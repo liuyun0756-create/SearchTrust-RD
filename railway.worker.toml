@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+# ── Worker Service (Celery) ───────────────────────────────────────────────────
+[deploy]
+startCommand = "celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4 --queues=seo_analysis --hostname=worker@%h --max-tasks-per-child=100"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
