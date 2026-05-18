@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 celery_app = Celery(
     "seo_analysis",
     broker=settings.celery_broker_url,
-    backend=settings.celery_result_backend,
+    backend=None,
     include=["app.tasks.pipeline"],          # auto-discover tasks
 )
 
@@ -56,8 +56,6 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,          # one task per worker at a time
 
     # ── Result backend ────────────────────────────────────────────────────────
-    result_expires=settings.TASK_RESULT_TTL,
-    result_extended=True,                  # store task args/kwargs/worker name
 
     # ── Retry / error handling ────────────────────────────────────────────────
     task_soft_time_limit=180,              # raises SoftTimeLimitExceeded at 3 min
@@ -85,24 +83,22 @@ celery_app.conf.update(
 
     # ── Redis-specific broker transport options ───────────────────────────────
     broker_transport_options={
-        "visibility_timeout": 3600,        # re-queue task if not acked in 1 h
+        "polling_interval": 5.0,
         "retry_policy": {
             "timeout": 5.0,
         },
     },
 
     # ── Connection pool ───────────────────────────────────────────────────────
-    broker_pool_limit=10,
-    redis_max_connections=20,
+    broker_pool_limit=3,
+    redis_max_connections=10,
+    broker_connection_retry_on_startup=True,
 )
 
 # ── SSL options: 仅在 rediss:// 时启用，redis:// 本地连接不需要 ────────────────
 if settings.REDIS_URL.startswith("rediss://"):
     celery_app.conf.update(
         broker_use_ssl={
-            "ssl_cert_reqs": ssl.CERT_REQUIRED,
-        },
-        redis_backend_use_ssl={
             "ssl_cert_reqs": ssl.CERT_REQUIRED,
         },
     )

@@ -73,11 +73,12 @@ def _get_pool() -> ConnectionPool:
     if _pool is None:
         _pool = aioredis.ConnectionPool.from_url(
             settings.REDIS_URL,
-            max_connections=50,
+            max_connections=10,
             decode_responses=True,
             socket_connect_timeout=10,
             socket_timeout=10,
             retry_on_timeout=True,
+            health_check_interval=60,
         )
     return _pool
 

@@ -9,8 +9,6 @@ Stage 1 — Scraping   (  0 – 30 %)   Jina Reader + SerpAPI GBP
 Stage 2 — Analysing  ( 30 – 90 %)   Dify streaming workflow
 Stage 3 — Done       ( 90 – 100%)   Persist report + update status
 
-Every stage updates the task state in Redis so the FastAPI polling
-endpoint always has a fresh snapshot to return.
 """
 
 from __future__ import annotations
@@ -30,6 +28,7 @@ from app.core.redis_client import RedisClient, get_redis, reset_pool
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
+_PROGRESS_THROTTLE_PCT: int = 10
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +164,7 @@ async def _run_pipeline(
     created_at = datetime.now(timezone.utc).isoformat()
 
     # ── Stage 1: Scraping (0 → 30 %) ─────────────────────────────────────────
+    # 写入 #1：标记任务已开始抓取（初始状态，让轮询端立即看到进度）
     await _async_update_state(
         redis, task_id, created_at,
         status="scraping",
@@ -180,6 +180,7 @@ async def _run_pipeline(
         scrape_result = await scrape(url, gbp_url=gbp_url)
     except RuntimeError as exc:
         logger.error("Scraping failed task_id=%s: %s", task_id, exc)
+        # 写入 #F1：失败状态（terminal）
         await _async_update_state(
             redis, task_id, created_at,
             status="failed",
@@ -193,21 +194,26 @@ async def _run_pipeline(
     content: str = scrape_result.get("content", "")
     gbp_data: dict[str, Any] = scrape_result.get("gbp", {})
 
-    await _async_update_state(
-        redis, task_id, created_at,
-        status="analyzing",
-        stage="scraping",
-        percent=30,
-        message=f"页面抓取完成（{len(content)} 字符），准备分析…",
-    )
 
     # ── Stage 2: Dify workflow (30 → 90 %) ───────────────────────────────────
     logger.info("Pipeline stage=analyzing task_id=%s", task_id)
 
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
 
+    # 节流状态：记录上次写入 Redis 的进度百分比，避免 Dify SSE 每个事件都写一次。
+    _last_written_pct: list[int] = [0]  # 使用 list 让内嵌函数可以修改
+
     async def _progress_cb(stage: str, percent: int, message: str) -> None:
-        """Relay Dify SSE progress to Redis."""
+        """Relay Dify SSE progress to Redis — throttled to _PROGRESS_THROTTLE_PCT intervals."""
+        # 只在进度变化超过阈值时才写 Redis，节省 Upstash 请求配额。
+        # 始终写入 percent >= 85 的阶段（reporting/done 边界），保证终态可见。
+        if percent < 85 and (percent - _last_written_pct[0]) < _PROGRESS_THROTTLE_PCT:
+            logger.debug(
+                "Progress update throttled — task_id=%s percent=%d (last=%d)",
+                task_id, percent, _last_written_pct[0],
+            )
+            return
+        _last_written_pct[0] = percent
         await _async_update_state(
             redis, task_id, created_at,
             status="analyzing" if percent < 85 else "reporting",
@@ -229,6 +235,7 @@ async def _run_pipeline(
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
+        # 写入 #F2：Dify 失败（terminal）
         await _async_update_state(
             redis, task_id, created_at,
             status="failed",
@@ -256,6 +263,8 @@ async def _run_pipeline(
         final_report = {"raw": report}
 
     # Persist report-level cache（附带生成时间，供缓存命中时复原时间戳）
+    # 注意：report cache 写入 + task status 写入合计 2 次 Redis 命令（pipeline 最后）。
+    # 用 pipeline 可合并为 1 个网络往返，但 set_json 封装差异较大暂不改动。
     now = datetime.now(timezone.utc).isoformat()
     cached_payload = {"report": final_report, "generated_at": now}
     report_cache_key = _report_cache_key(url, page_type, language)
@@ -268,7 +277,7 @@ async def _run_pipeline(
         percent=100,
         message="分析报告已生成",
         result=final_report,
-    )
+    )  # 写入 #last：terminal done 状态
 
     logger.info("Pipeline complete task_id=%s", task_id)
     return final_report

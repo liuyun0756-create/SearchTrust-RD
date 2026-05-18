@@ -68,8 +68,9 @@ local refill_int = tonumber(ARGV[3])
 local now        = tonumber(ARGV[4])
 local cost       = tonumber(ARGV[5])
 
-local tokens    = tonumber(redis.call('HGET', key, 'tokens'))
-local last_time = tonumber(redis.call('HGET', key, 'last_time'))
+local vals      = redis.call('HMGET', key, 'tokens', 'last_time')
+local tokens    = tonumber(vals[1])
+local last_time = tonumber(vals[2])
 
 -- Initialise bucket on first call
 if tokens == nil then
@@ -88,12 +89,11 @@ end
 -- Try to consume
 if tokens >= cost then
     tokens = tokens - cost
-    redis.call('HSET', key, 'tokens', tokens, 'last_time', last_time)
+    redis.call('HMSET', key, 'tokens', tokens, 'last_time', last_time)
     redis.call('EXPIRE', key, refill_int * 2)
     return 1
 else
-    -- Still update last_time even on failure (keeps refill accounting correct)
-    redis.call('HSET', key, 'tokens', tokens, 'last_time', last_time)
+    redis.call('HMSET', key, 'tokens', tokens, 'last_time', last_time)
     redis.call('EXPIRE', key, refill_int * 2)
     return 0
 end
