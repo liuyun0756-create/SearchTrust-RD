@@ -167,25 +167,24 @@ async def _stream_workflow(
                         await progress_callback(
                             "analyzing",
                             min(30 + node_count * 5, 65),
-                            f"节点 {node_count} 开始处理…",
+                            "正在分析中…",
                         )
 
                 elif event_type == "node_finished":
-                    node_title = event_data.get("title", f"节点 {node_count}")
                     if progress_callback:
                         await progress_callback(
                             "scoring",
                             min(65 + node_count * 3, 85),
-                            f"节点「{node_title}」完成",
+                            "正在分析中…",
                         )
 
                 elif event_type == "workflow_started":
                     if progress_callback:
-                        await progress_callback("analyzing", 30, "Dify 工作流已启动…")
+                        await progress_callback("analyzing", 30, "正在分析中…")
 
                 elif event_type == "workflow_finished":
                     if progress_callback:
-                        await progress_callback("reporting", 90, "工作流完成，整理最终报告…")
+                        await progress_callback("reporting", 90, "正在生成报告…")
 
                     # ── Extract outputs ───────────────────────────────────────
                     outputs = event_data.get("outputs")

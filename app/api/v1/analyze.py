@@ -63,7 +63,7 @@ def _build_initial_state(task_id: str) -> dict[str, Any]:
         "progress": {
             "stage": "queued",
             "percent": 0,
-            "message": "任务已接收，等待处理…",
+            "message": "排队中，即将开始…",
         },
         "result": None,
         "error": None,

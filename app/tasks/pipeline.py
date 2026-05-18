@@ -168,9 +168,9 @@ async def _run_pipeline(
     await _async_update_state(
         redis, task_id, created_at,
         status="scraping",
-        stage="scraping",
+        stage="loading",
         percent=5,
-        message="开始抓取页面内容…",
+        message="正在读取页面…",
     )
 
     from app.tasks.scraper import scrape  # noqa: PLC0415
@@ -184,9 +184,9 @@ async def _run_pipeline(
         await _async_update_state(
             redis, task_id, created_at,
             status="failed",
-            stage="scraping",
+            stage="failed",
             percent=10,
-            message="页面抓取失败",
+            message="页面读取失败,请稍后重试",
             error=str(exc),
         )
         raise
@@ -239,9 +239,9 @@ async def _run_pipeline(
         await _async_update_state(
             redis, task_id, created_at,
             status="failed",
-            stage="analyzing",
+            stage="failed",
             percent=50,
-            message="AI 分析失败",
+            message="分析失败，请稍后重试",
             error=str(exc),
         )
         raise
@@ -275,7 +275,7 @@ async def _run_pipeline(
         status="done",
         stage="done",
         percent=100,
-        message="分析报告已生成",
+        message="分析完成",
         result=final_report,
     )  # 写入 #last：terminal done 状态
 
@@ -355,9 +355,9 @@ def analyze_pipeline(
                 _async_update_state(
                     get_redis(), task_id, _fallback_created_at,
                     status="failed",
-                    stage="timeout",
+                    stage="failed",
                     percent=0,
-                    message="任务超时（超过3分钟）",
+                    message="分析超时，请稍后重试",
                     error="SoftTimeLimitExceeded",
                 )
             )
@@ -387,9 +387,9 @@ def analyze_pipeline(
                     _async_update_state(
                         get_redis(), task_id, _fallback_created_at,
                         status="failed",
-                        stage="unknown",
+                        stage="failed",
                         percent=0,
-                        message="任务失败（已达最大重试次数）",
+                        message="分析失败，请稍后重试",
                         error=str(exc),
                     )
                 )
