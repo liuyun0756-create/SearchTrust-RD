@@ -50,12 +50,11 @@ class IPRateLimitMiddleware(BaseHTTPMiddleware):
         rate_key = f"rate_limit:ip:{client_ip}:{current_minute}"
 
         try:
-            # Increment counter
-            count = await redis.incr(rate_key)
-
-            # Set TTL on first request in this window
-            if count == 1:
-                await redis.expire(rate_key, 60)
+            # Atomically increment counter and set TTL in one pipeline round-trip.
+            # Using separate incr() + expire() calls has a race condition: if the
+            # process crashes between the two commands the key never expires,
+            # permanently banning the IP.
+            count = await redis.incr_with_ttl(rate_key, ttl=60)
 
             # Check limit
             if count > settings.RATE_LIMIT_PER_MINUTE:

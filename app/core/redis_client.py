@@ -15,10 +15,10 @@ Usage
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any, Optional, Union
 
+import orjson
 import redis.asyncio as aioredis
 from redis.asyncio import ConnectionPool
 from redis.exceptions import RedisError
@@ -200,8 +200,8 @@ class RedisClient:
         if raw is None:
             return None
         try:
-            return json.loads(raw)
-        except (json.JSONDecodeError, TypeError) as exc:
+            return orjson.loads(raw)
+        except (orjson.JSONDecodeError, TypeError) as exc:
             logger.warning("Redis JSON decode failed for key=%s: %s", key, exc)
             return None
 
@@ -217,8 +217,9 @@ class RedisClient:
         Returns True on success, False on error.
         """
         try:
-            serialised = json.dumps(value, ensure_ascii=False, default=str)
-        except (TypeError, ValueError) as exc:
+            # orjson.dumps returns bytes; decode to str for redis string storage
+            serialised = orjson.dumps(value, option=orjson.OPT_NON_STR_KEYS).decode()
+        except (TypeError, orjson.JSONEncodeError) as exc:
             logger.error("JSON serialisation failed for key=%s: %s", key, exc)
             return False
         return await self.set(key, serialised, ttl=ttl)
@@ -231,6 +232,28 @@ class RedisClient:
             return await self._redis.incrby(key, amount)
         except RedisError as exc:
             logger.warning("Redis INCR failed for key=%s: %s", key, exc)
+            return None
+
+    async def incr_with_ttl(self, key: str, ttl: int, amount: int = 1) -> Optional[int]:
+        """
+        Atomically increment a counter and set its TTL in a single pipeline.
+
+        Unlike calling incr() + expire() separately, this method sends both
+        commands in one round-trip and the TTL is always applied — eliminating
+        the race condition where the key could become immortal if the process
+        crashes between the two calls.
+
+        Returns the new counter value, or None on Redis error.
+        """
+        try:
+            pipe = self._redis.pipeline()
+            pipe.incrby(key, amount)
+            pipe.expire(key, ttl)
+            results = await pipe.execute()
+            # results = [new_count (int), expire_result (bool)]
+            return results[0]
+        except RedisError as exc:
+            logger.warning("Redis INCR_WITH_TTL failed for key=%s: %s", key, exc)
             return None
 
     # ── Health check ──────────────────────────────────────────────────────────

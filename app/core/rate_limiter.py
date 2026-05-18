@@ -43,6 +43,7 @@ import redis as sync_redis_lib
 import redis.asyncio as aioredis
 
 from app.core.config import settings
+from app.core.redis_client import _get_pool
 
 logger = logging.getLogger(__name__)
 
@@ -143,16 +144,21 @@ class DistributedRateLimiter:
         self._async_client: Optional[aioredis.Redis] = None
         self._sync_client: Optional[sync_redis_lib.Redis] = None
 
+        # Cached registered Lua scripts (one per client instance)
+        self._async_script: Optional[aioredis.client.Script] = None  # type: ignore[name-defined]
+        self._sync_script: Optional[sync_redis_lib.client.Script] = None  # type: ignore[name-defined]
+
     # ── Async path (FastAPI / asyncio) ────────────────────────────────────────
 
     def _get_async_client(self) -> aioredis.Redis:
-        # Always create a fresh client; aioredis.from_url() is cheap and
-        # ensures the connection is bound to the *current* event loop.
-        # Caching the client across asyncio.run() boundaries (e.g. Celery
-        # worker tasks) causes "Future attached to a different loop" errors.
-        return aioredis.from_url(
-            settings.REDIS_URL, decode_responses=True
-        )
+        # Reuse the global connection pool managed by redis_client.py.
+        # Previously this called aioredis.from_url() on every acquire(),
+        # which created a brand-new TCP connection each time instead of
+        # drawing from the shared pool — wasteful under concurrency.
+        #
+        # _get_pool() already handles event-loop mismatch detection for
+        # Celery workers, so we don't need any extra logic here.
+        return aioredis.Redis(connection_pool=_get_pool())
 
     async def async_acquire(self, cost: int = 1) -> None:
         """
@@ -165,7 +171,12 @@ class DistributedRateLimiter:
             When no token can be acquired within ``max_wait`` seconds.
         """
         client = self._get_async_client()
-        script = client.register_script(_LUA_TOKEN_BUCKET)
+        # Cache the registered script on the instance so we don't re-register
+        # it on every call.  register_script() itself is cheap, but it creates
+        # a new Script object and prevents any future SHA-based EVALSHA reuse.
+        if self._async_script is None:
+            self._async_script = client.register_script(_LUA_TOKEN_BUCKET)
+        script = self._async_script
         deadline = time.monotonic() + self.max_wait
 
         while True:
@@ -225,7 +236,11 @@ class DistributedRateLimiter:
             When no token can be acquired within ``max_wait`` seconds.
         """
         client = self._get_sync_client()
-        script = client.register_script(_LUA_TOKEN_BUCKET)
+        # Cache the registered script on the instance (same rationale as the
+        # async path — avoids creating a new Script object on every call).
+        if self._sync_script is None:
+            self._sync_script = client.register_script(_LUA_TOKEN_BUCKET)
+        script = self._sync_script
         deadline = time.monotonic() + self.max_wait
 
         while True:

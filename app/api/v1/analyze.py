@@ -103,23 +103,17 @@ async def submit_analysis(
     if cached is not None:
         logger.info("Report cache hit for url=%s page_type=%s", url_str, body.page_type)
 
-        # 取出原始报告内容和生成时间
-        final_report = cached.get("report", cached)          # 兼容旧格式（无 report 包装）
-        generated_at = cached.get("generated_at", datetime.now(timezone.utc).isoformat())
+        final_report = cached.get("report", cached)   # 兼容旧格式（无 report 包装）
 
-        # Synthesise a completed task so client has a consistent polling path
-        task_id = str(uuid.uuid4())
-        completed_state: dict[str, Any] = {
-            "task_id": task_id,
-            "status": TaskStatus.DONE.value,
-            "progress": {"stage": "done", "percent": 100, "message": "已从缓存返回结果"},
-            "result": final_report,
-            "error": None,
-            "created_at": generated_at,
-            "updated_at": generated_at,
-        }
-        await redis.set_json(_task_key(task_id), completed_state, ttl=settings.TASK_DONE_TTL)
-        return TaskCreateResponse(task_id=task_id, status=TaskStatus.DONE, estimated_seconds=0)
+        # Return the report directly in the POST response — no Redis write,
+        # no polling round-trip needed.  Client detects cache hit via
+        # status='done' + result != None.
+        return TaskCreateResponse(
+            task_id=str(uuid.uuid4()),
+            status=TaskStatus.DONE,
+            estimated_seconds=0,
+            result=final_report,
+        )
 
     # ── 2. Generate task ID and persist initial state ─────────────────────────
     task_id = str(uuid.uuid4())

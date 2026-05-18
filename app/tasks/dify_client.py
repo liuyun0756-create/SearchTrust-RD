@@ -229,6 +229,7 @@ async def call_dify_workflow(
     gbp_data: dict[str, Any],
     task_id: str,
     progress_callback: Optional[ProgressCallback] = None,
+    gbp_url: str = "",
 ) -> dict[str, Any]:
     """
     Call the Dify SEO analysis workflow and return the final report.
@@ -251,6 +252,8 @@ async def call_dify_workflow(
         Used as ``user`` identifier in the Dify request.
     progress_callback:
         Optional async (stage, percent, message) → None.
+    gbp_url:
+        Google Business Profile URL, passed through to the final report.
 
     Returns
     -------
@@ -266,7 +269,25 @@ async def call_dify_workflow(
         "language": language,
         "content": content,
         "gbp_data": json.dumps(gbp_data, ensure_ascii=False),
+        "gbp_url": gbp_url,
     }
+
+    # Network-level transient errors worth retrying immediately (with a short
+    # sleep) because they are usually caused by brief connectivity hiccups:
+    #   - httpx.TimeoutException   — read/connect timeout
+    #   - httpx.ConnectError       — TCP connection refused / reset
+    #   - httpx.RemoteProtocolError — server closed connection mid-stream
+    #
+    # All other failures (rate-limiter timeout, bad HTTP status, missing
+    # outputs, RuntimeError from Dify) are re-raised immediately so the
+    # Celery task can surface them to the worker.  The Celery task wrapper
+    # in pipeline.py handles retries via self.retry(countdown=…), which
+    # releases the worker between attempts instead of blocking it with sleep.
+    _TRANSIENT_ERRORS = (
+        httpx.TimeoutException,
+        httpx.ConnectError,
+        httpx.RemoteProtocolError,
+    )
 
     last_exc: Exception = RuntimeError("No attempts made")
 
@@ -290,6 +311,8 @@ async def call_dify_workflow(
                     "consider raising DIFY_RPM_CAPACITY or your API quota",
                     task_id, exc,
                 )
+                # Rate-limiter timeout is not a transient network error — raise
+                # immediately so Celery can reschedule without blocking the worker.
                 raise RuntimeError(
                     f"Dify call rejected by rate limiter (system overloaded): {exc}"
                 ) from exc
@@ -308,19 +331,34 @@ async def call_dify_workflow(
             )
             return result
 
-        except (httpx.HTTPError, RuntimeError, asyncio.TimeoutError) as exc:
+        except _TRANSIENT_ERRORS as exc:
+            # Transient network error — short sleep then retry within this call.
+            # Sleep is brief (≤4 s) so the worker is not blocked for long.
             last_exc = exc
             logger.warning(
-                "Dify attempt %d/%d failed — task_id=%s: %s",
+                "Dify transient error attempt %d/%d — task_id=%s: %s",
                 attempt,
                 settings.DIFY_RETRY,
                 task_id,
                 exc,
             )
             if attempt < settings.DIFY_RETRY:
-                wait = 2 ** attempt       # 2s, 4s, 8s …
+                wait = 2 ** attempt   # 2s, 4s
                 logger.debug("Retrying Dify in %ds…", wait)
                 await asyncio.sleep(wait)
+
+        except (RuntimeError, asyncio.TimeoutError) as exc:
+            # Non-transient failure (bad payload, missing outputs, logic error).
+            # Raise immediately — let Celery's countdown retry handle rescheduling
+            # so this worker is freed to pick up the next task right away.
+            logger.warning(
+                "Dify non-transient error attempt %d/%d — task_id=%s: %s (not retrying inline)",
+                attempt,
+                settings.DIFY_RETRY,
+                task_id,
+                exc,
+            )
+            raise
 
     raise RuntimeError(
         f"Dify workflow failed after {settings.DIFY_RETRY} attempts "

@@ -62,8 +62,9 @@ class TaskCreateResponse(BaseModel):
     """
     Returned immediately after a client submits an analysis request.
 
-    The client should poll ``GET /api/v1/task/{task_id}`` using the
-    returned ``task_id`` until ``status`` is ``done`` or ``failed``.
+    When ``status == 'done'`` (cache hit), ``result`` is already populated and
+    the client does not need to poll ``GET /api/v1/task/{task_id}``.
+    Otherwise poll until ``status`` is ``done`` or ``failed``.
     """
 
     task_id: str = Field(
@@ -77,6 +78,10 @@ class TaskCreateResponse(BaseModel):
     estimated_seconds: int = Field(
         default=60,
         description="Rough estimate of processing time in seconds",
+    )
+    result: Optional[Any] = Field(
+        default=None,
+        description="Final analysis report — only present on cache hit (status='done')",
     )
 
     model_config = {

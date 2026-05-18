@@ -6,14 +6,15 @@ Dual-layer scraper: Jina Reader (primary) → Firecrawl (fallback).
 Public API
 ----------
 scrape(url)              — Main entry point; checks Redis cache first
-fetch_page_content(url)  — Waterfall: Jina → Firecrawl
+fetch_page_content(url)  — Waterfall: Jina → httpx → Firecrawl
 fetch_gbp_data(...)      — SerpAPI Google Maps / GBP lookup
 extract_business_info()  — Regex heuristics to pull name / city / phone
 
 Scraper levels
 --------------
 1. Jina Reader  — free, fast, clean Markdown output
-2. Firecrawl    — paid-per-call, stronger JS rendering, reliable fallback
+2. httpx direct — free fallback, static pages only
+3. Firecrawl    — paid-per-call, stronger JS rendering, reliable last resort
 
 Sub-page scraping
 -----------------
@@ -357,18 +358,18 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     """
     Try each scraper level in order; return on first success.
 
-    Level 1: Firecrawl     (paid, reliable, handles JS rendering)
+    Level 1: Jina Reader   (free, fast, clean Markdown output)
     Level 2: httpx direct  (free fallback, static pages only)
-    Level 3: Jina Reader   (free, clean Markdown, requires open network)
+    Level 3: Firecrawl     (paid-per-call, stronger JS rendering, reliable fallback)
 
     Returns
     -------
     ScrapeResult on success, None when all levels fail.
     """
     levels: list[tuple[ScraperSource, Any]] = [
-        (ScraperSource.FIRECRAWL, _fetch_firecrawl),
-        (ScraperSource.HTTPX,     _fetch_httpx),
         (ScraperSource.JINA,      _fetch_jina),
+        (ScraperSource.HTTPX,     _fetch_httpx),
+        (ScraperSource.FIRECRAWL, _fetch_firecrawl),
     ]
 
     for source, fetcher in levels:
@@ -903,8 +904,29 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
 
     logger.info("[Scraper] cache MISS — fetching url=%s", url)
 
-    # ── 2. Main page fetch ────────────────────────────────────────────────────
-    main_result = await fetch_page_content(url)
+    # ── 2. Main page fetch + optional parallel GBP (data_id path) ────────────
+    # When gbp_url contains a data_id we can query GBP independently of the
+    # page content, so we fire both requests concurrently and save 2-5 s.
+    # When there is no data_id, GBP needs business_name/city extracted from
+    # page content, so we keep the serial flow for that branch.
+    gbp_prefetch: Optional[dict[str, Any]] = None
+    has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
+
+    if has_data_id:
+        logger.info("[Scraper] data_id detected — running main page + GBP in parallel")
+        main_result, gbp_prefetch = await asyncio.gather(
+            fetch_page_content(url),
+            fetch_gbp_data(
+                business_name=None,
+                city=None,
+                website_url=url,
+                gbp_url=gbp_url,
+            ),
+            return_exceptions=False,
+        )
+    else:
+        main_result = await fetch_page_content(url)
+
     if main_result is None:
         raise RuntimeError(
             f"Page scraping failed (all scrapers failed) for url={url}"
@@ -955,17 +977,23 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     # ── 6. Business info ──────────────────────────────────────────────────────
     business_info = extract_business_info(combined_content)
 
-    # ── 7. GBP lookup — use URL domain for accuracy ───────────────────────────
-    try:
-        gbp_data = await fetch_gbp_data(
-            business_name=business_info.get("name"),
-            city=business_info.get("city"),
-            website_url=url,      # 页面域名，用于搜索兜底
-            gbp_url=gbp_url,      # Google Maps 链接，优先直接提取 data_id
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
-        gbp_data = {}
+    # ── 7. GBP lookup ─────────────────────────────────────────────────────────
+    # If gbp_prefetch is already populated (parallel fetch above), reuse it.
+    # Otherwise query SerpAPI now using business_name/city from page content.
+    if gbp_prefetch is not None:
+        gbp_data = gbp_prefetch
+        logger.info("[Scraper] using prefetched GBP data url=%s", url)
+    else:
+        try:
+            gbp_data = await fetch_gbp_data(
+                business_name=business_info.get("name"),
+                city=business_info.get("city"),
+                website_url=url,
+                gbp_url=gbp_url,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
+            gbp_data = {}
 
     # ── 8. Cache and return ───────────────────────────────────────────────────
     result: dict[str, Any] = {

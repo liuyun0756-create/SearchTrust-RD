@@ -77,6 +77,7 @@ def _sync_update_state(
 async def _async_update_state(
     redis: RedisClient,
     task_id: str,
+    created_at: str,
     status: str,
     stage: str,
     percent: int,
@@ -91,6 +92,8 @@ async def _async_update_state(
     ----------
     redis:      RedisClient instance (reused across the pipeline run)
     task_id:    Task UUID
+    created_at: Task creation timestamp (ISO 8601). Passed in from _run_pipeline
+                so we never need to read Redis just to preserve this value.
     status:     Lifecycle status string (queued/scraping/…/done/failed)
     stage:      Current stage label for the progress snapshot
     percent:    0-100 completion percentage
@@ -99,10 +102,6 @@ async def _async_update_state(
     error:      Error description (set only when failed)
     """
     now = datetime.now(timezone.utc).isoformat()
-
-    # Read existing state so we preserve ``created_at``
-    existing = await redis.get_json(_task_key(task_id)) or {}
-    created_at = existing.get("created_at", now)
 
     state: dict[str, Any] = {
         "task_id": task_id,
@@ -160,9 +159,14 @@ async def _run_pipeline(
     """
     redis = get_redis()
 
+    # Record created_at once here and pass it to every _async_update_state call.
+    # Previously each call read the key from Redis just to preserve this field,
+    # adding 6-8 unnecessary GET round-trips per task execution.
+    created_at = datetime.now(timezone.utc).isoformat()
+
     # ── Stage 1: Scraping (0 → 30 %) ─────────────────────────────────────────
     await _async_update_state(
-        redis, task_id,
+        redis, task_id, created_at,
         status="scraping",
         stage="scraping",
         percent=5,
@@ -177,7 +181,7 @@ async def _run_pipeline(
     except RuntimeError as exc:
         logger.error("Scraping failed task_id=%s: %s", task_id, exc)
         await _async_update_state(
-            redis, task_id,
+            redis, task_id, created_at,
             status="failed",
             stage="scraping",
             percent=10,
@@ -190,7 +194,7 @@ async def _run_pipeline(
     gbp_data: dict[str, Any] = scrape_result.get("gbp", {})
 
     await _async_update_state(
-        redis, task_id,
+        redis, task_id, created_at,
         status="analyzing",
         stage="scraping",
         percent=30,
@@ -205,7 +209,7 @@ async def _run_pipeline(
     async def _progress_cb(stage: str, percent: int, message: str) -> None:
         """Relay Dify SSE progress to Redis."""
         await _async_update_state(
-            redis, task_id,
+            redis, task_id, created_at,
             status="analyzing" if percent < 85 else "reporting",
             stage=stage,
             percent=percent,
@@ -221,11 +225,12 @@ async def _run_pipeline(
             gbp_data=gbp_data,
             task_id=task_id,
             progress_callback=_progress_cb,
+            gbp_url=gbp_url,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
         await _async_update_state(
-            redis, task_id,
+            redis, task_id, created_at,
             status="failed",
             stage="analyzing",
             percent=50,
@@ -257,7 +262,7 @@ async def _run_pipeline(
     await redis.set_json(report_cache_key, cached_payload, ttl=settings.REPORT_CACHE_TTL)
 
     await _async_update_state(
-        redis, task_id,
+        redis, task_id, created_at,
         status="done",
         stage="done",
         percent=100,
@@ -336,9 +341,10 @@ def analyze_pipeline(
         # Best-effort state update (may fail if Redis is slow)
         try:
             reset_pool()
+            _fallback_created_at = datetime.now(timezone.utc).isoformat()
             asyncio.run(
                 _async_update_state(
-                    get_redis(), task_id,
+                    get_redis(), task_id, _fallback_created_at,
                     status="failed",
                     stage="timeout",
                     percent=0,
@@ -367,9 +373,10 @@ def analyze_pipeline(
             )
             try:
                 reset_pool()
+                _fallback_created_at = datetime.now(timezone.utc).isoformat()
                 asyncio.run(
                     _async_update_state(
-                        get_redis(), task_id,
+                        get_redis(), task_id, _fallback_created_at,
                         status="failed",
                         stage="unknown",
                         percent=0,
