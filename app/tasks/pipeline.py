@@ -13,7 +13,6 @@ Stage 3 — Done       ( 90 – 100%)   Persist report + update status
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 import logging
@@ -24,7 +23,8 @@ from celery import Task
 from celery.exceptions import MaxRetriesExceededError, SoftTimeLimitExceeded
 
 from app.core.config import settings
-from app.core.redis_client import RedisClient, get_redis, reset_pool
+from app.core.redis_client import RedisClient, get_redis
+from app.core.rate_limiter import RateLimitedError
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -295,7 +295,7 @@ async def _run_pipeline(
     queue="seo_analysis",
     acks_late=True,
 )
-def analyze_pipeline(
+async def analyze_pipeline(
     self: Task,
     task_id: str,
     url: str,
@@ -305,6 +305,10 @@ def analyze_pipeline(
 ) -> dict[str, Any]:
     """
     Celery entry-point for the SEO trust-path analysis pipeline.
+
+    Now an async task: Celery 5.x native asyncio support means this coroutine
+    runs directly in the worker's event loop — no asyncio.run() wrapper, no
+    per-task loop creation, no Redis pool reset needed.
 
     Parameters
     ----------
@@ -328,42 +332,39 @@ def analyze_pipeline(
     )
 
     try:
-        # Reset the Redis connection pool before creating a new event loop.
-        # Celery workers call asyncio.run() which creates a fresh loop each
-        # time; any pool bound to a previous loop would cause
-        # "Future attached to a different loop" errors.
-        reset_pool()
-        result = asyncio.run(
-            _run_pipeline(
-                task_id=task_id,
-                url=url,
-                page_type=page_type,
-                language=language,
-                gbp_url=gbp_url or url,
-            )
+        result = await _run_pipeline(
+            task_id=task_id,
+            url=url,
+            page_type=page_type,
+            language=language,
+            gbp_url=gbp_url or url,
         )
         return result
 
     except SoftTimeLimitExceeded:
-        # Celery's soft time limit was hit (3 min)
         logger.error("Task soft time-limit exceeded — task_id=%s", task_id)
-        # Best-effort state update (may fail if Redis is slow)
         try:
-            reset_pool()
             _fallback_created_at = datetime.now(timezone.utc).isoformat()
-            asyncio.run(
-                _async_update_state(
-                    get_redis(), task_id, _fallback_created_at,
-                    status="failed",
-                    stage="failed",
-                    percent=0,
-                    message="分析超时，请稍后重试",
-                    error="SoftTimeLimitExceeded",
-                )
+            await _async_update_state(
+                get_redis(), task_id, _fallback_created_at,
+                status="failed",
+                stage="failed",
+                percent=0,
+                message="分析超时，请稍后重试",
+                error="SoftTimeLimitExceeded",
             )
         except Exception:  # noqa: BLE001
             pass
         raise
+
+    except RateLimitedError as exc:
+        countdown = 15
+        logger.warning(
+            "Dify rate limit hit — re-queuing task_id=%s in %ds",
+            task_id,
+            countdown,
+        )
+        raise self.retry(exc=exc, countdown=countdown, max_retries=10)
 
     except Exception as exc:
         logger.error(
@@ -372,7 +373,6 @@ def analyze_pipeline(
             exc,
             exc_info=True,
         )
-        # Retry if we haven't exhausted attempts
         try:
             raise self.retry(exc=exc, countdown=2 ** self.request.retries * 10)
         except MaxRetriesExceededError:
@@ -381,17 +381,14 @@ def analyze_pipeline(
                 task_id,
             )
             try:
-                reset_pool()
                 _fallback_created_at = datetime.now(timezone.utc).isoformat()
-                asyncio.run(
-                    _async_update_state(
-                        get_redis(), task_id, _fallback_created_at,
-                        status="failed",
-                        stage="failed",
-                        percent=0,
-                        message="分析失败，请稍后重试",
-                        error=str(exc),
-                    )
+                await _async_update_state(
+                    get_redis(), task_id, _fallback_created_at,
+                    status="failed",
+                    stage="failed",
+                    percent=0,
+                    message="分析失败，请稍后重试",
+                    error=str(exc),
                 )
             except Exception:  # noqa: BLE001
                 pass

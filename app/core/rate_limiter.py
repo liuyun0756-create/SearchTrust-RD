@@ -47,6 +47,19 @@ from app.core.redis_client import _get_pool
 
 logger = logging.getLogger(__name__)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Custom exception
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RateLimitedError(Exception):
+    """
+    Raised when ``async_try_acquire()`` finds the token bucket empty.
+
+    Callers (e.g. the Celery pipeline task) should catch this and re-queue
+    the task with a short countdown rather than blocking the worker.
+    """
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Atomic Lua script
 # ─────────────────────────────────────────────────────────────────────────────
@@ -210,6 +223,31 @@ class DistributedRateLimiter:
                 remaining,
             )
             await asyncio.sleep(wait)
+
+    async def async_try_acquire(self, cost: int = 1) -> bool:
+        """
+        Non-blocking async token acquisition attempt.
+
+        Returns True if a token was consumed, False if the bucket is empty.
+        Use this inside Celery tasks to avoid blocking the worker slot —
+        on False, raise RateLimitedError and let Celery retry with countdown.
+        """
+        client = self._get_async_client()
+        if self._async_script is None:
+            self._async_script = client.register_script(_LUA_TOKEN_BUCKET)
+        result = await self._async_script(
+            keys=[self.key],
+            args=[
+                self.capacity,
+                self.refill_amount,
+                self.refill_interval,
+                time.time(),
+                cost,
+            ],
+        )
+        acquired = result == 1
+        logger.debug("Rate limiter try_acquire key=%s acquired=%s", self.key, acquired)
+        return acquired
 
     async def async_current_tokens(self) -> int:
         """Return current token count (read-only, for monitoring)."""

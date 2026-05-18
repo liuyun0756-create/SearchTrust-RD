@@ -49,17 +49,21 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
 
-    # ── Task behaviour ────────────────────────────────────────────────────────
-    task_track_started=True,               # STARTED state visible in backend
-    task_acks_late=True,                   # ack after task completes (safer)
-    task_reject_on_worker_lost=True,       # re-queue on worker crash
-    worker_prefetch_multiplier=1,          # one task per worker at a time
+    # ── Async worker mode ─────────────────────────────────────────────────────
+    # Use the native asyncio pool so async tasks run in a single event loop
+    # per worker process — no per-task loop creation, no gevent monkey-patching.
+    worker_pool="solo",         # solo pool: one coroutine loop per process
+                                # concurrency is controlled at the asyncio level
 
-    # ── Result backend ────────────────────────────────────────────────────────
+    # ── Task behaviour ────────────────────────────────────────────────────────
+    task_track_started=True,
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+    worker_prefetch_multiplier=1,
 
     # ── Retry / error handling ────────────────────────────────────────────────
-    task_soft_time_limit=180,              # raises SoftTimeLimitExceeded at 3 min
-    task_time_limit=240,                   # SIGKILL at 4 min (hard limit)
+    task_soft_time_limit=180,
+    task_time_limit=240,
     task_max_retries=2,
 
     # ── Queues ────────────────────────────────────────────────────────────────
@@ -75,7 +79,7 @@ celery_app.conf.update(
     task_default_routing_key="seo_analysis",
 
     # ── Worker ────────────────────────────────────────────────────────────────
-    worker_max_tasks_per_child=100,        # recycle worker after 100 tasks
+    worker_max_tasks_per_child=100,
     worker_disable_rate_limits=False,
 
     # ── Beat schedule (placeholder) ───────────────────────────────────────────
@@ -83,14 +87,14 @@ celery_app.conf.update(
 
     # ── Redis-specific broker transport options ───────────────────────────────
     broker_transport_options={
-        "polling_interval": 5.0,
+        "polling_interval": 1.0,    # 从 5.0 降到 1.0，任务提交后更快被捡起
         "retry_policy": {
             "timeout": 5.0,
         },
     },
 
     # ── Connection pool ───────────────────────────────────────────────────────
-    broker_pool_limit=3,
+    broker_pool_limit=8,            # 从 3 提高到 8
     redis_max_connections=10,
     broker_connection_retry_on_startup=True,
 )

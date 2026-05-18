@@ -16,7 +16,7 @@ Usage
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import orjson
 import redis.asyncio as aioredis
@@ -35,45 +35,17 @@ _pool: Optional[ConnectionPool] = None
 
 def _get_pool() -> ConnectionPool:
     """
-    Return (or lazily create) the async connection pool bound to the
-    *current* running event loop.
+    Return (or lazily create) the shared async connection pool.
 
-    Each call checks whether the existing pool's internal loop matches the
-    loop that is currently running.  If they differ (e.g. a Celery worker
-    that calls asyncio.run() creates a brand-new loop each time), the old
-    pool is discarded and a fresh one is built for the new loop.
+    In the new asyncio-native Celery worker model, there is exactly one
+    event loop per worker process and it is never replaced — so the pool
+    is created once and reused for the lifetime of the process.
     """
     global _pool
-    import asyncio
-
-    if _pool is not None:
-        # Detect loop mismatch: pool was created for a different (possibly
-        # already-destroyed) loop.  asyncio.get_event_loop() returns the
-        # *running* loop inside asyncio.run(), so compare by identity.
-        try:
-            running_loop = asyncio.get_running_loop()
-            pool_loop = getattr(_pool, "_available_connections", None)
-            # Simpler heuristic: if the running loop is not the one stored
-            # in the pool's connection objects, reset.
-            # We check via the internal _loop attribute that aioredis sets.
-            existing_conn = None
-            if hasattr(_pool, "_created_connections"):
-                conns = list(_pool._created_connections)
-                if conns:
-                    existing_conn = conns[0]
-            if existing_conn is not None:
-                conn_loop = getattr(existing_conn, "_loop", None)
-                if conn_loop is not None and conn_loop is not running_loop:
-                    logger.debug("Redis pool loop mismatch — resetting pool for new event loop")
-                    _pool = None
-        except RuntimeError:
-            # No running loop yet (called from sync context before asyncio.run)
-            pass
-
     if _pool is None:
         _pool = aioredis.ConnectionPool.from_url(
             settings.REDIS_URL,
-            max_connections=10,
+            max_connections=20,
             decode_responses=True,
             socket_connect_timeout=10,
             socket_timeout=10,
@@ -81,19 +53,6 @@ def _get_pool() -> ConnectionPool:
             health_check_interval=60,
         )
     return _pool
-
-
-def reset_pool() -> None:
-    """
-    Discard the current connection pool without closing it.
-
-    Call this **before** ``asyncio.run()`` in Celery tasks so that the new
-    event loop gets a fresh pool rather than inheriting one bound to the
-    FastAPI / previous loop.  The old pool's connections will be GC'd.
-    """
-    global _pool
-    _pool = None
-    logger.debug("Redis connection pool reset (new event loop will be used)")
 
 
 async def close_pool() -> None:

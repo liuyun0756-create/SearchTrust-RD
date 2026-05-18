@@ -22,7 +22,7 @@ from typing import Any, Awaitable, Callable, Optional
 import httpx
 
 from app.core.config import settings
-from app.core.rate_limiter import dify_rate_limiter
+from app.core.rate_limiter import RateLimitedError, dify_rate_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -300,21 +300,16 @@ async def call_dify_workflow(
             )
 
             # ── Global rate limit: acquire a token before calling Dify ────────
-            # This is enforced across ALL Celery workers via Redis, so we never
-            # exceed the configured RPM cap regardless of concurrency.
-            try:
-                await dify_rate_limiter.async_acquire()
-            except TimeoutError as exc:
-                logger.error(
-                    "Dify rate limiter timeout task_id=%s: %s — "
-                    "consider raising DIFY_RPM_CAPACITY or your API quota",
-                    task_id, exc,
+            # Non-blocking: if bucket is empty raise RateLimitedError so the
+            # Celery task can retry via broker instead of sleeping in-process.
+            if not await dify_rate_limiter.async_try_acquire():
+                logger.warning(
+                    "Dify rate limiter bucket empty — task_id=%s will be rescheduled",
+                    task_id,
                 )
-                # Rate-limiter timeout is not a transient network error — raise
-                # immediately so Celery can reschedule without blocking the worker.
-                raise RuntimeError(
-                    f"Dify call rejected by rate limiter (system overloaded): {exc}"
-                ) from exc
+                raise RateLimitedError(
+                    "Dify token bucket empty; task will be retried by Celery"
+                )
 
             result = await _stream_workflow(inputs, task_id, progress_callback)
 
