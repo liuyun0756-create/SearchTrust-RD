@@ -6,15 +6,14 @@ Dual-layer scraper: Jina Reader (primary) → Firecrawl (fallback).
 Public API
 ----------
 scrape(url)              — Main entry point; checks Redis cache first
-fetch_page_content(url)  — Waterfall: Jina → httpx → Firecrawl
+fetch_page_content(url)  — Waterfall: Jina → Firecrawl
 fetch_gbp_data(...)      — SerpAPI Google Maps / GBP lookup
 extract_business_info()  — Regex heuristics to pull name / city / phone
 
 Scraper levels
 --------------
 1. Jina Reader  — free, fast, clean Markdown output
-2. httpx direct — free fallback, static pages only
-3. Firecrawl    — paid-per-call, stronger JS rendering, reliable last resort
+2. Firecrawl    — paid-per-call, stronger JS rendering, reliable last resort
 
 Sub-page scraping
 -----------------
@@ -88,7 +87,6 @@ _FAILURE_KEYWORDS: tuple[str, ...] = (
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ScraperSource(str, Enum):
-    HTTPX = "httpx"
     JINA = "jina"
     FIRECRAWL = "firecrawl"
 
@@ -128,68 +126,6 @@ def _is_valid_content(text: str) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Level 0 — httpx direct (no external service, works everywhere)
-# ─────────────────────────────────────────────────────────────────────────────
-
-async def _fetch_httpx(url: str) -> Optional[str]:
-    """
-    Directly fetch URL with httpx and extract text content.
-    No external service dependency — works in any network environment.
-    Used as primary scraper when Jina is not accessible (e.g. from China).
-    """
-    import re as _re
-    headers = {
-        "User-Agent": random.choice(_USER_AGENTS),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-    }
-
-    for attempt in range(settings.SCRAPER_RETRY):
-        if attempt > 0:
-            wait = 2 ** (attempt - 1)
-            await asyncio.sleep(wait)
-
-        try:
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT)),
-                follow_redirects=True,
-            ) as client:
-                resp = await client.get(url, headers=headers)
-
-            if resp.status_code in _NO_RETRY_CODES:
-                return None
-            if resp.status_code in {403, 429}:
-                logger.warning("[httpx] blocked status=%d url=%s", resp.status_code, url)
-                return None
-            if resp.status_code != 200:
-                continue
-
-            html = resp.text
-            # Remove script/style tags
-            text = _re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=_re.DOTALL)
-            text = _re.sub(r"<style[^>]*>.*?</style>", " ", text, flags=_re.DOTALL)
-            # Remove all HTML tags
-            text = _re.sub(r"<[^>]+>", " ", text)
-            # Collapse whitespace
-            text = _re.sub(r"\s+", " ", text).strip()
-
-            if _is_valid_content(text):
-                logger.info("[httpx] success attempt=%d len=%d url=%s", attempt + 1, len(text), url)
-                return text
-
-            logger.warning("[httpx] content invalid len=%d url=%s", len(text), url)
-
-        except httpx.TimeoutException:
-            logger.warning("[httpx] timeout attempt=%d url=%s", attempt + 1, url)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[httpx] error attempt=%d url=%s: %s", attempt + 1, url, exc)
-
-    logger.error("[httpx] all attempts failed url=%s", url)
-    return None
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Level 1 — Jina Reader
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -214,48 +150,48 @@ async def _fetch_jina(url: str) -> Optional[str]:
     if settings.JINA_API_KEY:
         headers["Authorization"] = f"Bearer {settings.JINA_API_KEY}"
 
-    for attempt in range(1, settings.SCRAPER_RETRY + 1):
-        if attempt > 1:
-            wait = 2 ** (attempt - 1)   # 2 s, 4 s
-            logger.info("[Jina] retry in %ds (attempt %d/%d)", wait, attempt, settings.SCRAPER_RETRY)
-            await asyncio.sleep(wait)
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT + 10)),
+        follow_redirects=True,
+    ) as client:
+        for attempt in range(1, settings.SCRAPER_RETRY + 1):
+            if attempt > 1:
+                wait = 2 ** (attempt - 1)   # 2 s, 4 s
+                logger.info("[Jina] retry in %ds (attempt %d/%d)", wait, attempt, settings.SCRAPER_RETRY)
+                await asyncio.sleep(wait)
 
-        try:
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT + 10)),
-                follow_redirects=True,
-            ) as client:
+            try:
                 resp = await client.get(jina_url, headers=headers)
 
-            if resp.status_code in _NO_RETRY_CODES:
-                logger.warning("[Jina] unrecoverable status=%d url=%s", resp.status_code, url)
-                return None
+                if resp.status_code in _NO_RETRY_CODES:
+                    logger.warning("[Jina] unrecoverable status=%d url=%s", resp.status_code, url)
+                    return None
 
-            if resp.status_code == 429:
-                retry_after = int(resp.headers.get("Retry-After", "30"))
-                logger.warning("[Jina] rate-limited; waiting %ds url=%s", retry_after, url)
-                await asyncio.sleep(retry_after)
-                continue
+                if resp.status_code == 429:
+                    retry_after = int(resp.headers.get("Retry-After", "30"))
+                    logger.warning("[Jina] rate-limited; waiting %ds url=%s", retry_after, url)
+                    await asyncio.sleep(retry_after)
+                    continue
 
-            if resp.status_code != 200:
-                logger.warning("[Jina] status=%d attempt=%d url=%s", resp.status_code, attempt, url)
-                continue
+                if resp.status_code != 200:
+                    logger.warning("[Jina] status=%d attempt=%d url=%s", resp.status_code, attempt, url)
+                    continue
 
-            if _is_valid_content(resp.text):
-                logger.info(
-                    "[Jina] success attempt=%d len=%d url=%s",
-                    attempt, len(resp.text), url,
-                )
-                return resp.text
+                if _is_valid_content(resp.text):
+                    logger.info(
+                        "[Jina] success attempt=%d len=%d url=%s",
+                        attempt, len(resp.text), url,
+                    )
+                    return resp.text
 
-            logger.warning("[Jina] content invalid len=%d attempt=%d url=%s", len(resp.text), attempt, url)
+                logger.warning("[Jina] content invalid len=%d attempt=%d url=%s", len(resp.text), attempt, url)
 
-        except httpx.TimeoutException:
-            logger.warning("[Jina] timeout attempt=%d url=%s", attempt, url)
-        except httpx.ConnectError as exc:
-            logger.warning("[Jina] connect error attempt=%d url=%s: %s", attempt, url, exc)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[Jina] unexpected error attempt=%d url=%s: %s", attempt, url, exc)
+            except httpx.TimeoutException:
+                logger.warning("[Jina] timeout attempt=%d url=%s", attempt, url)
+            except httpx.ConnectError as exc:
+                logger.warning("[Jina] connect error attempt=%d url=%s: %s", attempt, url, exc)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("[Jina] unexpected error attempt=%d url=%s: %s", attempt, url, exc)
 
     logger.error("[Jina] all %d attempts failed url=%s", settings.SCRAPER_RETRY, url)
     return None
@@ -295,56 +231,56 @@ async def _fetch_firecrawl(url: str) -> Optional[str]:
         ],
     }
 
-    for attempt in range(1, settings.SCRAPER_RETRY + 1):
-        if attempt > 1:
-            wait = 2 ** (attempt - 1)
-            logger.info("[Firecrawl] retry in %ds (attempt %d/%d)", wait, attempt, settings.SCRAPER_RETRY)
-            await asyncio.sleep(wait)
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT + 15)),
+        follow_redirects=True,
+    ) as client:
+        for attempt in range(1, settings.SCRAPER_RETRY + 1):
+            if attempt > 1:
+                wait = 2 ** (attempt - 1)
+                logger.info("[Firecrawl] retry in %ds (attempt %d/%d)", wait, attempt, settings.SCRAPER_RETRY)
+                await asyncio.sleep(wait)
 
-        try:
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT + 15)),
-                follow_redirects=True,
-            ) as client:
+            try:
                 resp = await client.post(endpoint, headers=headers, json=payload)
 
-            if resp.status_code in _NO_RETRY_CODES:
-                logger.warning("[Firecrawl] unrecoverable status=%d url=%s", resp.status_code, url)
-                return None
+                if resp.status_code in _NO_RETRY_CODES:
+                    logger.warning("[Firecrawl] unrecoverable status=%d url=%s", resp.status_code, url)
+                    return None
 
-            if resp.status_code == 402:
-                logger.error("[Firecrawl] quota exhausted (402) — top up your account")
-                return None
+                if resp.status_code == 402:
+                    logger.error("[Firecrawl] quota exhausted (402) — top up your account")
+                    return None
 
-            if resp.status_code == 429:
-                logger.warning("[Firecrawl] rate-limited attempt=%d url=%s", attempt, url)
-                await asyncio.sleep(30)
-                continue
+                if resp.status_code == 429:
+                    logger.warning("[Firecrawl] rate-limited attempt=%d url=%s", attempt, url)
+                    await asyncio.sleep(30)
+                    continue
 
-            if resp.status_code != 200:
-                logger.warning("[Firecrawl] status=%d attempt=%d url=%s", resp.status_code, attempt, url)
-                continue
+                if resp.status_code != 200:
+                    logger.warning("[Firecrawl] status=%d attempt=%d url=%s", resp.status_code, attempt, url)
+                    continue
 
-            data: dict[str, Any] = resp.json()
-            # Firecrawl v1: data.data.markdown  — v0: data.markdown
-            content: str = (
-                data.get("data", {}).get("markdown", "")
-                or data.get("markdown", "")
-            )
-
-            if _is_valid_content(content):
-                logger.info(
-                    "[Firecrawl] success attempt=%d len=%d url=%s",
-                    attempt, len(content), url,
+                data: dict[str, Any] = resp.json()
+                # Firecrawl v1: data.data.markdown  — v0: data.markdown
+                content: str = (
+                    data.get("data", {}).get("markdown", "")
+                    or data.get("markdown", "")
                 )
-                return content
 
-            logger.warning("[Firecrawl] content invalid len=%d attempt=%d url=%s", len(content), attempt, url)
+                if _is_valid_content(content):
+                    logger.info(
+                        "[Firecrawl] success attempt=%d len=%d url=%s",
+                        attempt, len(content), url,
+                    )
+                    return content
 
-        except httpx.TimeoutException:
-            logger.warning("[Firecrawl] timeout attempt=%d url=%s", attempt, url)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[Firecrawl] error attempt=%d url=%s: %s", attempt, url, exc)
+                logger.warning("[Firecrawl] content invalid len=%d attempt=%d url=%s", len(content), attempt, url)
+
+            except httpx.TimeoutException:
+                logger.warning("[Firecrawl] timeout attempt=%d url=%s", attempt, url)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("[Firecrawl] error attempt=%d url=%s: %s", attempt, url, exc)
 
     logger.error("[Firecrawl] all %d attempts failed url=%s", settings.SCRAPER_RETRY, url)
     return None
@@ -358,9 +294,8 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     """
     Try each scraper level in order; return on first success.
 
-    Level 1: Jina Reader   (free, fast, clean Markdown output)
-    Level 2: httpx direct  (free fallback, static pages only)
-    Level 3: Firecrawl     (paid-per-call, stronger JS rendering, reliable fallback)
+    Level 1: Jina Reader  (free, fast, clean Markdown output)
+    Level 2: Firecrawl    (paid-per-call, stronger JS rendering, reliable fallback)
 
     Returns
     -------
@@ -368,7 +303,6 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     """
     levels: list[tuple[ScraperSource, Any]] = [
         (ScraperSource.JINA,      _fetch_jina),
-        (ScraperSource.HTTPX,     _fetch_httpx),
         (ScraperSource.FIRECRAWL, _fetch_firecrawl),
     ]
 
