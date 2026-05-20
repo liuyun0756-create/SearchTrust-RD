@@ -50,15 +50,23 @@ celery_app.conf.update(
     enable_utc=True,
 
     # ── Async worker mode ─────────────────────────────────────────────────────
-    # Use the native asyncio pool so async tasks run in a single event loop
-    # per worker process — no per-task loop creation, no gevent monkey-patching.
-    worker_pool="solo",         # solo pool: one coroutine loop per process
-                                # concurrency is controlled at the asyncio level
+    # solo pool: blocking, inline, max concurrency = 1 per process.
+    # async def tasks are executed via asyncio.run() — one at a time.
+    #
+    # To increase throughput, run multiple worker PROCESSES (each solo):
+    #   Railway Hobby: start N workers in one Service via bash & ... & wait
+    #   Railway Pro:   use multiple Service replicas
+    #   docker-compose: --scale celery_worker=N
+    # Do NOT use prefork/gevent — incompatible with native asyncio tasks.
+    worker_pool="solo",
 
     # ── Task behaviour ────────────────────────────────────────────────────────
     task_track_started=True,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
+    # solo pool is single-task-per-process; prefetch > 1 only pre-loads tasks
+    # into memory but does not enable concurrency. Keep at 1 to avoid holding
+    # tasks hostage in a busy worker when other workers are idle.
     worker_prefetch_multiplier=1,
 
     # ── Retry / error handling ────────────────────────────────────────────────

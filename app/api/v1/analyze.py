@@ -105,9 +105,6 @@ async def submit_analysis(
 
         final_report = cached.get("report", cached)   # 兼容旧格式（无 report 包装）
 
-        # Return the report directly in the POST response — no Redis write,
-        # no polling round-trip needed.  Client detects cache hit via
-        # status='done' + result != None.
         return TaskCreateResponse(
             task_id=str(uuid.uuid4()),
             status=TaskStatus.DONE,
@@ -118,6 +115,10 @@ async def submit_analysis(
     # ── 2. Generate task ID and persist initial state ─────────────────────────
     task_id = str(uuid.uuid4())
     initial_state = _build_initial_state(task_id)
+    # Extract created_at from the state dict so the Celery task receives the
+    # exact same timestamp — this prevents the worker from having to re-read
+    # Redis just to preserve this field in failure paths.
+    created_at: str = initial_state["created_at"]
     await redis.set_json(_task_key(task_id), initial_state, ttl=settings.TASK_RESULT_TTL)
 
     # ── 3. Enqueue Celery task ────────────────────────────────────────────────
@@ -134,7 +135,7 @@ async def submit_analysis(
 
     try:
         analyze_pipeline.apply_async(
-            args=[task_id, url_str, body.page_type.value, body.language.value, gbp_url],
+            args=[task_id, url_str, body.page_type.value, body.language.value, gbp_url, created_at],
             task_id=task_id,
             queue="seo_analysis",
         )

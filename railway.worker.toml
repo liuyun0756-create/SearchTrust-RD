@@ -4,6 +4,6 @@ dockerfilePath = "Dockerfile"
 
 # ── Worker Service (Celery) ───────────────────────────────────────────────────
 [deploy]
-startCommand = "celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4 --queues=seo_analysis --hostname=worker@%h --max-tasks-per-child=100"
+startCommand = "bash -c 'celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w1@%h --loglevel=info --max-tasks-per-child=100 & celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w2@%h --loglevel=info --max-tasks-per-child=100 & celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w3@%h --loglevel=info --max-tasks-per-child=100 & wait'"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
