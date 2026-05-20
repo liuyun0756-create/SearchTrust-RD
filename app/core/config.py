@@ -143,8 +143,11 @@ class Settings(BaseSettings):
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = Field(
-        default=["*"],
-        description="Allowed CORS origins",
+        default=[
+            "https://trysearchtrust.com",
+            "https://www.trysearchtrust.com",
+        ],
+        description="Allowed CORS origins — never use ['*'] in production",
     )
 
     # ── Validators ────────────────────────────────────────────────────────────
