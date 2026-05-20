@@ -115,6 +115,9 @@ class IPRateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             count = await redis.incr_with_ttl(rate_key, ttl=60)
+            if count is None:
+                # Redis 故障，fail-open
+                return await call_next(request)
             if count > settings.RATE_LIMIT_PER_MINUTE:
                 logger.warning(
                     "Rate limit exceeded (redis) — ip=%s count=%d limit=%d path=%s",
@@ -150,7 +153,7 @@ class IPRateLimitMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
         current_minute = int(time.time() // 60)
-        self._add_headers(response, count, current_minute)
+        self._add_headers(response, count, current_minute, limit=mem_limit)
         return response
 
     # ── Helpers ───────────────────────────────────────────────────────────────
@@ -169,10 +172,10 @@ class IPRateLimitMiddleware(BaseHTTPMiddleware):
             },
         )
 
-    def _add_headers(self, response: Response, count: int, current_minute: int) -> None:
-        limit = settings.RATE_LIMIT_PER_MINUTE
-        response.headers["X-RateLimit-Limit"] = str(limit)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, limit - count))
+    def _add_headers(self, response: Response, count: int, current_minute: int, limit: int | None = None) -> None:
+        effective_limit = limit if limit is not None else settings.RATE_LIMIT_PER_MINUTE
+        response.headers["X-RateLimit-Limit"] = str(effective_limit)
+        response.headers["X-RateLimit-Remaining"] = str(max(0, effective_limit - count))
         response.headers["X-RateLimit-Reset"] = str((current_minute + 1) * 60)
 
     def _get_client_ip(self, request: Request) -> str:

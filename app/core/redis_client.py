@@ -196,22 +196,37 @@ class RedisClient:
 
     async def incr_with_ttl(self, key: str, ttl: int, amount: int = 1) -> Optional[int]:
         """
-        Atomically increment a counter and set its TTL in a single pipeline.
+        Atomically increment a counter and set its TTL **only on first creation**.
 
-        Unlike calling incr() + expire() separately, this method sends both
-        commands in one round-trip and the TTL is always applied — eliminating
-        the race condition where the key could become immortal if the process
-        crashes between the two calls.
+        Implemented as a Lua script so the INCRBY + conditional EXPIRE execute
+        atomically on the Redis server in a single round-trip — no pipeline
+        race condition, no repeated TTL reset.
+
+        Window semantics (fixed window):
+          - The TTL is set exactly once, when the key is first created (INCRBY
+            returns `amount`).  Subsequent requests within the same window do
+            NOT extend the TTL, so the window always expires at a fixed point.
+          - Using `val == amount` (instead of `val == 1`) correctly handles
+            callers that pass amount > 1 (e.g. weighted / batch billing).
 
         Returns the new counter value, or None on Redis error.
         """
+        _SCRIPT = """
+local val = redis.call('INCRBY', KEYS[1], ARGV[2])
+if val == tonumber(ARGV[2]) then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return val
+"""
         try:
-            pipe = self._redis.pipeline()
-            pipe.incrby(key, amount)
-            pipe.expire(key, ttl)
-            results = await pipe.execute()
-            # results = [new_count (int), expire_result (bool)]
-            return results[0]
+            result = await self._redis.eval(
+                _SCRIPT,
+                1,       # numkeys
+                key,     # KEYS[1]
+                ttl,     # ARGV[1]
+                amount,  # ARGV[2]
+            )
+            return int(result)
         except RedisError as exc:
             logger.warning("Redis INCR_WITH_TTL failed for key=%s: %s", key, exc)
             return None
@@ -240,10 +255,11 @@ class RedisClient:
 
 def get_redis() -> RedisClient:
     """
-    Return a RedisClient bound to the current event loop.
+    Return a RedisClient backed by the shared connection pool.
 
-    Delegates pool management to _get_pool() which detects loop mismatches
-    and resets the pool when needed (e.g. inside Celery asyncio.run() calls).
+    The pool is created once per process and reused for the lifetime of
+    the worker — safe because the asyncio-native Celery worker model
+    maintains a single event loop per process.
     """
     return RedisClient()
 
