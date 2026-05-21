@@ -5,7 +5,7 @@ Dual-layer scraper: Jina Reader (primary) → Firecrawl (fallback).
 
 Public API
 ----------
-scrape(url)              — Main entry point; checks Redis cache first
+scrape(url)              — Main entry point
 fetch_page_content(url)  — Waterfall: Jina → Firecrawl
 fetch_gbp_data(...)      — SerpAPI Google Maps / GBP lookup
 extract_business_info()  — Regex heuristics to pull name / city / phone
@@ -27,7 +27,6 @@ separator format used by the original Dify web_scraper node.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
 import random
@@ -40,7 +39,6 @@ from typing import Any, Optional
 import httpx
 
 from app.core.config import settings
-from app.core.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
 
@@ -779,15 +777,6 @@ async def _fetch_sub_page(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Cache key helper
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _scraper_cache_key(url: str) -> str:
-    digest = hashlib.md5(url.encode()).hexdigest()
-    return f"scraper:cache:{digest}"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -797,14 +786,12 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
 
     Flow
     ----
-    1. Check Redis cache  → return immediately on hit (zero cost)
-    2. Fetch main page    → Jina Reader (primary) → Firecrawl (fallback)
-    3. Extract sub-page URLs from main-page content (real links, not guesses)
-    4. Fetch all sub-pages concurrently (each: Jina → Firecrawl)
-    5. Append sub-page content with === PAGE === separators
-    6. Extract business info (name, city, phone) via regex
-    7. Fetch GBP data from SerpAPI (non-blocking on failure)
-    8. Store result in Redis (TTL = SCRAPER_CACHE_TTL)
+    1. Fetch main page    → Jina Reader (primary) → Firecrawl (fallback)
+    2. Extract sub-page URLs from main-page content (real links, not guesses)
+    3. Fetch all sub-pages concurrently (each: Jina → Firecrawl)
+    4. Append sub-page content with === PAGE === separators
+    5. Extract business info (name, city, phone) via regex
+    6. Fetch GBP data from SerpAPI (non-blocking on failure)
 
     Parameters
     ----------
@@ -820,25 +807,14 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         ``scraper_source`` — scraper that succeeded for the main page
         ``sub_pages``      — list of sub-page types successfully appended
         ``url``            — original URL
-        ``cached``         — True if result came from Redis cache
 
     Raises
     ------
     RuntimeError when both Jina and Firecrawl fail on the main page.
     """
-    redis = get_redis()
-    cache_key = _scraper_cache_key(url)
+    logger.info("[Scraper] fetching url=%s", url)
 
-    # ── 1. Cache check ────────────────────────────────────────────────────────
-    cached = await redis.get_json(cache_key)
-    if cached is not None:
-        logger.info("[Scraper] cache HIT url=%s", url)
-        cached["cached"] = True
-        return cached
-
-    logger.info("[Scraper] cache MISS — fetching url=%s", url)
-
-    # ── 2. Main page fetch + optional parallel GBP (data_id path) ────────────
+    # ── 1. Main page fetch + optional parallel GBP (data_id path) ────────────
     # When gbp_url contains a data_id we can query GBP independently of the
     # page content, so we fire both requests concurrently and save 2-5 s.
     # When there is no data_id, GBP needs business_name/city extracted from
@@ -848,7 +824,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
 
     if has_data_id:
         logger.info("[Scraper] data_id detected — running main page + GBP in parallel")
-        main_result, gbp_prefetch = await asyncio.gather(
+        results = await asyncio.gather(
             fetch_page_content(url),
             fetch_gbp_data(
                 business_name=None,
@@ -856,8 +832,12 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 website_url=url,
                 gbp_url=gbp_url,
             ),
-            return_exceptions=False,
+            return_exceptions=True,
         )
+        main_result = results[0] if not isinstance(results[0], Exception) else None
+        gbp_prefetch = results[1] if not isinstance(results[1], Exception) else {}
+        if isinstance(results[1], Exception):
+            logger.warning("[Scraper] parallel GBP fetch failed: %s — continuing without GBP", results[1])
     else:
         main_result = await fetch_page_content(url)
 
@@ -871,14 +851,14 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         main_result.source.value, main_result.content_length, url,
     )
 
-    # ── 3. Extract real sub-page URLs from main content ───────────────────────
+    # ── 2. Extract real sub-page URLs from main content ───────────────────────
     from urllib.parse import urlparse
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
 
     sub_urls = extract_sub_page_urls(main_result.content, base_url)
 
-    # ── 4. Concurrently fetch all detected sub-pages ──────────────────────────
+    # ── 3. Concurrently fetch all detected sub-pages ──────────────────────────
     combined_content = main_result.content
     appended: list[str] = []
 
@@ -890,11 +870,15 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         sub_tasks = [
             _fetch_sub_page(pt, pu) for pt, pu in sub_urls.items()
         ]
-        sub_results: list[tuple[str, Optional[str]]] = await asyncio.gather(
-            *sub_tasks, return_exceptions=False
-        )
+        sub_results_raw = await asyncio.gather(*sub_tasks, return_exceptions=True)
+        sub_results: list[tuple[str, Optional[str]]] = []
+        for r in sub_results_raw:
+            if isinstance(r, Exception):
+                logger.warning("[Scraper] sub-page task raised unexpected exception: %s", r)
+            else:
+                sub_results.append(r)
 
-        # ── 5. Append sub-page content ────────────────────────────────────────
+        # ── 4. Append sub-page content ────────────────────────────────────────
         for page_type, sub_content in sub_results:
             if sub_content:
                 tag = page_type.upper()
@@ -908,10 +892,10 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         len(main_result.content), appended,
     )
 
-    # ── 6. Business info ──────────────────────────────────────────────────────
+    # ── 5. Business info ──────────────────────────────────────────────────────
     business_info = extract_business_info(combined_content)
 
-    # ── 7. GBP lookup ─────────────────────────────────────────────────────────
+    # ── 6. GBP lookup ─────────────────────────────────────────────────────────
     # If gbp_prefetch is already populated (parallel fetch above), reuse it.
     # Otherwise query SerpAPI now using business_name/city from page content.
     if gbp_prefetch is not None:
@@ -929,7 +913,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
             gbp_data = {}
 
-    # ── 8. Cache and return ───────────────────────────────────────────────────
+    # ── 7. Return assembled result ────────────────────────────────────────────
     result: dict[str, Any] = {
         "url":            url,
         "content":        combined_content,
@@ -937,16 +921,10 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp":            gbp_data,
         "scraper_source": main_result.source.value,
         "sub_pages":      appended,
-        "cached":         False,
     }
-    ok = await redis.set_json(cache_key, result, ttl=settings.SCRAPER_CACHE_TTL)
-    if ok:
-        logger.info(
-            "[Scraper] cached url=%s source=%s sub_pages=%s ttl=%ds",
-            url, main_result.source.value, appended, settings.SCRAPER_CACHE_TTL,
-        )
-    else:
-        logger.warning("[Scraper] failed to cache result for url=%s", url)
-
+    logger.info(
+        "[Scraper] done url=%s source=%s sub_pages=%s",
+        url, main_result.source.value, appended,
+    )
     return result
 

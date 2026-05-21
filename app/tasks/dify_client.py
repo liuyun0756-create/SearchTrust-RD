@@ -17,12 +17,52 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from typing import Any, Awaitable, Callable, Optional
 
 import httpx
 
 from app.core.config import settings
-from app.core.rate_limiter import RateLimitedError, dify_rate_limiter
+
+# ── In-process token bucket for Dify RPM limiting ────────────────────────────
+class _TokenBucket:
+    """Simple in-process token bucket — no Redis required."""
+
+    def __init__(self, capacity: int, refill_amount: int, refill_interval: int) -> None:
+        self._capacity = capacity
+        self._refill_amount = refill_amount
+        self._refill_interval = refill_interval
+        self._tokens = float(capacity)
+        self._last_refill = time.monotonic()
+
+    def try_acquire(self) -> bool:
+        now = time.monotonic()
+        elapsed = now - self._last_refill
+        refills = int(elapsed / self._refill_interval)
+        if refills > 0:
+            self._tokens = min(self._capacity, self._tokens + refills * self._refill_amount)
+            self._last_refill += refills * self._refill_interval
+        if self._tokens >= 1:
+            self._tokens -= 1
+            return True
+        return False
+
+    async def async_acquire(self, max_wait: float = 120.0) -> None:
+        deadline = time.monotonic() + max_wait
+        while not self.try_acquire():
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Dify rate limiter timed out")
+            await asyncio.sleep(1.0)
+
+    async def async_try_acquire(self) -> bool:
+        return self.try_acquire()
+
+
+_dify_bucket = _TokenBucket(
+    capacity=settings.DIFY_RPM_CAPACITY,
+    refill_amount=settings.DIFY_RPM_REFILL,
+    refill_interval=settings.DIFY_RPM_INTERVAL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,19 +107,6 @@ def _parse_sse_line(line: str) -> Optional[dict[str, Any]]:
             logger.debug("SSE JSON parse error: %s — raw=%r", exc, payload)
             return None
     return None
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Progress mapping
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Map Dify event names → (stage, percent, message)
-_EVENT_PROGRESS: dict[str, tuple[str, int, str]] = {
-    "workflow_started":  ("analyzing",  30, "Dify 工作流已启动，开始分析…"),
-    "node_started":      ("analyzing",  45, "正在分析页面内容…"),
-    "node_finished":     ("scoring",    70, "规则评分完成，生成报告中…"),
-    "workflow_finished": ("reporting",  90, "报告生成完毕，整理结果…"),
-}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -273,15 +300,13 @@ async def call_dify_workflow(
 
     # Network-level transient errors worth retrying immediately (with a short
     # sleep) because they are usually caused by brief connectivity hiccups:
-    #   - httpx.TimeoutException   — read/connect timeout
-    #   - httpx.ConnectError       — TCP connection refused / reset
+    #   - httpx.TimeoutException    — read/connect timeout
+    #   - httpx.ConnectError        — TCP connection refused / reset
     #   - httpx.RemoteProtocolError — server closed connection mid-stream
     #
     # All other failures (rate-limiter timeout, bad HTTP status, missing
     # outputs, RuntimeError from Dify) are re-raised immediately so the
-    # Celery task can surface them to the worker.  The Celery task wrapper
-    # in pipeline.py handles retries via self.retry(countdown=…), which
-    # releases the worker between attempts instead of blocking it with sleep.
+    # pipeline can surface them and mark the task as failed.
     _TRANSIENT_ERRORS = (
         httpx.TimeoutException,
         httpx.ConnectError,
@@ -300,16 +325,12 @@ async def call_dify_workflow(
             )
 
             # ── Global rate limit: acquire a token before calling Dify ────────
-            # Non-blocking: if bucket is empty raise RateLimitedError so the
-            # Celery task can retry via broker instead of sleeping in-process.
-            if not await dify_rate_limiter.async_try_acquire():
+            if not await _dify_bucket.async_try_acquire():
                 logger.warning(
-                    "Dify rate limiter bucket empty — task_id=%s will be rescheduled",
+                    "Dify rate limiter bucket empty — task_id=%s waiting for token",
                     task_id,
                 )
-                raise RateLimitedError(
-                    "Dify token bucket empty; task will be retried by Celery"
-                )
+                await _dify_bucket.async_acquire()
 
             result = await _stream_workflow(inputs, task_id, progress_callback)
 
@@ -343,8 +364,7 @@ async def call_dify_workflow(
 
         except (RuntimeError, asyncio.TimeoutError) as exc:
             # Non-transient failure (bad payload, missing outputs, logic error).
-            # Raise immediately — let Celery's countdown retry handle rescheduling
-            # so this worker is freed to pick up the next task right away.
+            # Raise immediately so the pipeline can mark the task as failed.
             logger.warning(
                 "Dify non-transient error attempt %d/%d — task_id=%s: %s (not retrying inline)",
                 attempt,

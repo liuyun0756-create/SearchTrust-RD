@@ -2,8 +2,10 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
-# ── Worker Service (Celery) ───────────────────────────────────────────────────
+# ── Web Service (FastAPI + asyncio 进程内任务) ────────────────────────────────
+# 当前架构使用单进程 asyncio 后台任务，无需独立 Worker Service。
+# 并发任务数通过 MAX_CONCURRENT_REQUESTS 环境变量控制。
 [deploy]
-startCommand = "bash -c 'celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w1@%h --loglevel=info --max-tasks-per-child=100 & celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w2@%h --loglevel=info --max-tasks-per-child=100 & celery -A app.tasks.celery_app worker --pool=solo --queues=seo_analysis --hostname=w3@%h --loglevel=info --max-tasks-per-child=100 & wait'"
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

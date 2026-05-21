@@ -5,24 +5,27 @@ FastAPI router for the SEO Trust Path Analysis endpoints.
 
 Routes
 ------
-POST   /api/v1/analyze            — Submit analysis job, get task_id
-GET    /api/v1/task/{task_id}     — Poll task status / result
-DELETE /api/v1/task/{task_id}     — Cancel / delete a task
-GET    /api/v1/health             — Health check
+POST   /api/v1/analyze                  — Submit analysis job, get task_id
+GET    /api/v1/task/{task_id}           — Poll task status / result
+GET    /api/v1/task/{task_id}/stream    — SSE stream of task progress
+DELETE /api/v1/task/{task_id}           — Cancel / delete a task
+GET    /api/v1/health                   — Health check
 """
 
 from __future__ import annotations
 
-import hashlib
+import asyncio
+import json
 import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
-from app.core.redis_client import get_redis
+from app.core.task_store import delete_state, get_state, set_state, subscribe
 from app.models.request import AnalyzeRequest
 from app.models.response import (
     ErrorResponse,
@@ -35,27 +38,25 @@ from app.models.response import (
 
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Router
-# ─────────────────────────────────────────────────────────────────────────────
 router = APIRouter(prefix="/api/v1", tags=["SEO Analysis"])
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Active task counter — tracks how many pipelines are currently running.
+# Using a plain int counter (incremented/decremented atomically within the
+# single asyncio event loop) is simpler and race-free compared to checking
+# semaphore internals. MAX_CONCURRENT_REQUESTS controls the cap.
+# ─────────────────────────────────────────────────────────────────────────────
+_active_pipeline_count: int = 0
+
+# Tracks running asyncio Tasks by task_id so DELETE can attempt cancellation
+_running_tasks: dict[str, asyncio.Task] = {}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helper: task Redis key
+# Helpers
 # ─────────────────────────────────────────────────────────────────────────────
-def _task_key(task_id: str) -> str:
-    return f"task:status:{task_id}"
-
-
-def _report_cache_key(url: str, page_type: str, language: str) -> str:
-    raw = f"{url}:{page_type}:{language}"
-    digest = hashlib.md5(raw.encode()).hexdigest()
-    return f"report:cache:{digest}"
-
 
 def _build_initial_state(task_id: str) -> dict[str, Any]:
-    """Build the initial task state dict stored in Redis."""
     now = datetime.now(timezone.utc).isoformat()
     return {
         "task_id": task_id,
@@ -81,9 +82,8 @@ def _build_initial_state(task_id: str) -> dict[str, Any]:
     status_code=status.HTTP_202_ACCEPTED,
     summary="Submit an SEO trust-path analysis job",
     responses={
-        202: {"description": "Task accepted, poll /task/{task_id} for results"},
+        202: {"description": "Task accepted, connect to /task/{task_id}/stream for results"},
         422: {"model": ErrorResponse, "description": "Validation error"},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
     },
 )
 async def submit_analysis(
@@ -91,76 +91,68 @@ async def submit_analysis(
     body: AnalyzeRequest,
 ) -> TaskCreateResponse:
     """
-    Accept an analysis request, check the report cache, enqueue a Celery
-    task if no cache hit, and return a ``task_id`` for polling.
+    Accept an analysis request and start the pipeline as a background
+    asyncio task. Returns a task_id for streaming progress.
     """
-    redis = get_redis()
+    from urllib.parse import urlparse as _urlparse
+
+    global _active_pipeline_count
+
     url_str = str(body.url)
 
-    # ── 1. Check report-level cache ───────────────────────────────────────────
-    cache_key = _report_cache_key(url_str, body.page_type.value, body.language.value)
-    cached = await redis.get_json(cache_key)
-    if cached is not None:
-        logger.info("Report cache hit for url=%s page_type=%s", url_str, body.page_type)
-
-        final_report = cached.get("report", cached)   # 兼容旧格式（无 report 包装）
-
-        return TaskCreateResponse(
-            task_id=str(uuid.uuid4()),
-            status=TaskStatus.DONE,
-            estimated_seconds=0,
-            result=final_report,
-        )
-
-    # ── 2. Generate task ID and persist initial state ─────────────────────────
+    # ── Generate task and store initial state ─────────────────────────────────
     task_id = str(uuid.uuid4())
     initial_state = _build_initial_state(task_id)
-    # Extract created_at from the state dict so the Celery task receives the
-    # exact same timestamp — this prevents the worker from having to re-read
-    # Redis just to preserve this field in failure paths.
     created_at: str = initial_state["created_at"]
-    await redis.set_json(_task_key(task_id), initial_state, ttl=settings.TASK_RESULT_TTL)
+    set_state(task_id, initial_state)
 
-    # ── 3. Enqueue Celery task ────────────────────────────────────────────────
-    # Import here to avoid circular import at module load time
-    from app.tasks.pipeline import analyze_pipeline  # noqa: PLC0415
-
-    # gbp_url 未提供时默认用主域名
-    from urllib.parse import urlparse as _urlparse
+    # ── Resolve gbp_url ───────────────────────────────────────────────────────
     if body.gbp_url:
         gbp_url = body.gbp_url
     else:
         parsed = _urlparse(url_str)
         gbp_url = f"{parsed.scheme}://{parsed.netloc}"
 
-    try:
-        analyze_pipeline.apply_async(
-            args=[task_id, url_str, body.page_type.value, body.language.value, gbp_url, created_at],
-            task_id=task_id,
-            queue="seo_analysis",
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error(
-            "Failed to enqueue task task_id=%s: %s",
-            task_id,
-            exc,
-            exc_info=True,
-        )
-        # Clean up the orphaned task state from Redis
-        await redis.delete(_task_key(task_id))
+    # ── Launch pipeline as background asyncio task ────────────────────────────
+    from app.tasks.pipeline import run_pipeline  # noqa: PLC0415
+
+    # Reject immediately if all slots are occupied (atomic check in single event loop)
+    if _active_pipeline_count >= settings.MAX_CONCURRENT_REQUESTS:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Task queue unavailable — Celery broker connection failed. "
-                   "Ensure the Celery worker is running.",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Server is busy — too many concurrent analyses. Please retry in a moment.",
         )
 
+    async def _guarded_pipeline() -> None:
+        global _active_pipeline_count
+        _active_pipeline_count += 1
+        try:
+            await run_pipeline(
+                task_id=task_id,
+                url=url_str,
+                page_type=body.page_type.value,
+                language=body.language.value,
+                gbp_url=gbp_url,
+                created_at=created_at,
+            )
+        finally:
+            _active_pipeline_count -= 1
+            _running_tasks.pop(task_id, None)
+            # Auto-cleanup: remove task state 10 minutes after completion
+            # so clients have time to fetch the result before it's gone.
+            await asyncio.sleep(600)
+            # Only delete if the task still exists and is terminal
+            # (guards against manual deletion + re-creation edge cases)
+            state = get_state(task_id)
+            if state and state.get("status") in ("done", "failed"):
+                delete_state(task_id)
+
+    bg_task = asyncio.create_task(_guarded_pipeline(), name=f"pipeline-{task_id}")
+    _running_tasks[task_id] = bg_task
+
     logger.info(
-        "Task enqueued task_id=%s url=%s page_type=%s language=%s gbp_url=%s",
-        task_id,
-        url_str,
-        body.page_type.value,
-        body.language.value,
-        gbp_url,
+        "Task started task_id=%s url=%s page_type=%s language=%s",
+        task_id, url_str, body.page_type.value, body.language.value,
     )
 
     return TaskCreateResponse(
@@ -180,21 +172,14 @@ async def submit_analysis(
     responses={
         200: {"description": "Task snapshot"},
         404: {"model": ErrorResponse, "description": "Task not found"},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
     },
 )
 async def get_task_status(
     request: Request,
     task_id: str,
 ) -> TaskStatusResponse:
-    """
-    Return the current state of a task identified by ``task_id``.
-
-    The ``result`` field is populated once ``status == 'done'``.
-    The ``error`` field is populated when ``status == 'failed'``.
-    """
-    redis = get_redis()
-    state = await redis.get_json(_task_key(task_id))
+    """Return the current state of a task (fallback polling endpoint)."""
+    state = get_state(task_id)
 
     if state is None:
         raise HTTPException(
@@ -202,7 +187,6 @@ async def get_task_status(
             detail=f"Task '{task_id}' not found — it may have expired or never existed.",
         )
 
-    # Coerce ISO strings to datetime objects
     created_at = datetime.fromisoformat(state["created_at"])
     updated_at = datetime.fromisoformat(state["updated_at"])
 
@@ -214,6 +198,49 @@ async def get_task_status(
         error=state.get("error"),
         created_at=created_at,
         updated_at=updated_at,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/v1/task/{task_id}/stream  — SSE
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get(
+    "/task/{task_id}/stream",
+    summary="Stream task progress via Server-Sent Events",
+    responses={
+        200: {"description": "SSE stream — each event is a task state snapshot"},
+        404: {"model": ErrorResponse, "description": "Task not found"},
+    },
+)
+async def stream_task_status(
+    request: Request,
+    task_id: str,
+) -> StreamingResponse:
+    """
+    Subscribe to in-memory task events and forward each state update
+    to the client as an SSE event. No Redis required.
+    """
+    if get_state(task_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found — it may have expired or never existed.",
+        )
+
+    async def _event_generator():
+        async for state in subscribe(task_id, timeout=300.0):
+            if await request.is_disconnected():
+                break
+            yield f"data: {json.dumps(state)}\n\n"
+        # Send a final comment to signal stream end (helps some clients)
+        yield ": stream closed\n\n"
+
+    return StreamingResponse(
+        _event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -233,31 +260,20 @@ async def delete_task(
     request: Request,
     task_id: str,
 ) -> None:
-    """
-    Remove a task from Redis.
-
-    If the task is still running in Celery it will finish but its result
-    will no longer be visible via the polling endpoint.
-    """
-    redis = get_redis()
-    key = _task_key(task_id)
-    state = await redis.get_json(key)
-
-    if state is None:
+    """Cancel and remove a task from the in-memory store."""
+    if get_state(task_id) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task '{task_id}' not found.",
         )
 
-    # Attempt to revoke Celery task (best-effort; may already be done)
-    try:
-        from app.tasks.celery_app import celery_app  # noqa: PLC0415
-        celery_app.control.revoke(task_id, terminate=True, signal="SIGTERM")
-        logger.info("Celery task revoked task_id=%s", task_id)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Failed to revoke Celery task %s: %s", task_id, exc)
+    delete_state(task_id)
 
-    await redis.delete(key)
+    # Cancel the background asyncio task if still running
+    bg_task = _running_tasks.pop(task_id, None)
+    if bg_task and not bg_task.done():
+        bg_task.cancel()
+
     logger.info("Task deleted task_id=%s", task_id)
 
 
@@ -271,16 +287,8 @@ async def delete_task(
     tags=["Health"],
 )
 async def health_check() -> HealthResponse:
-    """
-    Return service liveness status.
-
-    Checks Redis connectivity; Celery worker health is not probed here
-    to keep the response fast.
-    """
-    redis = get_redis()
-    redis_ok = await redis.ping()
+    """Return service liveness status."""
     return HealthResponse(
-        status="ok" if redis_ok else "degraded",
+        status="ok",
         version=settings.APP_VERSION,
-        redis=redis_ok,
     )

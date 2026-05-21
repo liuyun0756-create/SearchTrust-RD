@@ -7,32 +7,28 @@
 | 层次 | 技术 |
 |------|------|
 | Web 框架 | FastAPI + Uvicorn |
-| 异步任务队列 | Celery 5 + Redis |
-| 网页抓取 | Firecrawl → httpx → Jina Reader（三级降级）|
+| 异步任务 | asyncio 后台任务（进程内，无需 Celery/Redis）|
+| 网页抓取 | Jina Reader → Firecrawl（两级降级）|
 | AI 分析 | Dify Workflow（SSE 流式）|
 | 商家数据 | SerpAPI → Google Business Profile + Reviews |
-| 缓存 / 限流 | Redis（Upstash）|
 | 容器化 | Docker + docker-compose |
 
 ## 项目结构
 
 ```
 app/
-├── main.py                  # FastAPI 入口，CORS / 限流 / Redis 生命周期
+├── main.py                  # FastAPI 入口，CORS / 日志 / 异常处理
 ├── api/v1/analyze.py        # HTTP 接口层
 ├── models/
 │   ├── request.py           # AnalyzeRequest（URL / 页面类型 / 语言 / GBP URL）
 │   └── response.py          # 任务状态 / 进度 / 响应模型
 ├── core/
 │   ├── config.py            # 所有配置项（从 .env 读取）
-│   ├── redis_client.py      # Redis 连接池封装
-│   ├── rate_limiter.py      # Dify 全局 RPM 限流（Token Bucket）
-│   └── ip_rate_limiter.py   # 每 IP 请求限流中间件
+│   └── task_store.py        # 进程内任务状态存储 + SSE 订阅队列
 └── tasks/
-    ├── celery_app.py        # Celery 配置
-    ├── pipeline.py          # 核心任务编排
+    ├── pipeline.py          # 核心任务编排（asyncio 协程）
     ├── scraper.py           # 数据采集层（抓取 / GBP / 评论）
-    └── dify_client.py       # Dify SSE 调用
+    └── dify_client.py       # Dify SSE 调用 + 进度回调
 ```
 
 ## 请求流程
@@ -40,16 +36,19 @@ app/
 ```
 POST /api/v1/analyze
     │
-    ├─ 命中报告缓存 → 直接返回
-    └─ 未命中 → 写 Redis 初始状态 → 投递 Celery 任务 → 返回 task_id
+    └─ 验证请求（SSRF 防护）
+       → 生成 task_id，写入进程内 task_store
+       → asyncio.create_task() 启动后台协程
+       → 立即返回 task_id
 
-GET /api/v1/task/{task_id}   ← 前端轮询
-
-Celery Worker：
-    1. [scraping]   Firecrawl / httpx / Jina 三级抓主页 + 子页面
+后台协程 run_pipeline()：
+    1. [scraping]   Jina Reader / Firecrawl 抓主页 + 子页面
     2. [scraping]   提取商家信息 → SerpAPI 查 GBP + 评论
     3. [analyzing]  调用 Dify Workflow（SSE 进度 30%→90%）
-    4. [done]       写报告缓存 → 更新任务状态
+    4. [done]       写回 task_store，等待客户端查询
+
+GET /api/v1/task/{task_id}           ← 轮询状态
+GET /api/v1/task/{task_id}/stream    ← SSE 实时推送（推荐）
 ```
 
 ## 快速开始
@@ -67,11 +66,8 @@ cp .env.example .env
 # 安装依赖
 pip install -r requirements.txt
 
-# 启动 FastAPI
+# 启动 FastAPI（单进程）
 uvicorn app.main:app --reload --port 8000
-
-# 另开终端启动 Celery Worker
-celery -A app.tasks.celery_app worker --loglevel=info --queues=seo_analysis
 ```
 
 ### 3. Docker 部署
@@ -83,33 +79,22 @@ docker-compose up --build -d
 启动后：
 - API 服务：http://localhost:8000
 - Swagger 文档（DEBUG=true 时）：http://localhost:8000/docs
-- Flower 监控面板：http://localhost:5555
 
 ## 环境变量说明
 
-复制 `.env` 并按下表填写：
+复制 `.env.example` 并按下表填写：
 
 | 变量 | 必填 | 说明 |
 |------|------|------|
-| `REDIS_URL` | ✅ | Redis 连接串，支持 `redis://` 和 `rediss://`（TLS）|
 | `DIFY_API_KEY` | ✅ | Dify 控制台 → 应用 → API → 生成 |
 | `DIFY_API_URL` | ✅ | Dify API 地址，默认 `https://api.dify.ai/v1` |
 | `DIFY_WORKFLOW_ID` | ✅ | Dify 工作流 ID |
 | `SERPAPI_KEY` | ✅ | [serpapi.com](https://serpapi.com/manage-api-key) 获取，用于 GBP 数据和评论 |
-| `FIRECRAWL_API_KEY` | 推荐 | [firecrawl.dev](https://www.firecrawl.dev/app/api-keys)，JS 渲染抓取 |
-| `JINA_API_KEY` | 可选 | 留空使用免费版 Jina Reader |
+| `FIRECRAWL_API_KEY` | 推荐 | [firecrawl.dev](https://www.firecrawl.dev/app/api-keys)，JS 渲染抓取（备用） |
+| `JINA_API_KEY` | 可选 | 留空使用免费版 Jina Reader（主抓取器） |
+| `MAX_CONCURRENT_REQUESTS` | 可选 | 最大并发任务数，默认 10 |
 | `DEBUG` | 可选 | `true` 时开启 Swagger 文档和 DEBUG 日志 |
 | `CORS_ORIGINS` | 可选 | 允许的前端域名，JSON 数组格式 |
-| `FLOWER_USER` / `FLOWER_PASSWORD` | 可选 | Flower 面板登录账号 |
-
-### 缓存 TTL
-
-| 变量 | 默认 | 说明 |
-|------|------|------|
-| `SCRAPER_CACHE_TTL` | 600s | 页面抓取结果缓存时长 |
-| `REPORT_CACHE_TTL` | 600s | SEO 报告缓存时长 |
-| `TASK_RESULT_TTL` | 1800s | 任务状态保留时长 |
-| `TASK_DONE_TTL` | 3600s | 已完成任务状态保留时长 |
 
 ## API 接口
 
@@ -124,15 +109,17 @@ POST /api/v1/analyze
   "url": "https://example.com/",
   "page_type": "本地服务落地页",
   "language": "English",
-  "gbp_url": "https://www.google.com/maps/place/..."  // 可选，提高 GBP 匹配精度
+  "gbp_url": "https://www.google.com/maps/place/..."
 }
 ```
+
+`gbp_url` 可选，提供可提高 Google Business Profile 匹配精度。
 
 `page_type` 支持 21 种类型，包括：实体目的地、场馆页、活动日历、菜单、商品、本地服务落地页、关于我们、联系我们、博客、文章、FAQ 等。
 
 `language` 支持：`中文` / `English` / `Both`
 
-### 查询任务状态
+### 查询任务状态（轮询）
 
 ```
 GET /api/v1/task/{task_id}
@@ -140,11 +127,21 @@ GET /api/v1/task/{task_id}
 
 返回任务状态（`queued` → `scraping` → `analyzing` → `done` / `failed`）和进度百分比。
 
+### 实时进度推送（SSE，推荐）
+
+```
+GET /api/v1/task/{task_id}/stream
+```
+
+建立 Server-Sent Events 连接，实时接收任务状态更新，无需轮询。
+
 ### 删除任务
 
 ```
 DELETE /api/v1/task/{task_id}
 ```
+
+取消正在运行的任务并从内存中删除其状态。
 
 ### 健康检查
 
@@ -156,9 +153,8 @@ GET /api/v1/health
 
 页面内容抓取按以下顺序降级：
 
-1. **Firecrawl**（首选）— 支持 JS 渲染、滚动加载、动态内容
-2. **httpx direct**（次选）— 直接 GET，适合静态页面，无外部依赖
-3. **Jina Reader**（兜底）— 返回干净 Markdown，需要开放网络
+1. **Jina Reader**（首选）— 返回干净 Markdown，兼容性好
+2. **Firecrawl**（降级）— 支持 JS 渲染、滚动加载、动态内容
 
 同时会并发抓取 `contact` / `about` 子页面并拼入正文。
 
@@ -168,15 +164,13 @@ GET /api/v1/health
 2. 页面域名 → Google Maps 搜索 + 域名匹配
 3. 商家名称 + 城市 → Google Maps 搜索 + 城市匹配
 
-## 查看爬取内容（调试）
+## 并发与扩容说明
 
-爬取结果缓存在 Redis，key 格式：`scraper:cache:<md5(url)>`
+当前架构在**单进程**内通过 asyncio 并发运行多个分析任务：
 
-```python
-import hashlib
-url = "https://example.com/"
-key = "scraper:cache:" + hashlib.md5(url.encode()).hexdigest()
-# redis-cli GET <key>  → JSON，content 字段为完整抓取文本
-```
+- `MAX_CONCURRENT_REQUESTS` 控制最大同时运行任务数（默认 10）
+- 超过上限时返回 `429 Too Many Requests`
+- 任务状态存储在进程内存，**不支持多实例横向扩容**
+- 部署时请确保使用 `--workers 1`（docker-compose 已正确配置）
 
-注意：`SCRAPER_CACHE_TTL` 默认 600 秒，需在过期前查询。
+> **如需多实例扩容**，需引入 Redis 共享 task_store，可在此基础上扩展。

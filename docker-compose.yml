@@ -18,76 +18,12 @@ services:
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
-      --workers 2
-      --loop uvloop
-      --http httptools
+      --workers 1
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # ─────────────────────────────────────────────
-  # Celery Worker
-  # ─────────────────────────────────────────────
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: seo_celery_worker
-    restart: unless-stopped
-    env_file:
-      - .env
-    command: >
-      celery -A app.tasks.celery_app worker
-      --loglevel=info
-      --pool=solo
-      --queues=seo_analysis
-      --hostname=worker@%h
-      --max-tasks-per-child=200
-    healthcheck:
-      test: ["CMD", "celery", "-A", "app.tasks.celery_app", "inspect", "ping"]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-
-  # ─────────────────────────────────────────────
-  # Celery Beat (for scheduled tasks — optional)
-  # ─────────────────────────────────────────────
-  # celery_beat:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: seo_celery_beat
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   command: >
-  #     celery -A app.tasks.celery_app beat
-  #     --loglevel=info
-  #     --scheduler celery.beat:PersistentScheduler
-  #     --schedule /app/celerybeat/celerybeat-schedule
-
-  # ─────────────────────────────────────────────
-  # Flower: Celery Web Monitor (按需开启)
-  # ─────────────────────────────────────────────
-  # flower:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: seo_flower
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5555:5555"
-  #   env_file:
-  #     - .env
-  #   command: >
-  #     celery -A app.tasks.celery_app flower
-  #     --port=5555
-  #     --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:?FLOWER_PASSWORD is required}
-
-volumes:
-  celery_beat_data:
 
 networks:
   default:

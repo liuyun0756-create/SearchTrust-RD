@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 class TaskStatus(str, Enum):
     """Lifecycle states of an analysis task."""
 
-    QUEUED = "queued"          # Accepted, waiting for a Celery worker
+    QUEUED = "queued"          # Accepted, waiting for pipeline execution
     SCRAPING = "scraping"      # Fetching page content via Jina + GBP
     ANALYZING = "analyzing"    # Sending data to Dify workflow
     SCORING = "scoring"        # Dify producing intermediate scores
@@ -141,7 +141,6 @@ class HealthResponse(BaseModel):
 
     status: str = Field(default="ok")
     version: str
-    redis: bool = Field(description="True if Redis is reachable")
 
 
 class ErrorResponse(BaseModel):

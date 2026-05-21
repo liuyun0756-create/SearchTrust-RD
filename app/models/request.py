@@ -6,10 +6,78 @@ Pydantic request models for the SEO Trust Path Analysis API.
 
 from __future__ import annotations
 
+import ipaddress
+import socket
 from enum import Enum
 from typing import Optional
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SSRF protection — block private / reserved IP ranges
+# ─────────────────────────────────────────────────────────────────────────────
+
+_BLOCKED_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),          # 内网 A 类
+    ipaddress.ip_network("172.16.0.0/12"),        # 内网 B 类
+    ipaddress.ip_network("192.168.0.0/16"),       # 内网 C 类
+    ipaddress.ip_network("127.0.0.0/8"),          # 本机回环
+    ipaddress.ip_network("169.254.0.0/16"),       # AWS/GCP 元数据服务
+    ipaddress.ip_network("100.64.0.0/10"),        # 运营商共享地址
+    ipaddress.ip_network("::1/128"),              # IPv6 回环
+    ipaddress.ip_network("fc00::/7"),             # IPv6 内网
+    ipaddress.ip_network("fe80::/10"),            # IPv6 链路本地
+]
+
+_BLOCKED_HOSTNAMES = {
+    "localhost",
+    "metadata.google.internal",                  # GCP 元数据
+    "metadata.google",
+}
+
+
+def _is_ssrf_safe(url: str) -> bool:
+    """
+    Return True only when the URL is safe to fetch from the server side.
+    Blocks private IPs, loopback, link-local, and cloud metadata endpoints.
+    """
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+
+    # 直接命中黑名单主机名
+    if hostname.lower() in _BLOCKED_HOSTNAMES:
+        return False
+
+    # 如果是 IP 地址，检查是否在保留范围内
+    try:
+        ip = ipaddress.ip_address(hostname)
+        for net in _BLOCKED_NETWORKS:
+            if ip in net:
+                return False
+        return True
+    except ValueError:
+        pass  # 不是 IP，是域名
+
+    # 域名解析后检查（防止 DNS rebinding）
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+        for _, _, _, _, sockaddr in resolved:
+            ip_str = sockaddr[0]
+            try:
+                ip = ipaddress.ip_address(ip_str)
+                for net in _BLOCKED_NETWORKS:
+                    if ip in net:
+                        return False
+            except ValueError:
+                continue
+    except socket.gaierror:
+        pass  # DNS 解析失败，交由后续抓取处理
+
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -105,6 +173,8 @@ class AnalyzeRequest(BaseModel):
         v = str(v).strip()
         if not v.startswith(("http://", "https://")):
             raise ValueError("URL must start with http:// or https://")
+        if not _is_ssrf_safe(v):
+            raise ValueError("URL points to a private or reserved address")
         return v
 
     @field_validator("gbp_url", mode="before")

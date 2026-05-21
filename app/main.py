@@ -8,9 +8,8 @@ Responsibilities
 - Create and configure the FastAPI instance
 - Register routers
 - Configure CORS middleware
-- Register slowapi rate-limit middleware
 - Global exception handlers
-- Startup / shutdown lifecycle hooks (Redis pool, logging)
+- Startup / shutdown lifecycle hooks
 """
 
 from __future__ import annotations
@@ -18,11 +17,9 @@ from __future__ import annotations
 import logging
 import logging.config
 import os
-import sys
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-# Fix Windows GBK encoding issue with slowapi/starlette reading .env
 os.environ.setdefault("PYTHONUTF8", "1")
 
 from fastapi import FastAPI, Request, status
@@ -31,8 +28,6 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1.analyze import router as analyze_router
 from app.core.config import settings
-from app.core.ip_rate_limiter import IPRateLimitMiddleware
-from app.core.redis_client import close_pool, init_redis
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Logging configuration
@@ -44,11 +39,6 @@ _LOG_CONFIG: dict = {
         "standard": {
             "format": "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
             "datefmt": "%Y-%m-%dT%H:%M:%S",
-        },
-        "json": {
-            # Structured JSON output — swap in production if feeding to a log aggregator
-            "format": '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}',
-            "datefmt": "%Y-%m-%dT%H:%M:%SZ",
         },
     },
     "handlers": {
@@ -67,9 +57,7 @@ _LOG_CONFIG: dict = {
         "uvicorn": {"level": "INFO", "propagate": True},
         "uvicorn.error": {"level": "INFO", "propagate": True},
         "uvicorn.access": {"level": "WARNING", "propagate": True},
-        "celery": {"level": "INFO", "propagate": True},
         "httpx": {"level": "WARNING", "propagate": True},
-        "hiredis": {"level": "WARNING", "propagate": True},
     },
 }
 
@@ -78,38 +66,13 @@ logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Lifespan context manager (startup / shutdown)
+# Lifespan
 # ─────────────────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    FastAPI lifespan handler.
-
-    Startup:
-        - Initialise Redis connection pool and verify connectivity.
-        - Attach the rate-limiter to app state (required by slowapi).
-
-    Shutdown:
-        - Gracefully drain and close the Redis connection pool.
-    """
-    # ── Startup ───────────────────────────────────────────────────────────────
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
-
-    try:
-        await init_redis()
-        logger.info("Redis connected — %s", settings.REDIS_URL)
-    except RuntimeError as exc:
-        logger.critical("Redis connection failed at startup: %s", exc)
-        sys.exit(1)
-
-    logger.info("Rate limiter attached — %d req/min per IP", settings.RATE_LIMIT_PER_MINUTE)
-
     yield
-
-    # ── Shutdown ──────────────────────────────────────────────────────────────
-    logger.info("Shutting down — closing Redis pool…")
-    await close_pool()
     logger.info("Shutdown complete")
 
 
@@ -118,8 +81,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def create_app() -> FastAPI:
-    """Create and fully configure the FastAPI application."""
-
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
@@ -142,12 +103,6 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type"],
     )
 
-    # ── Rate limiting (Redis-backed per-IP middleware) ─────────────────────────
-    # Replaces slowapi which has a bug on Windows where SlowAPIMiddleware
-    # silently returns 500 for all requests. This middleware uses Redis
-    # INCR + EXPIRE for a sliding window counter — works on all platforms.
-    app.add_middleware(IPRateLimitMiddleware)
-
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(analyze_router)
 
@@ -158,7 +113,6 @@ def create_app() -> FastAPI:
 
 
 def _register_exception_handlers(app: FastAPI) -> None:
-    """Attach global exception handlers for common error scenarios."""
 
     @app.exception_handler(404)
     async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -185,38 +139,28 @@ def _register_exception_handlers(app: FastAPI) -> None:
     async def internal_error_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.error(
             "Unhandled 500 error — %s %s: %s",
-            request.method,
-            request.url.path,
-            exc,
+            request.method, request.url.path, exc,
             exc_info=True,
         )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "detail": "Internal server error — please try again later.",
-                "code": "INTERNAL_ERROR",
-            },
+            content={"detail": "Internal server error — please try again later.", "code": "INTERNAL_ERROR"},
         )
 
     @app.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.error(
             "Unhandled exception — %s %s: %s",
-            request.method,
-            request.url.path,
-            exc,
+            request.method, request.url.path, exc,
             exc_info=True,
         )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "detail": "An unexpected error occurred.",
-                "code": "UNEXPECTED_ERROR",
-            },
+            content={"detail": "An unexpected error occurred.", "code": "UNEXPECTED_ERROR"},
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Module-level app instance (used by uvicorn / Celery)
+# Module-level app instance
 # ─────────────────────────────────────────────────────────────────────────────
 app: FastAPI = create_app()
