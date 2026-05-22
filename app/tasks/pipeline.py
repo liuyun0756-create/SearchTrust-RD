@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -167,11 +168,18 @@ async def _run_pipeline_inner(
     page_type = resolve_page_type(page_type)
 
     _last_written_pct: list[int] = [0]
+    _last_written_ts: list[float] = [0.0]
 
     async def _progress_cb(stage: str, percent: int, message: str) -> None:
+        now = time.monotonic()
+        # 低于 85%：进度变化不足 10% 则跳过
         if percent < 85 and (percent - _last_written_pct[0]) < _PROGRESS_THROTTLE_PCT:
             return
+        # 85% 以上：距上次推送不足 3 秒则跳过（防止心跳刷屏）
+        if percent >= 85 and (now - _last_written_ts[0]) < 3.0:
+            return
         _last_written_pct[0] = percent
+        _last_written_ts[0] = now
         _update_state(
             task_id, created_at,
             status="analyzing" if percent < 85 else "reporting",
