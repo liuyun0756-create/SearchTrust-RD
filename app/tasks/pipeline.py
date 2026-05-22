@@ -161,6 +161,10 @@ async def _run_pipeline_inner(
     logger.info("Pipeline stage=analyzing task_id=%s", task_id)
 
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
+    from app.models.request import resolve_page_type  # noqa: PLC0415
+
+    # Resolve English page_type to the Chinese value Dify expects
+    page_type = resolve_page_type(page_type)
 
     _last_written_pct: list[int] = [0]
 

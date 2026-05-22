@@ -85,29 +85,70 @@ def _is_ssrf_safe(url: str) -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class PageType(str, Enum):
-    """Page type classification — matches Dify workflow page_type options."""
+    """Page type classification — English values from frontend.
 
-    ENTITY_DESTINATION  = "实体目的地"
-    VENUE               = "场馆页"
-    EVENT_CALENDAR      = "活动日历"
-    EVENTS_PAGE         = "Events 页面"
-    MENU                = "菜单"
-    PRODUCT             = "商品"
-    INVENTORY_LIST      = "库存列表页"
-    LOCAL_SERVICE       = "本地服务落地页"
-    SERVICE_OVERVIEW    = "服务总览"
-    CATEGORY_PAGE       = "分类页"
-    ABOUT_US            = "关于我们"
-    TEAM_INTRO          = "团队介绍"
-    CONTACT_US          = "联系我们"
-    STORE_INFO          = "门店信息"
-    BLOG                = "博客"
-    ARTICLE             = "文章"
-    GUIDE_FAQ           = "指南 FAQ"
-    QA_PAGE             = "问答页"
-    CATEGORY            = "分类"
-    TAG                 = "标签"
-    INDEX_PAGE          = "索引页"
+    Each value is automatically mapped to the Chinese string expected
+    by the Dify workflow via resolve_page_type().
+    """
+
+    ENTITY_DESTINATION  = "Entity-Destination Page"
+    VENUE_PAGE          = "Venue Page"
+    EVENT_CALENDAR      = "Event-Calendar Page"
+    EVENTS_PAGE         = "Events Page"
+    MENU_PAGE           = "Menu Page"
+    PRODUCT_PAGE        = "Product Page"
+    INVENTORY_LIST      = "Inventory-List Page"
+    SERVICE_PAGE        = "Service Page"
+    SERVICE_AREA_PAGE   = "Service-Area Page"
+    LANDING_PAGE        = "Landing Page"
+    ABOUT_US_PAGE       = "About-Us Page"
+    TEAM_PAGE           = "Team Page"
+    CONTACT_US_PAGE     = "Contact-Us Page"
+    CITY_PAGE           = "City Page"
+    BLOG_PAGE           = "Blog Page"
+    BLOG_POST           = "Blog Post"
+    FAQ_PAGE            = "FAQ Page"
+    QA_PAGE             = "Q&A Page"
+    CATEGORY_PAGE       = "Category Page"
+    TAG_PAGE            = "Tag Page"
+    INDEX_PAGE          = "Index Page"
+
+
+# Mapping from English page_type values → Dify Chinese values.
+# Chinese values not listed here are passed through as-is (see resolve_page_type).
+_PAGE_TYPE_EN_TO_ZH: dict[str, str] = {
+    "entity-destination page": "实体目的地",
+    "venue page":              "场馆页",
+    "event-calendar page":     "活动日历",
+    "events page":             "Events 页面",
+    "menu page":               "菜单",
+    "product page":            "商品",
+    "inventory-list page":     "库存列表页",
+    "service page":            "本地服务落地页",
+    "service-area page":       "服务总览",
+    "landing page":            "分类页",
+    "about-us page":           "关于我们",
+    "team page":               "团队介绍",
+    "contact-us page":         "联系我们",
+    "city page":               "门店信息",
+    "blog page":               "博客",
+    "blog post":               "文章",
+    "faq page":                "指南 FAQ",
+    "q&a page":                "问答页",
+    "category page":           "分类",
+    "tag page":                "标签",
+    "index page":              "索引页",
+}
+
+
+def resolve_page_type(page_type: str) -> str:
+    """
+    Resolve a page_type value to the Chinese string expected by Dify.
+
+    If the value is already a Chinese string (passed directly), it is
+    returned as-is. English values are mapped via _PAGE_TYPE_EN_TO_ZH.
+    """
+    return _PAGE_TYPE_EN_TO_ZH.get(page_type.lower(), page_type)
 
 
 class Language(str, Enum):
