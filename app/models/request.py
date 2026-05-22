@@ -189,7 +189,7 @@ class AnalyzeRequest(BaseModel):
     page_type: PageType = Field(
         ...,
         description="Page type — must match one of the 21 Dify workflow options",
-        examples=[PageType.LOCAL_SERVICE],
+        examples=[PageType.SERVICE_PAGE],
     )
     language: Language = Field(
         default=Language.ENGLISH,
