@@ -195,12 +195,11 @@ class AnalyzeRequest(BaseModel):
         default=Language.ENGLISH,
         description="Desired language for the generated SEO report",
     )
-    gbp_url: Optional[str] = Field(
-        default=None,
+    gbp_url: str = Field(
+        ...,
         description=(
             "Website URL registered in Google Business Profile. "
-            "Used for domain-based GBP lookup. "
-            "If omitted, falls back to the homepage of `url`."
+            "Used for domain-based GBP lookup."
         ),
         examples=["https://nxtlvlautospa.com"],
     )
@@ -220,10 +219,8 @@ class AnalyzeRequest(BaseModel):
 
     @field_validator("gbp_url", mode="before")
     @classmethod
-    def normalise_gbp_url(cls, v: Optional[str]) -> Optional[str]:
-        """Normalise gbp_url if provided."""
-        if v is None:
-            return None
+    def normalise_gbp_url(cls, v: str) -> str:
+        """Normalise gbp_url — prepend https:// if scheme is missing."""
         v = str(v).strip()
         if not v.startswith(("http://", "https://")):
             v = "https://" + v

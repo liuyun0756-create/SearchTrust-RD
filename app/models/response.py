@@ -148,3 +148,35 @@ class ErrorResponse(BaseModel):
 
     detail: str
     code: Optional[str] = None
+
+
+class ReportMetaResponse(BaseModel):
+    """
+    Report metadata generated from page URL / type / GBP URL.
+
+    All fields are computed server-side (Beijing time, UTC+8).
+    """
+
+    page_url: str = Field(..., description="Original page URL")
+    page_type: str = Field(..., description="Page type classification")
+    gbp_url: str = Field(..., description="Google Business Profile URL (required)")
+    generated_at: str = Field(
+        ...,
+        description="Report generation time in Beijing time (UTC+8), e.g. '2026-05-26 14:32'",
+    )
+    report_id: str = Field(
+        ...,
+        description="Unique report identifier based on generation time, e.g. 'RPT-20260526-1432'",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "page_url": "https://example.com/services/plumbing",
+                "page_type": "service_page",
+                "gbp_url": "https://maps.google.com/?cid=123456",
+                "generated_at": "2026-05-26 14:32",
+                "report_id": "RPT-20260526-1432",
+            }
+        }
+    }

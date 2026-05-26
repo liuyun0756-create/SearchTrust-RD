@@ -18,7 +18,7 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -31,6 +31,7 @@ from app.models.response import (
     ErrorResponse,
     HealthResponse,
     ProgressInfo,
+    ReportMetaResponse,
     TaskCreateResponse,
     TaskStatus,
     TaskStatusResponse,
@@ -107,11 +108,7 @@ async def submit_analysis(
     set_state(task_id, initial_state)
 
     # ── Resolve gbp_url ───────────────────────────────────────────────────────
-    if body.gbp_url:
-        gbp_url = body.gbp_url
-    else:
-        parsed = _urlparse(url_str)
-        gbp_url = f"{parsed.scheme}://{parsed.netloc}"
+    gbp_url = body.gbp_url
 
     # ── Launch pipeline as background asyncio task ────────────────────────────
     from app.tasks.pipeline import run_pipeline  # noqa: PLC0415
@@ -275,6 +272,44 @@ async def delete_task(
         bg_task.cancel()
 
     logger.info("Task deleted task_id=%s", task_id)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/v1/report-meta
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get(
+    "/report-meta",
+    response_model=ReportMetaResponse,
+    summary="Generate report metadata from page info",
+    responses={
+        200: {"description": "Report metadata with generated_at and report_id"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+    },
+)
+async def get_report_meta(
+    url: str,
+    page_type: str,
+    gbp_url: str,
+) -> ReportMetaResponse:
+    """
+    Generate report metadata server-side using Beijing time (UTC+8).
+
+    Accepts ``url``, ``page_type``, and optional ``gbp_url`` as query parameters.
+    Returns ``generated_at`` (formatted timestamp) and ``report_id``
+    (unique identifier) alongside the echoed inputs.
+
+    This endpoint is stateless — no task or database record is created.
+    """
+    china_tz = timezone(timedelta(hours=8))
+    now = datetime.now(china_tz)
+
+    return ReportMetaResponse(
+        page_url=url.strip(),
+        page_type=page_type.strip(),
+        gbp_url=gbp_url.strip(),
+        generated_at=now.strftime("%Y-%m-%d %H:%M"),
+        report_id=now.strftime("RPT-%Y%m%d-%H%M"),
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
