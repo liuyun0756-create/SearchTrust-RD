@@ -66,6 +66,10 @@ _dify_bucket = _TokenBucket(
 
 logger = logging.getLogger(__name__)
 
+
+class _RetryablePluginError(Exception):
+    """Raised when a Dify node returns a transient 5xx error (e.g. 502 from LLM gateway)."""
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Type aliases
 # ─────────────────────────────────────────────────────────────────────────────
@@ -233,11 +237,27 @@ async def _stream_workflow(
 
                 elif event_type == "error":
                     error_msg = event_data.get("message", "Unknown Dify error")
+                    error_type = event_data.get("error_type", "")
                     logger.error(
-                        "Dify stream error — task_id=%s: %s",
+                        "Dify stream error — task_id=%s type=%s: %s",
                         task_id,
+                        error_type,
                         error_msg,
                     )
+                    # PluginInvokeError containing 502/503/504 is a transient
+                    # gateway error from the LLM provider — signal caller to retry
+                    # by raising a dedicated sentinel so the retry loop can catch it.
+                    is_retryable_plugin_error = (
+                        error_type == "InvokeError"
+                        and any(
+                            f"status code {code}" in error_msg
+                            for code in ("502", "503", "504")
+                        )
+                    )
+                    if is_retryable_plugin_error:
+                        raise _RetryablePluginError(
+                            f"Dify PluginInvokeError (retryable): {error_msg}"
+                        )
                     raise RuntimeError(f"Dify workflow error: {error_msg}")
 
     return final_outputs
@@ -304,7 +324,10 @@ async def call_dify_workflow(
     #   - httpx.ConnectError        — TCP connection refused / reset
     #   - httpx.RemoteProtocolError — server closed connection mid-stream
     #
-    # All other failures (rate-limiter timeout, bad HTTP status, missing
+    # HTTP 5xx errors from the LLM gateway (502 Bad Gateway, 503 Service
+    # Unavailable, 504 Gateway Timeout) are also transient and worth retrying.
+    #
+    # All other failures (rate-limiter timeout, 4xx HTTP status, missing
     # outputs, RuntimeError from Dify) are re-raised immediately so the
     # pipeline can surface them and mark the task as failed.
     _TRANSIENT_ERRORS = (
@@ -312,6 +335,8 @@ async def call_dify_workflow(
         httpx.ConnectError,
         httpx.RemoteProtocolError,
     )
+    # 5xx status codes that indicate a transient gateway/server error
+    _RETRYABLE_STATUS_CODES = {502, 503, 504}
 
     last_exc: Exception = RuntimeError("No attempts made")
 
@@ -346,9 +371,35 @@ async def call_dify_workflow(
             )
             return result
 
-        except _TRANSIENT_ERRORS as exc:
+        except httpx.HTTPStatusError as exc:
+            # Retry on 5xx gateway errors (502/503/504), raise immediately on others
+            if exc.response.status_code in _RETRYABLE_STATUS_CODES:
+                last_exc = exc
+                logger.warning(
+                    "Dify HTTP %d (retryable) attempt %d/%d — task_id=%s: %s",
+                    exc.response.status_code,
+                    attempt,
+                    settings.DIFY_RETRY,
+                    task_id,
+                    exc,
+                )
+                if attempt < settings.DIFY_RETRY:
+                    wait = 2 ** attempt   # 2s, 4s, 8s
+                    logger.info("Retrying Dify in %ds…", wait)
+                    await asyncio.sleep(wait)
+            else:
+                logger.warning(
+                    "Dify HTTP %d (non-retryable) attempt %d/%d — task_id=%s (not retrying)",
+                    exc.response.status_code,
+                    attempt,
+                    settings.DIFY_RETRY,
+                    task_id,
+                )
+                raise
+
+        except (_RetryablePluginError, httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
             # Transient network error — short sleep then retry within this call.
-            # Sleep is brief (≤4 s) so the worker is not blocked for long.
+            # Sleep is brief (≤8 s) so the worker is not blocked for long.
             last_exc = exc
             logger.warning(
                 "Dify transient error attempt %d/%d — task_id=%s: %s",
@@ -358,7 +409,7 @@ async def call_dify_workflow(
                 exc,
             )
             if attempt < settings.DIFY_RETRY:
-                wait = 2 ** attempt   # 2s, 4s
+                wait = 2 ** attempt   # 2s, 4s, 8s
                 logger.debug("Retrying Dify in %ds…", wait)
                 await asyncio.sleep(wait)
 
