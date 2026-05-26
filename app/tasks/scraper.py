@@ -300,8 +300,8 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     ScrapeResult on success, None when all levels fail.
     """
     levels: list[tuple[ScraperSource, Any]] = [
-        (ScraperSource.JINA,      _fetch_jina),
         (ScraperSource.FIRECRAWL, _fetch_firecrawl),
+        (ScraperSource.JINA,      _fetch_jina),
     ]
 
     for source, fetcher in levels:
