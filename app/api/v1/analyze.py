@@ -52,6 +52,40 @@ _active_pipeline_count: int = 0
 # Tracks running asyncio Tasks by task_id so DELETE can attempt cancellation
 _running_tasks: dict[str, asyncio.Task] = {}
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Internal queue — holds pending pipeline coroutine functions.
+# When all slots are occupied, new tasks wait here instead of being rejected.
+# A single dispatcher coroutine drains the queue as slots free up.
+# ─────────────────────────────────────────────────────────────────────────────
+_pending_queue: asyncio.Queue = asyncio.Queue()
+_dispatcher_task: asyncio.Task | None = None
+
+
+async def _dispatcher() -> None:
+    """
+    Background coroutine that drains _pending_queue.
+    Waits until a slot is free, then launches the next pipeline.
+    Runs for the lifetime of the process — restarted automatically if it dies.
+    """
+    while True:
+        # Wait for a free slot BEFORE taking from the queue,
+        # so we never hold a dequeued item while blocked on capacity.
+        while _active_pipeline_count >= settings.MAX_CONCURRENT_REQUESTS:
+            await asyncio.sleep(0.5)
+
+        task_id, pipeline_fn = await _pending_queue.get()  # blocks until a task is queued
+
+        # Launch and store the real asyncio.Task so DELETE can cancel it
+        bg_task = asyncio.create_task(pipeline_fn(), name=f"pipeline-{task_id}")
+        _running_tasks[task_id] = bg_task
+
+
+def _ensure_dispatcher_running() -> None:
+    """Start the dispatcher if it isn't already running."""
+    global _dispatcher_task
+    if _dispatcher_task is None or _dispatcher_task.done():
+        _dispatcher_task = asyncio.create_task(_dispatcher(), name="pipeline-dispatcher")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -95,8 +129,6 @@ async def submit_analysis(
     Accept an analysis request and start the pipeline as a background
     asyncio task. Returns a task_id for streaming progress.
     """
-    from urllib.parse import urlparse as _urlparse
-
     global _active_pipeline_count
 
     url_str = str(body.url)
@@ -113,15 +145,12 @@ async def submit_analysis(
     # ── Launch pipeline as background asyncio task ────────────────────────────
     from app.tasks.pipeline import run_pipeline  # noqa: PLC0415
 
-    # Reject immediately if all slots are occupied (atomic check in single event loop)
-    if _active_pipeline_count >= settings.MAX_CONCURRENT_REQUESTS:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Server is busy — too many concurrent analyses. Please retry in a moment.",
-        )
-
     async def _guarded_pipeline() -> None:
         global _active_pipeline_count
+        # Guard: if the task was deleted while waiting in the queue, skip it
+        if get_state(task_id) is None:
+            logger.info("Task cancelled before execution task_id=%s", task_id)
+            return
         _active_pipeline_count += 1
         try:
             await run_pipeline(
@@ -144,18 +173,22 @@ async def submit_analysis(
             if state and state.get("status") in ("done", "failed"):
                 delete_state(task_id)
 
-    bg_task = asyncio.create_task(_guarded_pipeline(), name=f"pipeline-{task_id}")
-    _running_tasks[task_id] = bg_task
+    # ── Enqueue instead of rejecting ─────────────────────────────────────────
+    # If slots are available the dispatcher will pick this up immediately.
+    # If all slots are busy it waits in the queue — no 429 to the caller.
+    await _pending_queue.put((task_id, _guarded_pipeline))
+    _ensure_dispatcher_running()
 
     logger.info(
-        "Task started task_id=%s url=%s page_type=%s language=%s",
+        "Task queued task_id=%s url=%s page_type=%s language=%s queue_size=%d",
         task_id, url_str, body.page_type.value, body.language.value,
+        _pending_queue.qsize(),
     )
 
     return TaskCreateResponse(
         task_id=task_id,
         status=TaskStatus.QUEUED,
-        estimated_seconds=60,
+        estimated_seconds=60 + _pending_queue.qsize() * 70,
     )
 
 
