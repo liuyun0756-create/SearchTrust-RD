@@ -112,6 +112,7 @@ class PageType(str, Enum):
     CATEGORY_PAGE       = "Category Page"
     TAG_PAGE            = "Tag Page"
     INDEX_PAGE          = "Index Page"
+    HOME_PAGE           = "Home Page"
 
 
 # Mapping from English page_type values → Dify Chinese values.
@@ -138,6 +139,7 @@ _PAGE_TYPE_EN_TO_ZH: dict[str, str] = {
     "category page":           "分类",
     "tag page":                "标签",
     "index page":              "索引页",
+    "home page":               "首页",
 }
 
 
