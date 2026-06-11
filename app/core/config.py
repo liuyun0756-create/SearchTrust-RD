@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     SCRAPER_MIN_CONTENT_LENGTH: int = Field(default=300)
 
     # ── Dify streaming ────────────────────────────────────────────────────────
-    DIFY_STREAM_TIMEOUT: int = Field(default=120)
+    DIFY_STREAM_TIMEOUT: int = Field(default=300)
     DIFY_RETRY: Annotated[int, Field(ge=0, le=5)] = Field(default=3)
 
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
