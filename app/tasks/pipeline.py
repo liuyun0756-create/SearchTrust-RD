@@ -226,6 +226,9 @@ async def _run_pipeline_inner(
     else:
         final_report = {"raw": report}
 
+    # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
+    final_report["gbp_connected"] = bool(gbp_data)
+
     _update_state(
         task_id, created_at,
         status="done",
