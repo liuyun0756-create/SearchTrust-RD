@@ -138,7 +138,7 @@ _PAGE_TYPE_EN_TO_ZH: dict[str, str] = {
     "q&a page":                "问答页",
     "category page":           "分类",
     "tag page":                "标签",
-    "index page":              "索引页",
+    "index page":               "索引页",
     "home page":               "首页",
 }
 
@@ -180,7 +180,8 @@ class AnalyzeRequest(BaseModel):
     gbp_url:
         Optional. The website URL registered in Google Business Profile.
         Used to query GBP data via domain matching (more accurate than
-        name+city search). Defaults to the same value as `url` if not provided.
+        name+city search). If not provided, GBP lookup falls back to
+        business name + city extracted from page content.
     """
 
     url: HttpUrl = Field(
@@ -197,11 +198,12 @@ class AnalyzeRequest(BaseModel):
         default=Language.ENGLISH,
         description="Desired language for the generated SEO report",
     )
-    gbp_url: str = Field(
-        ...,
+    gbp_url: Optional[str] = Field(
+        default=None,
         description=(
             "Website URL registered in Google Business Profile. "
-            "Used for domain-based GBP lookup."
+            "Used for domain-based GBP lookup. "
+            "If omitted, falls back to business name + city extracted from the page."
         ),
         examples=["https://nxtlvlautospa.com"],
     )
@@ -221,9 +223,13 @@ class AnalyzeRequest(BaseModel):
 
     @field_validator("gbp_url", mode="before")
     @classmethod
-    def normalise_gbp_url(cls, v: str) -> str:
-        """Normalise gbp_url — prepend https:// if scheme is missing."""
+    def normalise_gbp_url(cls, v: Optional[str]) -> Optional[str]:
+        """Normalise gbp_url — prepend https:// if scheme is missing. Pass through None."""
+        if v is None:
+            return None
         v = str(v).strip()
+        if not v:
+            return None
         if not v.startswith(("http://", "https://")):
             v = "https://" + v
         return v
