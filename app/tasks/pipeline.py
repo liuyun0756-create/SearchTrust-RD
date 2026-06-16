@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -216,12 +217,24 @@ async def _run_pipeline_inner(
 
     final_report: dict[str, Any]
     if isinstance(report, dict):
+        # score：剥掉 Markdown 代码块再 parse
         score_raw = report.get("score")
         if isinstance(score_raw, str):
             try:
-                report["score"] = json.loads(score_raw)
+                score_str = re.sub(r"^```json\s*|\s*```$", "", score_raw.strip())
+                report["score"] = json.loads(score_str)
             except json.JSONDecodeError:
                 pass
+
+        # trust_status / ranking_potential / risk_level：JSON 字符串直接 parse
+        for key in ("trust_status", "ranking_potential", "risk_level"):
+            val = report.get(key)
+            if isinstance(val, str):
+                try:
+                    report[key] = json.loads(val)
+                except json.JSONDecodeError:
+                    pass
+
         final_report = report
     else:
         final_report = {"raw": report}
