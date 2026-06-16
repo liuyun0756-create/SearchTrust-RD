@@ -477,6 +477,31 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
 # SerpAPI — Google Business Profile
 # ─────────────────────────────────────────────────────────────────────────────
 
+def extract_maps_url_from_content(content: str) -> Optional[str]:
+    """
+    从页面内容中提取第一个包含 data_id（0x...:0x... 格式）的 Google Maps URL。
+
+    很多网站页脚会嵌入 Google Maps 链接，提取到后可直接走 data_id 精准路径，
+    避免 name+city 模糊搜索的误匹配。
+
+    只匹配长链（含 data= 片段的标准 Maps URL），短链 maps.app.goo.gl 没有
+    data_id 无法提取，忽略。
+
+    Returns
+    -------
+    完整的 Google Maps URL（字符串），或 None（未找到）。
+    """
+    # 匹配含 data_id 的 Google Maps 长链
+    # 格式：https://www.google.com/maps/...data=...!1s0xABC:0xDEF...
+    pattern = r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*'
+    m = re.search(pattern, content)
+    if m:
+        url = m.group(0).rstrip(")")   # 去掉 Markdown 链接末尾可能残留的 )
+        logger.info("[Scraper] extracted Google Maps URL from content: %s", url)
+        return url
+    return None
+
+
 def _extract_data_id_from_gbp_url(gbp_url: str) -> Optional[str]:
     """
     从 Google Maps URL 中提取 data_id（0x... 格式的十六进制坐标 ID）。
@@ -600,10 +625,13 @@ async def fetch_gbp_data(
                             matched_raw = r
                             break
 
-                # 3. 兜底：第一条
+                # 3. 兜底：域名和城市都没匹配到，不再盲取第一条——直接放弃
                 if matched_raw is None:
-                    logger.info("[SerpAPI] using first local result query=%r", query)
-                    matched_raw = results[0]
+                    logger.warning(
+                        "[SerpAPI] no confident match found (domain/city both missed) query=%r"
+                        " — skipping to avoid wrong business",
+                        query,
+                    )
 
         if matched_raw is not None:
             gbp_info = _build_gbp_info(matched_raw)
@@ -896,6 +924,13 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     business_info = extract_business_info(combined_content)
 
     # ── 6. GBP lookup ─────────────────────────────────────────────────────────
+    # 如果调用方没有提供 gbp_url，尝试从页面内容自动提取 Google Maps 链接。
+    # 提取到则直接走 data_id 精准路径，避免 name+city 模糊搜索的误匹配。
+    if not gbp_url:
+        gbp_url = extract_maps_url_from_content(combined_content)
+        if gbp_url:
+            logger.info("[Scraper] auto-filled gbp_url from page content url=%s", url)
+
     # If gbp_prefetch is already populated (parallel fetch above), reuse it.
     # Otherwise query SerpAPI now using business_name/city from page content.
     if gbp_prefetch is not None:
