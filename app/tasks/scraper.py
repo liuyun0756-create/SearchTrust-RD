@@ -1,12 +1,12 @@
 """
 app/tasks/scraper.py
 ────────────────────
-Dual-layer scraper: Jina Reader (primary) → Firecrawl (fallback).
+Dual-layer scraper: Firecrawl (primary) → Jina Reader (fallback).
 
 Public API
 ----------
 scrape(url)              — Main entry point
-fetch_page_content(url)  — Waterfall: Jina → Firecrawl
+fetch_page_content(url)  — Waterfall: Firecrawl → Jina
 fetch_gbp_data(...)      — SerpAPI Google Maps / GBP lookup
 extract_business_info()  — Regex heuristics to pull name / city / phone
 
@@ -285,15 +285,214 @@ async def _fetch_firecrawl(url: str) -> Optional[str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Waterfall dispatcher
+# Firecrawl /map — discover site URLs via sitemap
 # ─────────────────────────────────────────────────────────────────────────────
+
+async def firecrawl_map(
+    url: str,
+    max_urls: int = 50,
+) -> list[str]:
+    """
+    Use Firecrawl's /map endpoint to get a list of URLs for a site.
+
+    /map costs 1 credit regardless of how many URLs are returned.
+    URLs are sourced primarily from the site's sitemap, supplemented by
+    search engine data — much higher signal than link-following discovery.
+
+    Parameters
+    ----------
+    url:
+        The site homepage URL.
+    max_urls:
+        Maximum number of URLs to retrieve (default 50).
+
+    Returns
+    -------
+    List of URL strings.  Empty list on any error or missing API key.
+    """
+    if not settings.FIRECRAWL_API_KEY:
+        logger.info("[Firecrawl/map] API key not configured — skipping")
+        return []
+
+    headers: dict[str, str] = {
+        "Authorization": f"Bearer {settings.FIRECRAWL_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload: dict[str, Any] = {
+        "url": url,
+        "limit": max_urls,
+    }
+
+    map_endpoint = f"{settings.FIRECRAWL_API_URL}/map"
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0),
+            follow_redirects=True,
+        ) as client:
+            resp = await client.post(map_endpoint, headers=headers, json=payload)
+            resp.raise_for_status()
+
+        data = resp.json()
+        # Response: {"success": true, "links": [{"url": "...", "title": "..."}, ...]}
+        # or just {"success": true, "links": ["url1", "url2", ...]} in some versions
+        raw_links: list[Any] = data.get("links", [])
+        urls: list[str] = []
+        for item in raw_links:
+            if isinstance(item, str):
+                urls.append(item)
+            elif isinstance(item, dict):
+                u = item.get("url", "")
+                if u:
+                    urls.append(u)
+
+        logger.info("[Firecrawl/map] got %d URLs url=%s", len(urls), url)
+        return urls
+
+    except Exception as exc:
+        logger.error("[Firecrawl/map] failed url=%s: %s", url, exc)
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Firecrawl /batch/scrape — scrape a known list of URLs concurrently
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def firecrawl_batch_scrape(
+    urls: list[str],
+    poll_interval: float = 3.0,
+    max_wait: float = 120.0,
+) -> list[dict[str, Any]]:
+    """
+    Scrape a predetermined list of URLs via Firecrawl's /batch/scrape endpoint.
+
+    Unlike /crawl, this endpoint does NOT discover additional pages — it scrapes
+    exactly the URLs you provide.  This gives full control over which pages are
+    fetched and avoids wasting credits on unwanted deep product/category pages.
+
+    Parameters
+    ----------
+    urls:
+        Explicit list of URLs to scrape.
+    poll_interval:
+        Seconds between status-poll requests.
+    max_wait:
+        Maximum total seconds to wait for the batch job to complete.
+
+    Returns
+    -------
+    List of page dicts, each with:
+        ``url``      — page URL
+        ``markdown`` — page content as Markdown
+    Empty list on any error or if API key is not configured.
+    """
+    if not settings.FIRECRAWL_API_KEY:
+        logger.info("[Firecrawl/batch] API key not configured — skipping")
+        return []
+
+    if not urls:
+        return []
+
+    headers: dict[str, str] = {
+        "Authorization": f"Bearer {settings.FIRECRAWL_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload: dict[str, Any] = {
+        "urls": urls,
+        "formats": ["markdown"],
+        "onlyMainContent": False,
+        "waitFor": 5000,
+        "timeout": settings.SCRAPER_TIMEOUT * 1000,
+        "actions": [
+            {"type": "scroll", "direction": "down", "amount": 500},
+            {"type": "wait", "milliseconds": 2000},
+            {"type": "scroll", "direction": "down", "amount": 500},
+            {"type": "wait", "milliseconds": 1000},
+        ],
+    }
+
+    batch_endpoint = f"{settings.FIRECRAWL_API_URL}/batch/scrape"
+
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(30.0),
+        follow_redirects=True,
+    ) as client:
+        # ── Start batch job ───────────────────────────────────────────────────
+        try:
+            resp = await client.post(batch_endpoint, headers=headers, json=payload)
+            resp.raise_for_status()
+        except Exception as exc:
+            logger.error("[Firecrawl/batch] failed to start job urls=%s: %s", urls, exc)
+            return []
+
+        data = resp.json()
+        job_id: Optional[str] = data.get("id")
+        if not job_id:
+            logger.error("[Firecrawl/batch] no job id returned resp=%s", data)
+            return []
+
+        logger.info("[Firecrawl/batch] job started id=%s urls=%s", job_id, urls)
+
+        # ── Poll until complete ───────────────────────────────────────────────
+        status_url = f"{batch_endpoint}/{job_id}"
+        elapsed = 0.0
+        while elapsed < max_wait:
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+
+            try:
+                poll_resp = await client.get(status_url, headers=headers)
+                poll_resp.raise_for_status()
+            except Exception as exc:
+                logger.warning(
+                    "[Firecrawl/batch] poll error id=%s elapsed=%.0fs: %s",
+                    job_id, elapsed, exc,
+                )
+                continue
+
+            status_data = poll_resp.json()
+            status = status_data.get("status", "")
+            completed = status_data.get("completed", 0)
+            total = status_data.get("total", "?")
+            logger.info(
+                "[Firecrawl/batch] id=%s status=%s pages=%s/%s elapsed=%.0fs",
+                job_id, status, completed, total, elapsed,
+            )
+
+            if status == "failed":
+                logger.error("[Firecrawl/batch] job failed id=%s", job_id)
+                return []
+
+            if status == "completed":
+                pages: list[dict[str, Any]] = status_data.get("data", [])
+                results = []
+                for page in pages:
+                    # batch/scrape response: page dict has metadata.url / metadata.sourceURL
+                    page_url = (
+                        page.get("metadata", {}).get("url")
+                        or page.get("metadata", {}).get("sourceURL", "")
+                    )
+                    markdown = page.get("markdown", "")
+                    if markdown and _is_valid_content(markdown):
+                        results.append({"url": page_url, "markdown": markdown})
+                logger.info(
+                    "[Firecrawl/batch] done id=%s valid_pages=%d",
+                    job_id, len(results),
+                )
+                return results
+
+        logger.error(
+            "[Firecrawl/batch] timed out after %.0fs id=%s",
+            max_wait, job_id,
+        )
+        return []
 
 async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     """
     Try each scraper level in order; return on first success.
 
-    Level 1: Jina Reader  (free, fast, clean Markdown output)
-    Level 2: Firecrawl    (paid-per-call, stronger JS rendering, reliable fallback)
+    Level 1: Firecrawl    (paid-per-call, stronger JS rendering, reliable primary)
+    Level 2: Jina Reader  (free, fast, clean Markdown output, fallback)
 
     Returns
     -------
@@ -328,6 +527,116 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
 
     logger.error("[Scraper] all sources failed url=%s", url)
     return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Content cleaner — strip noise before feeding to LLM rule engine
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Image alt texts that carry no useful information for rule evaluation
+_NOISE_ALT_TEXTS: frozenset[str] = frozenset({
+    "spinner", "logo", "icon", "banner", "header", "footer",
+    "background", "placeholder", "image", "loading", "arrow",
+    "chevron", "close", "menu", "search", "cart", "star",
+    "check", "checkmark", "play", "pause", "next", "prev",
+    "previous", "forward", "back",
+})
+
+# Single-line UI fragments that add no SEO-relevant signal
+_NOISE_LINE_PATTERNS: tuple[str, ...] = (
+    r"^try on$",
+    r"^slide \d+ of \d+$",
+    r"^go to .+ page$",
+    r"^\[go to .+ page\]",
+    r"^\[open linked video\]",
+    r"^skip to ",
+    r"^\[skip to ",
+)
+
+_NOISE_LINE_RE = re.compile(
+    "|".join(_NOISE_LINE_PATTERNS),
+    re.IGNORECASE,
+)
+
+
+def clean_content(text: str) -> str:
+    """
+    Strip low-signal noise from scraped Markdown before it is passed to the
+    LLM rule engine.  The goal is to reduce token consumption while preserving
+    every signal that the rule prompts actually check.
+
+    What is removed
+    ---------------
+    1. Image lines whose alt text is empty, purely numeric, or matches a known
+       noise keyword — e.g. ``![Spinner](…)`` or ``![logo](…)``.
+       Images with meaningful alt text (people, scenes, before/after, products)
+       are kept so rule_6 (fake/stock images) can still fire.
+    2. Exact-duplicate paragraphs (carousel responsive-layout double-render).
+       First occurrence is kept; subsequent identical blocks are dropped.
+    3. Single-line UI fragments: "Try on", "Slide 1 of 8",
+       "Go to Spiers Sycamore Crystal page", "Open linked video", etc.
+    4. Runs of more than two consecutive blank lines compressed to two.
+
+    What is NOT removed
+    -------------------
+    - Image lines with substantive alt text (contains non-noise words with
+      length > 10 chars), needed for rule_6.
+    - All text content, headings, links, reviews, addresses, phone numbers,
+      structured sections — needed by every other rule.
+    - Page-separator markers (=== PATH ===) used by the aggregation logic.
+    """
+    if not text:
+        return text
+
+    lines = text.splitlines()
+    cleaned: list[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+
+        # ── 1. Image lines ────────────────────────────────────────────────────
+        # Match both bare ![alt](url) and linked [![alt](url)](href)
+        img_match = re.match(r'!?\[([^\]]*)\]\([^)]+\)', stripped)
+        if img_match:
+            alt = img_match.group(1).strip().lower()
+            # Keep if alt is substantive (rule_6 needs it)
+            is_noise_alt = (
+                not alt
+                or alt.isdigit()
+                or alt in _NOISE_ALT_TEXTS
+                or any(w in alt for w in _NOISE_ALT_TEXTS)
+            )
+            if is_noise_alt:
+                continue   # drop noise image line
+
+        # ── 3. Single-line UI fragments ───────────────────────────────────────
+        if stripped and _NOISE_LINE_RE.match(stripped):
+            continue
+
+        cleaned.append(line)
+
+    # ── 2. Deduplicate paragraphs ─────────────────────────────────────────────
+    joined = "\n".join(cleaned)
+    paragraphs = joined.split("\n\n")
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for para in paragraphs:
+        key = para.strip()
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        deduped.append(para)
+
+    # ── 4. Compress blank lines ───────────────────────────────────────────────
+    result = re.sub(r"\n{3,}", "\n\n", "\n\n".join(deduped))
+
+    logger.debug(
+        "[Cleaner] %d → %d chars (%.0f%% reduction)",
+        len(text), len(result),
+        100 * (1 - len(result) / len(text)) if text else 0,
+    )
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -732,76 +1041,150 @@ async def fetch_gbp_reviews(
 # Sub-page URL extraction + concurrent fetch
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Which sub-page types to look for, and the regex patterns to find their URLs
-_SUB_PAGE_PATTERNS: dict[str, list[str]] = {
-    "contact": [
-        r'\[.*?\]\((https?://[^)]*contact[^)]*)\)',      # Markdown absolute
-        r'\[.*?\]\((/[^)]*contact[^)]*)\)',              # Markdown relative
-        r'href=["\']([^"\']*contact[^"\']*)["\']',       # HTML href
-    ],
-    "about": [
-        r'\[.*?\]\((https?://[^)]*about[^)]*)\)',
-        r'\[.*?\]\((/[^)]*about[^)]*)\)',
-        r'href=["\']([^"\']*about[^"\']*)["\']',
-    ],
-}
+# Asset file extensions — URLs ending in these are never HTML pages
+_ASSET_EXTENSIONS: frozenset[str] = frozenset({
+    ".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif",
+    ".ico", ".woff", ".woff2", ".ttf", ".eot",
+    ".css", ".js", ".map",
+    ".pdf", ".zip", ".gz", ".tar",
+    ".mp4", ".mp3", ".webm", ".ogg",
+})
+
+# Path segments that indicate non-content pages (cart, auth, tracking, etc.)
+# Any URL whose path contains one of these segments is excluded.
+_BLOCKLIST_SEGMENTS: frozenset[str] = frozenset({
+    "cart", "checkout", "payment", "order", "orders",
+    "account", "my-account", "login", "logout", "signin", "signup",
+    "register", "password", "auth",
+    "search", "autocomplete", "suggest",
+    "api", "graphql", "webhook", "callback",
+    "cdn", "static", "assets", "media", "images", "img", "fonts",
+    "atc", "add-to-cart",
+    "tracking", "analytics", "pixel", "beacon",
+    "sitemap", "robots",
+    "feed", "rss",
+})
+
+# Maximum number of sub-pages to scrape per main page
+_MAX_SUB_PAGES: int = 10
 
 
-def extract_sub_page_urls(content: str, base_url: str) -> dict[str, str]:
+def discover_sub_page_urls(content: str, base_url: str) -> list[str]:
     """
-    Scan main-page content for contact / about sub-page URLs.
+    Extract all candidate sub-page URLs from main-page content.
 
-    Parameters
-    ----------
-    content:
-        Raw Markdown / HTML content of the main page.
-    base_url:
-        Scheme + host (e.g. ``"https://example.com"``).
-        Used to resolve relative paths to absolute URLs.
+    Works on both Markdown (Firecrawl/Jina output) and raw HTML.
+    Returns a deduplicated list of absolute URLs that pass all filters,
+    ordered by first appearance.  The caller decides how many to fetch.
 
-    Returns
-    -------
-    dict mapping page_type → absolute URL.
-    At most one URL per type (first match wins).
+    Filters applied
+    ---------------
+    1. Same host as base_url (rejects CDN / external domains)
+    2. Not a static asset (rejects .svg, .png, .js, …)
+    3. Not a blocklisted path segment (rejects /cart, /login, /api, …)
+    4. Not the homepage itself (rejects bare "/" or the base_url)
+    5. Path depth ≤ 2 (rejects /a/b/c deep product/category pages)
+    6. No fragment-only links (rejects #section anchors)
+    7. Link text must not itself contain a URL (rejects [![](img)](page)
+       outer-bracket false-positives by requiring plain text in [...])
+
+    No path-depth limit is applied — any sub-page URL found in the main
+    page content is a valid candidate regardless of how deep its path is.
+    Depth limiting is done at the crawl level: only main-page links are
+    followed (no recursive discovery into sub-pages).
     """
-    found: dict[str, str] = {}
+    from urllib.parse import urlparse as _urlparse, urldefrag as _urldefrag
 
-    for page_type, patterns in _SUB_PAGE_PATTERNS.items():
-        for pattern in patterns:
-            for match in re.findall(pattern, content, re.IGNORECASE):
-                if not match:
-                    continue
-                if match.startswith("http"):
-                    found[page_type] = match
-                elif match.startswith("/"):
-                    found[page_type] = base_url.rstrip("/") + match
-                break          # first valid match for this pattern
-            if page_type in found:
-                break          # stop trying other patterns for this type
+    base_host = _urlparse(base_url).netloc.lower()
+    seen: set[str] = set()
+    results: list[str] = []
 
-    if found:
-        logger.info("[Scraper] extracted sub-page URLs: %s", found)
-    return found
+    # Collect raw URL strings from both Markdown and HTML
+    raw_candidates: list[str] = []
+
+    # Markdown links: [plain text](url) — text must not contain [ ] ( )
+    # This pattern rejects [![](img)](page) because the outer [...] contains "]"
+    for m in re.findall(r'\[[^\]\[()]+\]\(([^)]+)\)', content):
+        raw_candidates.append(m.strip())
+
+    # HTML href attributes
+    for m in re.findall(r'href=["\']([^"\']+)["\']', content, re.IGNORECASE):
+        raw_candidates.append(m.strip())
+
+    for raw in raw_candidates:
+        # Strip fragment
+        raw, fragment = _urldefrag(raw)
+        if not raw:
+            continue
+
+        # Resolve to absolute URL
+        if raw.startswith("http"):
+            candidate = raw
+        elif raw.startswith("/"):
+            candidate = base_url.rstrip("/") + raw
+        else:
+            continue   # relative paths without leading slash are ambiguous
+
+        # 1. Same host
+        try:
+            parsed = _urlparse(candidate)
+        except Exception:
+            continue
+        if parsed.netloc.lower() != base_host:
+            continue
+
+        path = parsed.path.rstrip("/") or "/"
+
+        # 2. Not a static asset
+        path_lower = path.lower()
+        if any(path_lower.endswith(ext) for ext in _ASSET_EXTENSIONS):
+            continue
+
+        # 3. Not a blocklisted segment
+        segments = [s for s in path.lower().split("/") if s]
+        if any(seg in _BLOCKLIST_SEGMENTS for seg in segments):
+            continue
+
+        # 4. Not the homepage
+        if path in ("", "/"):
+            continue
+
+        # 5. Path depth ≤ 2  (e.g. /about or /services/plumbing, not /a/b/c)
+        if len(segments) > 2:
+            continue
+
+        # 6. Deduplicate (normalise by stripping query string for comparison)
+        norm = f"{parsed.scheme}://{parsed.netloc}{path}"
+        if norm in seen:
+            continue
+        seen.add(norm)
+
+        results.append(candidate)
+
+    if results:
+        logger.info("[Scraper] discovered %d sub-page candidate(s): %s", len(results), results)
+    else:
+        logger.info("[Scraper] no sub-page candidates found in main page content")
+    return results
 
 
 async def _fetch_sub_page(
-    page_type: str,
     page_url: str,
 ) -> tuple[str, Optional[str]]:
     """
-    Fetch a single sub-page.  Returns ``(page_type, content)`` or
-    ``(page_type, None)`` on failure.
+    Fetch a single sub-page.  Returns ``(page_url, content)`` or
+    ``(page_url, None)`` on failure.
     """
-    logger.info("[Scraper] fetching sub-page type=%s url=%s", page_type, page_url)
+    logger.info("[Scraper] fetching sub-page url=%s", page_url)
     result = await fetch_page_content(page_url)
     if result:
         logger.info(
-            "[Scraper] sub-page OK type=%s len=%d url=%s",
-            page_type, result.content_length, page_url,
+            "[Scraper] sub-page OK len=%d url=%s",
+            result.content_length, page_url,
         )
-        return page_type, result.content
-    logger.warning("[Scraper] sub-page failed type=%s url=%s", page_type, page_url)
-    return page_type, None
+        return page_url, result.content
+    logger.warning("[Scraper] sub-page failed url=%s", page_url)
+    return page_url, None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -812,19 +1195,22 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     """
     Full scraping pipeline for a single URL.
 
-    Flow
-    ----
-    1. Fetch main page    → Jina Reader (primary) → Firecrawl (fallback)
-    2. Extract sub-page URLs from main-page content (real links, not guesses)
-    3. Fetch all sub-pages concurrently (each: Jina → Firecrawl)
-    4. Append sub-page content with === PAGE === separators
-    5. Extract business info (name, city, phone) via regex
-    6. Fetch GBP data from SerpAPI (non-blocking on failure)
+    Flow (Firecrawl configured)
+    ---------------------------
+    1. /scrape  main page (Firecrawl → Jina fallback)
+    2. /map     discover full site URL list (sitemap-based, 1 credit)
+    3. Filter   depth ≤ 2, same host, no blocklisted segments
+    4. /batch/scrape  fetch the selected sub-pages concurrently
+    5. Concatenate all page content with === PATH === separators
+    6. Extract business info (name, city, phone) via regex
+    7. Fetch GBP data from SerpAPI
 
-    Parameters
-    ----------
-    url:
-        Fully-qualified target URL (must start with http/https).
+    Flow (Firecrawl not configured — fallback)
+    ------------------------------------------
+    1. Fetch main page via Jina Reader
+    2. Discover sub-page URLs from main content (link extraction)
+    3. Fetch sub-pages concurrently via Jina
+    4-5. Same as above
 
     Returns
     -------
@@ -832,107 +1218,172 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         ``content``        — full combined page text (main + sub-pages)
         ``business``       — extracted business metadata (dict)
         ``gbp``            — GBP data from SerpAPI (dict, may be empty)
-        ``scraper_source`` — scraper that succeeded for the main page
-        ``sub_pages``      — list of sub-page types successfully appended
+        ``scraper_source`` — "firecrawl_batch" | "firecrawl" | "jina"
+        ``sub_pages``      — list of sub-page URLs successfully appended
         ``url``            — original URL
 
     Raises
     ------
-    RuntimeError when both Jina and Firecrawl fail on the main page.
+    RuntimeError when all scrapers fail on the main page.
     """
     logger.info("[Scraper] fetching url=%s", url)
 
-    # ── 1. Main page fetch + optional parallel GBP (data_id path) ────────────
-    # When gbp_url contains a data_id we can query GBP independently of the
-    # page content, so we fire both requests concurrently and save 2-5 s.
-    # When there is no data_id, GBP needs business_name/city extracted from
-    # page content, so we keep the serial flow for that branch.
-    gbp_prefetch: Optional[dict[str, Any]] = None
-    has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
-
-    if has_data_id:
-        logger.info("[Scraper] data_id detected — running main page + GBP in parallel")
-        results = await asyncio.gather(
-            fetch_page_content(url),
-            fetch_gbp_data(
-                business_name=None,
-                city=None,
-                website_url=url,
-                gbp_url=gbp_url,
-            ),
-            return_exceptions=True,
-        )
-        main_result = results[0] if not isinstance(results[0], Exception) else None
-        gbp_prefetch = results[1] if not isinstance(results[1], Exception) else {}
-        if isinstance(results[1], Exception):
-            logger.warning("[Scraper] parallel GBP fetch failed: %s — continuing without GBP", results[1])
-    else:
-        main_result = await fetch_page_content(url)
-
-    if main_result is None:
-        raise RuntimeError(
-            f"Page scraping failed (all scrapers failed) for url={url}"
-        )
-
-    logger.info(
-        "[Scraper] main page OK source=%s len=%d url=%s",
-        main_result.source.value, main_result.content_length, url,
-    )
-
-    # ── 2. Extract real sub-page URLs from main content ───────────────────────
     from urllib.parse import urlparse
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
 
-    sub_urls = extract_sub_page_urls(main_result.content, base_url)
-
-    # ── 3. Concurrently fetch all detected sub-pages ──────────────────────────
-    combined_content = main_result.content
+    combined_content = ""
     appended: list[str] = []
+    scraper_source = "firecrawl_batch"
 
-    if sub_urls:
+    # ── Option A: Firecrawl /map → filter → /batch/scrape ────────────────────
+    # /map retrieves the site's URL list (primarily from sitemap, 1 credit).
+    # We then filter to depth ≤ 2 sub-pages and scrape exactly those URLs,
+    # giving us full control over which pages are fetched.
+    if settings.FIRECRAWL_API_KEY:
+        from urllib.parse import urlparse as _up
+
+        logger.info("[Scraper] using Firecrawl /map + /batch/scrape url=%s", url)
+        main_path = _up(url).path.rstrip("/") or "/"
+
+        # ── Step 1: fetch main page via /scrape ───────────────────────────────
+        main_result = await fetch_page_content(url)
+        if main_result:
+            combined_content = main_result.content
+            scraper_source = main_result.source.value
+            logger.info(
+                "[Scraper] main page OK source=%s len=%d url=%s",
+                scraper_source, main_result.content_length, url,
+            )
+
+        # ── Step 2: discover sub-page URLs via /map ───────────────────────────
+        all_map_urls = await firecrawl_map(url)
+
+        # Filter: same host, path depth ≤ 2, not the main page itself,
+        # not a blocklisted segment, not a static asset
+        sub_urls: list[str] = []
+        seen_paths: set[str] = set()
+        for candidate in all_map_urls:
+            try:
+                cp = _up(candidate)
+            except Exception:
+                continue
+            if cp.netloc.lower() != _up(url).netloc.lower():
+                continue
+            path = cp.path.rstrip("/") or "/"
+            if path == main_path or path in ("", "/"):
+                continue
+            path_lower = path.lower()
+            if any(path_lower.endswith(ext) for ext in _ASSET_EXTENSIONS):
+                continue
+            segments = [s for s in path.lower().split("/") if s]
+            if any(seg in _BLOCKLIST_SEGMENTS for seg in segments):
+                continue
+            if len(segments) > 2:                  # depth limit
+                continue
+            norm = f"{cp.scheme}://{cp.netloc}{path}"
+            if norm in seen_paths:
+                continue
+            seen_paths.add(norm)
+            sub_urls.append(candidate)
+            if len(sub_urls) >= _MAX_SUB_PAGES:
+                break
+
         logger.info(
-            "[Scraper] launching %d concurrent sub-page fetch(es): %s",
-            len(sub_urls), list(sub_urls.keys()),
+            "[Scraper] /map filtered %d → %d sub-page(s) url=%s",
+            len(all_map_urls), len(sub_urls), url,
         )
-        sub_tasks = [
-            _fetch_sub_page(pt, pu) for pt, pu in sub_urls.items()
-        ]
-        sub_results_raw = await asyncio.gather(*sub_tasks, return_exceptions=True)
-        sub_results: list[tuple[str, Optional[str]]] = []
-        for r in sub_results_raw:
-            if isinstance(r, Exception):
-                logger.warning("[Scraper] sub-page task raised unexpected exception: %s", r)
-            else:
-                sub_results.append(r)
 
-        # ── 4. Append sub-page content ────────────────────────────────────────
-        for page_type, sub_content in sub_results:
-            if sub_content:
-                tag = page_type.upper()
-                combined_content += (
-                    f"\n\n=== {tag} PAGE ===\n{sub_content}\n=== END {tag} ==="
-                )
-                appended.append(page_type)
+        # ── Step 3: batch-scrape the selected sub-pages ───────────────────────
+        if sub_urls:
+            batch_pages = await firecrawl_batch_scrape(sub_urls)
+            for page in batch_pages:
+                page_url = page.get("url", "")
+                markdown = page.get("markdown", "")
+                if not markdown:
+                    continue
+                page_path = _up(page_url).path.strip("/").replace("/", "-").upper() or "PAGE"
+                combined_content += f"\n\n=== {page_path} ===\n{markdown}\n=== END {page_path} ==="
+                appended.append(page_url)
+                logger.info("[Scraper] sub-page appended url=%s", page_url)
 
+        # If main page scrape failed, fall through to Option B
+        if not combined_content:
+            logger.warning("[Scraper] Firecrawl main page failed — falling back url=%s", url)
+
+    # ── Option B: fallback — /scrape main page + manual sub-page discovery ───
+    if not combined_content:
+        main_result = await fetch_page_content(url)
+        if main_result is None:
+            raise RuntimeError(
+                f"Page scraping failed (all scrapers failed) for url={url}"
+            )
+        combined_content = main_result.content
+        scraper_source = main_result.source.value
+        logger.info(
+            "[Scraper] main page OK source=%s len=%d url=%s",
+            scraper_source, main_result.content_length, url,
+        )
+
+        # Manual sub-page discovery
+        all_sub_urls = discover_sub_page_urls(main_result.content, base_url)
+        sub_urls = all_sub_urls[:_MAX_SUB_PAGES]
+        if sub_urls:
+            logger.info("[Scraper] launching %d sub-page fetch(es): %s", len(sub_urls), sub_urls)
+            sub_results_raw = await asyncio.gather(
+                *[_fetch_sub_page(pu) for pu in sub_urls],
+                return_exceptions=True,
+            )
+            for r in sub_results_raw:
+                if isinstance(r, Exception):
+                    logger.warning("[Scraper] sub-page task exception: %s", r)
+                    continue
+                sub_url, sub_content = r
+                if sub_content:
+                    from urllib.parse import urlparse as _up
+                    tag = _up(sub_url).path.strip("/").replace("/", "-").upper() or "PAGE"
+                    combined_content += f"\n\n=== {tag} ===\n{sub_content}\n=== END {tag} ==="
+                    appended.append(sub_url)
+
+    raw_content_length = len(combined_content)
     logger.info(
-        "[Scraper] content assembled — main_len=%d sub_pages=%s",
-        len(main_result.content), appended,
+        "[Scraper] content assembled — len=%d sub_pages=%s",
+        raw_content_length, appended,
     )
 
-    # ── 5. Business info ──────────────────────────────────────────────────────
+    # ── GBP: if data_id in gbp_url, run in parallel with business info ────────
+    gbp_prefetch: Optional[dict[str, Any]] = None
+    has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
+    if has_data_id:
+        logger.info("[Scraper] data_id detected — fetching GBP in parallel with business info")
+        gbp_prefetch_result = await fetch_gbp_data(
+            business_name=None,
+            city=None,
+            website_url=url,
+            gbp_url=gbp_url,
+        )
+        gbp_prefetch = gbp_prefetch_result
+
+    # ── Business info ─────────────────────────────────────────────────────────
+    # Use raw content for regex-based extraction (phone/address patterns need
+    # the full unmodified text; clean_content may strip some context lines).
     business_info = extract_business_info(combined_content)
 
-    # ── 6. GBP lookup ─────────────────────────────────────────────────────────
-    # 如果调用方没有提供 gbp_url，尝试从页面内容自动提取 Google Maps 链接。
-    # 提取到则直接走 data_id 精准路径，避免 name+city 模糊搜索的误匹配。
+    # ── GBP URL auto-fill ─────────────────────────────────────────────────────
     if not gbp_url:
         gbp_url = extract_maps_url_from_content(combined_content)
         if gbp_url:
             logger.info("[Scraper] auto-filled gbp_url from page content url=%s", url)
 
-    # If gbp_prefetch is already populated (parallel fetch above), reuse it.
-    # Otherwise query SerpAPI now using business_name/city from page content.
+    # ── Clean content for LLM consumption ────────────────────────────────────
+    cleaned = clean_content(combined_content)
+    logger.info(
+        "[Scraper] content cleaned — raw=%d cleaned=%d chars (%.0f%% reduction) url=%s",
+        raw_content_length, len(cleaned),
+        100 * (1 - len(cleaned) / raw_content_length) if raw_content_length else 0,
+        url,
+    )
+
     if gbp_prefetch is not None:
         gbp_data = gbp_prefetch
         logger.info("[Scraper] using prefetched GBP data url=%s", url)
@@ -948,18 +1399,19 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
             gbp_data = {}
 
-    # ── 7. Return assembled result ────────────────────────────────────────────
+    # ── Return ────────────────────────────────────────────────────────────────
     result: dict[str, Any] = {
-        "url":            url,
-        "content":        combined_content,
-        "business":       business_info,
-        "gbp":            gbp_data,
-        "scraper_source": main_result.source.value,
-        "sub_pages":      appended,
+        "url":                url,
+        "content":            cleaned,           # cleaned for LLM rule engine
+        "raw_content_length": raw_content_length, # original length for debugging
+        "business":           business_info,
+        "gbp":                gbp_data,
+        "scraper_source":     scraper_source,
+        "sub_pages":          appended,
     }
     logger.info(
         "[Scraper] done url=%s source=%s sub_pages=%s",
-        url, main_result.source.value, appended,
+        url, scraper_source, appended,
     )
     return result
 

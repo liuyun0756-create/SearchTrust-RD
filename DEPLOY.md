@@ -333,3 +333,6 @@ fly deploy
 **其他平台回滚：**
 1. `git revert` 或 `git reset` 回到上一个正常提交
 2. `git push` 触发重新部署
+   
+
+uvicorn app.main:app --reload --port 8000
