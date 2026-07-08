@@ -1,0 +1,402 @@
+{
+  "report_v2_1": {
+    "schema_version": "2.1",
+    "report_id": "RPT-fixture-object",
+    "analyzed_url": "https://example.com/service",
+    "page_type": "Service Page",
+    "generated_at": "2026-07-07T00:00:00Z",
+    "gbp_status": {
+      "status": "not_checked",
+      "reason": "GBP alignment could not be verified in this fixture."
+    },
+    "data_coverage": {
+      "page_content_checked": true,
+      "gbp_checked": false,
+      "schema_checked": false,
+      "contact_page_checked": false,
+      "about_page_checked": false,
+      "reviews_checked": false,
+      "internal_pages_checked": false,
+      "competitor_pages_checked": false,
+      "limitations": [
+        "Fixture output."
+      ]
+    },
+    "overall_status": {
+      "label": "Trust Status",
+      "level": "medium",
+      "explanation": "Fixture status."
+    },
+    "ranking_potential": {
+      "label": "Ranking Potential",
+      "level": "competitive",
+      "explanation": "Fixture potential."
+    },
+    "risk_level": {
+      "label": "Risk Level",
+      "level": "medium",
+      "explanation": "Fixture risk."
+    },
+    "primary_blocking_layer": {
+      "layer_key": "specificity",
+      "layer_name": "Specificity",
+      "reason": "Fixture primary blocker.",
+      "evidence_items": [
+        {
+          "id": "ev-primary",
+          "source_type": "not_available",
+          "source_label": "Fixture",
+          "comparison_result": "not_checked",
+          "confidence": "low",
+          "explanation": "Fixture evidence."
+        }
+      ]
+    },
+    "page_level": {
+      "label": "Developing",
+      "what_it_looks_like": "Fixture page level.",
+      "strengths": [],
+      "missing_elements": []
+    },
+    "layers": [
+      {
+        "layer_id": 1,
+        "layer_key": "foundation",
+        "layer_name": "Foundation",
+        "layer_label": "Foundation",
+        "status": "good",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 2,
+        "layer_key": "entity_presence",
+        "layer_name": "Entity Presence",
+        "layer_label": "Entity Presence",
+        "status": "good",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 3,
+        "layer_key": "entity_consistency",
+        "layer_name": "Entity Consistency",
+        "layer_label": "Entity Consistency",
+        "status": "medium",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [
+          {
+            "id": "ev-layer-3",
+            "source_type": "not_available",
+            "source_label": "Fixture",
+            "comparison_result": "not_checked",
+            "confidence": "low",
+            "explanation": "Fixture evidence."
+          }
+        ],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 4,
+        "layer_key": "specificity",
+        "layer_name": "Specificity",
+        "layer_label": "Specificity",
+        "status": "weak",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [
+          {
+            "id": "ev-layer-4",
+            "source_type": "not_available",
+            "source_label": "Fixture",
+            "comparison_result": "not_checked",
+            "confidence": "low",
+            "explanation": "Fixture evidence."
+          }
+        ],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 5,
+        "layer_key": "real_world_connection",
+        "layer_name": "Real-World Connection",
+        "layer_label": "Real-World Connection",
+        "status": "medium",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [
+          {
+            "id": "ev-layer-5",
+            "source_type": "not_available",
+            "source_label": "Fixture",
+            "comparison_result": "not_checked",
+            "confidence": "low",
+            "explanation": "Fixture evidence."
+          }
+        ],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 6,
+        "layer_key": "accountability",
+        "layer_name": "Accountability",
+        "layer_label": "Accountability",
+        "status": "good",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 7,
+        "layer_key": "page_unique_value",
+        "layer_name": "Page Unique Value",
+        "layer_label": "Page Unique Value",
+        "status": "medium",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [
+          {
+            "id": "ev-layer-7",
+            "source_type": "not_available",
+            "source_label": "Fixture",
+            "comparison_result": "not_checked",
+            "confidence": "low",
+            "explanation": "Fixture evidence."
+          }
+        ],
+        "suggested_fixes": [],
+        "action_items": []
+      },
+      {
+        "layer_id": 8,
+        "layer_key": "algorithm_fit",
+        "layer_name": "Algorithm Fit",
+        "layer_label": "Algorithm Fit",
+        "status": "good",
+        "checked_rule_ids": [],
+        "triggered_rule_ids": [],
+        "summary": "Fixture.",
+        "explanation": "Fixture.",
+        "evidence_items": [],
+        "suggested_fixes": [],
+        "action_items": []
+      }
+    ],
+    "key_issues": [
+      {
+        "id": "issue-dup-1",
+        "issue_title": "Generic service proof",
+        "affected_layer": "specificity",
+        "related_rule_ids": [
+          12
+        ],
+        "severity": "medium",
+        "evidence_items": [
+          {
+            "id": "ev-duplicate-1",
+            "source_type": "page",
+            "source_label": "Service page",
+            "source_url": "https://example.com/service",
+            "page_section": "Body copy",
+            "extracted_text": "Generic service wording.",
+            "comparison_result": "partial",
+            "confidence": "medium",
+            "explanation": "The page has generic wording."
+          }
+        ],
+        "explanation": "This paragraph is intentionally repeated to test duplicate paragraph warnings in the v2.1 validator. It is longer than one hundred and twenty characters and should be detected exactly.",
+        "why_it_matters": "Specific evidence helps users understand why the service page is credible.",
+        "recommended_actions": [
+          {
+            "id": "act-duplicate-1",
+            "priority": "high",
+            "task_title": "Add specific service proof",
+            "affected_layer": "specificity",
+            "related_rule_ids": [
+              12
+            ],
+            "where_to_add": [
+              "Service page introduction"
+            ],
+            "what_to_add": [
+              "Add page-specific proof and named service details."
+            ],
+            "example_copy": "Our team documents the exact service scope before work begins.",
+            "implementation_notes": [
+              "Keep the action tied to visible page content."
+            ],
+            "completion_signals": [
+              "The service page includes specific proof."
+            ],
+            "expected_effect": "Improves specificity signals.",
+            "effort_level": "small"
+          }
+        ]
+      },
+      {
+        "id": "issue-dup-2",
+        "issue_title": "Generic service proof",
+        "affected_layer": "specificity",
+        "related_rule_ids": [
+          13
+        ],
+        "severity": "medium",
+        "evidence_items": [
+          {
+            "id": "ev-duplicate-1",
+            "source_type": "page",
+            "source_label": "Service page",
+            "source_url": "https://example.com/service",
+            "page_section": "Body copy",
+            "extracted_text": "Generic service wording.",
+            "comparison_result": "partial",
+            "confidence": "medium",
+            "explanation": "The page has generic wording."
+          }
+        ],
+        "explanation": "This paragraph is intentionally repeated to test duplicate paragraph warnings in the v2.1 validator. It is longer than one hundred and twenty characters and should be detected exactly.",
+        "why_it_matters": "Specific evidence helps users understand why the service page is credible.",
+        "recommended_actions": [
+          {
+            "id": "act-duplicate-1",
+            "priority": "high",
+            "task_title": "Add specific service proof",
+            "affected_layer": "specificity",
+            "related_rule_ids": [
+              12
+            ],
+            "where_to_add": [
+              "Service page introduction"
+            ],
+            "what_to_add": [
+              "Add page-specific proof and named service details."
+            ],
+            "example_copy": "Our team documents the exact service scope before work begins.",
+            "implementation_notes": [
+              "Keep the action tied to visible page content."
+            ],
+            "completion_signals": [
+              "The service page includes specific proof."
+            ],
+            "expected_effect": "Improves specificity signals.",
+            "effort_level": "small"
+          }
+        ]
+      }
+    ],
+    "optimization_path": {
+      "must_execute_now": [
+        {
+          "id": "act-duplicate-1",
+          "priority": "high",
+          "task_title": "Add specific service proof",
+          "affected_layer": "specificity",
+          "related_rule_ids": [
+            12
+          ],
+          "where_to_add": [
+            "Service page introduction"
+          ],
+          "what_to_add": [
+            "Add page-specific proof and named service details."
+          ],
+          "example_copy": "Our team documents the exact service scope before work begins.",
+          "implementation_notes": [
+            "Keep the action tied to visible page content."
+          ],
+          "completion_signals": [
+            "The service page includes specific proof."
+          ],
+          "expected_effect": "Improves specificity signals.",
+          "effort_level": "small"
+        },
+        {
+          "id": "act-duplicate-2",
+          "priority": "high",
+          "task_title": "Add specific service proof",
+          "affected_layer": "specificity",
+          "related_rule_ids": [
+            12
+          ],
+          "where_to_add": [
+            "Service page introduction"
+          ],
+          "what_to_add": [
+            "Add page-specific proof and named service details."
+          ],
+          "example_copy": "Our team documents the exact service scope before work begins.",
+          "implementation_notes": [
+            "Keep the action tied to visible page content."
+          ],
+          "completion_signals": [
+            "The service page includes specific proof."
+          ],
+          "expected_effect": "Improves specificity signals.",
+          "effort_level": "small"
+        }
+      ],
+      "defer_until_later": [],
+      "do_not_prioritize_yet": [],
+      "roadmap": [
+        {
+          "id": "phase-duplicate-1",
+          "phase_title": "Specificity cleanup",
+          "sequence": 1,
+          "goal": "Add service-specific proof.",
+          "entry_condition": "Start after primary copy review.",
+          "action_items": [],
+          "expected_outcomes": [
+            "The page has stronger proof."
+          ]
+        },
+        {
+          "id": "phase-duplicate-2",
+          "phase_title": "Specificity cleanup",
+          "sequence": 2,
+          "goal": "Review proof placement.",
+          "entry_condition": "Start after phase one.",
+          "action_items": [],
+          "expected_outcomes": [
+            "Proof placement is complete."
+          ]
+        }
+      ],
+      "fix_order_warning": "Fixture warning.",
+      "completion_signals": []
+    },
+    "client_summary": {
+      "title": "Fixture summary",
+      "plain_language_summary": "This paragraph is intentionally repeated to test duplicate paragraph warnings in the v2.1 validator. It is longer than one hundred and twenty characters and should be detected exactly.",
+      "why_it_matters": "Fixture reason.",
+      "first_priority": "Fixture priority.",
+      "not_first_priority": "Fixture non-priority.",
+      "expected_change": "Fixture expected change."
+    }
+  }
+}

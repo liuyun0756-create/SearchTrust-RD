@@ -1353,9 +1353,12 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
 
     # ── GBP: if data_id in gbp_url, run in parallel with business info ────────
     gbp_prefetch: Optional[dict[str, Any]] = None
+    gbp_lookup_attempted = False
+    gbp_error: str | None = None
     has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
     if has_data_id:
         logger.info("[Scraper] data_id detected — fetching GBP in parallel with business info")
+        gbp_lookup_attempted = True
         gbp_prefetch_result = await fetch_gbp_data(
             business_name=None,
             city=None,
@@ -1389,6 +1392,9 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         logger.info("[Scraper] using prefetched GBP data url=%s", url)
     else:
         try:
+            gbp_lookup_attempted = bool(
+                gbp_url or business_info.get("name") or business_info.get("city")
+            )
             gbp_data = await fetch_gbp_data(
                 business_name=business_info.get("name"),
                 city=business_info.get("city"),
@@ -1397,6 +1403,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
+            gbp_error = str(exc)
             gbp_data = {}
 
     # ── Return ────────────────────────────────────────────────────────────────
@@ -1406,6 +1413,9 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "raw_content_length": raw_content_length, # original length for debugging
         "business":           business_info,
         "gbp":                gbp_data,
+        "gbp_url":            gbp_url,
+        "gbp_lookup_attempted": gbp_lookup_attempted,
+        "gbp_error":          gbp_error,
         "scraper_source":     scraper_source,
         "sub_pages":          appended,
     }
@@ -1414,4 +1424,3 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         url, scraper_source, appended,
     )
     return result
-

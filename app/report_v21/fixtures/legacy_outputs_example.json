@@ -1,0 +1,66 @@
+{
+  "trust_status": "{\"label\":\"Trust Status\",\"value\":\"Medium\",\"description\":\"Legacy status card.\"}",
+  "ranking_potential": "{\"label\":\"Ranking Potential\",\"value\":\"Moderate\",\"description\":\"Legacy ranking card.\"}",
+  "risk_level": "{\"label\":\"Risk Level\",\"value\":\"Medium\",\"description\":\"Legacy risk card.\"}",
+  "score": {
+    "module_1_overview": {
+      "title": "Legacy SearchTrust Summary",
+      "summary": "The page has useful service content but lacks enough structured trust evidence.",
+      "primary_blocking_layer": "specificity"
+    },
+    "module_2_page_level": {
+      "label": "Developing service page",
+      "summary": "The page has a basic service description but needs clearer proof and page-specific details.",
+      "strengths": ["Service offer is visible"],
+      "missing_elements": ["Structured evidence is limited"]
+    },
+    "module_3_key_problems": {
+      "primary_trust_failure": {
+        "blocking_layer": "specificity",
+        "description": "The legacy report identified specificity as the main gap."
+      },
+      "concrete_issues": [
+        {
+          "title": "Service specificity is thin",
+          "layer_key": "specificity",
+          "explanation": "The page does not provide enough page-specific detail in the legacy output.",
+          "suggestions": ["Add service details", "Clarify who the service is for"]
+        }
+      ]
+    },
+    "module_4_eight_layers": {
+      "layers": [
+        {"layer_key": "foundation", "layer_name": "Foundation", "status": "良好", "description": "Basic page eligibility is present."},
+        {"layer_key": "entity_presence", "layer_name": "Entity Presence", "status": "良好", "description": "The entity is visible."},
+        {"layer_key": "entity_consistency", "layer_name": "Entity Consistency", "status": "一般", "description": "Entity consistency needs more evidence."},
+        {"layer_key": "specificity", "layer_name": "Specificity", "status": "偏弱", "description": "The page lacks specific service proof."},
+        {"layer_key": "real_world_connection", "layer_name": "Real-World Connection", "status": "一般", "description": "Local connection needs more detail."},
+        {"layer_key": "accountability", "layer_name": "Accountability", "status": "良好", "description": "Contact path is visible."},
+        {"layer_key": "page_unique_value", "layer_name": "Page Unique Value", "status": "一般", "description": "Unique value is not fully clear."},
+        {"layer_key": "algorithm_fit", "layer_name": "Algorithm Fit", "status": "良好", "description": "The page broadly fits the query intent."}
+      ]
+    },
+    "module_5_optimization": {
+      "primary_trust_blocker": {
+        "why_cannot_skip": "Fix specific service proof before deeper optimization."
+      },
+      "must_execute_now": {
+        "items": [
+          {
+            "title": "Add page-specific service proof",
+            "execution_focus": ["Add examples", "Clarify service conditions"],
+            "completion_signals": ["Specific examples are visible"]
+          }
+        ]
+      },
+      "roadmap": [
+        {
+          "phase_title": "Strengthen local proof",
+          "entry_condition": "Specificity has been improved.",
+          "goal": "Make local relevance easier to verify.",
+          "expected_outcomes": ["More complete local trust signals"]
+        }
+      ]
+    }
+  }
+}

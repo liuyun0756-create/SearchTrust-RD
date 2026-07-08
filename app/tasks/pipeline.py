@@ -15,6 +15,7 @@ asyncio.create_task() from the FastAPI request handler.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -129,6 +130,7 @@ async def _run_pipeline_inner(
     outer function can wrap it with a catch-all exception handler without
     duplicating error-state logic.
     """
+    input_page_type = page_type
 
     # ── Stage 1: Scraping (0 → 30 %) ─────────────────────────────────────────
     _update_state(
@@ -158,6 +160,7 @@ async def _run_pipeline_inner(
 
     content: str = scrape_result.get("content", "")
     gbp_data: dict[str, Any] = scrape_result.get("gbp", {})
+    final_gbp_url: str = scrape_result.get("gbp_url") or gbp_url or ""
 
     # ── Stage 2: Dify workflow (30 → 90 %) ───────────────────────────────────
     logger.info("Pipeline stage=analyzing task_id=%s", task_id)
@@ -166,7 +169,7 @@ async def _run_pipeline_inner(
     from app.models.request import resolve_page_type  # noqa: PLC0415
 
     # Resolve English page_type to the Chinese value Dify expects
-    page_type = resolve_page_type(page_type)
+    dify_page_type = resolve_page_type(input_page_type)
 
     _last_written_pct: list[int] = [0]
     _last_written_ts: list[float] = [0.0]
@@ -192,13 +195,13 @@ async def _run_pipeline_inner(
     try:
         report = await call_dify_workflow(
             url=url,
-            page_type=page_type,
+            page_type=dify_page_type,
             language=language,
             content=content,
             gbp_data=gbp_data,
             task_id=task_id,
             progress_callback=_progress_cb,
-            gbp_url=gbp_url,
+            gbp_url=final_gbp_url,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
@@ -241,6 +244,34 @@ async def _run_pipeline_inner(
 
     # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
     final_report["gbp_connected"] = bool(gbp_data)
+
+    try:
+        from app.report_v21.normalize import normalize_report_to_v21  # noqa: PLC0415
+
+        normalized_v21 = normalize_report_to_v21(
+            final_report,
+            {
+                "task_id": task_id,
+                "url": url,
+                "page_type": input_page_type,
+                "dify_page_type": dify_page_type,
+                "generated_at": created_at,
+                "gbp_url": final_gbp_url,
+                "gbp_data": gbp_data,
+                "content_checked": bool(content),
+                "scraper_source": scrape_result.get("scraper_source"),
+                "sub_pages": scrape_result.get("sub_pages"),
+                "raw_content_length": scrape_result.get("raw_content_length"),
+                "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
+                "gbp_error": scrape_result.get("gbp_error"),
+            },
+        )
+        final_report["report_v2_1"] = normalized_v21["report_v2_1"]
+        final_report["gbp_connected"] = (
+            final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("report_v2_1 normalization skipped task_id=%s: %s", task_id, exc)
 
     _update_state(
         task_id, created_at,
