@@ -245,33 +245,72 @@ async def _run_pipeline_inner(
     # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
     final_report["gbp_connected"] = bool(gbp_data)
 
-    try:
-        from app.report_v21.normalize import normalize_report_to_v21  # noqa: PLC0415
+    v21_context = {
+        "task_id": task_id,
+        "url": url,
+        "page_type": input_page_type,
+        "dify_page_type": dify_page_type,
+        "generated_at": created_at,
+        "input_gbp_url": gbp_url,
+        "gbp_url": final_gbp_url,
+        "gbp_data": gbp_data,
+        "content_checked": bool(content),
+        "scraper_source": scrape_result.get("scraper_source"),
+        "sub_pages": scrape_result.get("sub_pages"),
+        "raw_content_length": scrape_result.get("raw_content_length"),
+        "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
+        "gbp_error": scrape_result.get("gbp_error"),
+    }
 
-        normalized_v21 = normalize_report_to_v21(
-            final_report,
-            {
-                "task_id": task_id,
-                "url": url,
-                "page_type": input_page_type,
-                "dify_page_type": dify_page_type,
-                "generated_at": created_at,
-                "gbp_url": final_gbp_url,
-                "gbp_data": gbp_data,
-                "content_checked": bool(content),
-                "scraper_source": scrape_result.get("scraper_source"),
-                "sub_pages": scrape_result.get("sub_pages"),
-                "raw_content_length": scrape_result.get("raw_content_length"),
-                "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
-                "gbp_error": scrape_result.get("gbp_error"),
-            },
+    try:
+        from app.report_v21.normalize import (  # noqa: PLC0415
+            ReportV21OutputInvalid,
+            normalize_native_report_to_v21,
         )
+
+        normalized_v21 = normalize_native_report_to_v21(final_report, v21_context)
         final_report["report_v2_1"] = normalized_v21["report_v2_1"]
         final_report["gbp_connected"] = (
             final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
         )
+    except ReportV21OutputInvalid as exc:
+        error_result = exc.to_result(task_id)
+        logger.warning(
+            "Native report_v2_1 invalid task_id=%s errors=%s warnings=%s",
+            task_id,
+            exc.validation_errors,
+            exc.warnings,
+        )
+        _update_state(
+            task_id, created_at,
+            status="failed",
+            stage="failed",
+            percent=100,
+            message=exc.user_message,
+            result=error_result,
+            error=exc.user_message,
+        )
+        return error_result
     except Exception as exc:  # noqa: BLE001
-        logger.warning("report_v2_1 normalization skipped task_id=%s: %s", task_id, exc)
+        error_result = {
+            "status": "failed",
+            "error_code": "V21_NORMALIZATION_ERROR",
+            "retryable": True,
+            "user_message": "The report could not be completed because the structured report validation failed. Please try again.",
+            "validation_errors": [str(exc)],
+            "task_id": task_id,
+        }
+        logger.warning("native report_v2_1 normalization failed task_id=%s: %s", task_id, exc)
+        _update_state(
+            task_id, created_at,
+            status="failed",
+            stage="failed",
+            percent=100,
+            message=error_result["user_message"],
+            result=error_result,
+            error=error_result["user_message"],
+        )
+        return error_result
 
     _update_state(
         task_id, created_at,

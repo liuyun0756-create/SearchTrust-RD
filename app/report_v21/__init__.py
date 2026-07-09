@@ -13,8 +13,10 @@ __all__ = [
     "guard_gbp_claims",
     "extract_report_v21_from_outputs",
     "legacy_score_to_report_v21",
+    "normalize_native_report_to_v21",
     "normalize_report_to_v21",
     "parse_json_maybe",
+    "ReportV21OutputInvalid",
     "validate_report_v21",
 ]
 
@@ -46,19 +48,25 @@ def __getattr__(name: str) -> Any:
     if name in {
         "extract_report_v21_from_outputs",
         "legacy_score_to_report_v21",
+        "normalize_native_report_to_v21",
         "normalize_report_to_v21",
         "parse_json_maybe",
+        "ReportV21OutputInvalid",
     }:
         from app.report_v21.normalize import (
+            ReportV21OutputInvalid,
             extract_report_v21_from_outputs,
             legacy_score_to_report_v21,
+            normalize_native_report_to_v21,
             normalize_report_to_v21,
             parse_json_maybe,
         )
 
         return {
+            "ReportV21OutputInvalid": ReportV21OutputInvalid,
             "extract_report_v21_from_outputs": extract_report_v21_from_outputs,
             "legacy_score_to_report_v21": legacy_score_to_report_v21,
+            "normalize_native_report_to_v21": normalize_native_report_to_v21,
             "normalize_report_to_v21": normalize_report_to_v21,
             "parse_json_maybe": parse_json_maybe,
         }[name]

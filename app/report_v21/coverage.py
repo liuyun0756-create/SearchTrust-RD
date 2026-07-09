@@ -7,6 +7,7 @@ from typing import Any
 
 def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     """Build backend-owned GBP status from scraper context."""
+    input_gbp_url = _optional_str(context.get("input_gbp_url"))
     gbp_url = _optional_str(context.get("gbp_url"))
     gbp_error = _optional_str(context.get("gbp_error"))
     gbp_data = context.get("gbp_data")
@@ -26,10 +27,24 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
             "reason": None,
         }
 
-    if gbp_url:
+    if not input_gbp_url:
+        return {
+            "status": "not_checked",
+            "gbp_url": gbp_url,
+            "reason": "No GBP URL was provided by the user, so GBP alignment was not verified.",
+        }
+
+    if input_gbp_url and not lookup_attempted:
+        return {
+            "status": "not_checked",
+            "gbp_url": gbp_url or input_gbp_url,
+            "reason": "A GBP URL was provided, but the backend did not confirm that GBP lookup was attempted.",
+        }
+
+    if input_gbp_url:
         return {
             "status": "not_found",
-            "gbp_url": gbp_url,
+            "gbp_url": gbp_url or input_gbp_url,
             "reason": (
                 "GBP lookup appears to have been attempted, but no confident "
                 "usable GBP profile was returned. Current scraper output does "

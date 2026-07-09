@@ -62,6 +62,34 @@ RISK_LEVEL_MAP: dict[str, str] = {
     "高风险": "high",
 }
 
+V21_OUTPUT_INVALID_CODE = "V21_OUTPUT_INVALID"
+V21_OUTPUT_INVALID_MESSAGE = (
+    "The report could not be completed because the analysis output was incomplete. "
+    "Please try again."
+)
+
+
+class ReportV21OutputInvalid(RuntimeError):
+    """Raised when a new v2.1 run does not contain a valid native Dify report."""
+
+    def __init__(self, validation_errors: list[str], warnings: list[str] | None = None):
+        super().__init__(V21_OUTPUT_INVALID_MESSAGE)
+        self.error_code = V21_OUTPUT_INVALID_CODE
+        self.user_message = V21_OUTPUT_INVALID_MESSAGE
+        self.validation_errors = validation_errors
+        self.warnings = warnings or []
+
+    def to_result(self, task_id: str | None = None) -> dict[str, Any]:
+        return {
+            "status": "failed",
+            "error_code": self.error_code,
+            "retryable": True,
+            "user_message": self.user_message,
+            "validation_errors": self.validation_errors,
+            "warnings": self.warnings,
+            "task_id": task_id,
+        }
+
 
 def parse_json_maybe(value: Any) -> tuple[Any, str | None]:
     """Parse dict/list or JSON strings, returning `(value, warning)`."""
@@ -142,6 +170,44 @@ def normalize_report_to_v21(outputs: Any, context: dict[str, Any] | None = None)
     return {"report_v2_1": fallback}
 
 
+def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Normalize only native Dify `report_v2_1` output for new v2.1 runs.
+
+    Unlike `normalize_report_to_v21`, this does not adapt legacy `score` output
+    and does not synthesize a fallback report. New v2.1 reports must be backed
+    by Dify's native structured output.
+    """
+    context = context or {}
+    warnings: list[str] = []
+
+    native_report, extract_warnings = extract_report_v21_from_outputs(outputs)
+    warnings.extend(extract_warnings)
+    if native_report is None:
+        errors = ["Dify output did not include native report_v2_1."]
+        if extract_warnings:
+            errors.extend(extract_warnings)
+        raise ReportV21OutputInvalid(errors, warnings)
+
+    try:
+        report = _finalize_report(native_report, context, warnings, run_scoring=False)
+    except ValidationError as exc:
+        raise ReportV21OutputInvalid(
+            [f"Native report_v2_1 failed Pydantic validation: {exc.errors()}"],
+            warnings,
+        ) from exc
+
+    validation = validate_report_v21(report)
+    if not validation.get("valid"):
+        errors = [
+            str(error)
+            for error in validation.get("errors", [])
+            if str(error).strip()
+        ]
+        raise ReportV21OutputInvalid(errors or ["Native report_v2_1 failed validation."], warnings)
+
+    return {"report_v2_1": report}
+
+
 def legacy_score_to_report_v21(
     outputs: dict[str, Any],
     context: dict[str, Any] | None = None,
@@ -206,6 +272,8 @@ def _finalize_report(
     report: dict[str, Any],
     context: dict[str, Any],
     warnings: list[str],
+    *,
+    run_scoring: bool = True,
 ) -> dict[str, Any]:
     report = dict(report)
     report["schema_version"] = "2.1"
@@ -240,6 +308,10 @@ def _finalize_report(
     ]
     if post_dedupe_notes:
         _append_limitations(deduped_report, post_dedupe_notes)
+
+    if not run_scoring:
+        final_model = ReportV21.model_validate(deduped_report)
+        return final_model.model_dump(mode="json", exclude_none=True)
 
     pre_scoring_report = copy.deepcopy(deduped_report)
     scored_report, scoring_warnings = apply_deterministic_scoring(deduped_report)
