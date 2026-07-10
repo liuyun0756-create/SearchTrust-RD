@@ -120,6 +120,21 @@ class ReportV21ContractTests(unittest.TestCase):
                     expected_status == "checked",
                 )
 
+    def test_unchecked_gbp_removes_alignment_assessment_language(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        payload["report_v2_1"]["primary_blocking_layer"]["reason"] = (
+            "The page contact details do not clearly align with the supplied GBP data, "
+            "so a reliable entity match assessment could not be completed."
+        )
+
+        report = self.normalize(payload)
+        reason = report["primary_blocking_layer"]["reason"]
+
+        self.assertEqual(
+            reason,
+            "GBP was not checked in this report, so GBP alignment could not be verified.",
+        )
+
     def test_dedupe_preserves_example_copy_arrays(self):
         report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
         action = copy.deepcopy(report["layers"][0]["action_items"][0])

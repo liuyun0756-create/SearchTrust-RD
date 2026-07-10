@@ -35,6 +35,13 @@ BLOCKED_GBP_CLAIM_PHRASES: tuple[str, ...] = (
     "GBP shows",
     "matches the Google Business Profile",
     "exact Google Business Profile",
+    "does not clearly align with the supplied GBP data",
+    "does not clearly align with supplied GBP data",
+    "does not align with the supplied GBP data",
+    "does not align with supplied GBP data",
+    "does not match the supplied GBP data",
+    "does not match supplied GBP data",
+    "entity match assessment",
 )
 
 _BLOCKED_RE = re.compile(
