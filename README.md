@@ -32,6 +32,10 @@ app/
     └── dify_client.py       # Dify SSE 调用 + 进度回调
 ```
 
+## 跨系统变更
+
+本项目的功能改动可能同时涉及前端、后端、Dify 和 Supabase。数据库 schema 变更由项目负责人在 Supabase SQL Editor 手动执行；只要迁移未确认执行，相关任务不能视为完成。完整的责任边界、现有 `reports.report_v2_1` 字段和验收门槛见 [跨系统变更与数据库交接规范](docs/CHANGE_MANAGEMENT.md)。
+
 ## 请求流程
 
 ```
