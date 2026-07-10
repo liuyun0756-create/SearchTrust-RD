@@ -126,7 +126,9 @@
             "what_to_add": [
               "Synchronize with Google Business Profile because GBP mismatch exists."
             ],
-            "example_copy": "Align with Google Business Profile.",
+            "example_copy": [
+              "Align with Google Business Profile."
+            ],
             "implementation_notes": [
               "The address differs from GBP."
             ],

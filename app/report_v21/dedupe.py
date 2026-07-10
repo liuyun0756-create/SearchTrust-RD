@@ -226,8 +226,10 @@ def _merge_action_item(existing: dict[str, Any], candidate: dict[str, Any]) -> d
     merged["related_rule_ids"] = _merge_ints(existing.get("related_rule_ids"), candidate.get("related_rule_ids"))
     for field in ("where_to_add", "what_to_add", "implementation_notes", "completion_signals"):
         merged[field] = _merge_strings(existing.get(field), candidate.get(field))
-    if not str(merged.get("example_copy") or "").strip():
-        merged["example_copy"] = str(existing.get("example_copy") or candidate.get("example_copy") or "")
+    merged["example_copy"] = _merge_strings(
+        existing.get("example_copy"),
+        candidate.get("example_copy"),
+    )
     return merged
 
 

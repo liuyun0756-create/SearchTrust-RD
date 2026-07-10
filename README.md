@@ -68,11 +68,13 @@ cp .env.example .env
 ### 2. 本地开发（不用 Docker）
 
 ```bash
-# 安装依赖
-pip install -r requirements.txt
+# 需要 Homebrew Python 3.12；不要使用 macOS 自带的 Python 3.9
+brew install python@3.12
+/opt/homebrew/bin/python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 
 # 启动 FastAPI（单进程）
-uvicorn app.main:app --reload --port 8000
+.venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
 ### 3. Docker 部署
@@ -98,7 +100,10 @@ docker-compose up --build -d
 | `FIRECRAWL_API_KEY` | 推荐 | [firecrawl.dev](https://www.firecrawl.dev/app/api-keys)，JS 渲染抓取（降级用）|
 | `JINA_API_KEY` | 可选 | 留空使用免费版 Jina Reader（主抓取器）|
 | `MAX_CONCURRENT_REQUESTS` | 可选 | 最大同时运行任务数，默认 10，超出自动排队 |
-| `DIFY_RETRY` | 可选 | Dify 失败重试次数，默认 2 |
+| `DIFY_STREAM_TIMEOUT` | 可选 | 单次 Dify 流式读取上限（秒），默认 1200 |
+| `DIFY_RETRY` | 可选 | Dify 失败重试次数，默认 3 |
+| `TASK_STREAM_TIMEOUT` | 可选 | 单个任务 SSE 连接最长等待（秒），默认 1260 |
+| `TASK_STREAM_HEARTBEAT_INTERVAL` | 可选 | SSE 心跳间隔（秒），默认 20 |
 | `SCRAPER_RETRY` | 可选 | 抓取失败重试次数，默认 2 |
 | `DEBUG` | 可选 | `true` 时开启 Swagger 文档和 DEBUG 日志 |
 | `CORS_ORIGINS` | 可选 | 允许的前端域名，JSON 数组格式 |

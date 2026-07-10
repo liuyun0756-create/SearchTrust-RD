@@ -247,7 +247,9 @@
             "what_to_add": [
               "Add page-specific proof and named service details."
             ],
-            "example_copy": "Our team documents the exact service scope before work begins.",
+            "example_copy": [
+              "Our team documents the exact service scope before work begins."
+            ],
             "implementation_notes": [
               "Keep the action tied to visible page content."
             ],
@@ -297,7 +299,9 @@
             "what_to_add": [
               "Add page-specific proof and named service details."
             ],
-            "example_copy": "Our team documents the exact service scope before work begins.",
+            "example_copy": [
+              "Our team documents the exact service scope before work begins."
+            ],
             "implementation_notes": [
               "Keep the action tied to visible page content."
             ],
@@ -326,7 +330,9 @@
           "what_to_add": [
             "Add page-specific proof and named service details."
           ],
-          "example_copy": "Our team documents the exact service scope before work begins.",
+          "example_copy": [
+            "Our team documents the exact service scope before work begins."
+          ],
           "implementation_notes": [
             "Keep the action tied to visible page content."
           ],
@@ -350,7 +356,9 @@
           "what_to_add": [
             "Add page-specific proof and named service details."
           ],
-          "example_copy": "Our team documents the exact service scope before work begins.",
+          "example_copy": [
+            "Our team documents the exact service scope before work begins."
+          ],
           "implementation_notes": [
             "Keep the action tied to visible page content."
           ],

@@ -105,7 +105,7 @@ def _sanitize_dict(value: dict[str, Any], warnings: list[str]) -> dict[str, Any]
         rewritten["affected_layer"] = "entity_consistency"
         rewritten["where_to_add"] = ["Page footer", "Contact page", "Business identity sections"]
         rewritten["what_to_add"] = [ENTITY_CONSISTENCY_ACTION_TEXT]
-        rewritten["example_copy"] = ""
+        rewritten["example_copy"] = []
         rewritten["implementation_notes"] = [
             "Do not recommend GBP synchronization until GBP has been checked.",
             ENTITY_CONSISTENCY_ACTION_TEXT,

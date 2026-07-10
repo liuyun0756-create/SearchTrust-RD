@@ -129,7 +129,9 @@
             "what_to_add": [
               "Review the page, footer, contact page, and available business identity signals for consistency."
             ],
-            "example_copy": "",
+            "example_copy": [
+              ""
+            ],
             "implementation_notes": [
               "Do not recommend GBP synchronization until GBP has been checked.",
               "Review the page, footer, contact page, and available business identity signals for consistency."

@@ -16,10 +16,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Final, Optional
 
 logger = logging.getLogger(__name__)
+
+# Internal sentinel consumed by the API route to emit an SSE keepalive comment.
+SSE_HEARTBEAT: Final = object()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # In-memory stores
@@ -59,7 +63,7 @@ def delete_state(task_id: str) -> None:
     for q in _subscribers.pop(task_id, []):
         # Drain the queue first to make room, then send the close signal.
         # This ensures the None sentinel is never dropped due to QueueFull,
-        # which would leave SSE subscribers blocked until their 300s timeout.
+        # which would leave SSE subscribers waiting until their configured timeout.
         while not q.empty():
             try:
                 q.get_nowait()
@@ -75,13 +79,18 @@ def delete_state(task_id: str) -> None:
 # SSE subscription
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def subscribe(task_id: str, timeout: float = 300.0):
+async def subscribe(
+    task_id: str,
+    timeout: float = 1260.0,
+    heartbeat_interval: float = 20.0,
+):
     """
     Async generator that yields state updates for a task.
 
     Yields the current snapshot immediately, then yields each subsequent
-    update pushed by set_state(). Stops when status is done/failed or
-    timeout elapses.
+    update pushed by set_state(). Emits an internal heartbeat sentinel while
+    the task is quiet, and stops when status is done/failed or the total
+    connection timeout elapses.
     """
     # Send current snapshot immediately
     current = get_state(task_id)
@@ -93,13 +102,21 @@ async def subscribe(task_id: str, timeout: float = 300.0):
     # Register a queue for future updates
     q: asyncio.Queue = asyncio.Queue(maxsize=50)
     _subscribers.setdefault(task_id, []).append(q)
+    deadline = time.monotonic() + timeout
 
     try:
         while True:
-            try:
-                state = await asyncio.wait_for(q.get(), timeout=timeout)
-            except asyncio.TimeoutError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 break
+            try:
+                state = await asyncio.wait_for(
+                    q.get(),
+                    timeout=min(heartbeat_interval, remaining),
+                )
+            except asyncio.TimeoutError:
+                yield SSE_HEARTBEAT
+                continue
 
             if state is None:  # task deleted
                 break

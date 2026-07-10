@@ -275,7 +275,7 @@ def _finalize_report(
     *,
     run_scoring: bool = True,
 ) -> dict[str, Any]:
-    report = dict(report)
+    report = _normalize_action_example_copy_fields(report)
     report["schema_version"] = "2.1"
     report["report_id"] = _context_str(context, "report_id", _report_id_from_context(context))
     report["analyzed_url"] = _context_str(context, "url", "unknown-url")
@@ -352,6 +352,28 @@ def _finalize_report(
                 return fallback_model.model_dump(mode="json", exclude_none=True)
             except ValidationError:
                 return model_report
+
+
+def _normalize_action_example_copy_fields(value: Any) -> Any:
+    """Convert the legacy scalar example_copy form without weakening validation."""
+    if isinstance(value, list):
+        return [_normalize_action_example_copy_fields(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    normalized = {
+        key: _normalize_action_example_copy_fields(item)
+        for key, item in value.items()
+    }
+    if "example_copy" in normalized and _looks_like_action_item(normalized):
+        example_copy = normalized["example_copy"]
+        if isinstance(example_copy, str):
+            normalized["example_copy"] = [example_copy]
+    return normalized
+
+
+def _looks_like_action_item(value: dict[str, Any]) -> bool:
+    return "task_title" in value and "affected_layer" in value
 
 
 def _safe_fallback_report(context: dict[str, Any], warnings: list[str]) -> dict[str, Any]:
@@ -589,7 +611,7 @@ def _legacy_action(
         "related_rule_ids": [],
         "where_to_add": ["Relevant page sections identified during implementation."],
         "what_to_add": suggestion_list or ["Review the legacy recommendation and add missing trust-supporting details."],
-        "example_copy": "",
+        "example_copy": [],
         "implementation_notes": ["Adapted from legacy Dify output; structured implementation detail was not available."],
         "completion_signals": completion_list,
         "expected_effect": expected or "Improves the affected trust layer when implemented with page-specific evidence.",

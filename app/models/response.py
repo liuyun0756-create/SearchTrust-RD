@@ -159,7 +159,7 @@ class ReportMetaResponse(BaseModel):
 
     page_url: str = Field(..., description="Original page URL")
     page_type: str = Field(..., description="Page type classification")
-    gbp_url: str = Field(..., description="Google Business Profile URL (required)")
+    gbp_url: str = Field(default="", description="Google Business Profile URL")
     generated_at: str = Field(
         ...,
         description="Report generation time in Beijing time (UTC+8), e.g. '2026-05-26 14:32'",

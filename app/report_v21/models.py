@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
 
 LayerKey = Literal[
@@ -118,7 +118,7 @@ class ActionItem(_StrictModel):
     related_rule_ids: list[int] = Field(default_factory=list)
     where_to_add: list[str] = Field(default_factory=list)
     what_to_add: list[str] = Field(default_factory=list)
-    example_copy: str
+    example_copy: list[StrictStr]
     implementation_notes: list[str] = Field(default_factory=list)
     completion_signals: list[str] = Field(default_factory=list)
     expected_effect: str

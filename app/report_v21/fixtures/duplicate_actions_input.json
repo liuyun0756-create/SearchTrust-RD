@@ -147,7 +147,9 @@
               "Add specific proof points to the service page.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
             ],
-            "example_copy": "Our team documents the service scope before work begins.",
+            "example_copy": [
+              "Our team documents the service scope before work begins."
+            ],
             "implementation_notes": [
               "Use page-specific details.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -175,7 +177,9 @@
               "Add specific proof points on the service page.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
             ],
-            "example_copy": "",
+            "example_copy": [
+              ""
+            ],
             "implementation_notes": [
               "Use page-specific details.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -316,7 +320,9 @@
               "Add specific proof points to the service page.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
             ],
-            "example_copy": "Our team documents the service scope before work begins.",
+            "example_copy": [
+              "Our team documents the service scope before work begins."
+            ],
             "implementation_notes": [
               "Use page-specific details.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -344,7 +350,9 @@
               "Add specific proof points on the service page.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
             ],
-            "example_copy": "",
+            "example_copy": [
+              ""
+            ],
             "implementation_notes": [
               "Use page-specific details.",
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -376,7 +384,9 @@
             "Add specific proof points to the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -404,7 +414,9 @@
             "Add specific proof points on the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "",
+          "example_copy": [
+            ""
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -433,7 +445,9 @@
             "Add specific proof points to the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -461,7 +475,9 @@
             "Add specific proof points on the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "",
+          "example_copy": [
+            ""
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -490,7 +506,9 @@
             "Add specific proof points to the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -518,7 +536,9 @@
             "Add specific proof points on the service page.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
           ],
-          "example_copy": "",
+          "example_copy": [
+            ""
+          ],
           "implementation_notes": [
             "Use page-specific details.",
             "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -554,7 +574,9 @@
                 "Add specific proof points to the service page.",
                 "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
               ],
-              "example_copy": "Our team documents the service scope before work begins.",
+              "example_copy": [
+                "Our team documents the service scope before work begins."
+              ],
               "implementation_notes": [
                 "Use page-specific details.",
                 "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
@@ -582,7 +604,9 @@
                 "Add specific proof points on the service page.",
                 "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."
               ],
-              "example_copy": "",
+              "example_copy": [
+                ""
+              ],
               "implementation_notes": [
                 "Use page-specific details.",
                 "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely."

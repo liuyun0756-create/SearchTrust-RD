@@ -25,7 +25,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
-from app.core.task_store import delete_state, get_state, set_state, subscribe
+from app.core.task_store import SSE_HEARTBEAT, delete_state, get_state, set_state, subscribe
 from app.models.request import AnalyzeRequest
 from app.models.response import (
     ErrorResponse,
@@ -257,9 +257,16 @@ async def stream_task_status(
         )
 
     async def _event_generator():
-        async for state in subscribe(task_id, timeout=300.0):
+        async for state in subscribe(
+            task_id,
+            timeout=settings.TASK_STREAM_TIMEOUT,
+            heartbeat_interval=settings.TASK_STREAM_HEARTBEAT_INTERVAL,
+        ):
             if await request.is_disconnected():
                 break
+            if state is SSE_HEARTBEAT:
+                yield ": keepalive\n\n"
+                continue
             yield f"data: {json.dumps(state)}\n\n"
         # Send a final comment to signal stream end (helps some clients)
         yield ": stream closed\n\n"
@@ -322,7 +329,7 @@ async def delete_task(
 async def get_report_meta(
     url: str,
     page_type: str,
-    gbp_url: str,
+    gbp_url: str = "",
 ) -> ReportMetaResponse:
     """
     Generate report metadata server-side using Beijing time (UTC+8).

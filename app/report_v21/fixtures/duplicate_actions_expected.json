@@ -155,7 +155,9 @@
               "This is a repeated implementation note that is intentionally longer than one hundred and twenty characters so the deterministic array-only long text dedupe rule can remove later copies safely.",
               "Add specific proof points on the service page."
             ],
-            "example_copy": "Our team documents the service scope before work begins.",
+            "example_copy": [
+              "Our team documents the service scope before work begins."
+            ],
             "implementation_notes": [
               "Use page-specific details."
             ],
@@ -284,7 +286,9 @@
               "Add specific proof points to the service page.",
               "Add specific proof points on the service page."
             ],
-            "example_copy": "Our team documents the service scope before work begins.",
+            "example_copy": [
+              "Our team documents the service scope before work begins."
+            ],
             "implementation_notes": [
               "Use page-specific details."
             ],
@@ -315,7 +319,9 @@
             "Add specific proof points to the service page.",
             "Add specific proof points on the service page."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details."
           ],
@@ -343,7 +349,9 @@
             "Add specific proof points to the service page.",
             "Add specific proof points on the service page."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details."
           ],
@@ -371,7 +379,9 @@
             "Add specific proof points to the service page.",
             "Add specific proof points on the service page."
           ],
-          "example_copy": "Our team documents the service scope before work begins.",
+          "example_copy": [
+            "Our team documents the service scope before work begins."
+          ],
           "implementation_notes": [
             "Use page-specific details."
           ],
@@ -406,7 +416,9 @@
                 "Add specific proof points to the service page.",
                 "Add specific proof points on the service page."
               ],
-              "example_copy": "Our team documents the service scope before work begins.",
+              "example_copy": [
+                "Our team documents the service scope before work begins."
+              ],
               "implementation_notes": [
                 "Use page-specific details."
               ],

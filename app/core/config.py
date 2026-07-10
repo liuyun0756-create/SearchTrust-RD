@@ -54,8 +54,12 @@ class Settings(BaseSettings):
     SCRAPER_MIN_CONTENT_LENGTH: int = Field(default=300)
 
     # ── Dify streaming ────────────────────────────────────────────────────────
-    DIFY_STREAM_TIMEOUT: int = Field(default=300)
+    DIFY_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=1800)] = Field(default=1200)
     DIFY_RETRY: Annotated[int, Field(ge=0, le=5)] = Field(default=3)
+
+    # ── Task progress streaming ───────────────────────────────────────────────
+    TASK_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=3600)] = Field(default=1260)
+    TASK_STREAM_HEARTBEAT_INTERVAL: Annotated[int, Field(ge=5, le=60)] = Field(default=20)
 
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
