@@ -135,6 +135,34 @@ class ReportV21ContractTests(unittest.TestCase):
             "GBP was not checked in this report, so GBP alignment could not be verified.",
         )
 
+    def test_checked_gbp_overrides_unavailable_dify_narrative(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        report = payload["report_v2_1"]
+        report["primary_blocking_layer"]["reason"] = (
+            "The provided GBP data could not be reliably checked, so cross-platform "
+            "identity alignment could not be verified."
+        )
+        evidence = report["primary_blocking_layer"]["evidence_items"][0]
+        evidence["source_type"] = "not_available"
+        evidence["source_label"] = "GBP lookup error"
+        evidence["explanation"] = "The supplied GBP check failed."
+
+        normalized = self.normalize(payload, gbp_data={"name": "Spot On Plumbing"})
+        serialized = json.dumps(normalized)
+
+        self.assertEqual(normalized["gbp_status"]["status"], "checked")
+        self.assertEqual(
+            normalized["primary_blocking_layer"]["reason"],
+            "Backend-verified GBP data was available for this report. Specific alignment "
+            "claims are limited to the evidence shown.",
+        )
+        self.assertEqual(
+            normalized["primary_blocking_layer"]["evidence_items"][0]["source_type"],
+            "gbp",
+        )
+        self.assertNotIn("GBP lookup error", serialized)
+        self.assertNotIn("could not be reliably checked", serialized)
+
     def test_dedupe_preserves_example_copy_arrays(self):
         report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
         action = copy.deepcopy(report["layers"][0]["action_items"][0])

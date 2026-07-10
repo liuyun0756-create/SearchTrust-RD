@@ -14,6 +14,16 @@ GBP_EVIDENCE_UNVERIFIED_TEXT = (
     "GBP was not checked in this report, so GBP evidence could not be verified."
 )
 
+GBP_CHECKED_TEXT = (
+    "Backend-verified GBP data was available for this report. Specific alignment "
+    "claims are limited to the evidence shown."
+)
+
+GBP_EVIDENCE_CHECKED_TEXT = (
+    "Backend-verified GBP data was available, but this evidence item does not "
+    "state a specific comparison result without supporting evidence."
+)
+
 ENTITY_CONSISTENCY_ACTION_TEXT = (
     "Review the page, footer, contact page, and available business identity "
     "signals for consistency."
@@ -49,6 +59,29 @@ _BLOCKED_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Dify can conservatively describe GBP as unavailable even when the backend
+# scraper returned usable profile data. The backend-owned status is authoritative.
+CHECKED_GBP_CONTRADICTION_PHRASES: tuple[str, ...] = (
+    "GBP lookup error",
+    "GBP lookup errored",
+    "GBP check failed",
+    "supplied GBP check failed",
+    "could not be reliably checked",
+    "could not be reliably verified",
+    "could not be verified",
+    "could not be validated",
+    "could not be confirmed",
+    "no reliable GBP comparison was available",
+    "GBP alignment could not be verified",
+    "GBP data was not reliable enough",
+    "GBP data could not be reliably checked",
+)
+
+_CHECKED_CONTRADICTION_RE = re.compile(
+    "|".join(re.escape(phrase) for phrase in CHECKED_GBP_CONTRADICTION_PHRASES),
+    re.IGNORECASE,
+)
+
 
 def guard_gbp_claims(report_v2_1: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     """Return a sanitized report copy plus guard warnings."""
@@ -59,7 +92,7 @@ def guard_gbp_claims(report_v2_1: dict[str, Any]) -> tuple[dict[str, Any], list[
     status = gbp_status.get("status") if isinstance(gbp_status, dict) else None
 
     if status == "checked":
-        return report, warnings
+        return _sanitize_checked_gbp_claims(report), warnings
 
     guarded = _sanitize_value(report, warnings)
     if warnings and isinstance(guarded, dict):
@@ -92,6 +125,43 @@ def _sanitize_value(value: Any, warnings: list[str]) -> Any:
     if isinstance(value, dict):
         return _sanitize_dict(value, warnings)
     return value
+
+
+def _sanitize_checked_gbp_claims(value: Any) -> Any:
+    if isinstance(value, str):
+        return _sanitize_checked_text(value)
+    if isinstance(value, list):
+        return [_sanitize_checked_gbp_claims(item) for item in value]
+    if isinstance(value, dict):
+        return _sanitize_checked_dict(value)
+    return value
+
+
+def _sanitize_checked_dict(value: dict[str, Any]) -> dict[str, Any]:
+    source_label = value.get("source_label")
+    if isinstance(source_label, str) and _CHECKED_CONTRADICTION_RE.search(source_label):
+        rewritten = dict(value)
+        rewritten["source_type"] = "gbp"
+        rewritten["source_label"] = "Backend-verified GBP data"
+        rewritten["comparison_result"] = "not_checked"
+        rewritten["confidence"] = "medium"
+        rewritten["explanation"] = GBP_EVIDENCE_CHECKED_TEXT
+        return {
+            key: _sanitize_checked_gbp_claims(item)
+            for key, item in rewritten.items()
+        }
+    return {key: _sanitize_checked_gbp_claims(item) for key, item in value.items()}
+
+
+def _sanitize_checked_text(value: str) -> str:
+    if not _CHECKED_CONTRADICTION_RE.search(value):
+        return value
+
+    sentences = re.split(r"(?<=[.!?])\s+", value)
+    return " ".join(
+        GBP_CHECKED_TEXT if _CHECKED_CONTRADICTION_RE.search(sentence) else sentence
+        for sentence in sentences
+    )
 
 
 def _sanitize_dict(value: dict[str, Any], warnings: list[str]) -> dict[str, Any]:
