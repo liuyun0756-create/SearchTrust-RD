@@ -20,6 +20,7 @@ LayerKey = Literal[
 
 LayerStatus = Literal["good", "medium", "weak", "not_checked"]
 GBPStatusValue = Literal["checked", "not_checked", "not_found", "error"]
+GBPSource = Literal["user_provided", "system_discovered", "not_available"]
 ComparisonResult = Literal["match", "missing", "mismatch", "partial", "not_checked"]
 Confidence = Literal["high", "medium", "low"]
 EvidenceSourceType = Literal[
@@ -62,6 +63,7 @@ class _StrictModel(BaseModel):
 
 class GBPStatus(_StrictModel):
     status: GBPStatusValue
+    source: GBPSource = "not_available"
     gbp_url: str | None = None
     reason: str | None = None
 

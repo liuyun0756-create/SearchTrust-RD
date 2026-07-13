@@ -99,26 +99,42 @@ class ReportV21ContractTests(unittest.TestCase):
 
     def test_backend_owns_all_gbp_states(self):
         cases = {
-            "not_checked": {},
-            "checked": {"gbp_data": {"name": "Spot On Plumbing"}},
-            "not_found": {
+            "not_checked": ({}, "not_available"),
+            "checked": ({
+                "input_gbp_url": "https://maps.google.com/?cid=fixture",
+                "gbp_data": {"name": "Spot On Plumbing"},
+            }, "user_provided"),
+            "not_found": ({
                 "input_gbp_url": "https://www.google.com/maps?cid=fixture",
                 "gbp_lookup_attempted": True,
-            },
-            "error": {"gbp_error": "fixture timeout"},
+            }, "user_provided"),
+            "error": ({"gbp_error": "fixture timeout"}, "not_available"),
         }
 
-        for expected_status, overrides in cases.items():
+        for expected_status, (overrides, expected_source) in cases.items():
             with self.subTest(expected_status=expected_status):
                 report = self.normalize(
                     self.contract_compliant_projection(self.real_dify_output),
                     **overrides,
                 )
                 self.assertEqual(report["gbp_status"]["status"], expected_status)
+                self.assertEqual(report["gbp_status"]["source"], expected_source)
                 self.assertEqual(
                     report["data_coverage"]["gbp_checked"],
                     expected_status == "checked",
                 )
+
+    def test_system_discovered_gbp_is_checked_without_user_input(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            gbp_url="https://maps.google.com/?cid=discovered",
+            gbp_data={"name": "Spot On Plumbing"},
+            gbp_lookup_attempted=True,
+        )
+
+        self.assertEqual(report["gbp_status"]["status"], "checked")
+        self.assertEqual(report["gbp_status"]["source"], "system_discovered")
+        self.assertTrue(report["data_coverage"]["gbp_checked"])
 
     def test_unchecked_gbp_removes_alignment_assessment_language(self):
         payload = self.contract_compliant_projection(self.real_dify_output)

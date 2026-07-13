@@ -12,10 +12,12 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     gbp_error = _optional_str(context.get("gbp_error"))
     gbp_data = context.get("gbp_data")
     lookup_attempted = bool(context.get("gbp_lookup_attempted"))
+    source = _gbp_source(input_gbp_url, gbp_url, gbp_data)
 
     if gbp_error:
         return {
             "status": "error",
+            "source": source,
             "gbp_url": gbp_url,
             "reason": f"GBP lookup failed: {gbp_error}",
         }
@@ -23,6 +25,7 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     if _has_usable_gbp_data(gbp_data):
         return {
             "status": "checked",
+            "source": source,
             "gbp_url": gbp_url,
             "reason": None,
         }
@@ -30,13 +33,20 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     if not input_gbp_url:
         return {
             "status": "not_checked",
+            "source": source,
             "gbp_url": gbp_url,
-            "reason": "No GBP URL was provided by the user, so GBP alignment was not verified.",
+            "reason": (
+                "The system found a possible GBP link or business match, but did not receive usable GBP data, "
+                "so GBP alignment was not verified."
+                if source == "system_discovered"
+                else "No GBP URL was provided by the user, so GBP alignment was not verified."
+            ),
         }
 
     if input_gbp_url and not lookup_attempted:
         return {
             "status": "not_checked",
+            "source": source,
             "gbp_url": gbp_url or input_gbp_url,
             "reason": "A GBP URL was provided, but the backend did not confirm that GBP lookup was attempted.",
         }
@@ -44,6 +54,7 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     if input_gbp_url:
         return {
             "status": "not_found",
+            "source": source,
             "gbp_url": gbp_url or input_gbp_url,
             "reason": (
                 "GBP lookup appears to have been attempted, but no confident "
@@ -55,6 +66,7 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     if lookup_attempted:
         return {
             "status": "not_found",
+            "source": source,
             "gbp_url": gbp_url,
             "reason": (
                 "GBP lookup was attempted from extracted business information, "
@@ -64,9 +76,18 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
 
     return {
         "status": "not_checked",
+        "source": source,
         "gbp_url": gbp_url,
         "reason": "GBP lookup was not attempted because no GBP URL or usable lookup input was available.",
     }
+
+
+def _gbp_source(input_gbp_url: str | None, gbp_url: str | None, gbp_data: Any) -> str:
+    if input_gbp_url:
+        return "user_provided"
+    if gbp_url or _has_usable_gbp_data(gbp_data):
+        return "system_discovered"
+    return "not_available"
 
 
 def build_data_coverage(
