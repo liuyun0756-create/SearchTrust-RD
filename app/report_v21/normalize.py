@@ -10,10 +10,11 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.report_v21.coverage import build_data_coverage, build_gbp_status
+from app.report_v21.coverage import build_data_coverage, build_gbp_alignment, build_gbp_profile, build_gbp_status, build_schema_summary
+from app.report_v21.quality import validate_evidence_quality
 from app.report_v21.dedupe import dedupe_report_v21
 from app.report_v21.gbp_guard import BLOCKED_GBP_CLAIM_PHRASES
-from app.report_v21.models import LAYER_LABELS, REQUIRED_LAYER_KEYS, ReportV21
+from app.report_v21.models import LAYER_DISPLAY_LABELS, LAYER_LABELS, REQUIRED_LAYER_KEYS, ReportV21
 from app.report_v21.scoring import apply_deterministic_scoring
 from app.report_v21.validate import GOOGLE_CERTAINTY_PHRASES, OLD_LAYER_LABELS, validate_report_v21
 
@@ -78,6 +79,7 @@ class ReportV21OutputInvalid(RuntimeError):
         self.user_message = V21_OUTPUT_INVALID_MESSAGE
         self.validation_errors = validation_errors
         self.warnings = warnings or []
+        self.retryable = True
 
     def to_result(self, task_id: str | None = None) -> dict[str, Any]:
         return {
@@ -189,7 +191,9 @@ def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None 
         raise ReportV21OutputInvalid(errors, warnings)
 
     try:
-        report = _finalize_report(native_report, context, warnings, run_scoring=False)
+        # Native Dify output supplies narratives and evidence.  The app owns
+        # the assessment coverage, layer labels, and all aggregate score cards.
+        report = _finalize_report(native_report, context, warnings, run_scoring=True)
     except ValidationError as exc:
         raise ReportV21OutputInvalid(
             [f"Native report_v2_1 failed Pydantic validation: {exc.errors()}"],
@@ -204,6 +208,10 @@ def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None 
             if str(error).strip()
         ]
         raise ReportV21OutputInvalid(errors or ["Native report_v2_1 failed validation."], warnings)
+
+    quality_errors = validate_evidence_quality(report, context)
+    if quality_errors:
+        raise ReportV21OutputInvalid(quality_errors, warnings)
 
     return {"report_v2_1": report}
 
@@ -282,6 +290,9 @@ def _finalize_report(
     report["page_type"] = _context_str(context, "page_type", "unknown")
     report["generated_at"] = _context_str(context, "generated_at", _now_iso())
     report["gbp_status"] = build_gbp_status(context)
+    report["gbp_profile"] = build_gbp_profile(context)
+    report["gbp_alignment"] = build_gbp_alignment(context)
+    report["schema_summary"] = build_schema_summary(context)
     report["data_coverage"] = build_data_coverage(context, warnings)
 
     model = ReportV21.model_validate(report)
@@ -384,7 +395,7 @@ def _safe_fallback_report(context: dict[str, Any], warnings: list[str]) -> dict[
             "layer_id": idx,
             "layer_key": key,
             "layer_name": label,
-            "layer_label": label,
+            "layer_label": LAYER_DISPLAY_LABELS[key],
             "status": "not_checked",
             "checked_rule_ids": [],
             "triggered_rule_ids": [],
@@ -448,7 +459,7 @@ def _layers_from_legacy(module_4: dict[str, Any]) -> list[dict[str, Any]]:
             "layer_id": idx,
             "layer_key": key,
             "layer_name": str(legacy.get("layer_name") or label),
-            "layer_label": label,
+            "layer_label": LAYER_DISPLAY_LABELS[key],
             "status": status,
             "checked_rule_ids": [],
             "triggered_rule_ids": [],

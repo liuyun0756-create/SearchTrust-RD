@@ -68,3 +68,13 @@ alter table reports
 - 验证结果：测试、生产任务 ID、持久化状态、网页与 PDF 结果。
 
 当不存在数据库变更时，也必须明确写出“本次无数据库字段或迁移变更”。
+
+## 6. v2.1 Evidence And Agency PDF Scope (2026-07)
+
+The current v2.1 evidence-quality, GBP profile/alignment, schema summary, coverage,
+and Lite Agency PDF changes all remain inside the existing `reports.report_v2_1`
+JSONB payload or the request used to render one PDF.
+
+- **Database action for this release:** none, provided `reports.report_v2_1 jsonb null` already exists in the target Supabase project.
+- **Lite Agency PDF:** agency name, client name, footer note, and a locally uploaded PNG/JPEG logo are used only for the export request. They are not stored in Supabase, object storage, or a new table.
+- **Future manual database handoff is required before implementation** if the product adds saved agency profiles, persisted logos, reusable client branding, share links, external-source history, or any new report column. Codex must first provide the table/field list and executable SQL under section 2.

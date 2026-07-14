@@ -74,6 +74,7 @@ class _RetryablePluginError(Exception):
 # Type aliases
 # ─────────────────────────────────────────────────────────────────────────────
 ProgressCallback = Callable[[str, int, str], Awaitable[None]]
+OutputValidator = Callable[[dict[str, Any]], None]
 """
 Async callable signature: (stage: str, percent: int, message: str) -> None
 """
@@ -276,6 +277,7 @@ async def call_dify_workflow(
     task_id: str,
     progress_callback: Optional[ProgressCallback] = None,
     gbp_url: str = "",
+    output_validator: Optional[OutputValidator] = None,
 ) -> dict[str, Any]:
     """
     Call the Dify SEO analysis workflow and return the final report.
@@ -363,6 +365,8 @@ async def call_dify_workflow(
                 raise RuntimeError(
                     "Dify workflow_finished event received no outputs"
                 )
+            if output_validator:
+                output_validator(result)
 
             logger.info(
                 "Dify workflow completed — task_id=%s attempt=%d",
@@ -413,18 +417,27 @@ async def call_dify_workflow(
                 logger.debug("Retrying Dify in %ds…", wait)
                 await asyncio.sleep(wait)
 
-        except (RuntimeError, asyncio.TimeoutError) as exc:
-            # Non-transient failure (bad payload, missing outputs, logic error).
-            # Raise immediately so the pipeline can mark the task as failed.
-            logger.warning(
-                "Dify non-transient error attempt %d/%d — task_id=%s: %s (not retrying inline)",
-                attempt,
-                settings.DIFY_RETRY,
-                task_id,
-                exc,
-            )
+        except Exception as exc:  # noqa: BLE001
+            # Native report contract failures are retryable workflow-output
+            # failures. Re-run the complete Dify workflow against the same
+            # scraped inputs rather than persisting a confident incomplete report.
+            if getattr(exc, "retryable", False):
+                last_exc = exc
+                logger.warning(
+                    "Dify output rejected attempt %d/%d — task_id=%s: %s",
+                    attempt,
+                    settings.DIFY_RETRY,
+                    task_id,
+                    exc,
+                )
+                if attempt < settings.DIFY_RETRY:
+                    wait = 2 ** attempt
+                    await asyncio.sleep(wait)
+                continue
             raise
 
+    if getattr(last_exc, "retryable", False):
+        raise last_exc
     raise RuntimeError(
         f"Dify workflow failed after {settings.DIFY_RETRY} attempts "
         f"for task_id={task_id}: {last_exc}"

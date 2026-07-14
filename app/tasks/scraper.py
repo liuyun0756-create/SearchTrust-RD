@@ -963,6 +963,55 @@ async def fetch_gbp_data(
         return {}
 
 
+def extract_schema_summary(html: str) -> list[str]:
+    """Return unique JSON-LD @type values from an HTML response."""
+    types: list[str] = []
+    for script in re.findall(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        try:
+            parsed = json.loads(script.strip())
+        except json.JSONDecodeError:
+            continue
+        for item in _schema_records(parsed):
+            value = item.get("@type")
+            candidates = value if isinstance(value, list) else [value]
+            for candidate in candidates:
+                if isinstance(candidate, str) and candidate.strip() and candidate.strip() not in types:
+                    types.append(candidate.strip())
+    return types
+
+
+def _schema_records(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, list):
+        return [record for item in value for record in _schema_records(item)]
+    if not isinstance(value, dict):
+        return []
+    records = [value]
+    graph = value.get("@graph")
+    if isinstance(graph, list):
+        records.extend(record for item in graph for record in _schema_records(item))
+    return records
+
+
+async def fetch_schema_summary(url: str) -> dict[str, Any] | None:
+    """Inspect JSON-LD from the page response without making schema claims on failure."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(20.0),
+            follow_redirects=True,
+            headers={"User-Agent": random.choice(_USER_AGENTS), "Accept": "text/html,application/xhtml+xml"},
+        ) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+        return {"checked": True, "source_url": str(response.url), "types": extract_schema_summary(response.text)}
+    except Exception as exc:  # noqa: BLE001
+        logger.info("[Schema] unavailable url=%s: %s", url, exc)
+        return None
+
+
 def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
     """Normalise a SerpAPI result dict into a consistent GBP info structure."""
     type_val = r.get("type", "")
@@ -1351,6 +1400,9 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         raw_content_length, appended,
     )
 
+    # ── Schema / GBP: inspect available structured sources without blocking the audit ──
+    schema_data = await fetch_schema_summary(url)
+
     # ── GBP: if data_id in gbp_url, run in parallel with business info ────────
     gbp_prefetch: Optional[dict[str, Any]] = None
     gbp_lookup_attempted = False
@@ -1416,6 +1468,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp_url":            gbp_url,
         "gbp_lookup_attempted": gbp_lookup_attempted,
         "gbp_error":          gbp_error,
+        "schema":             schema_data,
         "scraper_source":     scraper_source,
         "sub_pages":          appended,
     }

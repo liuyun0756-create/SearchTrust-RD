@@ -5,6 +5,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from app.report_v21.models import LAYER_DISPLAY_LABELS
+
 
 REQUIRED_LAYER_KEYS: tuple[str, ...] = (
     "foundation",
@@ -70,7 +72,7 @@ def calculate_layer_status(layer_key: str, triggered_rule_ids: list[int]) -> str
 
 
 def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str, Any], list[str], bool]:
-    """Update layer statuses when triggered_rule_ids are available."""
+    """Apply the fixed eight-layer assessment contract to a report."""
     report = copy.deepcopy(report_v2_1)
     warnings: list[str] = []
     all_available = True
@@ -93,9 +95,17 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
             warnings.append("Layer status kept from model output because triggered_rule_ids were unavailable.")
             continue
 
-        if not isinstance(layer.get("checked_rule_ids"), list) or not layer.get("checked_rule_ids"):
-            layer["checked_rule_ids"] = list(LAYER_RULES[layer_key])
-        layer["triggered_rule_ids"] = _int_list(triggered)
+        incoming_triggered = _int_list(triggered)
+        allowed_rule_ids = set(LAYER_RULES[layer_key])
+        layer["layer_id"] = REQUIRED_LAYER_KEYS.index(layer_key) + 1
+        layer["layer_name"] = LAYER_LABELS[layer_key]
+        layer["layer_label"] = LAYER_DISPLAY_LABELS[layer_key]
+        # Assessment coverage is fixed by the backend.  Dify's checked ids are
+        # not a reliable coverage counter and must not affect the UI or scoring.
+        layer["checked_rule_ids"] = list(LAYER_RULES[layer_key])
+        layer["triggered_rule_ids"] = [rule_id for rule_id in incoming_triggered if rule_id in allowed_rule_ids]
+        if len(layer["triggered_rule_ids"]) != len(incoming_triggered):
+            warnings.append(f"Ignored triggered rule ids outside {layer_key}'s fixed assessment scope.")
         layer["status"] = calculate_layer_status(layer_key, layer["triggered_rule_ids"])
 
     return report, _dedupe_strings(warnings), all_available
@@ -129,16 +139,18 @@ def calculate_ranking_potential(layers: list[dict[str, Any]]) -> dict[str, str]:
     key_layers = ("foundation", "entity_presence", "page_unique_value", "algorithm_fit")
     counts = _count_statuses(statuses, key_layers)
 
-    if counts["good"] >= 3:
-        level, label = "strong", "Strong Competitive Potential"
+    # Severe gaps take precedence so a small number of good layers cannot hide
+    # a structurally weak competitive foundation.
+    if counts["weak"] >= 3:
+        level, label = "low", "Low potential"
+    elif counts["good"] >= 3:
+        level, label = "strong", "Strong competitive potential"
     elif counts["good"] >= 2:
-        level, label = "improvable", "Improvable"
+        level, label = "improvable", "Room to improve"
     elif counts["medium"] >= 3:
-        level, label = "competitive", "Competitive"
-    elif counts["weak"] >= 3:
-        level, label = "low", "Low"
+        level, label = "competitive", "Able to compete"
     else:
-        level, label = "competitive", "Competitive"
+        level, label = "competitive", "Able to compete"
 
     return {
         "label": label,
@@ -225,10 +237,10 @@ def calculate_page_level(layers: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def apply_deterministic_scoring(report_v2_1: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
-    """Apply deterministic scoring when enough rule data exists."""
+    """Apply backend-owned scoring and presentation fields to a complete report."""
     scored_report, warnings, all_available = calculate_all_layer_statuses(report_v2_1)
     if not all_available:
-        warnings.append("Deterministic aggregate scoring skipped because triggered_rule_ids were incomplete.")
+        warnings.append("Deterministic aggregate scoring skipped because one or more layers were unavailable.")
         return scored_report, _dedupe_strings(warnings)
 
     layers = scored_report.get("layers")

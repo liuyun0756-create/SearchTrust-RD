@@ -196,6 +196,91 @@ class ReportV21ContractTests(unittest.TestCase):
         )
         self.assertTrue(warnings)
 
+    def test_backend_overrides_layer_labels_and_assessment_coverage(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        layers = payload["report_v2_1"]["layers"]
+        specificity = next(layer for layer in layers if layer["layer_key"] == "specificity")
+        specificity["layer_name"] = "Dify supplied label"
+        specificity["layer_label"] = "L1 wrong numbering"
+        specificity["checked_rule_ids"] = [1, 2, 4, 6, 7, 8, 32]
+
+        report = self.normalize(payload)
+        scored_specificity = next(layer for layer in report["layers"] if layer["layer_key"] == "specificity")
+
+        self.assertEqual(scored_specificity["layer_id"], 4)
+        self.assertEqual(scored_specificity["layer_name"], "Specificity")
+        self.assertEqual(scored_specificity["layer_label"], "L4 Specificity")
+        self.assertEqual(scored_specificity["checked_rule_ids"], [1, 2, 4, 6, 7, 8, 32, 34, 35, 36])
+
+    def test_backend_ranking_potential_uses_confirmed_priority(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        rules_by_layer = {
+            "foundation": [17, 18, 19, 20],
+            "entity_presence": [21, 22, 23, 24, 25],
+            "entity_consistency": [],
+            "specificity": [],
+            "real_world_connection": [],
+            "accountability": [],
+            "page_unique_value": [13, 14, 16],
+            "algorithm_fit": [15, 37, 38, 39],
+        }
+        for layer in payload["report_v2_1"]["layers"]:
+            layer["triggered_rule_ids"] = rules_by_layer[layer["layer_key"]]
+
+        report = self.normalize(payload)
+
+        self.assertEqual(report["ranking_potential"]["level"], "low")
+        self.assertEqual(report["ranking_potential"]["label"], "Low potential")
+
+    def test_material_issue_without_direct_evidence_is_retryable_invalid_output(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        report = payload["report_v2_1"]
+        issue = next(issue for issue in report["key_issues"] if issue["severity"] in {"high", "medium"})
+        issue["evidence_items"] = []
+        issue["recommended_actions"] = []
+        layer = next(layer for layer in report["layers"] if layer["layer_key"] == issue["affected_layer"])
+        layer["evidence_items"] = []
+
+        with self.assertRaises(ReportV21OutputInvalid) as raised:
+            self.normalize(payload)
+
+        self.assertTrue(raised.exception.retryable)
+        self.assertIn("requires", " ".join(raised.exception.validation_errors))
+
+    def test_backend_adds_verified_gbp_profile_and_conservative_alignment_rows(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            input_gbp_url="https://maps.google.com/?cid=fixture",
+            gbp_url="https://maps.google.com/?cid=fixture",
+            business={"name": "Spot On Plumbing", "phone": "(918) 818-3901"},
+            gbp_data={
+                "name": "Spot On Plumbing",
+                "phone": "918 818 3901",
+                "address": "1911 W Reno St, Broken Arrow, OK 74012",
+                "website": "https://spotonplumbing.com/",
+                "type": "Plumber",
+                "hours": "Open 24 hours",
+                "rating": "4.9",
+                "reviews": "2180",
+                "service_areas": ["Tulsa", "Broken Arrow"],
+            },
+        )
+
+        self.assertEqual(report["gbp_profile"]["name"], "Spot On Plumbing")
+        self.assertEqual(report["gbp_profile"]["categories"], ["Plumber"])
+        rows = {row["field_key"]: row for row in report["gbp_alignment"]}
+        self.assertEqual(rows["phone"]["status"], "match")
+        self.assertEqual(rows["address"]["status"], "not_checked")
+
+    def test_backend_exposes_only_checked_schema_summary(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            schema_data={"checked": True, "source_url": "https://spotonplumbing.com/emergency-services/", "types": ["LocalBusiness", "Service"]},
+        )
+
+        self.assertTrue(report["data_coverage"]["schema_checked"])
+        self.assertEqual(report["schema_summary"]["types"], ["LocalBusiness", "Service"])
+
     def contract_compliant_projection(self, payload):
         """Model the shape Dify must emit after replacing legacy string actions."""
         projected = copy.deepcopy(payload)

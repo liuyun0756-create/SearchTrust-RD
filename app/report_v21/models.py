@@ -56,6 +56,19 @@ LAYER_LABELS: dict[str, str] = {
     "algorithm_fit": "Algorithm Fit",
 }
 
+# These labels are owned by the application contract.  Dify may provide useful
+# layer narratives, but it must not be allowed to rename or renumber the model.
+LAYER_DISPLAY_LABELS: dict[str, str] = {
+    "foundation": "L1 Foundation",
+    "entity_presence": "L2 Entity Presence",
+    "entity_consistency": "L3 Entity Consistency",
+    "specificity": "L4 Specificity",
+    "real_world_connection": "L5 Real-World Connection",
+    "accountability": "L6 Accountability",
+    "page_unique_value": "L7 Page Unique Value",
+    "algorithm_fit": "L8 Algorithm Fit",
+}
+
 
 class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -77,7 +90,42 @@ class DataCoverage(_StrictModel):
     reviews_checked: bool
     internal_pages_checked: bool
     competitor_pages_checked: bool
+    citations_checked: bool = False
+    geo_grid_checked: bool = False
     limitations: list[str] = Field(default_factory=list)
+
+
+class GBPProfileSnapshot(_StrictModel):
+    """Backend-derived GBP fields that were actually available to this audit."""
+
+    name: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    hours: str | None = None
+    rating: str | None = None
+    review_count: str | None = None
+    service_areas: list[str] = Field(default_factory=list)
+
+
+class GBPAlignmentRow(_StrictModel):
+    """A deterministic field-level comparison between the page and GBP."""
+
+    field_key: Literal["name", "phone", "address", "website", "service_area"]
+    field_label: str
+    page_value: str | None = None
+    gbp_value: str | None = None
+    status: ComparisonResult
+    impact: str
+    suggested_fix: str
+    related_layer_keys: list[LayerKey] = Field(default_factory=list)
+
+
+class SchemaSummary(_StrictModel):
+    checked: bool
+    source_url: str | None = None
+    types: list[str] = Field(default_factory=list)
 
 
 class OverallStatus(_StrictModel):
@@ -203,6 +251,9 @@ class ReportV21(_StrictModel):
     page_type: str = Field(min_length=1)
     generated_at: str = Field(min_length=1)
     gbp_status: GBPStatus
+    gbp_profile: GBPProfileSnapshot | None = None
+    gbp_alignment: list[GBPAlignmentRow] = Field(default_factory=list)
+    schema_summary: SchemaSummary | None = None
     data_coverage: DataCoverage
     overall_status: OverallStatus
     ranking_potential: RankingPotential
