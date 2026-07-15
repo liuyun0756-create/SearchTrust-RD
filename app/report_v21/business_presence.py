@@ -177,7 +177,7 @@ def _build_comparisons(page: dict[str, Any], gbp: dict[str, Any], gbp_status: st
         ("phone", "Phone", "phone", "phone"),
         ("address", "Address", "address", "text"),
         ("website", "Website", "website", "url"),
-        ("opening_hours", "Opening hours", "hours", "text"),
+        ("opening_hours", "Opening hours", "hours", "hours"),
         ("service_area", "Service area", "service_areas", "service_area"),
         ("categories", "Categories / service intent", "categories", "tokens"),
     )
@@ -570,6 +570,8 @@ def _normalize(value: Any, mode: str) -> str:
     if mode == "url":
         parsed = urlparse(text if "://" in text else f"https://{text}")
         return parsed.netloc.lower().removeprefix("www.").rstrip("/")
+    if mode == "hours" and re.search(r"(?:\b24\s*/\s*7\b|\bopen\s+24\s+hours\b)", text, re.IGNORECASE):
+        return "open 24 7"
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
 

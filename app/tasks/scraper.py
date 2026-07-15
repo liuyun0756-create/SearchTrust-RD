@@ -663,7 +663,8 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
 
     # H2/H3 with "Choose/Trust/About [Business Name]"
     m = re.search(
-        r"##\s+(?:Why|How|About).*?(?:Choose|Trust|Love|Prefer)\s+([A-Z][A-Za-z0-9\s&\-\.']{2,50}?)(?:\n|$|\?)",
+        r"##\s+(?:Why|How|About).*?(?:Choose|Trust|Love|Prefer)\s+"
+        r"([A-Z][A-Za-z0-9\s&\-\.']{2,50}?)(?:['’][sS]\b|\n|$|\?)",
         content, re.IGNORECASE
     )
     if m:

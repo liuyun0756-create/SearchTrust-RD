@@ -5,6 +5,7 @@ from app.report_v21.business_presence import (
     build_business_presence_audit,
 )
 from app.tasks.pipeline import _build_dify_gbp_payload
+from app.tasks.scraper import extract_business_info
 
 
 class BusinessPresenceAuditTests(unittest.TestCase):
@@ -216,6 +217,24 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(rows["opening_hours"]["status"], "missing")
         self.assertIsNone(rows["service_area"]["page_value"])
         self.assertEqual(rows["service_area"]["status"], "not_checked")
+
+    def test_24_7_page_claim_matches_daily_open_24_hours_profile(self):
+        context = self.base_context()
+        context["page_content"] = "## Why Choose Example Plumbing's 24/7 Plumbers\n"
+        context["gbp_data"]["hours"] = [
+            {day: "Open 24 hours"}
+            for day in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+        ]
+
+        audit = build_business_presence_audit(context)
+        hours = next(row for row in audit["gbp_page_alignment"] if row["key"] == "opening_hours")
+
+        self.assertEqual(hours["status"], "match")
+
+    def test_business_name_supports_curly_possessive_headings(self):
+        info = extract_business_info("## WHY CHOOSE SPOT ON PLUMBING’S 24/7 PLUMBERS\n")
+
+        self.assertEqual(info["name"], "SPOT ON PLUMBING")
 
     def test_alignment_evidence_reuses_ids_without_changing_rule_fields(self):
         context = self.base_context()
