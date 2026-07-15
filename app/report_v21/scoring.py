@@ -41,6 +41,47 @@ LAYER_RULES: dict[str, list[int]] = {
     "algorithm_fit": [15, 37, 38, 39],
 }
 
+RULE_FINDING_LABELS: dict[int, str] = {
+    1: "City references can be swapped without changing the page meaning",
+    2: "Service descriptions remain highly generic",
+    3: "No non-administrative geographic or entity anchor is present",
+    4: "No meaningful time or activity trace is present",
+    6: "Visual content appears reusable or template-based",
+    7: "The page lacks first-person action and concrete work detail",
+    8: "Calls to action remain generic",
+    9: "The page serves search demand without showing operational responsibility",
+    10: "Real-world constraints and complex cases are not addressed",
+    11: "No externally verifiable trust clue is present",
+    12: "Accountability for real-world outcomes is unclear",
+    13: "The page belongs to a highly similar page cluster",
+    14: "The page lacks a clear reason to be indexed separately",
+    15: "The page pattern relies on legacy authority more than current trust signals",
+    16: "The page exists mainly to cover search demand",
+    17: "The business name narrows how the entity can be interpreted",
+    18: "The claimed service exceeds the entity's primary category",
+    19: "Entity identity varies across the site",
+    20: "The page targets a query space where entity qualification is unclear",
+    21: "An identifiable real business entity is not clearly present",
+    22: "A physical address was not found",
+    23: "A contact phone number was not found",
+    24: "The service area is not clearly declared",
+    25: "Business hours were not found",
+    26: "The business name does not align with the checked GBP record",
+    27: "The address does not align with the checked GBP record",
+    28: "The phone number does not align with the checked GBP record",
+    29: "The service area does not align with the checked GBP record",
+    30: "Community-level geographic detail was not found",
+    31: "A concrete landmark reference was not found",
+    32: "Local context language was not found",
+    33: "A service radius or operational boundary is not defined",
+    34: "A specific service case was not found",
+    35: "Customer context is not described",
+    36: "Meaningful time context is not present",
+    37: "Reviews lack specific service detail",
+    38: "Reviews lack geographic context",
+    39: "Review service topics do not align with the page focus",
+}
+
 LAYER_THRESHOLDS: dict[str, tuple[range, range, range]] = {
     "foundation": (range(0, 2), range(2, 3), range(3, 5)),
     "entity_presence": (range(0, 2), range(2, 4), range(4, 6)),
@@ -104,6 +145,11 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
         # not a reliable coverage counter and must not affect the UI or scoring.
         layer["checked_rule_ids"] = list(LAYER_RULES[layer_key])
         layer["triggered_rule_ids"] = [rule_id for rule_id in incoming_triggered if rule_id in allowed_rule_ids]
+        layer["triggered_findings"] = [
+            RULE_FINDING_LABELS[rule_id]
+            for rule_id in layer["triggered_rule_ids"]
+            if rule_id in RULE_FINDING_LABELS
+        ]
         if len(layer["triggered_rule_ids"]) != len(incoming_triggered):
             warnings.append(f"Ignored triggered rule ids outside {layer_key}'s fixed assessment scope.")
         layer["status"] = calculate_layer_status(layer_key, layer["triggered_rule_ids"])
@@ -123,7 +169,7 @@ def calculate_overall_status(layers: list[dict[str, Any]]) -> dict[str, str]:
     elif weak_count <= 1 and good_count <= 2:
         level, label = "medium", "Medium"
     elif good_count >= 3 and weak_count == 0:
-        level, label = "strong", "Strong"
+        level, label = "strong", "Good"
     else:
         level, label = "medium_weak", "Medium Weak"
 
@@ -142,15 +188,15 @@ def calculate_ranking_potential(layers: list[dict[str, Any]]) -> dict[str, str]:
     # Severe gaps take precedence so a small number of good layers cannot hide
     # a structurally weak competitive foundation.
     if counts["weak"] >= 3:
-        level, label = "low", "Low potential"
+        level, label = "low", "Low Potential"
     elif counts["good"] >= 3:
-        level, label = "strong", "Strong competitive potential"
+        level, label = "strong", "Strong Competitive Potential"
     elif counts["good"] >= 2:
-        level, label = "improvable", "Room to improve"
+        level, label = "improvable", "Improvement Potential"
     elif counts["medium"] >= 3:
-        level, label = "competitive", "Able to compete"
+        level, label = "competitive", "Competitive"
     else:
-        level, label = "competitive", "Able to compete"
+        level, label = "competitive", "Competitive"
 
     return {
         "label": label,
@@ -225,14 +271,22 @@ def calculate_page_level(layers: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         label = "Medium"
 
+    description = _page_level_description(label)
+    strengths = _layer_names_by_status(statuses, {"good"})
+    limitations = [
+        *_layer_names_by_status(statuses, {"weak"}),
+        *_layer_names_by_status(statuses, {"medium"}),
+    ]
     return {
         "label": label,
-        "what_it_looks_like": _page_level_description(label),
-        "strengths": _layer_names_by_status(statuses, {"good"}),
-        "missing_elements": [
-            *_layer_names_by_status(statuses, {"weak"}),
-            *_layer_names_by_status(statuses, {"medium"}),
-        ],
+        "what_it_looks_like": description,
+        "strengths": strengths,
+        "missing_elements": limitations,
+        "current_assessment": description,
+        "existing_foundation": _page_foundation_summary(strengths),
+        "main_limitation": _page_limitation_summary(limitations),
+        "likely_search_outcome": _page_search_outcome(label),
+        "competitive_interpretation": _page_competitive_interpretation(label),
     }
 
 
@@ -251,7 +305,20 @@ def apply_deterministic_scoring(report_v2_1: dict[str, Any]) -> tuple[dict[str, 
     scored_report["overall_status"] = calculate_overall_status(layers)
     scored_report["ranking_potential"] = calculate_ranking_potential(layers)
     scored_report["risk_level"] = calculate_risk_level(layers)
-    scored_report["page_level"] = calculate_page_level(layers)
+    incoming_page_level = scored_report.get("page_level")
+    page_level = calculate_page_level(layers)
+    if isinstance(incoming_page_level, dict):
+        for field in (
+            "current_assessment",
+            "existing_foundation",
+            "main_limitation",
+            "likely_search_outcome",
+            "competitive_interpretation",
+        ):
+            value = incoming_page_level.get(field)
+            if isinstance(value, str) and value.strip():
+                page_level[field] = value.strip()
+    scored_report["page_level"] = page_level
     return scored_report, _dedupe_strings(warnings)
 
 
@@ -289,27 +356,33 @@ def _layer_names_by_status(statuses: dict[str, str], target_statuses: set[str]) 
 
 
 def _overall_explanation(level: str, counts: dict[str, int]) -> str:
-    return (
-        f"Deterministic scoring classified the page as {level.replace('_', ' ')} "
-        f"from {counts['good']} good, {counts['medium']} medium, and {counts['weak']} weak layers."
-    )
+    explanations = {
+        "weak": "The page has significant structural trust gaps. Core foundations should be repaired before advanced optimization.",
+        "medium_weak": "The page has some local relevance, but its trust structure is still incomplete and ranking stability remains weak.",
+        "medium": "The page has workable foundations, but several important trust layers still need strengthening before performance can become stable.",
+        "strong": "The page has a complete trust foundation and a solid base for local competition.",
+    }
+    return explanations[level]
 
 
 def _ranking_explanation(level: str) -> str:
     explanations = {
-        "strong": "Key competitive layers are mostly good, indicating strong competitive potential.",
-        "improvable": "Some key competitive layers are good, but additional layer work can improve potential.",
-        "competitive": "Key competitive layers are mostly medium, so the page can compete with improvements.",
-        "low": "Key competitive layers are mostly weak, limiting stable competitive potential.",
+        "strong": "The page has a solid foundation and, with further optimization, can move into a stronger competitive tier.",
+        "improvable": "The page has an existing competitive foundation. Strengthening the remaining key layers can improve ranking potential.",
+        "competitive": "The page can participate in local competition, but its main trust gaps should be repaired before expecting more stable performance.",
+        "low": "The competitive foundation is still insufficient, making stable local performance difficult in the near term.",
     }
     return explanations[level]
 
 
 def _risk_explanation(level: str, weak_count: int) -> str:
-    return (
-        f"Deterministic scoring found {weak_count} weak risk layers, "
-        f"resulting in a {level.replace('_', ' ')} risk level."
-    )
+    explanations = {
+        "high": "The page has major structural trust gaps that can materially limit visibility and stability.",
+        "medium_high": "The page has visible trust gaps that increase the likelihood of unstable performance until repaired.",
+        "medium": "The page has some weaknesses, but it still retains room for repair and optimization.",
+        "low": "The page does not show obvious structural trust weaknesses across the key risk layers.",
+    }
+    return explanations[level]
 
 
 def _page_level_description(label: str) -> str:
@@ -321,6 +394,40 @@ def _page_level_description(label: str) -> str:
         "High": "The page has strong trust signals across all eight layers.",
     }
     return descriptions[label]
+
+
+def _page_foundation_summary(strengths: list[str]) -> str:
+    if not strengths:
+        return "No trust layer is currently strong enough to serve as a dependable foundation."
+    return f"The strongest current foundations are {', '.join(strengths)}."
+
+
+def _page_limitation_summary(limitations: list[str]) -> str:
+    if not limitations:
+        return "No material layer limitation was identified by the current assessment."
+    return f"The main limitations are concentrated in {', '.join(limitations)}."
+
+
+def _page_search_outcome(label: str) -> str:
+    outcomes = {
+        "Low": "Stable visibility is unlikely until the core trust foundations are repaired.",
+        "Medium Weak": "The page may gain limited visibility, but performance is likely to remain unstable in stronger competition.",
+        "Medium": "The page can participate in relevant search results, but unresolved trust gaps may limit consistency.",
+        "Medium Strong": "The page is positioned to compete, with one remaining limitation preventing stronger stability.",
+        "High": "The page has the trust structure needed to compete more consistently, subject to normal market conditions.",
+    }
+    return outcomes[label]
+
+
+def _page_competitive_interpretation(label: str) -> str:
+    interpretations = {
+        "Low": "Competitors with clearer entity and real-world signals are likely to hold an advantage.",
+        "Medium Weak": "The page may compete in lower-pressure results but is vulnerable to pages with stronger local proof.",
+        "Medium": "The page has optimization value, but stronger competitors can still win through more complete trust signals.",
+        "Medium Strong": "The page is close to a strong competitive position and needs a focused final improvement.",
+        "High": "The page has a strong trust foundation for sustained local competition.",
+    }
+    return interpretations[label]
 
 
 def _int_list(values: Any) -> list[int]:

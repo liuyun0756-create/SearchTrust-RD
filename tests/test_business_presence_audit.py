@@ -65,6 +65,13 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(audit["review_audit"]["sample_size"], 2)
         self.assertEqual(audit["review_audit"]["owner_reply_rate"], 0.5)
         self.assertEqual(audit["review_audit"]["rating_distribution"], {"4": 1, "5": 1})
+        self.assertEqual(audit["review_audit"]["unanswered_count"], 1)
+        self.assertEqual(audit["review_audit"]["low_rating_count"], 0)
+        self.assertEqual(audit["review_audit"]["low_rating_unanswered_count"], 0)
+        self.assertEqual(audit["review_audit"]["detailed_positive_count"], 0)
+        self.assertTrue(audit["proposal_actions"])
+        self.assertEqual(audit["proposal_status"], "needs_attention")
+        self.assertFalse(any(action["business_area"] == "profile_activity" for action in audit["proposal_actions"]))
 
     def test_service_area_explicitly_empty_uses_missing_only_when_applicable(self):
         context = self.base_context()
@@ -105,12 +112,99 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(audit["review_audit"]["status"], "error")
         self.assertEqual(audit["review_audit"]["sample_size"], 0)
 
+    def test_low_rating_unanswered_review_becomes_high_priority_task(self):
+        context = self.base_context()
+        context["gbp_data"]["review_list"] = [{
+            "author": "Concerned customer",
+            "rating": 2,
+            "date": "yesterday",
+            "text": "The appointment window was missed and I did not receive an update.",
+            "owner_reply": "",
+        }]
+
+        audit = build_business_presence_audit(context)
+        review = audit["review_audit"]
+        action = next(item for item in audit["proposal_actions"] if item["id"] == "bp-action-low-rating-replies")
+
+        self.assertEqual(review["low_rating_count"], 1)
+        self.assertEqual(review["low_rating_unanswered_count"], 1)
+        self.assertEqual(action["priority"], "high")
+
+    def test_detailed_positive_review_is_counted_without_semantic_inference(self):
+        context = self.base_context()
+        context["gbp_data"]["review_list"] = [{
+            "author": "Customer",
+            "rating": 5,
+            "date": "last week",
+            "text": "The technician arrived on time, explained the repair clearly, protected the work area, and confirmed everything was operating before leaving.",
+            "owner_reply": "Thank you.",
+        }]
+
+        audit = build_business_presence_audit(context)
+
+        self.assertEqual(audit["review_audit"]["detailed_positive_count"], 1)
+        self.assertIn("bp-action-proof-candidates", {item["id"] for item in audit["proposal_actions"]})
+
+    def test_explicit_zero_activity_creates_tasks_but_missing_dates_do_not(self):
+        context = self.base_context()
+        context["gbp_data"]["photo_fetch"] = {"attempted": True, "count": 0, "latest_date": None, "error": None}
+        context["gbp_data"]["post_fetch"] = {"attempted": True, "count": 0, "latest_date": None, "error": None}
+
+        audit = build_business_presence_audit(context)
+        ids = {item["id"] for item in audit["proposal_actions"]}
+
+        self.assertIn("bp-action-add-photos", ids)
+        self.assertIn("bp-action-add-posts", ids)
+        self.assertFalse(any("inactive" in item["title"].lower() for item in audit["proposal_actions"]))
+
+    def test_unavailable_gbp_never_creates_comparison_or_profile_tasks(self):
+        context = self.base_context()
+        context.update({"input_gbp_url": None, "gbp_url": None, "gbp_lookup_attempted": False, "gbp_data": {}})
+
+        audit = build_business_presence_audit(context)
+
+        self.assertEqual(audit["proposal_status"], "limited")
+        self.assertFalse(audit["proposal_actions"])
+        self.assertTrue(all(row["status"] == "not_checked" for row in audit["gbp_page_alignment"]))
+
+    def test_fully_aligned_checked_data_does_not_create_false_tasks(self):
+        context = self.base_context()
+        context["page_content"] = (
+            "# Plumber\n\nExample Plumbing\n123 Main Street, Tulsa, OK 74101\n"
+            "(918) 555-0100\nOpen 24 hours\nServing Tulsa\n"
+        )
+        context["gbp_data"].update({
+            "address": "123 Main Street, Tulsa, OK 74101",
+            "hours": "Open 24 hours",
+            "service_areas": ["Tulsa"],
+            "service_areas_observed": True,
+            "service_area_business": True,
+            "categories": ["Plumber"],
+            "review_list": [{
+                "author": "Customer",
+                "rating": 5,
+                "date": "today",
+                "text": "Great work.",
+                "owner_reply": "Thank you.",
+            }],
+        })
+
+        audit = build_business_presence_audit(context)
+
+        self.assertFalse(any(item["business_area"] == "identity_alignment" for item in audit["proposal_actions"]))
+        self.assertFalse(any(item["business_area"] == "profile_activity" for item in audit["proposal_actions"]))
+        self.assertFalse(audit["proposal_actions"])
+
     def test_alignment_evidence_reuses_ids_without_changing_rule_fields(self):
         context = self.base_context()
         audit = build_business_presence_audit(context)
         report = {
+            "overall_status": {"label": "Medium", "level": "medium", "explanation": "Fixed score."},
+            "ranking_potential": {"label": "Competitive", "level": "competitive", "explanation": "Fixed score."},
+            "risk_level": {"label": "Medium", "level": "medium", "explanation": "Fixed score."},
             "layers": [{
                 "layer_key": "entity_consistency",
+                "status": "medium",
                 "checked_rule_ids": [26, 27, 28, 29],
                 "triggered_rule_ids": [27],
                 "evidence_items": [],
@@ -131,6 +225,10 @@ class BusinessPresenceAuditTests(unittest.TestCase):
 
         self.assertEqual(layer["checked_rule_ids"], [26, 27, 28, 29])
         self.assertEqual(layer["triggered_rule_ids"], [27])
+        self.assertEqual(layer["status"], "medium")
+        self.assertEqual(bound["overall_status"], report["overall_status"])
+        self.assertEqual(bound["ranking_potential"], report["ranking_potential"])
+        self.assertEqual(bound["risk_level"], report["risk_level"])
         self.assertTrue(layer["evidence_items"])
         self.assertEqual(
             [item["id"] for item in layer["evidence_items"]],

@@ -293,6 +293,7 @@ def _finalize_report(
     business_presence_audit = build_business_presence_audit(context)
     report["business_presence_audit"] = business_presence_audit
     report = bind_business_presence_evidence(report, business_presence_audit, context)
+    report = _backfill_presentation_fields(report)
 
     model = ReportV21.model_validate(report)
     model_report = model.model_dump(mode="json", exclude_none=True)
@@ -462,6 +463,7 @@ def _layers_from_legacy(module_4: dict[str, Any]) -> list[dict[str, Any]]:
             "status": status,
             "checked_rule_ids": [],
             "triggered_rule_ids": [],
+            "triggered_findings": [],
             "summary": description,
             "explanation": description,
             "evidence_items": evidence,
@@ -496,8 +498,11 @@ def _key_issues_from_legacy(module_3: dict[str, Any]) -> list[dict[str, Any]]:
             "related_rule_ids": [],
             "severity": "medium",
             "evidence_items": [_not_available_evidence(f"ev-issue-legacy-{index}", "Legacy issue did not include structured evidence.")],
+            "judgement": str(issue.get("judgement") or explanation),
             "explanation": explanation,
-            "why_it_matters": str(issue.get("impacts") or "This issue may limit the page's trust signals."),
+            "why_it_matters": _string_summary(issue.get("impacts")) or "This issue may limit the page's trust signals.",
+            "impacts": _string_list(issue.get("impacts")),
+            "suggestions": _string_list(issue.get("suggestions")),
             "recommended_actions": [action],
         })
     return issues
@@ -562,12 +567,50 @@ def _primary_blocking_layer(module_1: dict[str, Any], module_3: dict[str, Any]) 
 
 def _page_level(module_2: dict[str, Any]) -> dict[str, Any]:
     label = str(module_2.get("level") or module_2.get("label") or "Legacy page level")
+    current_assessment = str(
+        module_2.get("current_assessment")
+        or module_2.get("what_it_means")
+        or module_2.get("summary")
+        or "Legacy output did not include a v2.1 page-level explanation."
+    )
     return {
         "label": label,
-        "what_it_looks_like": str(module_2.get("what_it_means") or module_2.get("summary") or "Legacy output did not include a v2.1 page-level explanation."),
+        "what_it_looks_like": current_assessment,
         "strengths": _string_list(module_2.get("strengths") or module_2.get("existing_foundation")),
         "missing_elements": _string_list(module_2.get("missing_elements") or module_2.get("main_limitation")),
+        "current_assessment": current_assessment,
+        "existing_foundation": _string_summary(module_2.get("existing_foundation")),
+        "main_limitation": _string_summary(module_2.get("main_limitation")),
+        "likely_search_outcome": _string_summary(module_2.get("likely_search_outcome")),
+        "competitive_interpretation": _string_summary(module_2.get("competitive_interpretation")),
     }
+
+
+def _backfill_presentation_fields(report: dict[str, Any]) -> dict[str, Any]:
+    page_level = report.get("page_level")
+    if isinstance(page_level, dict):
+        current = str(page_level.get("current_assessment") or page_level.get("what_it_looks_like") or "").strip()
+        page_level.setdefault("current_assessment", current)
+        page_level.setdefault("existing_foundation", _string_summary(page_level.get("strengths")))
+        page_level.setdefault("main_limitation", _string_summary(page_level.get("missing_elements")))
+        page_level.setdefault("likely_search_outcome", "")
+        page_level.setdefault("competitive_interpretation", "")
+
+    issues = report.get("key_issues")
+    if isinstance(issues, list):
+        for issue in issues:
+            if not isinstance(issue, dict):
+                continue
+            issue.setdefault("judgement", str(issue.get("explanation") or "").strip())
+            issue.setdefault("impacts", _string_list(issue.get("why_it_matters")))
+            suggestions = issue.get("suggestions")
+            if not isinstance(suggestions, list) or not suggestions:
+                actions = issue.get("recommended_actions")
+                issue["suggestions"] = [
+                    str(action.get("task_title")).strip()
+                    for action in actions if isinstance(action, dict) and str(action.get("task_title") or "").strip()
+                ] if isinstance(actions, list) else []
+    return report
 
 
 def _client_summary_from_legacy(module_1: dict[str, Any]) -> dict[str, Any]:
@@ -674,6 +717,10 @@ def _string_list(value: Any) -> list[str]:
     if isinstance(value, str) and value.strip():
         return [value.strip()]
     return []
+
+
+def _string_summary(value: Any) -> str:
+    return " ".join(_string_list(value)).strip()
 
 
 def _best_layer_key(value: Any) -> str:

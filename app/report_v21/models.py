@@ -190,6 +190,10 @@ class ReviewAudit(_StrictModel):
     rating_distribution: dict[str, int] = Field(default_factory=dict)
     owner_reply_count: int = Field(ge=0)
     owner_reply_rate: float | None = Field(default=None, ge=0, le=1)
+    unanswered_count: int = Field(ge=0)
+    low_rating_count: int = Field(ge=0)
+    low_rating_unanswered_count: int = Field(ge=0)
+    detailed_positive_count: int = Field(ge=0)
     reviews: list[ReviewSampleItem] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
 
@@ -199,6 +203,24 @@ class CitationsAudit(_StrictModel):
     reason: str
 
 
+class BusinessPresenceProposalSummary(_StrictModel):
+    headline: str
+    summary: str
+    identity_issue_count: int = Field(ge=0)
+    profile_opportunity_count: int = Field(ge=0)
+    review_action_count: int = Field(ge=0)
+
+
+class BusinessPresenceProposalAction(_StrictModel):
+    id: str
+    priority: Literal["high", "medium", "low"]
+    business_area: Literal["identity_alignment", "profile_activity", "review_operations"]
+    title: str
+    rationale: str
+    recommended_scope: list[str] = Field(default_factory=list)
+    evidence_keys: list[str] = Field(default_factory=list)
+
+
 class BusinessPresenceAudit(_StrictModel):
     audit_scope: list[AuditScopeItem] = Field(default_factory=list)
     summary: BusinessPresenceSummary
@@ -206,6 +228,9 @@ class BusinessPresenceAudit(_StrictModel):
     profile_activity: ProfileActivity
     review_audit: ReviewAudit
     citations: CitationsAudit
+    proposal_status: Literal["clear", "needs_attention", "limited"]
+    proposal_summary: BusinessPresenceProposalSummary
+    proposal_actions: list[BusinessPresenceProposalAction] = Field(default_factory=list)
 
 
 class OverallStatus(_StrictModel):
@@ -267,6 +292,11 @@ class PageLevel(_StrictModel):
     what_it_looks_like: str
     strengths: list[str] = Field(default_factory=list)
     missing_elements: list[str] = Field(default_factory=list)
+    current_assessment: str = ""
+    existing_foundation: str = ""
+    main_limitation: str = ""
+    likely_search_outcome: str = ""
+    competitive_interpretation: str = ""
 
 
 class LayerFinding(_StrictModel):
@@ -277,6 +307,7 @@ class LayerFinding(_StrictModel):
     status: LayerStatus
     checked_rule_ids: list[int] = Field(default_factory=list)
     triggered_rule_ids: list[int] = Field(default_factory=list)
+    triggered_findings: list[str] = Field(default_factory=list)
     summary: str
     explanation: str
     evidence_items: list[EvidenceItem] = Field(default_factory=list)
@@ -291,8 +322,11 @@ class KeyIssue(_StrictModel):
     related_rule_ids: list[int] = Field(default_factory=list)
     severity: Literal["high", "medium", "low"]
     evidence_items: list[EvidenceItem] = Field(default_factory=list)
+    judgement: str = ""
     explanation: str
     why_it_matters: str
+    impacts: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
     recommended_actions: list[ActionItem] = Field(default_factory=list)
 
 

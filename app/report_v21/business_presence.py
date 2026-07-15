@@ -52,6 +52,12 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
     matched = [item for item in assessed if item["status"] == "match"]
     issues = [item for item in assessed if item["status"] in {"mismatch", "missing", "partial"}]
     unavailable = [item for item in comparisons if item["status"] in {"not_checked", "not_applicable", "error"}]
+    proposal_status, proposal_summary, proposal_actions = _build_proposal(
+        comparisons=comparisons,
+        profile=profile,
+        reviews=reviews,
+        gbp_status=gbp_status,
+    )
 
     scope = [
         {
@@ -107,6 +113,9 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
             "status": "not_checked",
             "reason": "Citation provider integration is deferred for this release.",
         },
+        "proposal_status": proposal_status,
+        "proposal_summary": proposal_summary,
+        "proposal_actions": proposal_actions,
     }
 
 
@@ -265,6 +274,8 @@ def _compare_signal(
 
     left_tokens = _tokens(left)
     right_tokens = _tokens(right)
+    if mode in {"service_area", "tokens"} and left_tokens and left_tokens == right_tokens:
+        return "match", "The normalized page and GBP values match."
     if left_tokens and right_tokens and left_tokens.intersection(right_tokens):
         return "partial", "The sources share part of the same signal, but the observed values are not fully aligned."
     return "mismatch", "The normalized page and GBP values do not align."
@@ -336,6 +347,10 @@ def _build_review_audit(gbp: dict[str, Any], gbp_status: str) -> dict[str, Any]:
 
     distribution: Counter[str] = Counter()
     owner_reply_count = 0
+    unanswered_count = 0
+    low_rating_count = 0
+    low_rating_unanswered_count = 0
+    detailed_positive_count = 0
     clean_reviews: list[dict[str, Any]] = []
     for item in reviews:
         if not isinstance(item, dict):
@@ -345,11 +360,19 @@ def _build_review_audit(gbp: dict[str, Any], gbp_status: str) -> dict[str, Any]:
             distribution[str(int(round(rating)))] += 1
         owner_reply = _optional_text(item.get("owner_reply"))
         owner_reply_count += int(bool(owner_reply))
+        unanswered_count += int(not owner_reply)
+        is_low_rating = rating is not None and rating <= 3
+        low_rating_count += int(is_low_rating)
+        low_rating_unanswered_count += int(is_low_rating and not owner_reply)
+        review_text = _optional_text(item.get("text"))
+        detailed_positive_count += int(
+            rating is not None and rating >= 4 and bool(review_text) and len(review_text) >= 80
+        )
         clean_reviews.append({
             "author": _optional_text(item.get("author")),
             "rating": rating,
             "date": _optional_text(item.get("date")),
-            "text": _optional_text(item.get("text")),
+            "text": review_text,
             "owner_reply": owner_reply,
         })
 
@@ -363,9 +386,146 @@ def _build_review_audit(gbp: dict[str, Any], gbp_status: str) -> dict[str, Any]:
         "rating_distribution": dict(sorted(distribution.items())),
         "owner_reply_count": owner_reply_count,
         "owner_reply_rate": (owner_reply_count / sample_size) if sample_size else None,
+        "unanswered_count": unanswered_count,
+        "low_rating_count": low_rating_count,
+        "low_rating_unanswered_count": low_rating_unanswered_count,
+        "detailed_positive_count": detailed_positive_count,
         "reviews": clean_reviews,
         "limitations": limitations,
     }
+
+
+def _build_proposal(
+    *,
+    comparisons: list[dict[str, Any]],
+    profile: dict[str, Any],
+    reviews: dict[str, Any],
+    gbp_status: str,
+) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
+    actions: list[dict[str, Any]] = []
+    identity_issues = [
+        item for item in comparisons if item.get("status") in {"mismatch", "missing", "partial"}
+    ]
+    if identity_issues:
+        labels = [str(item.get("label") or item.get("key")) for item in identity_issues]
+        actions.append({
+            "id": "bp-action-identity-alignment",
+            "priority": "high" if any(item.get("status") in {"mismatch", "missing"} for item in identity_issues) else "medium",
+            "business_area": "identity_alignment",
+            "title": "Align the business identity across the page and GBP profile",
+            "rationale": f"{len(identity_issues)} objectively compared signal(s) need attention: {', '.join(labels)}.",
+            "recommended_scope": [
+                f"Confirm the authoritative {label.lower()} and update the conflicting or missing source."
+                for label in labels
+            ],
+            "evidence_keys": [str(item.get("evidence_id")) for item in identity_issues],
+        })
+
+    profile_actions = 0
+    if profile.get("photo_status") == "checked" and profile.get("photo_count") == 0:
+        actions.append({
+            "id": "bp-action-add-photos",
+            "priority": "medium",
+            "business_area": "profile_activity",
+            "title": "Add current business photos to the GBP profile",
+            "rationale": "The public GBP response explicitly returned zero photos.",
+            "recommended_scope": [
+                "Publish current exterior, team, service and completed-work photos.",
+                "Use only authentic business-owned images with client permission where required.",
+            ],
+            "evidence_keys": ["profile-photo-count"],
+        })
+        profile_actions += 1
+    if profile.get("post_status") == "checked" and profile.get("post_count") == 0:
+        actions.append({
+            "id": "bp-action-add-posts",
+            "priority": "low",
+            "business_area": "profile_activity",
+            "title": "Publish an initial GBP update",
+            "rationale": "The public GBP response explicitly returned zero posts.",
+            "recommended_scope": [
+                "Publish one accurate service, availability or proof-led update.",
+                "Do not claim an inactivity period because post dates were not available.",
+            ],
+            "evidence_keys": ["profile-post-count"],
+        })
+        profile_actions += 1
+
+    review_actions = 0
+    low_unanswered = int(reviews.get("low_rating_unanswered_count") or 0)
+    unanswered = int(reviews.get("unanswered_count") or 0)
+    detailed_positive = int(reviews.get("detailed_positive_count") or 0)
+    if reviews.get("status") in {"checked", "partial"} and low_unanswered:
+        actions.append({
+            "id": "bp-action-low-rating-replies",
+            "priority": "high",
+            "business_area": "review_operations",
+            "title": "Respond to low-rating reviews first",
+            "rationale": f"{low_unanswered} of the recent 1-3 star review(s) have no owner reply.",
+            "recommended_scope": [
+                "Draft factual, non-defensive replies for each unanswered 1-3 star review.",
+                "Escalate service-recovery cases before publishing a response.",
+            ],
+            "evidence_keys": ["reviews-low-rating-unanswered"],
+        })
+        review_actions += 1
+    remaining_unanswered = max(0, unanswered - low_unanswered)
+    if reviews.get("status") in {"checked", "partial"} and remaining_unanswered:
+        actions.append({
+            "id": "bp-action-review-backlog",
+            "priority": "medium",
+            "business_area": "review_operations",
+            "title": "Clear the remaining recent-review reply backlog",
+            "rationale": f"{remaining_unanswered} additional recent review(s) have no owner reply.",
+            "recommended_scope": [
+                "Prepare concise, specific replies for the remaining unanswered recent reviews.",
+                "Keep replies individualized and avoid repetitive templates.",
+            ],
+            "evidence_keys": ["reviews-unanswered"],
+        })
+        review_actions += 1
+    if reviews.get("status") in {"checked", "partial"} and detailed_positive:
+        actions.append({
+            "id": "bp-action-proof-candidates",
+            "priority": "low",
+            "business_area": "review_operations",
+            "title": "Review detailed positive feedback for proof opportunities",
+            "rationale": f"{detailed_positive} recent 4-5 star review(s) contain at least 80 characters of customer detail.",
+            "recommended_scope": [
+                "Shortlist useful proof themes without changing the reviewer meaning.",
+                "Obtain client approval and follow platform rules before reusing any quote.",
+            ],
+            "evidence_keys": ["reviews-detailed-positive"],
+        })
+        review_actions += 1
+
+    unavailable = gbp_status != "checked" or any(
+        item.get("status") in {"not_checked", "error"} for item in comparisons
+    )
+    unavailable = unavailable or profile.get("status") in {"not_checked", "partial", "error"}
+    unavailable = unavailable or reviews.get("status") in {"not_checked", "partial", "error"}
+    status = "needs_attention" if actions else ("limited" if unavailable else "clear")
+
+    if actions:
+        headline = f"{len(actions)} proposal-ready work item(s) identified"
+        summary = (
+            "The checks below translate objective page, GBP and recent-review observations into "
+            "a one-time audit scope. They do not change the eight-layer score."
+        )
+    elif status == "limited":
+        headline = "No confirmed work item from the available data"
+        summary = "Some Business Presence inputs were unavailable, so the audit avoids definite conclusions for those areas."
+    else:
+        headline = "No confirmed Business Presence issue"
+        summary = "The objectively assessed page, GBP and recent-review signals did not produce a proposal task."
+
+    return status, {
+        "headline": headline,
+        "summary": summary,
+        "identity_issue_count": len(identity_issues),
+        "profile_opportunity_count": profile_actions,
+        "review_action_count": review_actions,
+    }, actions
 
 
 def _fetch_status(value: dict[str, Any]) -> str:
@@ -412,7 +572,10 @@ def _normalize(value: Any, mode: str) -> str:
 
 
 def _tokens(value: str) -> set[str]:
-    ignored = {"the", "and", "of", "in", "at", "llc", "inc", "services", "service", "page"}
+    ignored = {
+        "the", "and", "of", "in", "at", "llc", "inc", "services", "service", "page",
+        "serving", "serve", "areas", "area", "nearby", "communities",
+    }
     return {token for token in value.split() if len(token) > 2 and token not in ignored}
 
 

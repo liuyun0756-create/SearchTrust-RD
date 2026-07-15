@@ -230,7 +230,88 @@ class ReportV21ContractTests(unittest.TestCase):
         report = self.normalize(payload)
 
         self.assertEqual(report["ranking_potential"]["level"], "low")
-        self.assertEqual(report["ranking_potential"]["label"], "Low potential")
+        self.assertEqual(report["ranking_potential"]["label"], "Low Potential")
+
+    def test_backend_uses_product_labels_and_customer_facing_explanations(self):
+        report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
+
+        self.assertIn(report["overall_status"]["label"], {"Weak", "Medium Weak", "Medium", "Good"})
+        self.assertIn(
+            report["ranking_potential"]["label"],
+            {"Strong Competitive Potential", "Improvement Potential", "Competitive", "Low Potential"},
+        )
+        for field in ("overall_status", "ranking_potential", "risk_level"):
+            self.assertNotIn("deterministic scoring", report[field]["explanation"].lower())
+
+    def test_backend_adds_readable_findings_without_exposing_rule_numbers(self):
+        report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
+
+        for layer in report["layers"]:
+            self.assertEqual(len(layer["triggered_findings"]), len(layer["triggered_rule_ids"]))
+            self.assertTrue(all("rule_" not in finding.lower() for finding in layer["triggered_findings"]))
+
+    def test_page_level_preserves_richer_dify_narrative(self):
+        payload = self.contract_compliant_projection(self.real_dify_output)
+        page_level = payload["report_v2_1"]["page_level"]
+        page_level.update({
+            "current_assessment": "Page-specific current assessment.",
+            "existing_foundation": "Page-specific existing foundation.",
+            "main_limitation": "Page-specific main limitation.",
+            "likely_search_outcome": "Page-specific likely outcome.",
+            "competitive_interpretation": "Page-specific competitive interpretation.",
+        })
+
+        report = self.normalize(payload)
+
+        self.assertEqual(report["page_level"]["current_assessment"], "Page-specific current assessment.")
+        self.assertEqual(report["page_level"]["existing_foundation"], "Page-specific existing foundation.")
+        self.assertEqual(report["page_level"]["main_limitation"], "Page-specific main limitation.")
+        self.assertEqual(report["page_level"]["likely_search_outcome"], "Page-specific likely outcome.")
+        self.assertEqual(
+            report["page_level"]["competitive_interpretation"],
+            "Page-specific competitive interpretation.",
+        )
+
+    def test_key_issue_presentation_fields_have_safe_legacy_fallbacks(self):
+        report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
+        issue = report["key_issues"][0]
+
+        self.assertTrue(issue["judgement"])
+        self.assertTrue(issue["impacts"])
+        self.assertTrue(issue["suggestions"])
+
+    def test_dedupe_merges_same_excerpt_across_url_and_section_variants(self):
+        report = self.normalize(self.contract_compliant_projection(self.real_dify_output))
+        specificity = next(layer for layer in report["layers"] if layer["layer_key"] == "specificity")
+        specificity["evidence_items"] = [
+            {
+                "id": "ev-variant-1",
+                "source_type": "page",
+                "source_label": "Body copy",
+                "source_url": "https://example.com/service/",
+                "page_section": "Main content",
+                "extracted_text": "24-hour plumbing services, seven days a week",
+                "comparison_result": "partial",
+                "confidence": "medium",
+                "explanation": "The wording is generic.",
+            },
+            {
+                "id": "ev-variant-2",
+                "source_type": "page",
+                "source_label": "Service copy",
+                "source_url": "https://example.com/service?ref=audit",
+                "page_section": "Body copy",
+                "extracted_text": "24-hour plumbing services, seven days a week.",
+                "comparison_result": "partial",
+                "confidence": "medium",
+                "explanation": "The wording lacks a local scenario.",
+            },
+        ]
+
+        deduped, _ = dedupe_report_v21(report)
+        deduped_specificity = next(layer for layer in deduped["layers"] if layer["layer_key"] == "specificity")
+
+        self.assertEqual(len(deduped_specificity["evidence_items"]), 1)
 
     def test_native_conclusion_without_dify_evidence_is_not_rejected(self):
         payload = self.contract_compliant_projection(self.real_dify_output)

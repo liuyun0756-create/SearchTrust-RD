@@ -6,6 +6,7 @@ import copy
 import re
 from difflib import SequenceMatcher
 from typing import Any
+from urllib.parse import urlsplit
 
 
 SEVERITY_RANK = {"high": 3, "medium": 2, "low": 1}
@@ -195,8 +196,24 @@ def _roadmap_phases_duplicate(existing: dict[str, Any], candidate: dict[str, Any
 
 
 def _evidence_duplicate(existing: dict[str, Any], candidate: dict[str, Any]) -> bool:
-    keys = ("source_type", "source_url", "page_section", "extracted_text", "comparison_result")
-    return all(_normalize_text(existing.get(key)) == _normalize_text(candidate.get(key)) for key in keys)
+    if existing.get("source_type") != candidate.get("source_type"):
+        return False
+    if existing.get("comparison_result") != candidate.get("comparison_result"):
+        return False
+
+    existing_value = _normalize_text(existing.get("extracted_text") or existing.get("normalized_value"))
+    candidate_value = _normalize_text(candidate.get("extracted_text") or candidate.get("normalized_value"))
+    if existing_value or candidate_value:
+        return (
+            existing_value == candidate_value
+            and _urls_compatible(existing.get("source_url"), candidate.get("source_url"))
+        )
+
+    return (
+        _normalize_text(existing.get("source_label")) == _normalize_text(candidate.get("source_label"))
+        and _normalize_text(existing.get("page_section")) == _normalize_text(candidate.get("page_section"))
+        and _urls_compatible(existing.get("source_url"), candidate.get("source_url"))
+    )
 
 
 def _merge_key_issue(existing: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
@@ -215,8 +232,12 @@ def _merge_key_issue(existing: dict[str, Any], candidate: dict[str, Any]) -> dic
     )
     if not str(merged.get("explanation") or "").strip():
         merged["explanation"] = other.get("explanation", "")
+    if not str(merged.get("judgement") or "").strip():
+        merged["judgement"] = other.get("judgement", "")
     if not str(merged.get("why_it_matters") or "").strip():
         merged["why_it_matters"] = other.get("why_it_matters", "")
+    merged["impacts"] = _merge_strings(existing.get("impacts"), candidate.get("impacts"))
+    merged["suggestions"] = _merge_strings(existing.get("suggestions"), candidate.get("suggestions"))
     return merged
 
 
@@ -323,6 +344,25 @@ def _normalize_text(value: Any) -> str:
     text = re.sub(r"\s+", " ", text)
     text = re.sub(r"[^\w\s]", "", text)
     return text.strip()
+
+
+def _urls_compatible(left: Any, right: Any) -> bool:
+    left_url = _canonical_url(left)
+    right_url = _canonical_url(right)
+    return not left_url or not right_url or left_url == right_url
+
+
+def _canonical_url(value: Any) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    try:
+        parts = urlsplit(raw)
+    except ValueError:
+        return _normalize_text(raw)
+    host = (parts.hostname or "").lower()
+    path = re.sub(r"/+$", "", parts.path or "") or "/"
+    return f"{host}{path}"
 
 
 def _similar(a: str, b: str) -> bool:
