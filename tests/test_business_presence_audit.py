@@ -195,6 +195,28 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertFalse(any(item["business_area"] == "profile_activity" for item in audit["proposal_actions"]))
         self.assertFalse(audit["proposal_actions"])
 
+    def test_navigation_links_are_not_treated_as_hours_or_service_area_values(self):
+        context = self.base_context()
+        context["page_content"] = (
+            "[Testimonials](https://example.com/testimonials/)\n"
+            "[Service Areas](https://example.com/service-areas/)\n"
+        )
+        context["page_business"] = {"phone": "+19185550100)\n\n-"}
+        context["gbp_data"].update({
+            "hours": "Open 24 hours",
+            "service_areas": [],
+            "service_areas_observed": False,
+        })
+
+        audit = build_business_presence_audit(context)
+        rows = {row["key"]: row for row in audit["gbp_page_alignment"]}
+
+        self.assertEqual(rows["phone"]["page_value"], "+19185550100")
+        self.assertIsNone(rows["opening_hours"]["page_value"])
+        self.assertEqual(rows["opening_hours"]["status"], "missing")
+        self.assertIsNone(rows["service_area"]["page_value"])
+        self.assertEqual(rows["service_area"]["status"], "not_checked")
+
     def test_alignment_evidence_reuses_ids_without_changing_rule_fields(self):
         context = self.base_context()
         audit = build_business_presence_audit(context)

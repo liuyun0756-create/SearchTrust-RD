@@ -21,8 +21,9 @@ _US_ADDRESS = re.compile(
 )
 _PHONE = re.compile(r"(?:\+?1[\s.\-]?)?\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}")
 _HOURS_LINE = re.compile(
-    r"^.{0,45}(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|"
-    r"Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?|open\s+24\s+hours|24/7).{0,100}$",
+    r"^.{0,45}(?:\bMon(?:day)?\b|\bTue(?:sday)?\b|\bWed(?:nesday)?\b|"
+    r"\bThu(?:rsday)?\b|\bFri(?:day)?\b|\bSat(?:urday)?\b|\bSun(?:day)?\b|"
+    r"\bopen\s+24\s+hours\b|\b24/7\b).{0,100}$",
     re.IGNORECASE | re.MULTILINE,
 )
 _SERVICE_AREA_LINE = re.compile(
@@ -30,6 +31,7 @@ _SERVICE_AREA_LINE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 _HEADING = re.compile(r"^#{1,2}\s+(.{3,140})$", re.MULTILINE)
+_MARKDOWN_LINK_ONLY = re.compile(r"^\[[^\]]+\]\([^)]+\)$")
 
 
 def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
@@ -153,7 +155,7 @@ def bind_business_presence_evidence(
 def _extract_page_signals(content: str, business: dict[str, Any], url: str) -> dict[str, Any]:
     headings = [_clean_excerpt(value) for value in _HEADING.findall(content)]
     address = _first_match(_US_ADDRESS, content)
-    phone = _text(business.get("phone")) or _first_match(_PHONE, content)
+    phone = _clean_phone(_text(business.get("phone"))) or _clean_phone(content)
     hours = _first_match(_HOURS_LINE, content)
     service_area = _first_match(_SERVICE_AREA_LINE, content)
     category = headings[0] if headings else None
@@ -597,8 +599,26 @@ def _string_list(value: Any) -> list[str]:
 
 
 def _first_match(pattern: re.Pattern[str], content: str) -> str | None:
-    match = pattern.search(content)
-    return _clean_excerpt(match.group(0)) if match else None
+    for match in pattern.finditer(content):
+        candidate = _clean_excerpt(match.group(0))
+        if candidate and not _MARKDOWN_LINK_ONLY.fullmatch(candidate):
+            return candidate
+    return None
+
+
+def _clean_phone(value: str) -> str | None:
+    """Return a comparable phone value without parser punctuation artifacts."""
+    if not value:
+        return None
+    match = _PHONE.search(value)
+    if match:
+        return _clean_excerpt(match.group(0))
+    digits = re.sub(r"\D", "", value)
+    if len(digits) == 11 and digits.startswith("1"):
+        return f"+{digits}"
+    if len(digits) == 10:
+        return digits
+    return None
 
 
 def _clean_excerpt(value: str) -> str:
