@@ -23,6 +23,16 @@ GBPStatusValue = Literal["checked", "not_checked", "not_found", "error"]
 GBPSource = Literal["user_provided", "system_discovered", "not_available"]
 ComparisonResult = Literal["match", "missing", "mismatch", "partial", "not_checked"]
 Confidence = Literal["high", "medium", "low"]
+AuditStatus = Literal["checked", "partial", "not_checked", "error", "not_applicable"]
+AuditComparisonStatus = Literal[
+    "match",
+    "missing",
+    "mismatch",
+    "partial",
+    "not_checked",
+    "not_applicable",
+    "error",
+]
 EvidenceSourceType = Literal[
     "page",
     "gbp",
@@ -56,8 +66,6 @@ LAYER_LABELS: dict[str, str] = {
     "algorithm_fit": "Algorithm Fit",
 }
 
-# These labels are owned by the application contract.  Dify may provide useful
-# layer narratives, but it must not be allowed to rename or renumber the model.
 LAYER_DISPLAY_LABELS: dict[str, str] = {
     "foundation": "L1 Foundation",
     "entity_presence": "L2 Entity Presence",
@@ -96,8 +104,6 @@ class DataCoverage(_StrictModel):
 
 
 class GBPProfileSnapshot(_StrictModel):
-    """Backend-derived GBP fields that were actually available to this audit."""
-
     name: str | None = None
     address: str | None = None
     phone: str | None = None
@@ -110,8 +116,6 @@ class GBPProfileSnapshot(_StrictModel):
 
 
 class GBPAlignmentRow(_StrictModel):
-    """A deterministic field-level comparison between the page and GBP."""
-
     field_key: Literal["name", "phone", "address", "website", "service_area"]
     field_label: str
     page_value: str | None = None
@@ -126,6 +130,82 @@ class SchemaSummary(_StrictModel):
     checked: bool
     source_url: str | None = None
     types: list[str] = Field(default_factory=list)
+
+
+class AuditScopeItem(_StrictModel):
+    key: str
+    label: str
+    status: AuditStatus
+    detail: str
+
+
+class BusinessPresenceSummary(_StrictModel):
+    assessed_items: int = Field(ge=0)
+    matched_items: int = Field(ge=0)
+    issue_items: int = Field(ge=0)
+    not_checked_items: int = Field(ge=0)
+
+
+class PresenceComparisonItem(_StrictModel):
+    key: str
+    evidence_id: str
+    label: str
+    status: AuditComparisonStatus
+    page_value: str | None = None
+    gbp_value: str | None = None
+    page_source: str | None = None
+    gbp_source: str | None = None
+    explanation: str
+    related_layer: LayerKey | None = None
+    included_in_score: bool = False
+
+
+class ProfileActivity(_StrictModel):
+    status: AuditStatus
+    categories: list[str] = Field(default_factory=list)
+    category_source: Literal["observed", "authoritative", "not_available"] = "not_available"
+    photo_count: int | None = Field(default=None, ge=0)
+    latest_photo_date: str | None = None
+    photo_status: AuditStatus
+    post_count: int | None = Field(default=None, ge=0)
+    latest_post_date: str | None = None
+    post_status: AuditStatus
+    limitations: list[str] = Field(default_factory=list)
+
+
+class ReviewSampleItem(_StrictModel):
+    author: str | None = None
+    rating: float | None = Field(default=None, ge=0, le=5)
+    date: str | None = None
+    text: str | None = None
+    owner_reply: str | None = None
+
+
+class ReviewAudit(_StrictModel):
+    status: AuditStatus
+    total_reviews: int | None = Field(default=None, ge=0)
+    sample_size: int = Field(ge=0)
+    sample_limit: int = Field(default=30, ge=1)
+    latest_review_date: str | None = None
+    rating_distribution: dict[str, int] = Field(default_factory=dict)
+    owner_reply_count: int = Field(ge=0)
+    owner_reply_rate: float | None = Field(default=None, ge=0, le=1)
+    reviews: list[ReviewSampleItem] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+
+class CitationsAudit(_StrictModel):
+    status: Literal["not_checked"] = "not_checked"
+    reason: str
+
+
+class BusinessPresenceAudit(_StrictModel):
+    audit_scope: list[AuditScopeItem] = Field(default_factory=list)
+    summary: BusinessPresenceSummary
+    gbp_page_alignment: list[PresenceComparisonItem] = Field(default_factory=list)
+    profile_activity: ProfileActivity
+    review_audit: ReviewAudit
+    citations: CitationsAudit
 
 
 class OverallStatus(_StrictModel):
@@ -255,6 +335,7 @@ class ReportV21(_StrictModel):
     gbp_alignment: list[GBPAlignmentRow] = Field(default_factory=list)
     schema_summary: SchemaSummary | None = None
     data_coverage: DataCoverage
+    business_presence_audit: BusinessPresenceAudit | None = None
     overall_status: OverallStatus
     ranking_potential: RankingPotential
     risk_level: RiskLevel

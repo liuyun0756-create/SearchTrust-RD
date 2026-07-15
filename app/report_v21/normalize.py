@@ -10,8 +10,11 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from app.report_v21.business_presence import (
+    bind_business_presence_evidence,
+    build_business_presence_audit,
+)
 from app.report_v21.coverage import build_data_coverage, build_gbp_alignment, build_gbp_profile, build_gbp_status, build_schema_summary
-from app.report_v21.quality import validate_evidence_quality
 from app.report_v21.dedupe import dedupe_report_v21
 from app.report_v21.gbp_guard import BLOCKED_GBP_CLAIM_PHRASES
 from app.report_v21.models import LAYER_DISPLAY_LABELS, LAYER_LABELS, REQUIRED_LAYER_KEYS, ReportV21
@@ -79,7 +82,6 @@ class ReportV21OutputInvalid(RuntimeError):
         self.user_message = V21_OUTPUT_INVALID_MESSAGE
         self.validation_errors = validation_errors
         self.warnings = warnings or []
-        self.retryable = True
 
     def to_result(self, task_id: str | None = None) -> dict[str, Any]:
         return {
@@ -191,8 +193,6 @@ def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None 
         raise ReportV21OutputInvalid(errors, warnings)
 
     try:
-        # Native Dify output supplies narratives and evidence.  The app owns
-        # the assessment coverage, layer labels, and all aggregate score cards.
         report = _finalize_report(native_report, context, warnings, run_scoring=True)
     except ValidationError as exc:
         raise ReportV21OutputInvalid(
@@ -208,10 +208,6 @@ def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None 
             if str(error).strip()
         ]
         raise ReportV21OutputInvalid(errors or ["Native report_v2_1 failed validation."], warnings)
-
-    quality_errors = validate_evidence_quality(report, context)
-    if quality_errors:
-        raise ReportV21OutputInvalid(quality_errors, warnings)
 
     return {"report_v2_1": report}
 
@@ -294,6 +290,9 @@ def _finalize_report(
     report["gbp_alignment"] = build_gbp_alignment(context)
     report["schema_summary"] = build_schema_summary(context)
     report["data_coverage"] = build_data_coverage(context, warnings)
+    business_presence_audit = build_business_presence_audit(context)
+    report["business_presence_audit"] = business_presence_audit
+    report = bind_business_presence_evidence(report, business_presence_audit, context)
 
     model = ReportV21.model_validate(report)
     model_report = model.model_dump(mode="json", exclude_none=True)

@@ -167,37 +167,9 @@ async def _run_pipeline_inner(
 
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
     from app.models.request import resolve_page_type  # noqa: PLC0415
-    from app.report_v21.normalize import (  # noqa: PLC0415
-        ReportV21OutputInvalid,
-        normalize_native_report_to_v21,
-    )
 
     # Resolve English page_type to the Chinese value Dify expects
     dify_page_type = resolve_page_type(input_page_type)
-    v21_context = {
-        "task_id": task_id,
-        "url": url,
-        "page_type": input_page_type,
-        "dify_page_type": dify_page_type,
-        "generated_at": created_at,
-        "input_gbp_url": gbp_url,
-        "gbp_url": final_gbp_url,
-        "gbp_data": gbp_data,
-        "business": scrape_result.get("business"),
-        "content": content,
-        "schema_data": scrape_result.get("schema"),
-        "content_checked": bool(content),
-        "scraper_source": scrape_result.get("scraper_source"),
-        "sub_pages": scrape_result.get("sub_pages"),
-        "raw_content_length": scrape_result.get("raw_content_length"),
-        "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
-        "gbp_error": scrape_result.get("gbp_error"),
-    }
-    normalized_v21: dict[str, Any] | None = None
-
-    def _validate_native_output(candidate: dict[str, Any]) -> None:
-        nonlocal normalized_v21
-        normalized_v21 = normalize_native_report_to_v21(candidate, v21_context)
 
     _last_written_pct: list[int] = [0]
     _last_written_ts: list[float] = [0.0]
@@ -221,35 +193,17 @@ async def _run_pipeline_inner(
         )
 
     try:
+        dify_gbp_data = _build_dify_gbp_payload(gbp_data)
         report = await call_dify_workflow(
             url=url,
             page_type=dify_page_type,
             language=language,
             content=content,
-            gbp_data=gbp_data,
+            gbp_data=dify_gbp_data,
             task_id=task_id,
             progress_callback=_progress_cb,
             gbp_url=final_gbp_url,
-            output_validator=_validate_native_output,
         )
-    except ReportV21OutputInvalid as exc:
-        error_result = exc.to_result(task_id)
-        logger.warning(
-            "Native report_v2_1 remained invalid after Dify retries task_id=%s errors=%s warnings=%s",
-            task_id,
-            exc.validation_errors,
-            exc.warnings,
-        )
-        _update_state(
-            task_id, created_at,
-            status="failed",
-            stage="failed",
-            percent=100,
-            message=exc.user_message,
-            result=error_result,
-            error=exc.user_message,
-        )
-        return error_result
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
         _update_state(
@@ -292,12 +246,76 @@ async def _run_pipeline_inner(
     # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
     final_report["gbp_connected"] = bool(gbp_data)
 
-    if normalized_v21 is None:
-        raise RuntimeError("Dify completed without a normalized native report_v2_1 result")
-    final_report["report_v2_1"] = normalized_v21["report_v2_1"]
-    final_report["gbp_connected"] = (
-        final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
-    )
+    v21_context = {
+        "task_id": task_id,
+        "url": url,
+        "page_type": input_page_type,
+        "dify_page_type": dify_page_type,
+        "generated_at": created_at,
+        "input_gbp_url": gbp_url,
+        "gbp_url": final_gbp_url,
+        "gbp_data": gbp_data,
+        "page_content": content,
+        "page_business": scrape_result.get("business"),
+        "business": scrape_result.get("business"),
+        "schema_data": scrape_result.get("schema"),
+        "content_checked": bool(content),
+        "scraper_source": scrape_result.get("scraper_source"),
+        "sub_pages": scrape_result.get("sub_pages"),
+        "raw_content_length": scrape_result.get("raw_content_length"),
+        "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
+        "gbp_error": scrape_result.get("gbp_error"),
+    }
+
+    try:
+        from app.report_v21.normalize import (  # noqa: PLC0415
+            ReportV21OutputInvalid,
+            normalize_native_report_to_v21,
+        )
+
+        normalized_v21 = normalize_native_report_to_v21(final_report, v21_context)
+        final_report["report_v2_1"] = normalized_v21["report_v2_1"]
+        final_report["gbp_connected"] = (
+            final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
+        )
+    except ReportV21OutputInvalid as exc:
+        error_result = exc.to_result(task_id)
+        logger.warning(
+            "Native report_v2_1 invalid task_id=%s errors=%s warnings=%s",
+            task_id,
+            exc.validation_errors,
+            exc.warnings,
+        )
+        _update_state(
+            task_id, created_at,
+            status="failed",
+            stage="failed",
+            percent=100,
+            message=exc.user_message,
+            result=error_result,
+            error=exc.user_message,
+        )
+        return error_result
+    except Exception as exc:  # noqa: BLE001
+        error_result = {
+            "status": "failed",
+            "error_code": "V21_NORMALIZATION_ERROR",
+            "retryable": True,
+            "user_message": "The report could not be completed because the structured report validation failed. Please try again.",
+            "validation_errors": [str(exc)],
+            "task_id": task_id,
+        }
+        logger.warning("native report_v2_1 normalization failed task_id=%s: %s", task_id, exc)
+        _update_state(
+            task_id, created_at,
+            status="failed",
+            stage="failed",
+            percent=100,
+            message=error_result["user_message"],
+            result=error_result,
+            error=error_result["user_message"],
+        )
+        return error_result
 
     _update_state(
         task_id, created_at,
@@ -310,3 +328,27 @@ async def _run_pipeline_inner(
 
     logger.info("Pipeline complete task_id=%s", task_id)
     return final_report
+
+
+def _build_dify_gbp_payload(gbp_data: dict[str, Any]) -> dict[str, Any]:
+    """Keep backend audit metadata out of the Dify prompt payload."""
+    if not isinstance(gbp_data, dict) or not gbp_data:
+        return {}
+    allowed_keys = (
+        "name",
+        "address",
+        "phone",
+        "rating",
+        "reviews",
+        "type",
+        "hours",
+        "website",
+        "service_areas",
+        "data_id",
+        "review_list",
+    )
+    payload = {key: gbp_data.get(key) for key in allowed_keys if key in gbp_data}
+    review_list = payload.get("review_list")
+    if isinstance(review_list, list):
+        payload["review_list"] = review_list[:10]
+    return payload

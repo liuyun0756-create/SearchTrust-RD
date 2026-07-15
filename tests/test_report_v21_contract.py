@@ -232,7 +232,7 @@ class ReportV21ContractTests(unittest.TestCase):
         self.assertEqual(report["ranking_potential"]["level"], "low")
         self.assertEqual(report["ranking_potential"]["label"], "Low potential")
 
-    def test_material_issue_without_direct_evidence_is_retryable_invalid_output(self):
+    def test_native_conclusion_without_dify_evidence_is_not_rejected(self):
         payload = self.contract_compliant_projection(self.real_dify_output)
         report = payload["report_v2_1"]
         issue = next(issue for issue in report["key_issues"] if issue["severity"] in {"high", "medium"})
@@ -241,11 +241,8 @@ class ReportV21ContractTests(unittest.TestCase):
         layer = next(layer for layer in report["layers"] if layer["layer_key"] == issue["affected_layer"])
         layer["evidence_items"] = []
 
-        with self.assertRaises(ReportV21OutputInvalid) as raised:
-            self.normalize(payload)
-
-        self.assertTrue(raised.exception.retryable)
-        self.assertIn("requires", " ".join(raised.exception.validation_errors))
+        normalized = self.normalize(payload)
+        self.assertEqual(normalized["schema_version"], "2.1")
 
     def test_backend_adds_verified_gbp_profile_and_conservative_alignment_rows(self):
         report = self.normalize(

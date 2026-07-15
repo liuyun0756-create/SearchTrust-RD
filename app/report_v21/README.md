@@ -9,8 +9,7 @@ This package adds backend support for the SearchTrust v2.1 report contract witho
 - `validate.py` performs lightweight safety checks before later full schema validation work.
 - `dedupe.py` performs deterministic duplicate merging for repeated report content.
 - `scoring.py` applies deterministic v2.1 scoring when rule IDs are available.
-- `quality.py` rejects native output that makes a high/medium issue or weak/medium layer conclusion without traceable evidence; the pipeline retries the complete Dify workflow for that retryable failure.
-- `coverage.py` owns GBP status, the verified GBP profile snapshot, conservative field-level GBP alignment, schema coverage, and page-coverage disclosure.
+- `business_presence.py` builds the backend-owned Business Presence Audit from page and public GBP observations.
 - `fixtures/` contains example output shapes for local checks.
 
 ## Supported output shapes
@@ -21,13 +20,22 @@ This package adds backend support for the SearchTrust v2.1 report contract witho
 
 ## Pipeline behavior
 
-`app.tasks.pipeline` validates native output inside the complete Dify retry loop, then attaches `final_report["report_v2_1"]`. Existing `score`, `trust_status`, `ranking_potential`, `risk_level`, and `gbp_connected` fields are preserved.
+`app.tasks.pipeline` attaches `final_report["report_v2_1"]` after the existing legacy parsing step. Existing `score`, `trust_status`, `ranking_potential`, `risk_level`, and `gbp_connected` fields are preserved.
 
-The backend owns fixed L1-L8 labels, assessment coverage, aggregate score cards, GBP status/source, and any generated GBP alignment row. Dify supplies the report narrative and evidence, not the final contract semantics.
+The backend overwrites `business_presence_audit` after Dify returns. Dify remains responsible for report conclusions; it is not the source of truth for page/GBP values, review excerpts, or comparison results. Business Presence Audit checks are informational and do not change rule hits, layer statuses, scoring ratios, or thresholds.
+
+## Business Presence Audit
+
+- GBP x Page checks cover observed business name, phone, address, website, hours, service area, and categories/service intent.
+- Missing public GBP fields are reported as `not_checked`; they are never inferred as mismatches.
+- Service area is `missing` only when an authoritative source explicitly returns an empty service area for a service-area business. Storefront-only businesses can be `not_applicable`.
+- Review analysis is limited to the 30 most recent publicly returned reviews. The report records the actual sample size and treats a zero-record endpoint response as partial/error when the profile reports existing reviews.
+- Photo and post counts represent public records returned by the configured provider. Missing dates remain explicit limitations.
+- External citations/NAP network checking is deferred and appears only as `not_checked` in Audit Scope.
+
+The audit summary and bounded review sample are stored inside the existing report JSON. No database schema change is required for this release. A future decision to retain large raw review/photo/post histories would require a separate database design and a manual database migration before deployment.
 
 ## Known limitations
 
 - Legacy-adapted reports use placeholder `not_available` evidence when old modules do not include structured evidence.
 - Deterministic backend scoring preserves Dify/legacy values when `triggered_rule_ids` are unavailable.
-- Schema is marked checked only when a direct page response was successfully inspected for JSON-LD. Citations, competitor pages, and Map Pack / geo-grid data remain explicitly not assessed until a dedicated collector is added.
-- The contract additions are nested in the existing `reports.report_v2_1` JSONB value; no new Supabase field is required for this release. See `docs/CHANGE_MANAGEMENT.md` before adding any persisted report or agency-branding field.

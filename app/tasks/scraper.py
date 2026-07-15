@@ -868,8 +868,7 @@ async def fetch_gbp_data(
             if place:
                 gbp_info = _build_gbp_info(place)
                 gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
-                gbp_info["review_list"] = await fetch_gbp_reviews(gbp_info["data_id"])
-                return gbp_info
+                return await _enrich_gbp_info(gbp_info)
         except Exception as exc:  # noqa: BLE001
             logger.warning("[SerpAPI] place details fetch failed data_id=%s: %s; falling back to search", data_id_from_url, exc)
 
@@ -944,13 +943,7 @@ async def fetch_gbp_data(
 
         if matched_raw is not None:
             gbp_info = _build_gbp_info(matched_raw)
-            # 用 data_id 拉取评论详情（最多 10 条）
-            data_id = gbp_info.get("data_id", "")
-            if data_id:
-                gbp_info["review_list"] = await fetch_gbp_reviews(data_id)
-            else:
-                gbp_info["review_list"] = []
-            return gbp_info
+            return await _enrich_gbp_info(gbp_info)
 
         logger.info("[SerpAPI] no GBP results found query=%r", query)
         return {}
@@ -997,7 +990,7 @@ def _schema_records(value: Any) -> list[dict[str, Any]]:
 
 
 async def fetch_schema_summary(url: str) -> dict[str, Any] | None:
-    """Inspect JSON-LD from the page response without making schema claims on failure."""
+    """Inspect JSON-LD without converting an unavailable response into a claim."""
     try:
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(20.0),
@@ -1015,8 +1008,20 @@ async def fetch_schema_summary(url: str) -> dict[str, Any] | None:
 def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
     """Normalise a SerpAPI result dict into a consistent GBP info structure."""
     type_val = r.get("type", "")
+    categories_raw = r.get("types") or r.get("categories") or type_val
+    if isinstance(categories_raw, list):
+        categories = [str(item).strip() for item in categories_raw if str(item).strip()]
+    elif categories_raw:
+        categories = [str(categories_raw).strip()]
+    else:
+        categories = []
     if isinstance(type_val, list):
-        type_val = ", ".join(type_val)
+        type_val = ", ".join(str(item) for item in type_val)
+
+    service_areas_observed = "service_areas" in r
+    service_area_business = r.get("service_area_business")
+    if service_area_business is None:
+        service_area_business = r.get("pure_service_area_business")
     return {
         "name":          r.get("title", ""),
         "address":       r.get("address", ""),
@@ -1024,17 +1029,44 @@ def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
         "rating":        r.get("rating", ""),
         "reviews":       r.get("reviews", ""),   # 评论总数
         "type":          type_val,
-        "hours":         r.get("open_state", r.get("hours", "")),
+        "categories":    categories,
+        "hours":         r.get("hours") or r.get("open_state", ""),
         "website":       r.get("website", ""),
         "service_areas": r.get("service_areas", []),
+        "service_areas_observed": service_areas_observed,
+        "service_area_business": service_area_business,
         # data_id 用于后续拉取评论详情
         "data_id":       r.get("data_id", ""),
     }
 
 
+async def _enrich_gbp_info(gbp_info: dict[str, Any]) -> dict[str, Any]:
+    """Attach bounded public review, photo and post observations."""
+    data_id = str(gbp_info.get("data_id") or "").strip()
+    if not data_id:
+        gbp_info.update({
+            "review_list": [],
+            "review_fetch": {"attempted": False, "error": "GBP data_id was unavailable."},
+            "photo_fetch": {"attempted": False, "error": "GBP data_id was unavailable."},
+            "post_fetch": {"attempted": False, "error": "GBP data_id was unavailable."},
+        })
+        return gbp_info
+
+    review_fetch, photo_fetch, post_fetch = await asyncio.gather(
+        fetch_gbp_review_audit(data_id, max_reviews=30),
+        fetch_gbp_photo_audit(data_id),
+        fetch_gbp_post_audit(data_id),
+    )
+    gbp_info["review_list"] = review_fetch.get("items", [])
+    gbp_info["review_fetch"] = {key: value for key, value in review_fetch.items() if key != "items"}
+    gbp_info["photo_fetch"] = photo_fetch
+    gbp_info["post_fetch"] = post_fetch
+    return gbp_info
+
+
 async def fetch_gbp_reviews(
     data_id: str,
-    max_reviews: int = 10,
+    max_reviews: int = 30,
 ) -> list[dict[str, Any]]:
     """
     使用 SerpAPI google_maps_reviews engine 拉取真实评论内容。
@@ -1051,8 +1083,17 @@ async def fetch_gbp_reviews(
     list of dicts，每条包含：author、rating、date、text。
     失败时返回空列表。
     """
+    result = await fetch_gbp_review_audit(data_id, max_reviews=max_reviews)
+    return result.get("items", [])
+
+
+async def fetch_gbp_review_audit(
+    data_id: str,
+    max_reviews: int = 30,
+) -> dict[str, Any]:
+    """Fetch at most the most recent 30 reviews with pagination metadata."""
     if not settings.SERPAPI_KEY or not data_id:
-        return []
+        return {"attempted": False, "items": [], "error": "SerpAPI key or GBP data_id was unavailable."}
 
     params: dict[str, str] = {
         "engine":   "google_maps_reviews",
@@ -1062,28 +1103,111 @@ async def fetch_gbp_reviews(
         "sort_by":  "newestFirst",
     }
 
+    reviews: list[dict[str, Any]] = []
+    token = ""
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
-            resp = await client.get(settings.SERPAPI_BASE_URL, params=params)
-            resp.raise_for_status()
-        data = resp.json()
-
-        reviews_raw: list[dict] = data.get("reviews", [])
-        reviews: list[dict[str, Any]] = []
-        for rv in reviews_raw[:max_reviews]:
-            reviews.append({
-                "author": rv.get("user", {}).get("name", ""),
-                "rating": rv.get("rating", ""),
-                "date":   rv.get("date", ""),
-                "text":   rv.get("snippet", rv.get("description", "")),
-            })
+            for _ in range(4):
+                page_params = dict(params)
+                if token:
+                    page_params["next_page_token"] = token
+                resp = await client.get(settings.SERPAPI_BASE_URL, params=page_params)
+                resp.raise_for_status()
+                data = resp.json()
+                reviews_raw: list[dict[str, Any]] = data.get("reviews", [])
+                for rv in reviews_raw:
+                    response = rv.get("response") or rv.get("owner_response") or {}
+                    owner_reply = response.get("snippet") if isinstance(response, dict) else response
+                    reviews.append({
+                        "author": (rv.get("user") or {}).get("name", ""),
+                        "rating": rv.get("rating", ""),
+                        "date": rv.get("date", ""),
+                        "text": rv.get("snippet", rv.get("description", "")),
+                        "owner_reply": owner_reply or "",
+                    })
+                    if len(reviews) >= max_reviews:
+                        break
+                if len(reviews) >= max_reviews:
+                    break
+                pagination = data.get("serpapi_pagination") or {}
+                token = str(pagination.get("next_page_token") or data.get("next_page_token") or "")
+                if not token:
+                    break
 
         logger.info("[SerpAPI] fetched %d reviews for data_id=%s", len(reviews), data_id)
-        return reviews
+        return {"attempted": True, "items": reviews[:max_reviews], "error": None}
 
     except Exception as exc:  # noqa: BLE001
         logger.warning("[SerpAPI] reviews fetch failed data_id=%s: %s", data_id, exc)
-        return []
+        return {"attempted": True, "items": reviews[:max_reviews], "error": str(exc)}
+
+
+async def fetch_gbp_photo_audit(data_id: str, max_pages: int = 1) -> dict[str, Any]:
+    """Count publicly returned photo records without downloading image files."""
+    return await _fetch_gbp_activity_collection(
+        engine="google_maps_photos",
+        data_id=data_id,
+        collection_key="photos",
+        max_pages=max_pages,
+    )
+
+
+async def fetch_gbp_post_audit(data_id: str, max_pages: int = 1) -> dict[str, Any]:
+    """Count publicly returned GBP posts and preserve the latest observed date."""
+    return await _fetch_gbp_activity_collection(
+        engine="google_maps_posts",
+        data_id=data_id,
+        collection_key="posts",
+        max_pages=max_pages,
+    )
+
+
+async def _fetch_gbp_activity_collection(
+    *,
+    engine: str,
+    data_id: str,
+    collection_key: str,
+    max_pages: int,
+) -> dict[str, Any]:
+    if not settings.SERPAPI_KEY or not data_id:
+        return {"attempted": False, "count": None, "latest_date": None, "error": "SerpAPI key or GBP data_id was unavailable."}
+
+    base_params: dict[str, str] = {
+        "engine": engine,
+        "data_id": data_id,
+        "hl": "en",
+        "api_key": settings.SERPAPI_KEY,
+    }
+    count = 0
+    latest_date: str | None = None
+    token = ""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+            for _ in range(max_pages):
+                params = dict(base_params)
+                if token:
+                    params["next_page_token"] = token
+                resp = await client.get(settings.SERPAPI_BASE_URL, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+                items = data.get(collection_key) or []
+                if not isinstance(items, list):
+                    items = []
+                count += len(items)
+                if latest_date is None:
+                    for item in items:
+                        if isinstance(item, dict):
+                            latest_date = item.get("date") or item.get("published_at") or item.get("created_at")
+                            if latest_date:
+                                break
+                pagination = data.get("serpapi_pagination") or {}
+                token = str(pagination.get("next_page_token") or data.get("next_page_token") or "")
+                if not token:
+                    break
+        return {"attempted": True, "count": count, "latest_date": latest_date, "error": None}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[SerpAPI] %s fetch failed data_id=%s: %s", collection_key, data_id, exc)
+        return {"attempted": True, "count": count, "latest_date": latest_date, "error": str(exc)}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1400,9 +1524,6 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         raw_content_length, appended,
     )
 
-    # ── Schema / GBP: inspect available structured sources without blocking the audit ──
-    schema_data = await fetch_schema_summary(url)
-
     # ── GBP: if data_id in gbp_url, run in parallel with business info ────────
     gbp_prefetch: Optional[dict[str, Any]] = None
     gbp_lookup_attempted = False
@@ -1468,7 +1589,6 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp_url":            gbp_url,
         "gbp_lookup_attempted": gbp_lookup_attempted,
         "gbp_error":          gbp_error,
-        "schema":             schema_data,
         "scraper_source":     scraper_source,
         "sub_pages":          appended,
     }
