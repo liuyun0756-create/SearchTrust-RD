@@ -292,12 +292,17 @@ async def _run_pipeline_inner(
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
         error_code = str(getattr(exc, "error_code", "DIFY_WORKFLOW_FAILED"))
+        validation_errors = list(
+            getattr(exc, "details", None)
+            or getattr(exc, "validation_errors", None)
+            or []
+        )
         error_result = {
             "status": "failed",
             "error_code": error_code,
             "retryable": True,
             "user_message": str(exc),
-            "validation_errors": list(getattr(exc, "details", [])),
+            "validation_errors": validation_errors,
             "task_id": task_id,
         }
         _update_state(

@@ -431,10 +431,14 @@ async def call_dify_workflow(
             if getattr(exc, "retryable", False):
                 last_exc = exc
                 logger.warning(
-                    "Dify output rejected attempt %d/%d — task_id=%s: %s",
+                    "Dify output rejected attempt %d/%d — task_id=%s code=%s details=%s: %s",
                     attempt,
                     settings.DIFY_RETRY,
                     task_id,
+                    getattr(exc, "error_code", "OUTPUT_INVALID"),
+                    getattr(exc, "details", None)
+                    or getattr(exc, "validation_errors", None)
+                    or [],
                     exc,
                 )
                 if attempt < settings.DIFY_RETRY:

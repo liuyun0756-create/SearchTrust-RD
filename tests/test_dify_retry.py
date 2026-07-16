@@ -8,6 +8,12 @@ class RetryableOutputError(RuntimeError):
     retryable = True
 
 
+class RetryableValidationError(RuntimeError):
+    retryable = True
+    error_code = "V21_OUTPUT_INVALID"
+    validation_errors = ["specific validation failure"]
+
+
 class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
     async def test_retryable_native_output_restarts_the_workflow(self):
         attempts = 0
@@ -54,3 +60,25 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(inputs["language"], "English")
         self.assertIn("business_names", inputs["page_facts"])
         self.assertIn("page-0001", inputs["evidence_ledger"])
+
+    async def test_retry_exhaustion_preserves_validation_errors(self):
+        def reject(_output):
+            raise RetryableValidationError("invalid output")
+
+        with patch("app.tasks.dify_client._stream_workflow", new_callable=AsyncMock) as stream, patch(
+            "app.tasks.dify_client.asyncio.sleep", new_callable=AsyncMock
+        ):
+            stream.return_value = {"ok": True}
+            with self.assertRaises(RetryableValidationError) as raised:
+                await call_dify_workflow(
+                    url="https://example.com/service",
+                    page_type="Service Page",
+                    language="English",
+                    content="Checked page content.",
+                    gbp_data={},
+                    task_id="validation-details-fixture",
+                    output_validator=reject,
+                )
+
+        self.assertEqual(raised.exception.validation_errors, ["specific validation failure"])
+        self.assertEqual(stream.await_count, 3)
