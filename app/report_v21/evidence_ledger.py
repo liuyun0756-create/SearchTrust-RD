@@ -20,6 +20,9 @@ GBP_COMPARISON_FIELDS: dict[int, tuple[str, str]] = {
     28: ("phones", "phone"),
     29: ("service_areas", "service_areas"),
 }
+PAGE_SOURCE_TYPES: frozenset[str] = frozenset({
+    "page", "schema", "contact_page", "about_page", "site_internal",
+})
 
 
 def build_evidence_ledger(context: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -140,8 +143,17 @@ def validate_rule_evidence_references(
         if not rule_results.get(rule_id) and evidence_ids:
             errors.append(f"rule_{rule_id} cannot reference evidence when the rule is false.")
         for evidence_id in evidence_ids:
-            if evidence_id not in ledger:
+            item = ledger.get(evidence_id)
+            if item is None:
                 errors.append(f"rule_{rule_id} referenced unknown evidence ID {evidence_id}.")
+                continue
+            source_type = str(item.get("source_type") or "")
+            allowed_sources = _allowed_source_types(rule_id)
+            if source_type not in allowed_sources:
+                errors.append(
+                    f"rule_{rule_id} cannot use {source_type} evidence {evidence_id}; "
+                    f"allowed sources are {sorted(allowed_sources)}."
+                )
 
     self_sufficient = MISSING_OBSERVATION_RULES | frozenset(GBP_COMPARISON_FIELDS)
     for rule_id, triggered in rule_results.items():
@@ -285,11 +297,25 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
 
 def _values(value: Any) -> list[str]:
     if isinstance(value, list):
-        return [text for item in value if (text := str(item).strip())]
+        return [text for item in value if (text := _source_text(item))]
     if value is None:
         return []
-    text = str(value).strip()
+    text = _source_text(value)
     return [text] if text else []
+
+
+def _source_text(value: Any) -> str:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return str(value).strip()
+
+
+def _allowed_source_types(rule_id: int) -> frozenset[str]:
+    if rule_id in GBP_COMPARISON_FIELDS:
+        return frozenset()
+    if rule_id in {37, 38, 39}:
+        return frozenset({"review"})
+    return PAGE_SOURCE_TYPES
 
 
 def _dedupe_evidence(items: list[dict[str, Any]]) -> list[dict[str, Any]]:

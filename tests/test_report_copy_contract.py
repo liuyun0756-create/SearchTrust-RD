@@ -160,6 +160,26 @@ class ReportCopyContractTests(unittest.TestCase):
         errors = validate_rule_evidence_references(results, refs, ledger)
         self.assertTrue(any("unknown evidence ID" in error for error in errors))
 
+    def test_non_gbp_rule_cannot_use_gbp_evidence(self):
+        context = _context()
+        context["gbp_data"] = {"name": "Example Business"}
+        ledger = build_evidence_ledger(context)
+        results = {rule_id: rule_id == 1 for rule_id in ACTIVE_RULE_IDS}
+        refs = {rule_id: [] for rule_id in ACTIVE_RULE_IDS}
+        refs[1] = ["gbp-name-01"]
+
+        errors = validate_rule_evidence_references(results, refs, ledger)
+        self.assertTrue(any("cannot use gbp evidence" in error for error in errors))
+
+    def test_structured_gbp_values_use_json_text(self):
+        context = _context()
+        context["gbp_data"] = {"hours": {"monday": "Open 24 hours"}}
+        ledger = build_evidence_ledger(context)
+        self.assertEqual(
+            ledger["gbp-hours-01"]["extracted_text"],
+            '{"monday": "Open 24 hours"}',
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
