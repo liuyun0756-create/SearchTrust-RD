@@ -18,6 +18,7 @@ from app.report_v21.coverage import build_data_coverage, build_gbp_alignment, bu
 from app.report_v21.dedupe import dedupe_report_v21
 from app.report_v21.gbp_guard import BLOCKED_GBP_CLAIM_PHRASES
 from app.report_v21.models import LAYER_DISPLAY_LABELS, LAYER_LABELS, REQUIRED_LAYER_KEYS, ReportV21
+from app.report_v21.quality import validate_evidence_quality
 from app.report_v21.scoring import apply_deterministic_scoring
 from app.report_v21.validate import GOOGLE_CERTAINTY_PHRASES, OLD_LAYER_LABELS, validate_report_v21
 
@@ -75,6 +76,8 @@ V21_OUTPUT_INVALID_MESSAGE = (
 
 class ReportV21OutputInvalid(RuntimeError):
     """Raised when a new v2.1 run does not contain a valid native Dify report."""
+
+    retryable = True
 
     def __init__(self, validation_errors: list[str], warnings: list[str] | None = None):
         super().__init__(V21_OUTPUT_INVALID_MESSAGE)
@@ -209,6 +212,50 @@ def normalize_native_report_to_v21(outputs: Any, context: dict[str, Any] | None 
         ]
         raise ReportV21OutputInvalid(errors or ["Native report_v2_1 failed validation."], warnings)
 
+    return {"report_v2_1": report}
+
+
+def normalize_report_copy_to_v21(
+    outputs: Any,
+    context: dict[str, Any],
+    rule_results: dict[int, bool],
+    rule_applicability: dict[int, bool],
+    rule_evidence_ids: dict[int, list[str]],
+    evidence_ledger: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Assemble a native report from backend facts and Dify narrative copy."""
+    from app.report_v21.copy_contract import (  # noqa: PLC0415
+        assemble_report_skeleton,
+        parse_report_copy,
+        validate_english_copy,
+    )
+
+    report_copy = parse_report_copy(outputs)
+    validate_english_copy(report_copy)
+    skeleton = assemble_report_skeleton(
+        report_copy,
+        rule_results,
+        rule_applicability,
+        rule_evidence_ids,
+        evidence_ledger,
+        context,
+    )
+    try:
+        report = _finalize_report(skeleton, context, [], run_scoring=True)
+    except ValidationError as exc:
+        raise ReportV21OutputInvalid(
+            [f"Backend report assembly failed Pydantic validation: {exc.errors()}"],
+        ) from exc
+
+    evidence_errors = validate_evidence_quality(report, context)
+    if evidence_errors:
+        raise ReportV21OutputInvalid(evidence_errors)
+    validation = validate_report_v21(report)
+    if not validation.get("valid"):
+        raise ReportV21OutputInvalid(
+            [str(error) for error in validation.get("errors", []) if str(error).strip()]
+            or ["Backend-assembled report_v2_1 failed validation."],
+        )
     return {"report_v2_1": report}
 
 

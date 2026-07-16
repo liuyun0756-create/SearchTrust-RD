@@ -131,6 +131,7 @@ async def _run_pipeline_inner(
     duplicating error-state logic.
     """
     input_page_type = page_type
+    language = "English"
 
     # ── Stage 1: Scraping (0 → 30 %) ─────────────────────────────────────────
     _update_state(
@@ -138,7 +139,7 @@ async def _run_pipeline_inner(
         status="scraping",
         stage="loading",
         percent=5,
-        message="正在读取页面…",
+        message="Reading the page...",
     )
 
     from app.tasks.scraper import scrape  # noqa: PLC0415
@@ -153,7 +154,7 @@ async def _run_pipeline_inner(
             status="failed",
             stage="failed",
             percent=10,
-            message="页面读取失败，请稍后重试",
+            message="The page could not be read. Please try again.",
             error=str(exc),
         )
         return {}
@@ -167,9 +168,91 @@ async def _run_pipeline_inner(
 
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
     from app.models.request import resolve_page_type  # noqa: PLC0415
+    from app.report_v21.evidence_ledger import (  # noqa: PLC0415
+        build_evidence_ledger,
+        serialize_evidence_ledger,
+        validate_rule_evidence_references,
+    )
+    from app.report_v21.normalize import (  # noqa: PLC0415
+        normalize_native_report_to_v21,
+        normalize_report_copy_to_v21,
+    )
+    from app.report_v21.page_facts import build_page_facts  # noqa: PLC0415
+    from app.report_v21.rule_contract import (  # noqa: PLC0415
+        parse_rule_results,
+        parse_rule_evidence_ids,
+        validate_english_narrative,
+    )
 
     # Resolve English page_type to the Chinese value Dify expects
     dify_page_type = resolve_page_type(input_page_type)
+    dify_gbp_data = _build_dify_gbp_payload(gbp_data)
+    page_facts = build_page_facts(content, scrape_result.get("business"))
+
+    v21_context = {
+        "task_id": task_id,
+        "url": url,
+        "page_type": input_page_type,
+        "dify_page_type": dify_page_type,
+        "generated_at": created_at,
+        "input_gbp_url": gbp_url,
+        "gbp_url": final_gbp_url,
+        "gbp_data": gbp_data,
+        "page_content": content,
+        "content": content,
+        "page_business": scrape_result.get("business"),
+        "business": scrape_result.get("business"),
+        "schema_data": scrape_result.get("schema"),
+        "content_checked": bool(content),
+        "scraper_source": scrape_result.get("scraper_source"),
+        "sub_pages": scrape_result.get("sub_pages"),
+        "raw_content_length": scrape_result.get("raw_content_length"),
+        "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
+        "gbp_error": scrape_result.get("gbp_error"),
+        "page_facts": page_facts,
+    }
+    evidence_ledger = build_evidence_ledger(v21_context)
+    serialized_evidence_ledger = serialize_evidence_ledger(evidence_ledger)
+    validated_report: dict[str, Any] = {}
+
+    def _validate_dify_output(outputs: dict[str, Any]) -> None:
+        if "rule_results" in outputs or "report_copy_v2_1" in outputs:
+            rule_results, rule_applicability = parse_rule_results(outputs)
+            rule_evidence_ids = parse_rule_evidence_ids(outputs)
+            evidence_errors = validate_rule_evidence_references(
+                rule_results,
+                rule_evidence_ids,
+                evidence_ledger,
+            )
+            if evidence_errors:
+                from app.report_v21.rule_contract import RetryableDifyOutputError  # noqa: PLC0415
+
+                raise RetryableDifyOutputError(
+                    "V21_EVIDENCE_REFS_INVALID",
+                    "Dify returned invalid or incomplete evidence references.",
+                    evidence_errors,
+                )
+            normalized = normalize_report_copy_to_v21(
+                outputs,
+                v21_context,
+                rule_results,
+                rule_applicability,
+                rule_evidence_ids,
+                evidence_ledger,
+            )
+            v21_context.update({
+                "rule_results": rule_results,
+                "rule_applicability": rule_applicability,
+                "rule_evidence_ids": rule_evidence_ids,
+            })
+        else:
+            # Deployment bridge: an already-published legacy workflow can keep
+            # serving until the user manually imports the new Dify candidate.
+            # It does not receive the new determinism guarantee.
+            validate_english_narrative(outputs)
+            normalized = normalize_native_report_to_v21(outputs, v21_context)
+        validated_report.clear()
+        validated_report.update(normalized)
 
     _last_written_pct: list[int] = [0]
     _last_written_ts: list[float] = [0.0]
@@ -193,7 +276,6 @@ async def _run_pipeline_inner(
         )
 
     try:
-        dify_gbp_data = _build_dify_gbp_payload(gbp_data)
         report = await call_dify_workflow(
             url=url,
             page_type=dify_page_type,
@@ -203,18 +285,31 @@ async def _run_pipeline_inner(
             task_id=task_id,
             progress_callback=_progress_cb,
             gbp_url=final_gbp_url,
+            output_validator=_validate_dify_output,
+            page_facts=page_facts,
+            evidence_ledger=serialized_evidence_ledger,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
+        error_code = str(getattr(exc, "error_code", "DIFY_WORKFLOW_FAILED"))
+        error_result = {
+            "status": "failed",
+            "error_code": error_code,
+            "retryable": True,
+            "user_message": str(exc),
+            "validation_errors": list(getattr(exc, "details", [])),
+            "task_id": task_id,
+        }
         _update_state(
             task_id, created_at,
             status="failed",
             stage="failed",
             percent=50,
-            message="分析失败，请稍后重试",
+            message="The analysis could not be completed. Please try again.",
+            result=error_result,
             error=str(exc),
         )
-        return {}
+        return error_result
 
     # ── Stage 3: Done (90 → 100 %) ───────────────────────────────────────────
     logger.info("Pipeline stage=done task_id=%s", task_id)
@@ -246,34 +341,13 @@ async def _run_pipeline_inner(
     # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
     final_report["gbp_connected"] = bool(gbp_data)
 
-    v21_context = {
-        "task_id": task_id,
-        "url": url,
-        "page_type": input_page_type,
-        "dify_page_type": dify_page_type,
-        "generated_at": created_at,
-        "input_gbp_url": gbp_url,
-        "gbp_url": final_gbp_url,
-        "gbp_data": gbp_data,
-        "page_content": content,
-        "page_business": scrape_result.get("business"),
-        "business": scrape_result.get("business"),
-        "schema_data": scrape_result.get("schema"),
-        "content_checked": bool(content),
-        "scraper_source": scrape_result.get("scraper_source"),
-        "sub_pages": scrape_result.get("sub_pages"),
-        "raw_content_length": scrape_result.get("raw_content_length"),
-        "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
-        "gbp_error": scrape_result.get("gbp_error"),
-    }
-
     try:
         from app.report_v21.normalize import (  # noqa: PLC0415
             ReportV21OutputInvalid,
             normalize_native_report_to_v21,
         )
 
-        normalized_v21 = normalize_native_report_to_v21(final_report, v21_context)
+        normalized_v21 = validated_report or normalize_native_report_to_v21(final_report, v21_context)
         final_report["report_v2_1"] = normalized_v21["report_v2_1"]
         final_report["gbp_connected"] = (
             final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
@@ -322,7 +396,7 @@ async def _run_pipeline_inner(
         status="done",
         stage="done",
         percent=100,
-        message="分析完成",
+        message="Analysis complete",
         result=final_report,
     )
 
@@ -350,5 +424,5 @@ def _build_dify_gbp_payload(gbp_data: dict[str, Any]) -> dict[str, Any]:
     payload = {key: gbp_data.get(key) for key in allowed_keys if key in gbp_data}
     review_list = payload.get("review_list")
     if isinstance(review_list, list):
-        payload["review_list"] = review_list[:10]
+        payload["review_list"] = review_list[:30]
     return payload

@@ -1,6 +1,6 @@
 # SEO Trust Path Analysis Service
 
-异步 SEO 页面诊断后端服务。输入一个页面 URL，系统自动抓取页面内容、拉取 Google Business Profile 数据，交由 Dify AI 工作流生成 SEO 诊断报告。
+异步 SEO 页面诊断后端服务。输入一个页面 URL，系统自动抓取页面内容、拉取 Google Business Profile 数据，Dify 工作流返回规则向量和英文话术，后端统一生成最终 `report_v2_1`。
 
 ## 技术栈
 
@@ -133,7 +133,15 @@ POST /api/v1/analyze
 
 `page_type` 支持 21 种类型，包括：实体目的地、场馆页、活动日历、菜单、商品、本地服务落地页、关于我们、联系我们、博客、文章、FAQ 等。
 
-`language` 支持：`中文` / `English` / `Both`
+`language` 为历史兼容字段，仍接受 `中文` / `English` / `Both`，但产品面向英语市场，后端会统一强制生成英文报告。原始页面摘录、企业名称和地址等客观证据保留源语言。
+
+### Dify v2.1 输出边界
+
+- `rule_results` 和 `rule_applicability` 是完整的规则事实向量；历史 Rule 5 已退役，所以实际为 38 个启用规则。
+- `rule_evidence_ids` 只能引用后端 Evidence Ledger 中的固定 ID，Dify 不返回或改写原文证据。
+- `report_copy_v2_1` 只包含英文解释、影响、建议和执行话术。
+- 后端独立生成层级状态、评分、Coverage、Evidence、GBP 状态、Business Presence 和报告身份字段。
+- 新契约输出不完整、证据 ID 无效或英文话术出现中文时，后端会重试完整 Dify 工作流，最多 3 次。
 
 ### 查询任务状态（轮询）
 

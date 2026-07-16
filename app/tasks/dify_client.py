@@ -278,6 +278,8 @@ async def call_dify_workflow(
     progress_callback: Optional[ProgressCallback] = None,
     gbp_url: str = "",
     output_validator: Optional[OutputValidator] = None,
+    page_facts: Optional[dict[str, Any]] = None,
+    evidence_ledger: str = "",
 ) -> dict[str, Any]:
     """
     Call the Dify SEO analysis workflow and return the final report.
@@ -314,10 +316,15 @@ async def call_dify_workflow(
     inputs: dict[str, Any] = {
         "url": url,
         "page_type": page_type,
-        "language": language,
+        # SearchTrust currently serves English-language markets only. Keep the
+        # argument for API compatibility, but never let legacy values change
+        # the workflow output language.
+        "language": "English",
         "content": content,
         "gbp_data": json.dumps(gbp_data, ensure_ascii=False),
         "gbp_url": gbp_url,
+        "page_facts": json.dumps(page_facts or {}, ensure_ascii=False),
+        "evidence_ledger": evidence_ledger,
     }
 
     # Network-level transient errors worth retrying immediately (with a short

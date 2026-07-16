@@ -35,3 +35,22 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["report_v2_1"]["schema_version"], "2.1")
         self.assertEqual(attempts, 2)
         self.assertEqual(stream.await_count, 2)
+
+    async def test_dify_inputs_force_english_and_include_backend_fact_sources(self):
+        with patch("app.tasks.dify_client._stream_workflow", new_callable=AsyncMock) as stream:
+            stream.return_value = {"ok": True}
+            await call_dify_workflow(
+                url="https://example.com/service",
+                page_type="Service Page",
+                language="中文",
+                content="Checked page content.",
+                gbp_data={"name": "Example"},
+                task_id="english-input-fixture",
+                page_facts={"business_names": ["Example"]},
+                evidence_ledger='[{"id":"page-0001","text":"Checked page content."}]',
+            )
+
+        inputs = stream.await_args.args[0]
+        self.assertEqual(inputs["language"], "English")
+        self.assertIn("business_names", inputs["page_facts"])
+        self.assertIn("page-0001", inputs["evidence_ledger"])

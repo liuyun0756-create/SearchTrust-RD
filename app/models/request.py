@@ -154,7 +154,11 @@ def resolve_page_type(page_type: str) -> str:
 
 
 class Language(str, Enum):
-    """Supported analysis output languages."""
+    """Legacy request values accepted for API compatibility.
+
+    SearchTrust serves English-language markets only. The pipeline normalizes
+    every value to English before invoking Dify.
+    """
 
     CHINESE = "中文"
     ENGLISH = "English"
@@ -196,7 +200,7 @@ class AnalyzeRequest(BaseModel):
     )
     language: Language = Field(
         default=Language.ENGLISH,
-        description="Desired language for the generated SEO report",
+        description="Legacy-compatible request field; generated reports are always English",
     )
     gbp_url: Optional[str] = Field(
         default=None,

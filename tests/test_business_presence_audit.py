@@ -285,7 +285,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             "post_fetch": {"attempted": True, "count": 2},
         })
 
-        self.assertEqual(len(payload["review_list"]), 10)
+        self.assertEqual(len(payload["review_list"]), 30)
         self.assertNotIn("review_fetch", payload)
         self.assertNotIn("photo_fetch", payload)
         self.assertNotIn("post_fetch", payload)
