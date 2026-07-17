@@ -10,7 +10,7 @@ _PHONE_PATTERN = re.compile(r"(?<!\d)(?:\+?1[\s.()-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{
 _ADDRESS_PATTERN = re.compile(
     r"\b\d{1,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z0-9.' -]{2,60}?\s+"
     r"(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|"
-    r"Lane|Ln\.?|Court|Ct\.?|Highway|Hwy\.?|Way|Place|Pl\.?)"
+    r"Lane|Ln\.?|Court|Ct\.?|Highway|Hwy\.?|Way|Place|Pl\.?)(?![A-Za-z])"
     r"(?:\s*,?\s*(?:Suite|Ste\.?|Unit|#)\s*[A-Za-z0-9-]+)?"
     r"(?:\s*,\s*[A-Za-z .'-]{2,40}\s*,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)?",
     flags=re.IGNORECASE,
@@ -56,7 +56,11 @@ def build_page_facts(content: str, business: Any = None) -> dict[str, Any]:
 def _extract_service_areas(content: str) -> list[str]:
     values: list[str] = []
     for raw_line in content.splitlines():
-        line = re.sub(r"[*_#`\[\]()]", " ", raw_line)
+        # Keep link labels while removing their destinations so navigation such as
+        # ``[Service Areas](https://example.com/...)`` cannot become place data.
+        line = re.sub(r"\[([^\]]*)\]\([^)]+\)", r"\1", raw_line)
+        line = re.sub(r"https?://\S+", " ", line, flags=re.IGNORECASE)
+        line = re.sub(r"[*_#`\[\]()]", " ", line)
         match = _SERVICE_PREFIX.search(line)
         if not match:
             continue

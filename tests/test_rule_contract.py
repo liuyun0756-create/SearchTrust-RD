@@ -102,3 +102,17 @@ class RuleContractTests(unittest.TestCase):
         self.assertEqual(facts["service_areas"], ["Tulsa", "Broken Arrow", "Catoosa", "Sapulpa"])
         self.assertTrue(facts["addresses"])
         self.assertEqual(facts["hours"], ["Open 24 hours"])
+
+    def test_page_facts_ignore_service_area_links_and_footer_copyright(self):
+        content = """
+        [Service Areas](https://spotonplumbing.com/service-areas/)
+        Serving Tulsa, Broken Arrow, or Sapulpa.
+        Copyright 2026 Spot On Plumbing
+        """
+
+        facts = build_page_facts(content, {"name": "Spot On Plumbing"})
+
+        self.assertEqual(facts["service_areas"], ["Tulsa", "Broken Arrow", "Sapulpa"])
+        self.assertNotIn("https", facts["service_areas"])
+        self.assertNotIn("spotonplumbing", facts["service_areas"])
+        self.assertNotIn("2026 Spot On Pl", facts["addresses"])
