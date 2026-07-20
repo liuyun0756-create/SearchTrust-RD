@@ -53,13 +53,13 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
                 gbp_data={"name": "Example"},
                 task_id="english-input-fixture",
                 page_facts={"business_names": ["Example"]},
-                evidence_ledger='[{"id":"page-0001","text":"Checked page content."}]',
+                review_corpus='[{"id":"gbp-review-01","text":"Great drain repair."}]',
             )
 
         inputs = stream.await_args.args[0]
         self.assertEqual(inputs["language"], "English")
         self.assertIn("business_names", inputs["page_facts"])
-        self.assertIn("page-0001", inputs["evidence_ledger"])
+        self.assertIn("gbp-review-01", inputs["review_corpus"])
 
     async def test_retry_exhaustion_preserves_validation_errors(self):
         def reject(_output):

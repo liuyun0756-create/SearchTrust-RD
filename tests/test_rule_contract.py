@@ -4,7 +4,6 @@ from app.report_v21.page_facts import build_page_facts
 from app.report_v21.rule_contract import (
     ACTIVE_RULE_IDS,
     RetryableDifyOutputError,
-    parse_rule_evidence_ids,
     parse_rule_results,
     validate_english_narrative,
 )
@@ -56,16 +55,20 @@ class RuleContractTests(unittest.TestCase):
                 "rule_applicability": applicability,
             })
 
-    def test_rule_evidence_ids_require_complete_active_shape(self):
-        refs = {f"rule_{rule_id}": [] for rule_id in ACTIVE_RULE_IDS}
-        refs["rule_26"] = ["page-0001", "gbp-name-01"]
-        parsed = parse_rule_evidence_ids({"rule_evidence_ids": refs})
-        self.assertEqual(parsed[26], ["page-0001", "gbp-name-01"])
-        self.assertNotIn(5, parsed)
+    def test_missing_gbp_snapshot_can_trigger_all_comparison_rules(self):
+        results = _complete_vector(False)
+        applicability = _complete_vector(True)
+        for rule_id in (26, 27, 28, 29):
+            results[f"rule_{rule_id}"] = True
 
-        refs.pop("rule_29")
-        with self.assertRaises(RetryableDifyOutputError):
-            parse_rule_evidence_ids({"rule_evidence_ids": refs})
+        parsed_results, parsed_applicability = parse_rule_results({
+            "rule_results": results,
+            "rule_applicability": applicability,
+            "rule_evidence_ids": "this legacy output is ignored",
+        })
+
+        self.assertTrue(all(parsed_results[rule_id] for rule_id in (26, 27, 28, 29)))
+        self.assertTrue(all(parsed_applicability[rule_id] for rule_id in (26, 27, 28, 29)))
 
     def test_chinese_narrative_is_rejected_but_raw_evidence_is_exempt(self):
         outputs = {

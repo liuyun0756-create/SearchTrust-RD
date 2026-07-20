@@ -148,9 +148,6 @@ def _validate_data_coverage(report: dict[str, Any], errors: list[str], warnings:
     if coverage.get("gbp_checked") != gbp_checked:
         errors.append("data_coverage.gbp_checked must match gbp_status.status == checked")
 
-    if coverage.get("reviews_checked") is True and not gbp_checked:
-        errors.append("data_coverage.reviews_checked cannot be true when GBP is not checked")
-
     if coverage.get("competitor_pages_checked") is not False:
         errors.append("data_coverage.competitor_pages_checked must be false for v2.1")
 

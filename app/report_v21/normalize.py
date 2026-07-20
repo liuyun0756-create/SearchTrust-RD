@@ -220,7 +220,6 @@ def normalize_report_copy_to_v21(
     context: dict[str, Any],
     rule_results: dict[int, bool],
     rule_applicability: dict[int, bool],
-    rule_evidence_ids: dict[int, list[str]],
     evidence_ledger: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     """Assemble a native report from backend facts and Dify narrative copy."""
@@ -236,7 +235,6 @@ def normalize_report_copy_to_v21(
         report_copy,
         rule_results,
         rule_applicability,
-        rule_evidence_ids,
         evidence_ledger,
         context,
     )

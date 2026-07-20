@@ -2,11 +2,9 @@ import copy
 import unittest
 
 from app.report_v21.copy_contract import ReportCopyInvalid
-from app.report_v21.evidence_ledger import (
-    build_evidence_ledger,
-    validate_rule_evidence_references,
-)
+from app.report_v21.evidence_ledger import build_evidence_ledger
 from app.report_v21.normalize import normalize_report_copy_to_v21
+from app.report_v21.review_corpus import build_review_corpus
 from app.report_v21.rule_contract import ACTIVE_RULE_IDS
 from app.report_v21.scoring import REQUIRED_LAYER_KEYS
 
@@ -106,14 +104,12 @@ class ReportCopyContractTests(unittest.TestCase):
         ledger = build_evidence_ledger(context)
         results = {rule_id: rule_id in {21, 22, 23, 24, 25} for rule_id in ACTIVE_RULE_IDS}
         applicability = {rule_id: rule_id not in {26, 27, 28, 29} for rule_id in ACTIVE_RULE_IDS}
-        refs = {rule_id: [] for rule_id in ACTIVE_RULE_IDS}
         outputs = {"report_copy_v2_1": copy_payload or _report_copy()}
         return normalize_report_copy_to_v21(
             outputs,
             context,
             results,
             applicability,
-            refs,
             ledger,
         )["report_v2_1"]
 
@@ -150,26 +146,47 @@ class ReportCopyContractTests(unittest.TestCase):
             self._normalize(payload)
         self.assertEqual(raised.exception.error_code, "V21_LANGUAGE_INVALID")
 
-    def test_unknown_or_missing_positive_evidence_reference_is_rejected(self):
+    def test_backend_builds_positive_rule_evidence_without_dify_references(self):
         context = _context()
         ledger = build_evidence_ledger(context)
         results = {rule_id: rule_id == 1 for rule_id in ACTIVE_RULE_IDS}
-        refs = {rule_id: [] for rule_id in ACTIVE_RULE_IDS}
-        refs[1] = ["invented-evidence"]
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy()},
+            context,
+            results,
+            applicability,
+            ledger,
+        )["report_v2_1"]
+        layer = next(item for item in report["layers"] if item["layer_key"] == "specificity")
+        self.assertEqual(layer["triggered_rule_ids"], [1])
+        self.assertTrue(layer["evidence_items"])
+        self.assertEqual(layer["evidence_items"][0]["source_type"], "page")
 
-        errors = validate_rule_evidence_references(results, refs, ledger)
-        self.assertTrue(any("unknown evidence ID" in error for error in errors))
-
-    def test_non_gbp_rule_cannot_use_gbp_evidence(self):
+    def test_review_rules_use_the_same_backend_review_corpus(self):
         context = _context()
-        context["gbp_data"] = {"name": "Example Business"}
+        context["gbp_data"] = {
+            "review_list": [{"text": "They repaired our water heater in Tulsa."}],
+        }
+        context["review_corpus"] = build_review_corpus(
+            context["content"],
+            context["gbp_data"],
+            page_url=context["url"],
+        )
         ledger = build_evidence_ledger(context)
-        results = {rule_id: rule_id == 1 for rule_id in ACTIVE_RULE_IDS}
-        refs = {rule_id: [] for rule_id in ACTIVE_RULE_IDS}
-        refs[1] = ["gbp-name-01"]
-
-        errors = validate_rule_evidence_references(results, refs, ledger)
-        self.assertTrue(any("cannot use gbp evidence" in error for error in errors))
+        results = {rule_id: rule_id in {37, 38} for rule_id in ACTIVE_RULE_IDS}
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy()},
+            context,
+            results,
+            applicability,
+            ledger,
+        )["report_v2_1"]
+        layer = next(item for item in report["layers"] if item["layer_key"] == "algorithm_fit")
+        self.assertEqual(layer["triggered_rule_ids"], [37, 38])
+        self.assertEqual(len(layer["evidence_items"]), 1)
+        self.assertEqual(layer["evidence_items"][0]["source_type"], "review")
 
     def test_structured_gbp_values_use_json_text(self):
         context = _context()

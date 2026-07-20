@@ -168,19 +168,18 @@ async def _run_pipeline_inner(
 
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
     from app.models.request import resolve_page_type  # noqa: PLC0415
-    from app.report_v21.evidence_ledger import (  # noqa: PLC0415
-        build_evidence_ledger,
-        serialize_evidence_ledger,
-        validate_rule_evidence_references,
-    )
+    from app.report_v21.evidence_ledger import build_evidence_ledger  # noqa: PLC0415
     from app.report_v21.normalize import (  # noqa: PLC0415
         normalize_native_report_to_v21,
         normalize_report_copy_to_v21,
     )
     from app.report_v21.page_facts import build_page_facts  # noqa: PLC0415
+    from app.report_v21.review_corpus import (  # noqa: PLC0415
+        build_review_corpus,
+        serialize_review_corpus,
+    )
     from app.report_v21.rule_contract import (  # noqa: PLC0415
         parse_rule_results,
-        parse_rule_evidence_ids,
         validate_english_narrative,
     )
 
@@ -188,6 +187,12 @@ async def _run_pipeline_inner(
     dify_page_type = resolve_page_type(input_page_type)
     dify_gbp_data = _build_dify_gbp_payload(gbp_data)
     page_facts = build_page_facts(content, scrape_result.get("business"))
+    review_corpus = build_review_corpus(
+        content,
+        gbp_data,
+        page_url=url,
+        gbp_url=final_gbp_url,
+    )
 
     v21_context = {
         "task_id": task_id,
@@ -210,40 +215,25 @@ async def _run_pipeline_inner(
         "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
         "gbp_error": scrape_result.get("gbp_error"),
         "page_facts": page_facts,
+        "review_corpus": review_corpus,
     }
     evidence_ledger = build_evidence_ledger(v21_context)
-    serialized_evidence_ledger = serialize_evidence_ledger(evidence_ledger)
+    serialized_review_corpus = serialize_review_corpus(review_corpus)
     validated_report: dict[str, Any] = {}
 
     def _validate_dify_output(outputs: dict[str, Any]) -> None:
         if "rule_results" in outputs or "report_copy_v2_1" in outputs:
             rule_results, rule_applicability = parse_rule_results(outputs)
-            rule_evidence_ids = parse_rule_evidence_ids(outputs)
-            evidence_errors = validate_rule_evidence_references(
-                rule_results,
-                rule_evidence_ids,
-                evidence_ledger,
-            )
-            if evidence_errors:
-                from app.report_v21.rule_contract import RetryableDifyOutputError  # noqa: PLC0415
-
-                raise RetryableDifyOutputError(
-                    "V21_EVIDENCE_REFS_INVALID",
-                    "Dify returned invalid or incomplete evidence references.",
-                    evidence_errors,
-                )
             normalized = normalize_report_copy_to_v21(
                 outputs,
                 v21_context,
                 rule_results,
                 rule_applicability,
-                rule_evidence_ids,
                 evidence_ledger,
             )
             v21_context.update({
                 "rule_results": rule_results,
                 "rule_applicability": rule_applicability,
-                "rule_evidence_ids": rule_evidence_ids,
             })
         else:
             # Deployment bridge: an already-published legacy workflow can keep
@@ -287,7 +277,7 @@ async def _run_pipeline_inner(
             gbp_url=final_gbp_url,
             output_validator=_validate_dify_output,
             page_facts=page_facts,
-            evidence_ledger=serialized_evidence_ledger,
+            review_corpus=serialized_review_corpus,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
@@ -424,10 +414,6 @@ def _build_dify_gbp_payload(gbp_data: dict[str, Any]) -> dict[str, Any]:
         "website",
         "service_areas",
         "data_id",
-        "review_list",
     )
     payload = {key: gbp_data.get(key) for key in allowed_keys if key in gbp_data}
-    review_list = payload.get("review_list")
-    if isinstance(review_list, list):
-        payload["review_list"] = review_list[:30]
     return payload

@@ -83,6 +83,7 @@ def _validate_traceability(
     errors: list[str] = []
     content = _normalized(context.get("content"))
     gbp_payload = _normalized(json.dumps(context.get("gbp_data") or {}, ensure_ascii=False))
+    review_payload = _normalized(json.dumps(context.get("review_corpus") or [], ensure_ascii=False))
     gbp_checked = _text(_record(context.get("gbp_status")).get("status")) == "checked"
 
     for item in items:
@@ -107,6 +108,8 @@ def _validate_traceability(
                 or (normalized_value and normalized_value in gbp_payload)
             ):
                 errors.append(f"{owner}: GBP value for {label} was not found in backend GBP data.")
+        if source_type == "review" and extracted and review_payload and extracted not in review_payload:
+            errors.append(f"{owner}: review excerpt for {label} was not found in the task review corpus.")
     return errors
 
 

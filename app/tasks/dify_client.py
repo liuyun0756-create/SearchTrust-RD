@@ -279,7 +279,7 @@ async def call_dify_workflow(
     gbp_url: str = "",
     output_validator: Optional[OutputValidator] = None,
     page_facts: Optional[dict[str, Any]] = None,
-    evidence_ledger: str = "",
+    review_corpus: str = "[]",
 ) -> dict[str, Any]:
     """
     Call the Dify SEO analysis workflow and return the final report.
@@ -304,6 +304,8 @@ async def call_dify_workflow(
         Optional async (stage, percent, message) → None.
     gbp_url:
         Google Business Profile URL, passed through to the final report.
+    review_corpus:
+        Backend-built JSON review snapshot shared with Rules 37-39.
 
     Returns
     -------
@@ -324,7 +326,7 @@ async def call_dify_workflow(
         "gbp_data": json.dumps(gbp_data, ensure_ascii=False),
         "gbp_url": gbp_url,
         "page_facts": json.dumps(page_facts or {}, ensure_ascii=False),
-        "evidence_ledger": evidence_ledger,
+        "review_corpus": review_corpus,
     }
 
     # Network-level transient errors worth retrying immediately (with a short

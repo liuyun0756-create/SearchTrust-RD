@@ -276,7 +276,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             [item["id"] for item in issue["evidence_items"]],
         )
 
-    def test_dify_receives_bounded_legacy_gbp_payload(self):
+    def test_dify_gbp_payload_excludes_review_and_backend_audit_details(self):
         payload = _build_dify_gbp_payload({
             "name": "Example Plumbing",
             "review_list": [{"text": str(index)} for index in range(30)],
@@ -285,7 +285,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             "post_fetch": {"attempted": True, "count": 2},
         })
 
-        self.assertEqual(len(payload["review_list"]), 30)
+        self.assertEqual(payload["name"], "Example Plumbing")
+        self.assertNotIn("review_list", payload)
         self.assertNotIn("review_fetch", payload)
         self.assertNotIn("photo_fetch", payload)
         self.assertNotIn("post_fetch", payload)

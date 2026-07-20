@@ -138,10 +138,11 @@ POST /api/v1/analyze
 ### Dify v2.1 输出边界
 
 - `rule_results` 和 `rule_applicability` 是完整的规则事实向量；历史 Rule 5 已退役，所以实际为 38 个启用规则。
-- `rule_evidence_ids` 只能引用后端 Evidence Ledger 中的固定 ID，Dify 不返回或改写原文证据。
 - `report_copy_v2_1` 只包含英文解释、影响、建议和执行话术。
+- 后端将同一份页面事实、GBP事实和 `review_corpus` 输入 Dify，同时独立保留用于报告证据。
+- Dify 不输出 Evidence、Coverage、原始摘录或证据 ID；后端按固定规则范围从任务数据快照生成这些内容。
 - 后端独立生成层级状态、评分、Coverage、Evidence、GBP 状态、Business Presence 和报告身份字段。
-- 新契约输出不完整、证据 ID 无效或英文话术出现中文时，后端会重试完整 Dify 工作流，最多 3 次。
+- 新契约规则向量不完整或英文话术出现中文时，后端会重试完整 Dify 工作流，最多 3 次。
 
 ### 查询任务状态（轮询）
 

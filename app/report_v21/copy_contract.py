@@ -145,7 +145,6 @@ def assemble_report_skeleton(
     copy: ReportCopyV21,
     rule_results: dict[int, bool],
     rule_applicability: dict[int, bool],
-    rule_evidence_ids: dict[int, list[str]],
     evidence_ledger: dict[str, dict[str, Any]],
     context: dict[str, Any],
 ) -> dict[str, Any]:
@@ -179,7 +178,6 @@ def assemble_report_skeleton(
             "explanation": narrative.explanation,
             "evidence_items": build_layer_evidence(
                 triggered_ids,
-                rule_evidence_ids,
                 evidence_ledger,
                 context,
             ),

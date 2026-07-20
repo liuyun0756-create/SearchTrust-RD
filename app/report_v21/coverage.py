@@ -105,7 +105,9 @@ def build_data_coverage(
     schema_summary = build_schema_summary(context)
     page_content_checked = bool(context.get("content_checked"))
     gbp_checked = gbp_status["status"] == "checked"
-    reviews_checked = _has_reviews(gbp_data)
+    review_corpus = context.get("review_corpus")
+    reviews_checked = page_content_checked or _has_reviews(gbp_data)
+    review_text_available = isinstance(review_corpus, list) and bool(review_corpus)
     internal_pages_checked = bool(sub_page_paths)
     contact_page_checked = any("contact" in path for path in sub_page_paths)
     about_page_checked = any("about" in path or "our-story" in path or "who-we-are" in path for path in sub_page_paths)
@@ -117,7 +119,11 @@ def build_data_coverage(
         *(["No JSON-LD schema was detected in the checked page response."] if schema_summary and schema_summary["checked"] and not schema_summary["types"] else []),
         *([] if contact_page_checked else ["No successfully scraped contact page was available for this audit."]),
         *([] if about_page_checked else ["No successfully scraped about page was available for this audit."]),
-        *([] if reviews_checked else ["GBP reviews were not checked or no usable GBP reviews were returned."]),
+        *(
+            []
+            if review_text_available
+            else ["No usable review or testimonial text was found in the checked page and GBP sources."]
+        ),
         *([] if internal_pages_checked else ["Internal sub-page coverage was not confirmed by the scraper."]),
         "Citations are not checked in this audit.",
         "Competitor pages and map-pack / geo-grid visibility are not checked in this audit.",

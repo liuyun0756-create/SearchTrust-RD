@@ -88,41 +88,6 @@ def parse_rule_results(outputs: Any) -> tuple[dict[int, bool], dict[int, bool]]:
     return results, applicability
 
 
-def parse_rule_evidence_ids(outputs: Any) -> dict[int, list[str]]:
-    """Parse the evidence-linker output without accepting generated excerpts."""
-    if not isinstance(outputs, dict):
-        raise RetryableDifyOutputError(
-            V21_RULE_RESULTS_INVALID_CODE,
-            "Dify output did not include rule evidence references.",
-        )
-    raw = _parse_json_object(outputs.get("rule_evidence_ids"), "rule_evidence_ids")
-    if isinstance(raw.get("rule_evidence_ids"), dict):
-        raw = raw["rule_evidence_ids"]
-
-    expected = set(ACTIVE_RULE_KEYS)
-    keys = set(raw)
-    errors: list[str] = []
-    if keys != expected:
-        errors.append(_key_difference("rule_evidence_ids", expected, keys))
-
-    parsed: dict[int, list[str]] = {}
-    for rule_id in ACTIVE_RULE_IDS:
-        key = f"rule_{rule_id}"
-        value = raw.get(key)
-        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-            errors.append(f"{key} must be an array of evidence ID strings.")
-            continue
-        parsed[rule_id] = list(dict.fromkeys(item.strip() for item in value if item.strip()))
-
-    if errors:
-        raise RetryableDifyOutputError(
-            V21_RULE_RESULTS_INVALID_CODE,
-            "Dify returned incomplete or invalid rule evidence references.",
-            errors,
-        )
-    return parsed
-
-
 def validate_english_narrative(outputs: Any) -> None:
     """Reject Chinese characters in Dify-owned narrative fields."""
     report = _extract_native_report(outputs)
