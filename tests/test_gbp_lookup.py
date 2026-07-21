@@ -58,6 +58,12 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             "0x87b68befcc42b925:0x20f8d8fccd659226",
         )
 
+    def test_converts_maps_data_id_to_decimal_cid(self):
+        self.assertEqual(
+            scraper._data_cid_from_data_id("0x87b68befcc42b925:0x20f8d8fccd659226"),
+            "2375887383727280678",
+        )
+
     async def test_short_url_uses_exact_place_lookup(self):
         place = {
             "title": "Spot On Plumbing of Tulsa Plumbers",
@@ -84,8 +90,8 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["name"], "Spot On Plumbing of Tulsa Plumbers")
         self.assertEqual(result["data_id"], "0x87b68befcc42b925:0x20f8d8fccd659226")
         params = client.requests[0][1]["params"]
-        self.assertEqual(params["type"], "place")
-        self.assertEqual(params["data_id"], result["data_id"])
+        self.assertNotIn("type", params)
+        self.assertEqual(params["data_cid"], "2375887383727280678")
 
     async def test_unresolved_supplied_maps_url_does_not_fallback_to_name_search(self):
         client_factory = AsyncMock()

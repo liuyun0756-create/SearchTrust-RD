@@ -830,6 +830,16 @@ def _extract_data_id_from_gbp_url(gbp_url: str) -> Optional[str]:
     return None
 
 
+def _data_cid_from_data_id(data_id: str | None) -> str | None:
+    """Convert the CID half of a Google Maps hex data_id to decimal."""
+    if not data_id or ":" not in data_id:
+        return None
+    try:
+        return str(int(data_id.rsplit(":", 1)[1], 16))
+    except ValueError:
+        return None
+
+
 def _is_google_maps_url(value: str) -> bool:
     """Return whether ``value`` points to a supported Google Maps host."""
     try:
@@ -947,12 +957,16 @@ async def fetch_gbp_data(
     # ── 优先级 1：gbp_url 含 data_id，直接拉 place details ──────────────────
     resolved_gbp_url = await _resolve_gbp_url(gbp_url or "")
     data_id_from_url = _extract_data_id_from_gbp_url(resolved_gbp_url)
-    if data_id_from_url:
-        logger.info("[SerpAPI] gbp_url contains data_id=%s — fetching place details directly", data_id_from_url)
+    data_cid_from_url = _data_cid_from_data_id(data_id_from_url)
+    if data_id_from_url and data_cid_from_url:
+        logger.info(
+            "[SerpAPI] gbp_url contains data_id=%s data_cid=%s — fetching place details directly",
+            data_id_from_url,
+            data_cid_from_url,
+        )
         params: dict[str, str] = {
             "engine":  "google_maps",
-            "type":    "place",
-            "data_id": data_id_from_url,
+            "data_cid": data_cid_from_url,
             "hl":      "en",
             "api_key": settings.SERPAPI_KEY,
         }
