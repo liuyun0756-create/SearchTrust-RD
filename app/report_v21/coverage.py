@@ -13,6 +13,12 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
     gbp_error = _optional_str(context.get("gbp_error"))
     gbp_data = context.get("gbp_data")
     lookup_attempted = bool(context.get("gbp_lookup_attempted"))
+    lookup_diagnostic = context.get("gbp_lookup_diagnostic")
+    diagnostic_reason = (
+        _optional_str(lookup_diagnostic.get("message"))
+        if isinstance(lookup_diagnostic, dict)
+        else None
+    )
     source = _gbp_source(input_gbp_url, gbp_url, gbp_data)
 
     if gbp_error:
@@ -57,7 +63,7 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
             "status": "not_found",
             "source": source,
             "gbp_url": gbp_url or input_gbp_url,
-            "reason": (
+            "reason": diagnostic_reason or (
                 "GBP lookup appears to have been attempted, but no confident "
                 "usable GBP profile was returned. Current scraper output does "
                 "not expose a more specific no-match reason."

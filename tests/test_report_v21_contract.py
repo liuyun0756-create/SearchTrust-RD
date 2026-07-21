@@ -136,6 +136,25 @@ class ReportV21ContractTests(unittest.TestCase):
         self.assertEqual(report["gbp_status"]["source"], "system_discovered")
         self.assertTrue(report["data_coverage"]["gbp_checked"])
 
+    def test_gbp_not_found_uses_backend_lookup_diagnostic(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            input_gbp_url="https://maps.app.goo.gl/fixture",
+            gbp_url="https://maps.app.goo.gl/fixture",
+            gbp_lookup_attempted=True,
+            gbp_lookup_diagnostic={
+                "status": "not_found",
+                "code": "strict_fallback_no_match",
+                "message": "The exact CID and strict website-domain fallback returned no match.",
+            },
+        )
+
+        self.assertEqual(report["gbp_status"]["status"], "not_found")
+        self.assertEqual(
+            report["gbp_status"]["reason"],
+            "The exact CID and strict website-domain fallback returned no match.",
+        )
+
     def test_unchecked_gbp_removes_alignment_assessment_language(self):
         payload = self.contract_compliant_projection(self.real_dify_output)
         payload["report_v2_1"]["primary_blocking_layer"]["reason"] = (

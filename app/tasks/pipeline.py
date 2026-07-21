@@ -214,6 +214,7 @@ async def _run_pipeline_inner(
         "raw_content_length": scrape_result.get("raw_content_length"),
         "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
         "gbp_error": scrape_result.get("gbp_error"),
+        "gbp_lookup_diagnostic": scrape_result.get("gbp_lookup_diagnostic"),
         "page_facts": page_facts,
         "review_corpus": review_corpus,
     }

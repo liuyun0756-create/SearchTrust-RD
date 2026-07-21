@@ -80,6 +80,11 @@ _FAILURE_KEYWORDS: tuple[str, ...] = (
     "ray id",               # Cloudflare ray-id footer
 )
 
+_GBP_LOOKUP_ATTEMPTS = 3
+_GBP_SHORT_URL_CACHE_TTL = 24 * 60 * 60
+_GBP_SHORT_URL_CACHE_MAX = 256
+_GBP_SHORT_URL_CACHE: dict[str, tuple[float, str]] = {}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data structures
@@ -855,8 +860,40 @@ def _is_google_maps_url(value: str) -> bool:
     }
 
 
-async def _resolve_gbp_url(gbp_url: str) -> str:
-    """Expand Google Maps short links before extracting their data_id."""
+def _set_gbp_lookup_diagnostic(
+    diagnostic: dict[str, Any] | None,
+    *,
+    status: str,
+    code: str,
+    message: str,
+) -> None:
+    if diagnostic is not None:
+        diagnostic.update({"status": status, "code": code, "message": message})
+
+
+def _get_cached_gbp_url(gbp_url: str) -> str | None:
+    cached = _GBP_SHORT_URL_CACHE.get(gbp_url)
+    if not cached:
+        return None
+    cached_at, resolved = cached
+    if time.monotonic() - cached_at <= _GBP_SHORT_URL_CACHE_TTL:
+        return resolved
+    _GBP_SHORT_URL_CACHE.pop(gbp_url, None)
+    return None
+
+
+def _cache_gbp_url(gbp_url: str, resolved: str) -> None:
+    if len(_GBP_SHORT_URL_CACHE) >= _GBP_SHORT_URL_CACHE_MAX:
+        oldest = min(_GBP_SHORT_URL_CACHE, key=lambda key: _GBP_SHORT_URL_CACHE[key][0])
+        _GBP_SHORT_URL_CACHE.pop(oldest, None)
+    _GBP_SHORT_URL_CACHE[gbp_url] = (time.monotonic(), resolved)
+
+
+async def _resolve_gbp_url(
+    gbp_url: str,
+    diagnostic: dict[str, Any] | None = None,
+) -> str:
+    """Expand Google Maps short links with bounded retries and caching."""
     if not gbp_url or _extract_data_id_from_gbp_url(gbp_url):
         return gbp_url
 
@@ -867,22 +904,57 @@ async def _resolve_gbp_url(gbp_url: str) -> str:
     if host not in {"maps.app.goo.gl", "goo.gl"}:
         return gbp_url
 
-    try:
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(15.0),
-            follow_redirects=True,
-            max_redirects=10,
-            headers={"User-Agent": random.choice(_USER_AGENTS)},
-        ) as client:
-            response = await client.get(gbp_url)
-            response.raise_for_status()
-        resolved = str(response.url)
-        if _is_google_maps_url(resolved):
-            logger.info("[SerpAPI] resolved GBP short URL to %s", resolved)
-            return resolved
-        logger.warning("[SerpAPI] GBP short URL redirected outside Google Maps: %s", resolved)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("[SerpAPI] failed to resolve GBP short URL %s: %s", gbp_url, exc)
+    cached = _get_cached_gbp_url(gbp_url)
+    if cached:
+        logger.info("[SerpAPI] using cached GBP short URL resolution url=%s", gbp_url)
+        return cached
+
+    last_error = "Google Maps short link did not resolve to a URL containing a data_id."
+    for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(15.0),
+                follow_redirects=True,
+                max_redirects=10,
+                headers={"User-Agent": random.choice(_USER_AGENTS)},
+            ) as client:
+                response = await client.get(gbp_url)
+                response.raise_for_status()
+            resolved = str(response.url)
+            if _is_google_maps_url(resolved) and _extract_data_id_from_gbp_url(resolved):
+                _cache_gbp_url(gbp_url, resolved)
+                logger.info(
+                    "[SerpAPI] resolved GBP short URL attempt=%d/%d to %s",
+                    attempt,
+                    _GBP_LOOKUP_ATTEMPTS,
+                    resolved,
+                )
+                return resolved
+            last_error = f"Google Maps returned a URL without a data_id: {resolved}"
+            logger.warning(
+                "[SerpAPI] GBP short URL resolution incomplete attempt=%d/%d resolved=%s",
+                attempt,
+                _GBP_LOOKUP_ATTEMPTS,
+                resolved,
+            )
+        except Exception as exc:  # noqa: BLE001
+            last_error = str(exc)
+            logger.warning(
+                "[SerpAPI] failed to resolve GBP short URL attempt=%d/%d url=%s: %s",
+                attempt,
+                _GBP_LOOKUP_ATTEMPTS,
+                gbp_url,
+                exc,
+            )
+        if attempt < _GBP_LOOKUP_ATTEMPTS:
+            await asyncio.sleep(2 ** (attempt - 1))
+
+    _set_gbp_lookup_diagnostic(
+        diagnostic,
+        status="error",
+        code="short_url_resolution_failed",
+        message=f"Google Maps short URL resolution failed after {_GBP_LOOKUP_ATTEMPTS} attempts: {last_error}",
+    )
     return gbp_url
 
 
@@ -922,16 +994,31 @@ def _is_confident_gbp_match(
     *,
     website_url: str | None,
     city: str | None,
+    require_domain_match: bool = False,
 ) -> bool:
     """Require an objective domain or city match before accepting search results."""
     target_domain = _normalise_domain(website_url)
     result_domain = _normalise_domain(str(result.get("website") or ""))
     if _domains_match(target_domain, result_domain):
         return True
+    if require_domain_match:
+        return False
 
     target_city = _normalise_match_text(city)
     result_address = _normalise_match_text(str(result.get("address") or ""))
     return bool(target_city and result_address and target_city in result_address)
+
+
+def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
+    error = data.get("error")
+    if error:
+        return str(error)
+    metadata = data.get("search_metadata")
+    if isinstance(metadata, dict):
+        status = str(metadata.get("status") or "").strip().lower()
+        if status and status not in {"success", "cached"}:
+            return f"SerpAPI search status was {metadata.get('status')}."
+    return None
 
 
 async def fetch_gbp_data(
@@ -939,6 +1026,7 @@ async def fetch_gbp_data(
     city: Optional[str],
     website_url: Optional[str] = None,
     gbp_url: Optional[str] = None,
+    diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Query SerpAPI for Google Maps / GBP data.
@@ -952,12 +1040,19 @@ async def fetch_gbp_data(
     """
     if not settings.SERPAPI_KEY:
         logger.warning("[SerpAPI] SERPAPI_KEY not configured — skipping GBP lookup")
+        _set_gbp_lookup_diagnostic(
+            diagnostic,
+            status="error",
+            code="serpapi_key_missing",
+            message="SerpAPI key is not configured.",
+        )
         return {}
 
     # ── 优先级 1：gbp_url 含 data_id，直接拉 place details ──────────────────
-    resolved_gbp_url = await _resolve_gbp_url(gbp_url or "")
+    resolved_gbp_url = await _resolve_gbp_url(gbp_url or "", diagnostic=diagnostic)
     data_id_from_url = _extract_data_id_from_gbp_url(resolved_gbp_url)
     data_cid_from_url = _data_cid_from_data_id(data_id_from_url)
+    exact_failure = ""
     if data_id_from_url and data_cid_from_url:
         logger.info(
             "[SerpAPI] gbp_url contains data_id=%s data_cid=%s — fetching place details directly",
@@ -970,39 +1065,89 @@ async def fetch_gbp_data(
             "hl":      "en",
             "api_key": settings.SERPAPI_KEY,
         }
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=True) as client:
-                resp = await client.get(settings.SERPAPI_BASE_URL, params=params)
-                resp.raise_for_status()
-            data: dict[str, Any] = resp.json()
-            place = data.get("place_results") or (data.get("local_results") or [None])[0]
-            if place:
-                gbp_info = _build_gbp_info(place)
-                gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
-                return await _enrich_gbp_info(gbp_info)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[SerpAPI] place details fetch failed data_id=%s: %s", data_id_from_url, exc)
-
-    # A supplied Maps URL identifies one exact profile. If it cannot be
-    # resolved, returning no GBP is safer than substituting a similarly named
-    # business from a broad domain or name search.
-    if gbp_url and _is_google_maps_url(gbp_url):
-        logger.warning(
-            "[SerpAPI] supplied GBP URL did not yield a data_id; "
-            "skipping fallback search to avoid a wrong business"
-        )
-        return {}
+        for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
+            request_params = dict(params)
+            if attempt > 1:
+                request_params["no_cache"] = "true"
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=True) as client:
+                    resp = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
+                    resp.raise_for_status()
+                data: dict[str, Any] = resp.json()
+                payload_error = _serpapi_payload_error(data)
+                if payload_error:
+                    raise ValueError(payload_error)
+                place = data.get("place_results") or (data.get("local_results") or [None])[0]
+                if isinstance(place, dict) and place:
+                    gbp_info = _build_gbp_info(place)
+                    gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
+                    _set_gbp_lookup_diagnostic(
+                        diagnostic,
+                        status="checked",
+                        code="exact_cid_match",
+                        message=f"GBP profile resolved by exact Google Maps CID on attempt {attempt}.",
+                    )
+                    return await _enrich_gbp_info(gbp_info)
+                exact_failure = "SerpAPI returned no place_results for the exact Google Maps CID."
+                metadata = data.get("search_metadata")
+                search_id = metadata.get("id") if isinstance(metadata, dict) else None
+                logger.warning(
+                    "[SerpAPI] exact CID lookup returned no place attempt=%d/%d data_id=%s search_id=%s",
+                    attempt,
+                    _GBP_LOOKUP_ATTEMPTS,
+                    data_id_from_url,
+                    search_id,
+                )
+            except Exception as exc:  # noqa: BLE001
+                exact_failure = str(exc)
+                logger.warning(
+                    "[SerpAPI] exact CID lookup failed attempt=%d/%d data_id=%s: %s",
+                    attempt,
+                    _GBP_LOOKUP_ATTEMPTS,
+                    data_id_from_url,
+                    exc,
+                )
+            if attempt < _GBP_LOOKUP_ATTEMPTS:
+                await asyncio.sleep(2 ** (attempt - 1))
 
     # ── 优先级 2 & 3：构建搜索查询 ──────────────────────────────────────────
+    strict_domain_fallback = bool(gbp_url and _is_google_maps_url(gbp_url))
     if website_url:
         domain = urlparse(website_url).netloc or website_url
         query = domain
-        logger.info("[SerpAPI] querying by domain=%s", domain)
+        logger.info(
+            "[SerpAPI] querying by domain=%s strict_domain_match=%s",
+            domain,
+            strict_domain_fallback,
+        )
     elif business_name:
+        if strict_domain_fallback:
+            message = (
+                "The supplied Google Maps URL could not be resolved and no website domain "
+                "was available for a safe fallback."
+            )
+            _set_gbp_lookup_diagnostic(
+                diagnostic,
+                status="error",
+                code="safe_fallback_unavailable",
+                message=message,
+            )
+            logger.warning("[SerpAPI] %s", message)
+            return {}
         query = f"{business_name} {city or ''}".strip()
         logger.info("[SerpAPI] querying by name+city=%s", query)
     else:
         logger.info("[SerpAPI] no query params — skipping GBP lookup")
+        _set_gbp_lookup_diagnostic(
+            diagnostic,
+            status="error" if gbp_url else "skipped",
+            code="safe_fallback_unavailable" if gbp_url else "lookup_input_missing",
+            message=(
+                "No website domain was available for a safe GBP fallback."
+                if gbp_url
+                else "No GBP URL, website, business name, or city was available for lookup."
+            ),
+        )
         return {}
 
     params: dict[str, str] = {
@@ -1013,65 +1158,104 @@ async def fetch_gbp_data(
         "api_key": settings.SERPAPI_KEY,
     }
 
-    try:
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0),
-            follow_redirects=True,
-        ) as client:
-            resp = await client.get(settings.SERPAPI_BASE_URL, params=params)
-            resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
+    last_request_error = ""
+    for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
+        request_params = dict(params)
+        if attempt > 1:
+            request_params["no_cache"] = "true"
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0),
+                follow_redirects=True,
+            ) as client:
+                resp = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
+                resp.raise_for_status()
+            data: dict[str, Any] = resp.json()
+            payload_error = _serpapi_payload_error(data)
+            if payload_error:
+                raise ValueError(payload_error)
 
-        # A singular place_results response can still be a fuzzy search match.
-        # Require an objective domain or city match before accepting it.
-        matched_raw: Optional[dict] = None
-        if "place_results" in data:
-            candidate = data["place_results"]
-            if isinstance(candidate, dict) and _is_confident_gbp_match(
-                candidate,
-                website_url=website_url,
-                city=city,
-            ):
-                logger.info("[SerpAPI] verified place_results query=%r", query)
-                matched_raw = candidate
-            else:
-                logger.warning("[SerpAPI] rejected unverified place_results query=%r", query)
+            candidates: list[dict[str, Any]] = []
+            place_result = data.get("place_results")
+            if isinstance(place_result, dict):
+                candidates.append(place_result)
+            local_results = data.get("local_results") or []
+            if isinstance(local_results, dict):
+                candidates.append(local_results)
+            elif isinstance(local_results, list):
+                candidates.extend(item for item in local_results if isinstance(item, dict))
 
-        if matched_raw is None:
-            local: list[dict[str, Any]] = data.get("local_results", [])
-            if local:
-                results = local if isinstance(local, list) else [local]
-                for candidate in results:
-                    if isinstance(candidate, dict) and _is_confident_gbp_match(
+            matched_raw = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if _is_confident_gbp_match(
                         candidate,
                         website_url=website_url,
                         city=city,
-                    ):
-                        logger.info("[SerpAPI] verified local result query=%r", query)
-                        matched_raw = candidate
-                        break
-
-                # 3. 兜底：域名和城市都没匹配到，不再盲取第一条——直接放弃
-                if matched_raw is None:
-                    logger.warning(
-                        "[SerpAPI] no confident match found (domain/city both missed) query=%r"
-                        " — skipping to avoid wrong business",
-                        query,
+                        require_domain_match=strict_domain_fallback,
                     )
+                ),
+                None,
+            )
+            if matched_raw is not None:
+                gbp_info = _build_gbp_info(matched_raw)
+                _set_gbp_lookup_diagnostic(
+                    diagnostic,
+                    status="checked",
+                    code="strict_domain_fallback_match" if strict_domain_fallback else "search_match",
+                    message=(
+                        "Exact CID lookup was unavailable; GBP profile was verified by exact website domain."
+                        if strict_domain_fallback
+                        else "GBP profile was verified by website domain or city."
+                    ),
+                )
+                return await _enrich_gbp_info(gbp_info)
 
-        if matched_raw is not None:
-            gbp_info = _build_gbp_info(matched_raw)
-            return await _enrich_gbp_info(gbp_info)
+            code = "strict_fallback_no_match" if strict_domain_fallback else "search_no_match"
+            message = (
+                "Exact CID lookup did not return a profile and the strict website-domain fallback "
+                "did not find a matching GBP profile."
+                if strict_domain_fallback
+                else "GBP search completed without a confident website-domain or city match."
+            )
+            _set_gbp_lookup_diagnostic(
+                diagnostic,
+                status="not_found",
+                code=code,
+                message=message,
+            )
+            logger.warning(
+                "[SerpAPI] no confident match query=%r strict_domain_match=%s candidate_count=%d exact_failure=%s",
+                query,
+                strict_domain_fallback,
+                len(candidates),
+                exact_failure,
+            )
+            return {}
 
-        logger.info("[SerpAPI] no GBP results found query=%r", query)
-        return {}
+        except Exception as exc:  # noqa: BLE001
+            last_request_error = str(exc)
+            logger.warning(
+                "[SerpAPI] fallback request failed attempt=%d/%d query=%r: %s",
+                attempt,
+                _GBP_LOOKUP_ATTEMPTS,
+                query,
+                exc,
+            )
+            if attempt < _GBP_LOOKUP_ATTEMPTS:
+                await asyncio.sleep(2 ** (attempt - 1))
 
-    except httpx.HTTPError as exc:
-        logger.error("[SerpAPI] request failed query=%r: %s", query, exc)
-        return {}
-    except (json.JSONDecodeError, KeyError, IndexError) as exc:
-        logger.error("[SerpAPI] response parse failed: %s", exc)
-        return {}
+    _set_gbp_lookup_diagnostic(
+        diagnostic,
+        status="error",
+        code="serpapi_request_failed",
+        message=(
+            f"GBP lookup failed after {_GBP_LOOKUP_ATTEMPTS} attempts: {last_request_error}. "
+            f"Exact lookup detail: {exact_failure or 'not available'}"
+        ),
+    )
+    return {}
 
 
 def extract_schema_summary(html: str) -> list[str]:
@@ -1646,6 +1830,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     gbp_prefetch: Optional[dict[str, Any]] = None
     gbp_lookup_attempted = False
     gbp_error: str | None = None
+    gbp_lookup_diagnostic: dict[str, Any] = {}
     has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
     if has_data_id:
         logger.info("[Scraper] data_id detected — fetching GBP in parallel with business info")
@@ -1655,6 +1840,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             city=None,
             website_url=url,
             gbp_url=gbp_url,
+            diagnostic=gbp_lookup_diagnostic,
         )
         gbp_prefetch = gbp_prefetch_result
 
@@ -1691,11 +1877,17 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 city=business_info.get("city"),
                 website_url=url,
                 gbp_url=gbp_url,
+                diagnostic=gbp_lookup_diagnostic,
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
             gbp_error = str(exc)
             gbp_data = {}
+
+    if not gbp_data and gbp_lookup_diagnostic.get("status") == "error":
+        code = str(gbp_lookup_diagnostic.get("code") or "lookup_failed")
+        message = str(gbp_lookup_diagnostic.get("message") or "GBP lookup failed.")
+        gbp_error = f"{code}: {message}"
 
     # ── Return ────────────────────────────────────────────────────────────────
     result: dict[str, Any] = {
@@ -1707,6 +1899,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp_url":            gbp_url,
         "gbp_lookup_attempted": gbp_lookup_attempted,
         "gbp_error":          gbp_error,
+        "gbp_lookup_diagnostic": gbp_lookup_diagnostic or None,
         "scraper_source":     scraper_source,
         "sub_pages":          appended,
     }
