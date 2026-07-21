@@ -35,6 +35,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
+from urllib.parse import unquote, urlparse
 
 import httpx
 
@@ -823,10 +824,104 @@ def _extract_data_id_from_gbp_url(gbp_url: str) -> Optional[str]:
     if not gbp_url:
         return None
     # data_id 格式：0x<hex>:0x<hex>，出现在 Maps URL 的 data= 片段里
-    m = re.search(r"(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)", gbp_url)
+    m = re.search(r"(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)", unquote(gbp_url))
     if m:
         return m.group(1)
     return None
+
+
+def _is_google_maps_url(value: str) -> bool:
+    """Return whether ``value`` points to a supported Google Maps host."""
+    try:
+        host = (urlparse(value).hostname or "").lower()
+    except ValueError:
+        return False
+    return host in {
+        "google.com",
+        "www.google.com",
+        "maps.google.com",
+        "maps.app.goo.gl",
+        "goo.gl",
+    }
+
+
+async def _resolve_gbp_url(gbp_url: str) -> str:
+    """Expand Google Maps short links before extracting their data_id."""
+    if not gbp_url or _extract_data_id_from_gbp_url(gbp_url):
+        return gbp_url
+
+    try:
+        host = (urlparse(gbp_url).hostname or "").lower()
+    except ValueError:
+        return gbp_url
+    if host not in {"maps.app.goo.gl", "goo.gl"}:
+        return gbp_url
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(15.0),
+            follow_redirects=True,
+            max_redirects=10,
+            headers={"User-Agent": random.choice(_USER_AGENTS)},
+        ) as client:
+            response = await client.get(gbp_url)
+            response.raise_for_status()
+        resolved = str(response.url)
+        if _is_google_maps_url(resolved):
+            logger.info("[SerpAPI] resolved GBP short URL to %s", resolved)
+            return resolved
+        logger.warning("[SerpAPI] GBP short URL redirected outside Google Maps: %s", resolved)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[SerpAPI] failed to resolve GBP short URL %s: %s", gbp_url, exc)
+    return gbp_url
+
+
+def _normalise_domain(value: str | None) -> str:
+    if not value:
+        return ""
+    candidate = value.strip()
+    if "://" not in candidate:
+        candidate = "https://" + candidate
+    try:
+        host = (urlparse(candidate).hostname or "").lower().rstrip(".")
+    except ValueError:
+        return ""
+    return host.removeprefix("www.")
+
+
+def _domains_match(left: str, right: str) -> bool:
+    return bool(
+        left
+        and right
+        and (
+            left == right
+            or left.endswith("." + right)
+            or right.endswith("." + left)
+        )
+    )
+
+
+def _normalise_match_text(value: str | None) -> str:
+    if not value:
+        return ""
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
+
+
+def _is_confident_gbp_match(
+    result: dict[str, Any],
+    *,
+    website_url: str | None,
+    city: str | None,
+) -> bool:
+    """Require an objective domain or city match before accepting search results."""
+    target_domain = _normalise_domain(website_url)
+    result_domain = _normalise_domain(str(result.get("website") or ""))
+    if _domains_match(target_domain, result_domain):
+        return True
+
+    target_city = _normalise_match_text(city)
+    result_address = _normalise_match_text(str(result.get("address") or ""))
+    return bool(target_city and result_address and target_city in result_address)
 
 
 async def fetch_gbp_data(
@@ -839,7 +934,7 @@ async def fetch_gbp_data(
     Query SerpAPI for Google Maps / GBP data.
 
     Priority:
-    1. gbp_url 含 data_id → 直接查 place details，最精准，跳过搜索
+    1. gbp_url 短链或长链 → 展开并提取 data_id，直接查 place details
     2. website_url 域名   → Google Maps 搜索，再按域名匹配结果
     3. business_name+city → Google Maps 搜索，按城市匹配结果
 
@@ -850,7 +945,8 @@ async def fetch_gbp_data(
         return {}
 
     # ── 优先级 1：gbp_url 含 data_id，直接拉 place details ──────────────────
-    data_id_from_url = _extract_data_id_from_gbp_url(gbp_url or "")
+    resolved_gbp_url = await _resolve_gbp_url(gbp_url or "")
+    data_id_from_url = _extract_data_id_from_gbp_url(resolved_gbp_url)
     if data_id_from_url:
         logger.info("[SerpAPI] gbp_url contains data_id=%s — fetching place details directly", data_id_from_url)
         params: dict[str, str] = {
@@ -871,12 +967,21 @@ async def fetch_gbp_data(
                 gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
                 return await _enrich_gbp_info(gbp_info)
         except Exception as exc:  # noqa: BLE001
-            logger.warning("[SerpAPI] place details fetch failed data_id=%s: %s; falling back to search", data_id_from_url, exc)
+            logger.warning("[SerpAPI] place details fetch failed data_id=%s: %s", data_id_from_url, exc)
+
+    # A supplied Maps URL identifies one exact profile. If it cannot be
+    # resolved, returning no GBP is safer than substituting a similarly named
+    # business from a broad domain or name search.
+    if gbp_url and _is_google_maps_url(gbp_url):
+        logger.warning(
+            "[SerpAPI] supplied GBP URL did not yield a data_id; "
+            "skipping fallback search to avoid a wrong business"
+        )
+        return {}
 
     # ── 优先级 2 & 3：构建搜索查询 ──────────────────────────────────────────
     if website_url:
-        from urllib.parse import urlparse as _urlparse
-        domain = _urlparse(website_url).netloc or website_url
+        domain = urlparse(website_url).netloc or website_url
         query = domain
         logger.info("[SerpAPI] querying by domain=%s", domain)
     elif business_name:
@@ -903,36 +1008,34 @@ async def fetch_gbp_data(
             resp.raise_for_status()
         data: dict[str, Any] = resp.json()
 
-        # Prefer place_results (exact match) over local_results (list)
+        # A singular place_results response can still be a fuzzy search match.
+        # Require an objective domain or city match before accepting it.
         matched_raw: Optional[dict] = None
         if "place_results" in data:
-            logger.info("[SerpAPI] place_results found query=%r", query)
-            matched_raw = data["place_results"]
+            candidate = data["place_results"]
+            if isinstance(candidate, dict) and _is_confident_gbp_match(
+                candidate,
+                website_url=website_url,
+                city=city,
+            ):
+                logger.info("[SerpAPI] verified place_results query=%r", query)
+                matched_raw = candidate
+            else:
+                logger.warning("[SerpAPI] rejected unverified place_results query=%r", query)
 
         if matched_raw is None:
             local: list[dict[str, Any]] = data.get("local_results", [])
             if local:
                 results = local if isinstance(local, list) else [local]
-                city_lower = (city or "").lower()
-
-                # 1. 优先：网站域名精确匹配（最可靠）
-                if website_url:
-                    from urllib.parse import urlparse as _up
-                    target_domain = _up(website_url).netloc.lower().lstrip("www.")
-                    for r in results:
-                        r_site = r.get("website", "").lower().lstrip("www.")
-                        if target_domain and target_domain in r_site:
-                            logger.info("[SerpAPI] domain-matched result query=%r domain=%s", query, target_domain)
-                            matched_raw = r
-                            break
-
-                # 2. 次选：城市匹配
-                if matched_raw is None:
-                    for r in results:
-                        if city_lower and city_lower in r.get("address", "").lower():
-                            logger.info("[SerpAPI] city-matched local result query=%r", query)
-                            matched_raw = r
-                            break
+                for candidate in results:
+                    if isinstance(candidate, dict) and _is_confident_gbp_match(
+                        candidate,
+                        website_url=website_url,
+                        city=city,
+                    ):
+                        logger.info("[SerpAPI] verified local result query=%r", query)
+                        matched_raw = candidate
+                        break
 
                 # 3. 兜底：域名和城市都没匹配到，不再盲取第一条——直接放弃
                 if matched_raw is None:
