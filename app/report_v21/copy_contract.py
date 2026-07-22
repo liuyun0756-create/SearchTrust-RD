@@ -18,6 +18,14 @@ from app.report_v21.models import (
 from app.report_v21.scoring import LAYER_RULES, calculate_layer_status
 
 
+GBP_FINDING_KEYS: dict[str, int] = {
+    "rule_26": 26,
+    "rule_27": 27,
+    "rule_28": 28,
+    "rule_29": 29,
+}
+
+
 class _StrictCopyModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -44,6 +52,7 @@ class LayerCopy(_StrictCopyModel):
 
 
 class KeyIssueCopy(_StrictCopyModel):
+    finding_key: Literal["layer", "rule_26", "rule_27", "rule_28", "rule_29"] = "layer"
     issue_title: str
     affected_layer: LayerKey
     judgement: str
@@ -186,20 +195,53 @@ def assemble_report_skeleton(
         })
 
     issues: list[dict[str, Any]] = []
+    seen_gbp_finding_keys: set[str] = set()
     for index, issue in enumerate(copy.key_issues, start=1):
         layer_key = issue.affected_layer
         status = layer_statuses[layer_key]
-        triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
-        if status == "good" or not triggered_ids:
+        layer_triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
+        if status == "good" or not layer_triggered_ids:
             continue
-        layer = next(item for item in layers if item["layer_key"] == layer_key)
+
+        if issue.finding_key in GBP_FINDING_KEYS:
+            rule_id = GBP_FINDING_KEYS[issue.finding_key]
+            if layer_key != "entity_consistency":
+                raise ReportCopyInvalid([
+                    f"{issue.finding_key} must use affected_layer entity_consistency."
+                ])
+            if rule_id not in triggered:
+                raise ReportCopyInvalid([
+                    f"{issue.finding_key} was not triggered by the backend and must not be a Key Issue."
+                ])
+            if issue.finding_key in seen_gbp_finding_keys:
+                raise ReportCopyInvalid([
+                    f"{issue.finding_key} may appear only once in key_issues."
+                ])
+            seen_gbp_finding_keys.add(issue.finding_key)
+            triggered_ids = [rule_id]
+            issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
+        else:
+            if layer_key == "entity_consistency":
+                raise ReportCopyInvalid([
+                    "Entity Consistency Key Issues must use rule_26, rule_27, rule_28, or rule_29 finding_key."
+                ])
+            triggered_ids = layer_triggered_ids
+            layer = next(item for item in layers if item["layer_key"] == layer_key)
+            issue_evidence = layer["evidence_items"]
+
+        for action in issue.recommended_actions:
+            if action.affected_layer != layer_key:
+                raise ReportCopyInvalid([
+                    f"{issue.finding_key} recommended action must use affected_layer {layer_key}."
+                ])
+
         issues.append({
             "id": f"issue-{index:02d}-{layer_key}",
             "issue_title": issue.issue_title,
             "affected_layer": layer_key,
             "related_rule_ids": triggered_ids,
             "severity": "high" if status == "weak" else "medium",
-            "evidence_items": layer["evidence_items"],
+            "evidence_items": issue_evidence,
             "judgement": issue.judgement,
             "explanation": issue.explanation,
             "why_it_matters": issue.why_it_matters,
@@ -211,6 +253,20 @@ def assemble_report_skeleton(
                 f"issue-{index:02d}",
             ),
         })
+
+    entity_status = layer_statuses["entity_consistency"]
+    if entity_status in {"medium", "weak"}:
+        expected_gbp_finding_keys = {
+            f"rule_{rule_id}"
+            for rule_id in LAYER_RULES["entity_consistency"]
+            if rule_id in triggered
+        }
+        missing_gbp_findings = expected_gbp_finding_keys - seen_gbp_finding_keys
+        if missing_gbp_findings:
+            raise ReportCopyInvalid([
+                "Each triggered backend GBP finding requires one Key Issue: "
+                + ", ".join(sorted(missing_gbp_findings))
+            ])
 
     issue_layers = {issue["affected_layer"] for issue in issues}
     missing_weak = [key for key, status in layer_statuses.items() if status == "weak" and key not in issue_layers]

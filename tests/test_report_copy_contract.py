@@ -3,6 +3,7 @@ import unittest
 
 from app.report_v21.copy_contract import ReportCopyInvalid
 from app.report_v21.evidence_ledger import build_evidence_ledger
+from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.normalize import normalize_report_copy_to_v21
 from app.report_v21.review_corpus import build_review_corpus
 from app.report_v21.rule_contract import ACTIVE_RULE_IDS
@@ -196,6 +197,93 @@ class ReportCopyContractTests(unittest.TestCase):
             ledger["gbp-hours-01"]["extracted_text"],
             '{"monday": "Open 24 hours"}',
         )
+
+    def test_gbp_key_issues_bind_one_rule_action_and_evidence_each(self):
+        context = _context()
+        context["content"] += "\n1911 West Reno Street, Broken Arrow, OK 74012"
+        context["page_content"] = context["content"]
+        context["page_business"] = {"name": "Spot On Plumbing", "phone": "(918) 818-3901"}
+        context.update({
+            "input_gbp_url": "https://maps.google.com/example",
+            "gbp_url": "https://maps.google.com/example",
+            "gbp_lookup_attempted": True,
+            "page_facts": {
+                "business_names": ["Spot On Plumbing"],
+                "addresses": ["1911 West Reno Street, Broken Arrow, OK 74012"],
+                "phones": ["(918) 818-3901"],
+                "service_areas": ["Tulsa"],
+            },
+            "gbp_data": {
+                "name": "Spot On Plumbing",
+                "address": "1911 W Reno St, Broken Arrow, OK 74012",
+                "phone": "(918) 844-7961",
+                "service_areas": ["Tulsa"],
+            },
+        })
+        results = {rule_id: False for rule_id in ACTIVE_RULE_IDS}
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        backend_results, backend_applicability, findings = evaluate_gbp_rules(context)
+        results.update(backend_results)
+        applicability.update(backend_applicability)
+        context["backend_gbp_findings"] = findings
+        payload = copy.deepcopy(_report_copy())
+        payload["key_issues"] = []
+        for rule_id, title in ((27, "Address identity differs"), (28, "Phone identity differs")):
+            action = _action("entity_consistency")
+            payload["key_issues"].append({
+                "finding_key": f"rule_{rule_id}",
+                "issue_title": title,
+                "affected_layer": "entity_consistency",
+                "judgement": title,
+                "explanation": "The checked values are not exactly aligned.",
+                "why_it_matters": "Stable identity fields help users verify the business.",
+                "impacts": ["The page and profile can present conflicting identity signals."],
+                "suggestions": ["Confirm and publish one canonical value."],
+                "recommended_actions": [action],
+            })
+
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            context,
+            results,
+            applicability,
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        issues = [item for item in report["key_issues"] if item["affected_layer"] == "entity_consistency"]
+        self.assertEqual([item["related_rule_ids"] for item in issues], [[27], [28]])
+        self.assertEqual([item["recommended_actions"][0]["related_rule_ids"] for item in issues], [[27], [28]])
+        self.assertTrue(all(all(f"rule-{rule_id}" in evidence["id"] or evidence["id"] == f"bp-{key}"
+                                for evidence in issue["evidence_items"])
+                            for issue, rule_id, key in zip(issues, (27, 28), ("address", "phone"))))
+
+    def test_medium_entity_consistency_requires_each_triggered_finding_key(self):
+        context = _context()
+        ledger = build_evidence_ledger(context)
+        results = {rule_id: rule_id in {27, 28} for rule_id in ACTIVE_RULE_IDS}
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        payload = copy.deepcopy(_report_copy())
+        payload["key_issues"] = [{
+            "finding_key": "rule_27",
+            "issue_title": "Address identity differs",
+            "affected_layer": "entity_consistency",
+            "judgement": "The address differs.",
+            "explanation": "The values are not aligned.",
+            "why_it_matters": "Identity should be stable.",
+            "impacts": ["Conflicting identity signal."],
+            "suggestions": ["Confirm one address."],
+            "recommended_actions": [_action("entity_consistency")],
+        }]
+
+        with self.assertRaises(ReportCopyInvalid) as raised:
+            normalize_report_copy_to_v21(
+                {"report_copy_v2_1": payload},
+                context,
+                results,
+                applicability,
+                ledger,
+            )
+        self.assertIn("rule_28", " ".join(raised.exception.details))
 
 
 if __name__ == "__main__":

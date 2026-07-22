@@ -294,6 +294,21 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
     gbp_values = _values(gbp.get(gbp_field))
     field_label = gbp_field.replace("_", " ")
     finding = RULE_FINDING_LABELS[rule_id]
+    backend_findings = context.get("backend_gbp_findings")
+    backend_finding = (
+        backend_findings.get(f"rule_{rule_id}")
+        if isinstance(backend_findings, dict)
+        else None
+    )
+    condition = str(backend_finding.get("condition") or "mismatch") if isinstance(backend_finding, dict) else "mismatch"
+    explanation = (
+        str(backend_finding.get("explanation") or finding)
+        if isinstance(backend_finding, dict)
+        else finding
+    )
+    comparison_result = "missing" if condition in {
+        "gbp_unavailable", "gbp_field_missing", "page_missing"
+    } else "mismatch"
     items: list[dict[str, Any]] = []
 
     if page_values:
@@ -307,9 +322,9 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
                 "extracted_text": value,
                 "normalized_value": None,
                 "expected_value": "; ".join(gbp_values) or "GBP field not available",
-                "comparison_result": "mismatch",
+                "comparison_result": comparison_result,
                 "confidence": "high",
-                "explanation": finding,
+                "explanation": explanation,
             })
     else:
         items.append({
@@ -323,7 +338,7 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
             "expected_value": "; ".join(gbp_values) or "GBP field not available",
             "comparison_result": "missing",
             "confidence": "high",
-            "explanation": finding,
+            "explanation": explanation,
         })
 
     for index, value in enumerate(gbp_values[:4], start=1):
@@ -336,9 +351,9 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
             "extracted_text": value,
             "normalized_value": None,
             "expected_value": "; ".join(page_values) or "Page field not found",
-            "comparison_result": "mismatch",
+            "comparison_result": comparison_result,
             "confidence": "high",
-            "explanation": finding,
+            "explanation": explanation,
         })
     return items
 

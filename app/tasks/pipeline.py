@@ -169,6 +169,7 @@ async def _run_pipeline_inner(
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
     from app.models.request import resolve_page_type  # noqa: PLC0415
     from app.report_v21.evidence_ledger import build_evidence_ledger  # noqa: PLC0415
+    from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules  # noqa: PLC0415
     from app.report_v21.normalize import (  # noqa: PLC0415
         normalize_native_report_to_v21,
         normalize_report_copy_to_v21,
@@ -219,12 +220,18 @@ async def _run_pipeline_inner(
         "review_corpus": review_corpus,
     }
     evidence_ledger = build_evidence_ledger(v21_context)
+    backend_gbp_results, backend_gbp_applicability, backend_gbp_findings = evaluate_gbp_rules(v21_context)
+    v21_context["backend_gbp_findings"] = backend_gbp_findings
     serialized_review_corpus = serialize_review_corpus(review_corpus)
     validated_report: dict[str, Any] = {}
 
     def _validate_dify_output(outputs: dict[str, Any]) -> None:
         if "rule_results" in outputs or "report_copy_v2_1" in outputs:
-            rule_results, rule_applicability = parse_rule_results(outputs)
+            rule_results, rule_applicability = parse_rule_results(
+                outputs,
+                backend_gbp_results=backend_gbp_results,
+                backend_gbp_applicability=backend_gbp_applicability,
+            )
             normalized = normalize_report_copy_to_v21(
                 outputs,
                 v21_context,
@@ -279,6 +286,7 @@ async def _run_pipeline_inner(
             output_validator=_validate_dify_output,
             page_facts=page_facts,
             review_corpus=serialized_review_corpus,
+            backend_gbp_findings=backend_gbp_findings,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)

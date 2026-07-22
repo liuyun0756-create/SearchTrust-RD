@@ -27,8 +27,13 @@ class RetryableDifyOutputError(RuntimeError):
         self.details = details or []
 
 
-def parse_rule_results(outputs: Any) -> tuple[dict[int, bool], dict[int, bool]]:
-    """Parse and strictly validate the complete active-rule vector."""
+def parse_rule_results(
+    outputs: Any,
+    *,
+    backend_gbp_results: dict[int, bool] | None = None,
+    backend_gbp_applicability: dict[int, bool] | None = None,
+) -> tuple[dict[int, bool], dict[int, bool]]:
+    """Parse the Dify vector and optionally override rules 26-29 from backend facts."""
     if not isinstance(outputs, dict):
         raise RetryableDifyOutputError(
             V21_RULE_RESULTS_INVALID_CODE,
@@ -46,19 +51,31 @@ def parse_rule_results(outputs: Any) -> tuple[dict[int, bool], dict[int, bool]]:
             raw_errors = json.loads(raw_errors)
         except json.JSONDecodeError:
             raw_errors = [raw_errors]
-    expected = set(ACTIVE_RULE_KEYS)
+    backend_owns_gbp = backend_gbp_results is not None or backend_gbp_applicability is not None
+    expected = {
+        key
+        for key in ACTIVE_RULE_KEYS
+        if not backend_owns_gbp or int(key.removeprefix("rule_")) not in GBP_COMPARISON_RULE_IDS
+    }
+    allowed = set(ACTIVE_RULE_KEYS)
     result_keys = set(raw_results)
     applicability_keys = set(raw_applicability)
     errors: list[str] = []
 
     if isinstance(raw_errors, list):
-        errors.extend(str(item) for item in raw_errors if str(item).strip())
+        for item in raw_errors:
+            message = str(item).strip()
+            if not message:
+                continue
+            if backend_owns_gbp and any(f"rule_{rule_id}" in message for rule_id in GBP_COMPARISON_RULE_IDS):
+                continue
+            errors.append(message)
     elif raw_errors not in (None, "", []):
         errors.append("rule_errors must be an array when provided.")
 
-    if result_keys != expected:
+    if not expected.issubset(result_keys) or not result_keys.issubset(allowed):
         errors.append(_key_difference("rule_results", expected, result_keys))
-    if applicability_keys != expected:
+    if not expected.issubset(applicability_keys) or not applicability_keys.issubset(allowed):
         errors.append(_key_difference("rule_applicability", expected, applicability_keys))
 
     for key in expected & result_keys:
@@ -68,10 +85,21 @@ def parse_rule_results(outputs: Any) -> tuple[dict[int, bool], dict[int, bool]]:
         if type(raw_applicability[key]) is not bool:
             errors.append(f"{key} must be a boolean in rule_applicability.")
 
-    for rule_id in GBP_COMPARISON_RULE_IDS:
-        key = f"rule_{rule_id}"
-        if raw_applicability.get(key) is False and raw_results.get(key) is True:
-            errors.append(f"{key} cannot trigger when the GBP comparison is not applicable.")
+    if backend_owns_gbp:
+        if set(backend_gbp_results or {}) != set(GBP_COMPARISON_RULE_IDS):
+            errors.append("Backend GBP rule results must contain exactly rules 26-29.")
+        if set(backend_gbp_applicability or {}) != set(GBP_COMPARISON_RULE_IDS):
+            errors.append("Backend GBP rule applicability must contain exactly rules 26-29.")
+        for rule_id in GBP_COMPARISON_RULE_IDS:
+            if type((backend_gbp_results or {}).get(rule_id)) is not bool:
+                errors.append(f"Backend rule_{rule_id} result must be boolean.")
+            if type((backend_gbp_applicability or {}).get(rule_id)) is not bool:
+                errors.append(f"Backend rule_{rule_id} applicability must be boolean.")
+    else:
+        for rule_id in GBP_COMPARISON_RULE_IDS:
+            key = f"rule_{rule_id}"
+            if raw_applicability.get(key) is False and raw_results.get(key) is True:
+                errors.append(f"{key} cannot trigger when the GBP comparison is not applicable.")
 
     if errors:
         raise RetryableDifyOutputError(
@@ -80,9 +108,20 @@ def parse_rule_results(outputs: Any) -> tuple[dict[int, bool], dict[int, bool]]:
             errors,
         )
 
-    results = {rule_id: raw_results[f"rule_{rule_id}"] for rule_id in ACTIVE_RULE_IDS}
+    results = {
+        rule_id: (
+            (backend_gbp_results or {})[rule_id]
+            if backend_owns_gbp and rule_id in GBP_COMPARISON_RULE_IDS
+            else raw_results[f"rule_{rule_id}"]
+        )
+        for rule_id in ACTIVE_RULE_IDS
+    }
     applicability = {
-        rule_id: raw_applicability[f"rule_{rule_id}"]
+        rule_id: (
+            (backend_gbp_applicability or {})[rule_id]
+            if backend_owns_gbp and rule_id in GBP_COMPARISON_RULE_IDS
+            else raw_applicability[f"rule_{rule_id}"]
+        )
         for rule_id in ACTIVE_RULE_IDS
     }
     return results, applicability

@@ -11,6 +11,14 @@ from urllib.parse import urlparse
 from app.report_v21.coverage import build_gbp_status
 
 
+_GBP_RULE_TO_COMPARISON_KEY = {
+    26: "business_name",
+    27: "address",
+    28: "phone",
+    29: "service_area",
+}
+
+
 _US_ADDRESS = re.compile(
     r"\b\d{1,6}\s+[A-Za-z0-9.'#\- ]{2,55}\s+"
     r"(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|"
@@ -129,12 +137,14 @@ def bind_business_presence_evidence(
     """Reuse objective alignment records in L3 and related report findings."""
     bound_report = copy.deepcopy(report)
     source_url = _optional_text(context.get("url"))
-    evidence = [
-        _comparison_to_evidence(item, source_url)
+    evidence_by_key = {
+        str(item.get("key")): converted
         for item in audit.get("gbp_page_alignment", [])
-        if isinstance(item, dict) and item.get("status") in {"match", "missing", "mismatch", "partial"}
-    ]
-    evidence = [item for item in evidence if item]
+        if isinstance(item, dict)
+        and item.get("status") in {"match", "missing", "mismatch", "partial"}
+        and (converted := _comparison_to_evidence(item, source_url))
+    }
+    evidence = list(evidence_by_key.values())
     if not evidence:
         return bound_report
 
@@ -144,7 +154,13 @@ def bind_business_presence_evidence(
 
     for issue in bound_report.get("key_issues", []):
         if isinstance(issue, dict) and issue.get("affected_layer") == "entity_consistency":
-            issue["evidence_items"] = _merge_evidence(issue.get("evidence_items"), evidence)
+            related_rule_ids = issue.get("related_rule_ids") if isinstance(issue.get("related_rule_ids"), list) else []
+            issue_evidence = [
+                evidence_by_key[key]
+                for rule_id in related_rule_ids
+                if (key := _GBP_RULE_TO_COMPARISON_KEY.get(rule_id)) in evidence_by_key
+            ]
+            issue["evidence_items"] = _merge_evidence(issue.get("evidence_items"), issue_evidence)
 
     blocker = bound_report.get("primary_blocking_layer")
     if isinstance(blocker, dict) and blocker.get("layer_key") == "entity_consistency":

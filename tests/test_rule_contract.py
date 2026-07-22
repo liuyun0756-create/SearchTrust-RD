@@ -70,6 +70,58 @@ class RuleContractTests(unittest.TestCase):
         self.assertTrue(all(parsed_results[rule_id] for rule_id in (26, 27, 28, 29)))
         self.assertTrue(all(parsed_applicability[rule_id] for rule_id in (26, 27, 28, 29)))
 
+    def test_backend_overrides_gbp_rules_and_dify_may_omit_them(self):
+        results = _complete_vector(False)
+        applicability = _complete_vector(True)
+        for rule_id in (26, 27, 28, 29):
+            results.pop(f"rule_{rule_id}")
+            applicability.pop(f"rule_{rule_id}")
+
+        parsed_results, parsed_applicability = parse_rule_results(
+            {
+                "rule_results": results,
+                "rule_applicability": applicability,
+            },
+            backend_gbp_results={26: False, 27: True, 28: True, 29: False},
+            backend_gbp_applicability={26: True, 27: True, 28: True, 29: True},
+        )
+
+        self.assertFalse(parsed_results[26])
+        self.assertTrue(parsed_results[27])
+        self.assertTrue(parsed_results[28])
+        self.assertFalse(parsed_results[29])
+        self.assertTrue(all(parsed_applicability[rule_id] for rule_id in (26, 27, 28, 29)))
+
+    def test_backend_ownership_ignores_only_dify_gbp_rule_errors(self):
+        results = _complete_vector(False)
+        applicability = _complete_vector(True)
+
+        parsed_results, _ = parse_rule_results(
+            {
+                "rule_results": results,
+                "rule_applicability": applicability,
+                "rule_errors": [
+                    "rule_26 deterministic output was incomplete",
+                    "rule_29 deterministic output was incomplete",
+                ],
+            },
+            backend_gbp_results={26: False, 27: True, 28: True, 29: False},
+            backend_gbp_applicability={26: True, 27: True, 28: True, 29: True},
+        )
+
+        self.assertTrue(parsed_results[27])
+
+        with self.assertRaises(RetryableDifyOutputError):
+            parse_rule_results(
+                {
+                    "rule_results": results,
+                    "rule_applicability": applicability,
+                    "rule_errors": ["rule_1 returned invalid JSON"],
+                },
+                backend_gbp_results={26: False, 27: True, 28: True, 29: False},
+                backend_gbp_applicability={26: True, 27: True, 28: True, 29: True},
+            )
+
     def test_chinese_narrative_is_rejected_but_raw_evidence_is_exempt(self):
         outputs = {
             "report_v2_1": {

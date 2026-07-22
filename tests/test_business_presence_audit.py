@@ -238,6 +238,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
 
     def test_alignment_evidence_reuses_ids_without_changing_rule_fields(self):
         context = self.base_context()
+        context["page_content"] += "1911 West Reno Street, Broken Arrow, OK 74012\n"
+        context["gbp_data"]["address"] = "1911 W Reno St, Broken Arrow, OK 74012"
         audit = build_business_presence_audit(context)
         report = {
             "overall_status": {"label": "Medium", "level": "medium", "explanation": "Fixed score."},
@@ -252,6 +254,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             }],
             "key_issues": [{
                 "affected_layer": "entity_consistency",
+                "related_rule_ids": [27],
                 "evidence_items": [],
             }],
             "primary_blocking_layer": {
@@ -271,10 +274,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(bound["ranking_potential"], report["ranking_potential"])
         self.assertEqual(bound["risk_level"], report["risk_level"])
         self.assertTrue(layer["evidence_items"])
-        self.assertEqual(
-            [item["id"] for item in layer["evidence_items"]],
-            [item["id"] for item in issue["evidence_items"]],
-        )
+        self.assertIn("bp-address", [item["id"] for item in layer["evidence_items"]])
+        self.assertEqual([item["id"] for item in issue["evidence_items"]], ["bp-address"])
 
     def test_dify_gbp_payload_excludes_review_and_backend_audit_details(self):
         payload = _build_dify_gbp_payload({
