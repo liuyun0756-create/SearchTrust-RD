@@ -319,7 +319,148 @@ def apply_deterministic_scoring(report_v2_1: dict[str, Any]) -> tuple[dict[str, 
             if isinstance(value, str) and value.strip():
                 page_level[field] = value.strip()
     scored_report["page_level"] = page_level
+    client_summary = scored_report.get("client_summary")
+    if isinstance(client_summary, dict):
+        client_summary["decision_context"] = build_client_decision_context(scored_report)
     return scored_report, _dedupe_strings(warnings)
+
+
+def build_client_decision_context(report_v2_1: dict[str, Any]) -> dict[str, Any]:
+    """Build non-scoring client decision context from the final report."""
+    issues = [
+        issue
+        for issue in report_v2_1.get("key_issues", [])
+        if isinstance(issue, dict)
+    ]
+    affected_keys = {
+        str(issue.get("affected_layer"))
+        for issue in issues
+        if str(issue.get("affected_layer")) in REQUIRED_LAYER_KEYS
+    }
+    ordered_keys = [key for key in REQUIRED_LAYER_KEYS if key in affected_keys]
+    earliest_key = ordered_keys[0] if ordered_keys else None
+    earliest_number = REQUIRED_LAYER_KEYS.index(earliest_key) + 1 if earliest_key else None
+
+    if earliest_number is None:
+        priority_level = "monitor"
+        priority_label = "Monitor and maintain"
+        why_act_now = (
+            "No confirmed Key Issues were produced. Maintain the current trust signals "
+            "and re-audit after meaningful page or business changes."
+        )
+    elif earliest_number <= 3:
+        priority_level = "immediate"
+        priority_label = "Immediate foundation repair"
+        why_act_now = (
+            f"Confirmed issues begin at {LAYER_DISPLAY_LABELS[earliest_key]}. Lower-numbered "
+            "layers support the work above them, so later optimization can deliver weaker "
+            "returns until this foundation is repaired."
+        )
+    elif earliest_number <= 5:
+        priority_level = "high"
+        priority_label = "High-priority trust repair"
+        why_act_now = (
+            f"Confirmed issues begin at {LAYER_DISPLAY_LABELS[earliest_key]}. Addressing this "
+            "page-level trust gap now makes later proof and differentiation work more credible."
+        )
+    else:
+        priority_level = "planned"
+        priority_label = "Planned trust strengthening"
+        why_act_now = (
+            f"Core foundations are holding, but the confirmed gaps begin at "
+            f"{LAYER_DISPLAY_LABELS[earliest_key]} and still limit how distinctive and "
+            "defensible the page can become."
+        )
+
+    work_sequence = _client_work_sequence(ordered_keys)
+    overall = _display_value(report_v2_1.get("overall_status"))
+    ranking = _display_value(report_v2_1.get("ranking_potential"))
+    risk = _display_value(report_v2_1.get("risk_level"))
+
+    return {
+        "priority_level": priority_level,
+        "priority_label": priority_label,
+        "why_act_now": why_act_now,
+        "issue_count": len(issues),
+        "affected_layer_count": len(ordered_keys),
+        "work_phase_count": len(work_sequence),
+        "score_interpretation": (
+            f"Trust Status ({overall}) describes current page strength. Ranking Potential "
+            f"({ranking}) describes the upside available after repair. Risk Level ({risk}) "
+            "measures the coverage of severe weak layers; it does not mean confirmed issues "
+            "can be ignored."
+        ),
+        "work_sequence": work_sequence,
+    }
+
+
+def _client_work_sequence(ordered_keys: list[str]) -> list[dict[str, Any]]:
+    if not ordered_keys:
+        return []
+
+    earliest_key = ordered_keys[0]
+    earliest_index = REQUIRED_LAYER_KEYS.index(earliest_key)
+    build_next = [
+        key
+        for key in ordered_keys[1:]
+        if REQUIRED_LAYER_KEYS.index(key) <= 4
+    ]
+    strengthen_after = [
+        key
+        for key in ordered_keys
+        if REQUIRED_LAYER_KEYS.index(key) >= 5 and key != earliest_key
+    ]
+    phases: list[dict[str, Any]] = [
+        _client_phase(
+            "fix_first",
+            "Fix first",
+            [earliest_key],
+            f"Resolve {LAYER_DISPLAY_LABELS[earliest_key]} before investing in later-layer work.",
+        )
+    ]
+    if build_next:
+        phases.append(_client_phase(
+            "build_next",
+            "Build next",
+            build_next,
+            "Build the next page-level trust foundations after the first blocker is resolved.",
+        ))
+    if strengthen_after:
+        phases.append(_client_phase(
+            "strengthen_after",
+            "Strengthen after",
+            strengthen_after,
+            "Strengthen accountability, differentiation, and current search-era fit.",
+        ))
+
+    # L6-L8 can be the first affected layer. It remains the first approved phase
+    # instead of appearing twice in the later-strengthening group.
+    if earliest_index >= 5 and len(phases) == 1:
+        phases[0]["summary"] = (
+            f"Strengthen {LAYER_DISPLAY_LABELS[earliest_key]} as the first confirmed opportunity."
+        )
+    return phases
+
+
+def _client_phase(
+    stage: str,
+    label: str,
+    layer_keys: list[str],
+    summary: str,
+) -> dict[str, Any]:
+    return {
+        "stage": stage,
+        "label": label,
+        "layer_keys": layer_keys,
+        "layer_labels": [LAYER_DISPLAY_LABELS[key] for key in layer_keys],
+        "summary": summary,
+    }
+
+
+def _display_value(value: Any) -> str:
+    if not isinstance(value, dict):
+        return "Not available"
+    return str(value.get("label") or value.get("level") or "Not available")
 
 
 def _status_by_layer(layers: list[dict[str, Any]]) -> dict[str, str]:

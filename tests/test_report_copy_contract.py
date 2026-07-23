@@ -1,13 +1,17 @@
 import copy
 import unittest
 
-from app.report_v21.copy_contract import ReportCopyInvalid
+from app.report_v21.copy_contract import (
+    ReportCopyInvalid,
+    ReportCopyV21,
+    assemble_report_skeleton,
+)
 from app.report_v21.evidence_ledger import build_evidence_ledger
 from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.normalize import normalize_report_copy_to_v21
 from app.report_v21.review_corpus import build_review_corpus
 from app.report_v21.rule_contract import ACTIVE_RULE_IDS
-from app.report_v21.scoring import REQUIRED_LAYER_KEYS
+from app.report_v21.scoring import REQUIRED_LAYER_KEYS, build_client_decision_context
 
 
 def _action(layer_key="entity_presence"):
@@ -139,6 +143,101 @@ class ReportCopyContractTests(unittest.TestCase):
         ]
         self.assertEqual(projections[0], projections[1])
         self.assertEqual(projections[1], projections[2])
+
+    def test_client_decision_context_uses_final_key_issues_without_changing_scores(self):
+        report = {
+            "key_issues": [
+                {"affected_layer": "entity_consistency"},
+                {"affected_layer": "entity_consistency"},
+                {"affected_layer": "specificity"},
+                {"affected_layer": "accountability"},
+            ],
+            "overall_status": {"label": "Medium Weak", "level": "medium_weak"},
+            "ranking_potential": {"label": "Strong Competitive Potential", "level": "strong"},
+            "risk_level": {"label": "Low", "level": "low"},
+        }
+        objective_scores = copy.deepcopy({
+            "overall_status": report["overall_status"],
+            "ranking_potential": report["ranking_potential"],
+            "risk_level": report["risk_level"],
+        })
+
+        context = build_client_decision_context(report)
+
+        self.assertEqual(context["priority_level"], "immediate")
+        self.assertEqual(context["issue_count"], 4)
+        self.assertEqual(context["affected_layer_count"], 3)
+        self.assertEqual(context["work_phase_count"], 3)
+        self.assertEqual(
+            [phase["stage"] for phase in context["work_sequence"]],
+            ["fix_first", "build_next", "strengthen_after"],
+        )
+        self.assertEqual(
+            context["work_sequence"][0]["layer_keys"],
+            ["entity_consistency"],
+        )
+        self.assertEqual(
+            objective_scores,
+            {
+                "overall_status": report["overall_status"],
+                "ranking_potential": report["ranking_potential"],
+                "risk_level": report["risk_level"],
+            },
+        )
+
+    def test_client_decision_priority_mapping(self):
+        def decision_for(layer_key=None):
+            return build_client_decision_context({
+                "key_issues": [] if layer_key is None else [{"affected_layer": layer_key}],
+                "overall_status": {"label": "Good"},
+                "ranking_potential": {"label": "Competitive"},
+                "risk_level": {"label": "Low"},
+            })
+
+        self.assertEqual(decision_for("entity_consistency")["priority_level"], "immediate")
+        self.assertEqual(decision_for("specificity")["priority_level"], "high")
+        self.assertEqual(decision_for("accountability")["priority_level"], "planned")
+        self.assertEqual(decision_for()["priority_level"], "monitor")
+        self.assertEqual(decision_for()["work_phase_count"], 0)
+
+    def test_primary_blocker_uses_earliest_triggered_layer_and_keeps_good_layer_issue(self):
+        payload = copy.deepcopy(_report_copy())
+
+        def issue(layer_key, title, finding_key="layer"):
+            return {
+                "finding_key": finding_key,
+                "issue_title": title,
+                "affected_layer": layer_key,
+                "judgement": title,
+                "explanation": f"Explanation for {title}.",
+                "why_it_matters": f"Why {title} matters.",
+                "impacts": [f"Impact from {title}."],
+                "suggestions": [f"Suggestion for {title}."],
+                "recommended_actions": [_action(layer_key)],
+            }
+
+        payload["key_issues"] = [
+            issue("entity_consistency", "Address identity differs", "rule_27"),
+            issue("entity_consistency", "Phone identity differs", "rule_28"),
+            issue("specificity", "The page needs more specific detail"),
+            issue("accountability", "The page should show more service responsibility"),
+        ]
+        triggered_ids = {1, 2, 4, 6, 7, 8, 9, 27, 28, 32, 34}
+        results = {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS}
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+
+        report = assemble_report_skeleton(
+            ReportCopyV21.model_validate(payload),
+            results,
+            applicability,
+            {},
+            _context(),
+        )
+
+        self.assertEqual(report["primary_blocking_layer"]["layer_key"], "entity_consistency")
+        issue_by_layer = {item["affected_layer"]: item for item in report["key_issues"]}
+        self.assertIn("accountability", issue_by_layer)
+        self.assertEqual(issue_by_layer["accountability"]["severity"], "low")
 
     def test_chinese_copy_is_rejected(self):
         payload = copy.deepcopy(_report_copy())

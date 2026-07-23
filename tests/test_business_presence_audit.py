@@ -62,6 +62,10 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(rows["phone"]["status"], "match")
         self.assertEqual(rows["website"]["status"], "match")
         self.assertEqual(rows["service_area"]["status"], "not_checked")
+        alignment_scope = next(
+            item for item in audit["audit_scope"] if item["key"] == "gbp_page_alignment"
+        )
+        self.assertEqual(alignment_scope["status"], "checked")
         self.assertTrue(all(row["included_in_score"] is False for row in rows.values()))
         self.assertEqual(audit["review_audit"]["sample_size"], 2)
         self.assertEqual(audit["review_audit"]["owner_reply_rate"], 0.5)

@@ -559,8 +559,7 @@ def _alignment_scope_status(rows: list[dict[str, Any]], gbp_status: str) -> str:
         return "error"
     if gbp_status != "checked":
         return "not_checked"
-    statuses = {row["status"] for row in rows}
-    return "checked" if statuses <= {"match", "missing", "mismatch", "partial"} else "partial"
+    return "checked" if rows else "partial"
 
 
 def _gbp_scope_detail(status: str) -> str:

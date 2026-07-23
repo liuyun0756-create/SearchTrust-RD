@@ -200,7 +200,7 @@ def assemble_report_skeleton(
         layer_key = issue.affected_layer
         status = layer_statuses[layer_key]
         layer_triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
-        if status == "good" or not layer_triggered_ids:
+        if not layer_triggered_ids:
             continue
 
         if issue.finding_key in GBP_FINDING_KEYS:
@@ -240,7 +240,7 @@ def assemble_report_skeleton(
             "issue_title": issue.issue_title,
             "affected_layer": layer_key,
             "related_rule_ids": triggered_ids,
-            "severity": "high" if status == "weak" else "medium",
+            "severity": _issue_severity(status),
             "evidence_items": issue_evidence,
             "judgement": issue.judgement,
             "explanation": issue.explanation,
@@ -254,13 +254,12 @@ def assemble_report_skeleton(
             ),
         })
 
-    entity_status = layer_statuses["entity_consistency"]
-    if entity_status in {"medium", "weak"}:
-        expected_gbp_finding_keys = {
-            f"rule_{rule_id}"
-            for rule_id in LAYER_RULES["entity_consistency"]
-            if rule_id in triggered
-        }
+    expected_gbp_finding_keys = {
+        f"rule_{rule_id}"
+        for rule_id in LAYER_RULES["entity_consistency"]
+        if rule_id in triggered
+    }
+    if expected_gbp_finding_keys:
         missing_gbp_findings = expected_gbp_finding_keys - seen_gbp_finding_keys
         if missing_gbp_findings:
             raise ReportCopyInvalid([
@@ -275,7 +274,7 @@ def assemble_report_skeleton(
             "Every weak layer requires key issue narrative: " + ", ".join(missing_weak)
         ])
 
-    blocker_key = _primary_blocker(layer_statuses)
+    blocker_key = _primary_blocker(triggered)
     blocker_layer = next(item for item in layers if item["layer_key"] == blocker_key)
     blocker_issue = next((item for item in issues if item["affected_layer"] == blocker_key), None)
     primary_reason = (
@@ -365,11 +364,18 @@ def _optimization(value: OptimizationCopy, triggered: set[int]) -> dict[str, Any
     }
 
 
-def _primary_blocker(statuses: dict[str, str]) -> str:
-    for wanted in ("weak", "medium"):
-        for layer_key in REQUIRED_LAYER_KEYS:
-            if statuses.get(layer_key) == wanted:
-                return layer_key
+def _issue_severity(layer_status: str) -> str:
+    if layer_status == "weak":
+        return "high"
+    if layer_status == "medium":
+        return "medium"
+    return "low"
+
+
+def _primary_blocker(triggered: set[int]) -> str:
+    for layer_key in REQUIRED_LAYER_KEYS:
+        if any(rule_id in triggered for rule_id in LAYER_RULES[layer_key]):
+            return layer_key
     return REQUIRED_LAYER_KEYS[0]
 
 

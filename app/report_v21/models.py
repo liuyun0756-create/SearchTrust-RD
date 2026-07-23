@@ -349,6 +349,25 @@ class OptimizationPath(_StrictModel):
     completion_signals: list[str] = Field(default_factory=list)
 
 
+class ClientDecisionWorkPhase(_StrictModel):
+    stage: Literal["fix_first", "build_next", "strengthen_after"]
+    label: str
+    layer_keys: list[LayerKey] = Field(default_factory=list)
+    layer_labels: list[str] = Field(default_factory=list)
+    summary: str
+
+
+class ClientDecisionContext(_StrictModel):
+    priority_level: Literal["immediate", "high", "planned", "monitor"]
+    priority_label: str
+    why_act_now: str
+    issue_count: int = Field(ge=0)
+    affected_layer_count: int = Field(ge=0)
+    work_phase_count: int = Field(ge=0)
+    score_interpretation: str
+    work_sequence: list[ClientDecisionWorkPhase] = Field(default_factory=list)
+
+
 class ClientSummary(_StrictModel):
     title: str
     plain_language_summary: str
@@ -356,6 +375,7 @@ class ClientSummary(_StrictModel):
     first_priority: str
     not_first_priority: str
     expected_change: str
+    decision_context: ClientDecisionContext | None = None
 
 
 class ReportV21(_StrictModel):
