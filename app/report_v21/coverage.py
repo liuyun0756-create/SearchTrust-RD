@@ -37,6 +37,17 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
             "reason": None,
         }
 
+    if not input_gbp_url and lookup_attempted:
+        return {
+            "status": "not_found",
+            "source": source,
+            "gbp_url": gbp_url,
+            "reason": diagnostic_reason or (
+                "GBP auto-discovery was attempted from the checked page, but no confident "
+                "usable GBP profile was returned."
+            ),
+        }
+
     if not input_gbp_url:
         return {
             "status": "not_checked",
@@ -67,17 +78,6 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
                 "GBP lookup appears to have been attempted, but no confident "
                 "usable GBP profile was returned. Current scraper output does "
                 "not expose a more specific no-match reason."
-            ),
-        }
-
-    if lookup_attempted:
-        return {
-            "status": "not_found",
-            "source": source,
-            "gbp_url": gbp_url,
-            "reason": (
-                "GBP lookup was attempted from extracted business information, "
-                "but no confident usable GBP profile was returned."
             ),
         }
 

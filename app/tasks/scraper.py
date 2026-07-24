@@ -795,26 +795,26 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
 
 def extract_maps_url_from_content(content: str) -> Optional[str]:
     """
-    从页面内容中提取第一个包含 data_id（0x...:0x... 格式）的 Google Maps URL。
+    从页面内容中提取可用于精确 GBP 查询的 Google Maps URL。
 
-    很多网站页脚会嵌入 Google Maps 链接，提取到后可直接走 data_id 精准路径，
-    避免 name+city 模糊搜索的误匹配。
-
-    只匹配长链（含 data= 片段的标准 Maps URL），短链 maps.app.goo.gl 没有
-    data_id 无法提取，忽略。
+    优先使用包含 data_id 的 Google Maps 长链；页面仅暴露 goo.gl/maps 或
+    maps.app.goo.gl 短链时也保留该链接，后续统一展开并按 CID 查询。
 
     Returns
     -------
-    完整的 Google Maps URL（字符串），或 None（未找到）。
+    Google Maps 长链或短链，未找到时返回 None。
     """
-    # 匹配含 data_id 的 Google Maps 长链
-    # 格式：https://www.google.com/maps/...data=...!1s0xABC:0xDEF...
-    pattern = r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*'
-    m = re.search(pattern, content)
-    if m:
-        url = m.group(0).rstrip(")")   # 去掉 Markdown 链接末尾可能残留的 )
-        logger.info("[Scraper] extracted Google Maps URL from content: %s", url)
-        return url
+    patterns = (
+        r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*',
+        r'https://maps\.app\.goo\.gl/[^\s\'"<>]+',
+        r'https://goo\.gl/maps/[^\s\'"<>]+',
+    )
+    for pattern in patterns:
+        match = re.search(pattern, content, re.IGNORECASE)
+        if match:
+            url = match.group(0).rstrip("),.;]")
+            logger.info("[Scraper] extracted Google Maps URL from content: %s", url)
+            return url
     return None
 
 
@@ -1159,6 +1159,9 @@ async def fetch_gbp_data(
     }
 
     last_request_error = ""
+    last_no_match_code = ""
+    last_no_match_message = ""
+    last_outcome = ""
     for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
         request_params = dict(params)
         if attempt > 1:
@@ -1219,23 +1222,25 @@ async def fetch_gbp_data(
                 if strict_domain_fallback
                 else "GBP search completed without a confident website-domain or city match."
             )
-            _set_gbp_lookup_diagnostic(
-                diagnostic,
-                status="not_found",
-                code=code,
-                message=message,
-            )
+            last_no_match_code = code
+            last_no_match_message = message
+            last_outcome = "no_match"
             logger.warning(
-                "[SerpAPI] no confident match query=%r strict_domain_match=%s candidate_count=%d exact_failure=%s",
+                "[SerpAPI] no confident match attempt=%d/%d query=%r strict_domain_match=%s "
+                "candidate_count=%d exact_failure=%s",
+                attempt,
+                _GBP_LOOKUP_ATTEMPTS,
                 query,
                 strict_domain_fallback,
                 len(candidates),
                 exact_failure,
             )
-            return {}
+            if attempt < _GBP_LOOKUP_ATTEMPTS:
+                await asyncio.sleep(2 ** (attempt - 1))
 
         except Exception as exc:  # noqa: BLE001
             last_request_error = str(exc)
+            last_outcome = "error"
             logger.warning(
                 "[SerpAPI] fallback request failed attempt=%d/%d query=%r: %s",
                 attempt,
@@ -1245,6 +1250,15 @@ async def fetch_gbp_data(
             )
             if attempt < _GBP_LOOKUP_ATTEMPTS:
                 await asyncio.sleep(2 ** (attempt - 1))
+
+    if last_outcome == "no_match":
+        _set_gbp_lookup_diagnostic(
+            diagnostic,
+            status="not_found",
+            code=last_no_match_code,
+            message=last_no_match_message,
+        )
+        return {}
 
     _set_gbp_lookup_diagnostic(
         diagnostic,

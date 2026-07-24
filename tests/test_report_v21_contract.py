@@ -136,6 +136,25 @@ class ReportV21ContractTests(unittest.TestCase):
         self.assertEqual(report["gbp_status"]["source"], "system_discovered")
         self.assertTrue(report["data_coverage"]["gbp_checked"])
 
+    def test_system_auto_discovery_attempt_without_match_is_not_found(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            gbp_lookup_attempted=True,
+            gbp_lookup_diagnostic={
+                "status": "not_found",
+                "code": "search_no_match",
+                "message": "GBP domain search returned no confident match after three attempts.",
+            },
+        )
+
+        self.assertEqual(report["gbp_status"]["status"], "not_found")
+        self.assertEqual(report["gbp_status"]["source"], "not_available")
+        self.assertEqual(
+            report["gbp_status"]["reason"],
+            "GBP domain search returned no confident match after three attempts.",
+        )
+        self.assertFalse(report["data_coverage"]["gbp_checked"])
+
     def test_gbp_not_found_uses_backend_lookup_diagnostic(self):
         report = self.normalize(
             self.contract_compliant_projection(self.real_dify_output),

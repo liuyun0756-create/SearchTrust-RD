@@ -5,6 +5,7 @@ from app.tasks import scraper
 
 
 SHORT_URL = "https://maps.app.goo.gl/spB4reXT8NAMvS8V8"
+PAGE_SHORT_URL = "https://goo.gl/maps/BmutfbtV5uvo62km7"
 TULSA_URL = (
     "https://www.google.com/maps/place/Spot+On+Plumbing+of+Tulsa+Plumbers/"
     "data=!4m6!3m5!1s0x87b68befcc42b925:0x20f8d8fccd659226"
@@ -45,6 +46,20 @@ class _FakeClient:
 class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         scraper._GBP_SHORT_URL_CACHE.clear()
+
+    def test_extracts_google_maps_short_url_from_page_content(self):
+        content = (
+            "Quick Contact\n"
+            f"[1911 West Reno Street]({PAGE_SHORT_URL})\n"
+            "[Google](https://example.com)"
+        )
+
+        self.assertEqual(scraper.extract_maps_url_from_content(content), PAGE_SHORT_URL)
+
+    def test_prefers_exact_google_maps_long_url_over_short_url(self):
+        content = f"[Address]({PAGE_SHORT_URL})\n[Google Business Profile]({TULSA_URL})"
+
+        self.assertEqual(scraper.extract_maps_url_from_content(content), TULSA_URL)
 
     async def test_resolves_maps_short_url_to_data_id_url(self):
         client = _FakeClient([_FakeResponse(url=TULSA_URL)])
@@ -208,6 +223,57 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["code"], "strict_domain_fallback_match")
         self.assertEqual(len(client.requests), 4)
 
+    async def test_domain_search_retries_empty_result_and_recovers(self):
+        place = {
+            "title": "Spot On Plumbing of Tulsa Plumbers",
+            "phone": "(918) 844-7961",
+            "address": "1911 W Reno St, Broken Arrow, OK 74012",
+            "website": "https://spotonplumbing.com/",
+        }
+        client = _FakeClient([
+            _FakeResponse(url="https://serpapi.example/search", payload={}),
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": place}),
+        ])
+        diagnostic = {}
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ), patch("app.tasks.scraper.asyncio.sleep", new=AsyncMock()):
+            result = await scraper.fetch_gbp_data(
+                business_name="Spot On Plumbing",
+                city="Tulsa",
+                website_url="https://spotonplumbing.com/emergency-services/",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result["name"], "Spot On Plumbing of Tulsa Plumbers")
+        self.assertEqual(diagnostic["code"], "search_match")
+        self.assertEqual(len(client.requests), 2)
+        self.assertNotIn("no_cache", client.requests[0][1]["params"])
+        self.assertEqual(client.requests[1][1]["params"]["no_cache"], "true")
+
+    async def test_domain_search_requires_three_no_matches_before_not_found(self):
+        empty = _FakeResponse(url="https://serpapi.example/search", payload={})
+        client = _FakeClient([empty, empty, empty])
+        diagnostic = {}
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock()
+        ), patch("app.tasks.scraper.asyncio.sleep", new=AsyncMock()):
+            result = await scraper.fetch_gbp_data(
+                business_name="Spot On Plumbing",
+                city="Tulsa",
+                website_url="https://spotonplumbing.com/emergency-services/",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result, {})
+        self.assertEqual(len(client.requests), 3)
+        self.assertEqual(diagnostic["status"], "not_found")
+        self.assertEqual(diagnostic["code"], "search_no_match")
+
     async def test_strict_domain_fallback_rejects_wrong_naples_business(self):
         wrong_place = {
             "title": "Spot-On Plumbing Service, Inc",
@@ -216,7 +282,9 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             "website": "https://spotonplumbingservice.com/",
         }
         client = _FakeClient([
-            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": wrong_place})
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": wrong_place}),
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": wrong_place}),
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": wrong_place}),
         ])
         diagnostic = {}
         with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
@@ -246,7 +314,15 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             _FakeResponse(
                 url="https://serpapi.example/search",
                 payload={"place_results": wrong_place},
-            )
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"place_results": wrong_place},
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"place_results": wrong_place},
+            ),
         ])
         enrich = AsyncMock()
 
