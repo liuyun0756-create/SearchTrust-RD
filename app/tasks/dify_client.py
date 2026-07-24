@@ -281,6 +281,7 @@ async def call_dify_workflow(
     page_facts: Optional[dict[str, Any]] = None,
     review_corpus: str = "[]",
     backend_gbp_findings: Optional[dict[str, Any]] = None,
+    action_requirements: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """
     Call the Dify SEO analysis workflow and return the final report.
@@ -329,6 +330,7 @@ async def call_dify_workflow(
         "page_facts": json.dumps(page_facts or {}, ensure_ascii=False),
         "review_corpus": review_corpus,
         "backend_gbp_findings": json.dumps(backend_gbp_findings or {}, ensure_ascii=False),
+        "action_requirements": json.dumps(action_requirements or {"requirements": []}, ensure_ascii=False),
     }
 
     # Network-level transient errors worth retrying immediately (with a short

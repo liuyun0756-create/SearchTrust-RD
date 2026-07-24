@@ -169,6 +169,7 @@ async def _run_pipeline_inner(
     from app.tasks.dify_client import call_dify_workflow  # noqa: PLC0415
     from app.models.request import resolve_page_type  # noqa: PLC0415
     from app.report_v21.evidence_ledger import build_evidence_ledger  # noqa: PLC0415
+    from app.report_v21.action_requirements import serialize_action_requirements  # noqa: PLC0415
     from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules  # noqa: PLC0415
     from app.report_v21.normalize import (  # noqa: PLC0415
         normalize_native_report_to_v21,
@@ -222,6 +223,7 @@ async def _run_pipeline_inner(
     evidence_ledger = build_evidence_ledger(v21_context)
     backend_gbp_results, backend_gbp_applicability, backend_gbp_findings = evaluate_gbp_rules(v21_context)
     v21_context["backend_gbp_findings"] = backend_gbp_findings
+    action_requirements = serialize_action_requirements()
     serialized_review_corpus = serialize_review_corpus(review_corpus)
     validated_report: dict[str, Any] = {}
 
@@ -287,6 +289,7 @@ async def _run_pipeline_inner(
             page_facts=page_facts,
             review_corpus=serialized_review_corpus,
             backend_gbp_findings=backend_gbp_findings,
+            action_requirements=action_requirements,
         )
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)

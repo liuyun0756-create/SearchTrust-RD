@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy as copy_module
 import json
 import re
 from typing import Any, Literal
@@ -9,6 +10,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
 
 from app.report_v21.evidence_ledger import build_layer_evidence
+from app.report_v21.action_requirements import (
+    ActionRequirement,
+    active_action_requirements,
+)
 from app.report_v21.models import (
     LAYER_DISPLAY_LABELS,
     LAYER_LABELS,
@@ -18,19 +23,13 @@ from app.report_v21.models import (
 from app.report_v21.scoring import LAYER_RULES, calculate_layer_status
 
 
-GBP_FINDING_KEYS: dict[str, int] = {
-    "rule_26": 26,
-    "rule_27": 27,
-    "rule_28": 28,
-    "rule_29": 29,
-}
-
-
 class _StrictCopyModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
-class ActionCopy(_StrictCopyModel):
+class CatalogActionCopy(_StrictCopyModel):
+    action_key: str
+    covers_finding_keys: list[str] = Field(min_length=1)
     priority: Literal["high", "medium", "low"]
     task_title: str
     affected_layer: LayerKey
@@ -48,11 +47,10 @@ class LayerCopy(_StrictCopyModel):
     summary: str
     explanation: str
     suggested_fixes: list[str] = Field(default_factory=list)
-    action_items: list[ActionCopy] = Field(default_factory=list)
 
 
 class KeyIssueCopy(_StrictCopyModel):
-    finding_key: Literal["layer", "rule_26", "rule_27", "rule_28", "rule_29"] = "layer"
+    finding_keys: list[str] = Field(min_length=1)
     issue_title: str
     affected_layer: LayerKey
     judgement: str
@@ -60,7 +58,7 @@ class KeyIssueCopy(_StrictCopyModel):
     why_it_matters: str
     impacts: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
-    recommended_actions: list[ActionCopy] = Field(default_factory=list)
+    recommended_action_keys: list[str] = Field(min_length=1, max_length=3)
 
 
 class PageLevelCopy(_StrictCopyModel):
@@ -76,14 +74,14 @@ class RoadmapPhaseCopy(_StrictCopyModel):
     sequence: int = Field(ge=1)
     goal: str
     entry_condition: str
-    action_items: list[ActionCopy] = Field(default_factory=list)
+    action_keys: list[str] = Field(default_factory=list)
     expected_outcomes: list[str] = Field(default_factory=list)
 
 
 class OptimizationCopy(_StrictCopyModel):
-    must_execute_now: list[ActionCopy] = Field(default_factory=list)
-    defer_until_later: list[ActionCopy] = Field(default_factory=list)
-    do_not_prioritize_yet: list[ActionCopy] = Field(default_factory=list)
+    must_execute_now_action_keys: list[str] = Field(default_factory=list)
+    defer_until_later_action_keys: list[str] = Field(default_factory=list)
+    do_not_prioritize_yet_action_keys: list[str] = Field(default_factory=list)
     roadmap: list[RoadmapPhaseCopy] = Field(default_factory=list)
     fix_order_warning: str
     completion_signals: list[str] = Field(default_factory=list)
@@ -101,6 +99,7 @@ class ClientSummaryCopy(_StrictCopyModel):
 class ReportCopyV21(_StrictCopyModel):
     page_level: PageLevelCopy
     layers: list[LayerCopy] = Field(min_length=8, max_length=8)
+    action_catalog: list[CatalogActionCopy] = Field(default_factory=list)
     key_issues: list[KeyIssueCopy] = Field(default_factory=list)
     optimization_path: OptimizationCopy
     client_summary: ClientSummaryCopy
@@ -167,6 +166,9 @@ def assemble_report_skeleton(
     if set(layer_copy_by_key) != set(REQUIRED_LAYER_KEYS):
         raise ReportCopyInvalid(["layers must contain each fixed layer_key exactly once."])
 
+    active_requirements = active_action_requirements(rule_results, rule_applicability)
+    action_catalog = _validated_action_catalog(copy.action_catalog, active_requirements)
+
     layers: list[dict[str, Any]] = []
     layer_statuses: dict[str, str] = {}
     for index, layer_key in enumerate(REQUIRED_LAYER_KEYS, start=1):
@@ -191,52 +193,47 @@ def assemble_report_skeleton(
                 context,
             ),
             "suggested_fixes": narrative.suggested_fixes,
-            "action_items": _actions(narrative.action_items, triggered_ids, f"layer-{layer_key}"),
+            "action_items": [
+                copy_module.deepcopy(action)
+                for action in action_catalog.values()
+                if action["affected_layer"] == layer_key
+            ],
         })
 
     issues: list[dict[str, Any]] = []
-    seen_gbp_finding_keys: set[str] = set()
+    seen_issue_action_keys: set[str] = set()
     for index, issue in enumerate(copy.key_issues, start=1):
         layer_key = issue.affected_layer
         status = layer_statuses[layer_key]
-        layer_triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
-        if not layer_triggered_ids:
-            continue
-
-        if issue.finding_key in GBP_FINDING_KEYS:
-            rule_id = GBP_FINDING_KEYS[issue.finding_key]
-            if layer_key != "entity_consistency":
-                raise ReportCopyInvalid([
-                    f"{issue.finding_key} must use affected_layer entity_consistency."
-                ])
-            if rule_id not in triggered:
-                raise ReportCopyInvalid([
-                    f"{issue.finding_key} was not triggered by the backend and must not be a Key Issue."
-                ])
-            if issue.finding_key in seen_gbp_finding_keys:
-                raise ReportCopyInvalid([
-                    f"{issue.finding_key} may appear only once in key_issues."
-                ])
-            seen_gbp_finding_keys.add(issue.finding_key)
-            triggered_ids = [rule_id]
-            issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
-        else:
-            if layer_key == "entity_consistency":
-                raise ReportCopyInvalid([
-                    "Entity Consistency Key Issues must use rule_26, rule_27, rule_28, or rule_29 finding_key."
-                ])
-            triggered_ids = layer_triggered_ids
-            layer = next(item for item in layers if item["layer_key"] == layer_key)
-            issue_evidence = layer["evidence_items"]
-
-        for action in issue.recommended_actions:
-            if action.affected_layer != layer_key:
-                raise ReportCopyInvalid([
-                    f"{issue.finding_key} recommended action must use affected_layer {layer_key}."
-                ])
+        if len(issue.recommended_action_keys) != 1:
+            raise ReportCopyInvalid([
+                "Every Key Issue must reference exactly one unified Action."
+            ])
+        action_key = issue.recommended_action_keys[0]
+        action = action_catalog.get(action_key)
+        if action is None:
+            raise ReportCopyInvalid([
+                f"Key Issue references unknown or inactive action_key {action_key}."
+            ])
+        if action_key in seen_issue_action_keys:
+            raise ReportCopyInvalid([
+                f"Action {action_key} may be referenced by only one Key Issue."
+            ])
+        if action["affected_layer"] != layer_key:
+            raise ReportCopyInvalid([
+                f"Action {action_key} must use affected_layer {action['affected_layer']}."
+            ])
+        expected_finding_keys = [f"rule_{rule_id}" for rule_id in action["related_rule_ids"]]
+        if issue.finding_keys != expected_finding_keys:
+            raise ReportCopyInvalid([
+                f"Key Issue for {action_key} must use finding_keys {expected_finding_keys}."
+            ])
+        seen_issue_action_keys.add(action_key)
+        triggered_ids = list(action["related_rule_ids"])
+        issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
 
         issues.append({
-            "id": f"issue-{index:02d}-{layer_key}",
+            "id": f"issue-{action_key}",
             "issue_title": issue.issue_title,
             "affected_layer": layer_key,
             "related_rule_ids": triggered_ids,
@@ -247,31 +244,21 @@ def assemble_report_skeleton(
             "why_it_matters": issue.why_it_matters,
             "impacts": issue.impacts,
             "suggestions": issue.suggestions,
-            "recommended_actions": _actions(
-                issue.recommended_actions,
-                triggered_ids,
-                f"issue-{index:02d}",
-            ),
+            "recommended_actions": [copy_module.deepcopy(action)],
         })
 
-    expected_gbp_finding_keys = {
-        f"rule_{rule_id}"
-        for rule_id in LAYER_RULES["entity_consistency"]
-        if rule_id in triggered
-    }
-    if expected_gbp_finding_keys:
-        missing_gbp_findings = expected_gbp_finding_keys - seen_gbp_finding_keys
-        if missing_gbp_findings:
-            raise ReportCopyInvalid([
-                "Each triggered backend GBP finding requires one Key Issue: "
-                + ", ".join(sorted(missing_gbp_findings))
-            ])
-
-    issue_layers = {issue["affected_layer"] for issue in issues}
-    missing_weak = [key for key, status in layer_statuses.items() if status == "weak" and key not in issue_layers]
-    if missing_weak:
+    expected_issue_action_keys = set(action_catalog)
+    if seen_issue_action_keys != expected_issue_action_keys:
+        missing = sorted(expected_issue_action_keys - seen_issue_action_keys)
+        extra = sorted(seen_issue_action_keys - expected_issue_action_keys)
+        missing_findings = sorted({
+            f"rule_{rule_id}"
+            for action_key in missing
+            for rule_id in action_catalog[action_key]["related_rule_ids"]
+        })
         raise ReportCopyInvalid([
-            "Every weak layer requires key issue narrative: " + ", ".join(missing_weak)
+            "Every active remediation group requires exactly one Key Issue: "
+            f"missing={missing}, missing_findings={missing_findings}, extra={extra}"
         ])
 
     blocker_key = _primary_blocker(triggered)
@@ -309,55 +296,142 @@ def assemble_report_skeleton(
         },
         "layers": layers,
         "key_issues": issues,
-        "optimization_path": _optimization(copy.optimization_path, triggered),
+        "optimization_path": _optimization(
+            copy.optimization_path,
+            action_catalog,
+        ),
         "client_summary": copy.client_summary.model_dump(mode="json"),
     }
 
 
-def _actions(
-    values: list[ActionCopy],
-    related_rule_ids: list[int],
-    prefix: str,
-) -> list[dict[str, Any]]:
-    actions: list[dict[str, Any]] = []
-    for index, action in enumerate(values, start=1):
-        item = action.model_dump(mode="json")
-        item["id"] = f"act-{prefix}-{index:02d}"
-        item["related_rule_ids"] = [
-            rule_id for rule_id in related_rule_ids if rule_id in LAYER_RULES[action.affected_layer]
-        ]
-        actions.append(item)
-    return actions
+def _validated_action_catalog(
+    values: list[CatalogActionCopy],
+    active_requirements: dict[str, tuple[ActionRequirement, tuple[int, ...]]],
+) -> dict[str, dict[str, Any]]:
+    incoming_by_key: dict[str, CatalogActionCopy] = {}
+    for value in values:
+        if value.action_key in incoming_by_key:
+            raise ReportCopyInvalid([f"Duplicate action_key {value.action_key}."])
+        incoming_by_key[value.action_key] = value
+
+    expected_keys = set(active_requirements)
+    incoming_keys = set(incoming_by_key)
+    if incoming_keys != expected_keys:
+        raise ReportCopyInvalid([
+            "Action catalog must match the active backend remediation groups exactly: "
+            f"missing={sorted(expected_keys - incoming_keys)}, "
+            f"extra={sorted(incoming_keys - expected_keys)}"
+        ])
+
+    catalog: dict[str, dict[str, Any]] = {}
+    covered_rule_ids: list[int] = []
+    for action_key, (requirement, triggered_ids) in active_requirements.items():
+        incoming = incoming_by_key[action_key]
+        expected_finding_keys = [f"rule_{rule_id}" for rule_id in triggered_ids]
+        errors: list[str] = []
+        if incoming.covers_finding_keys != expected_finding_keys:
+            errors.append(
+                f"{action_key}.covers_finding_keys must be {expected_finding_keys}."
+            )
+        if incoming.affected_layer != requirement.affected_layer:
+            errors.append(
+                f"{action_key}.affected_layer must be {requirement.affected_layer}."
+            )
+        if incoming.priority != requirement.priority:
+            errors.append(f"{action_key}.priority must be {requirement.priority}.")
+        if incoming.effort_level != requirement.effort_level:
+            errors.append(
+                f"{action_key}.effort_level must be {requirement.effort_level}."
+            )
+        if errors:
+            raise ReportCopyInvalid(errors)
+
+        item = incoming.model_dump(
+            mode="json",
+            exclude={"action_key", "covers_finding_keys"},
+        )
+        item["id"] = f"act-{action_key}"
+        item["related_rule_ids"] = list(triggered_ids)
+        catalog[action_key] = item
+        covered_rule_ids.extend(triggered_ids)
+
+    if len(covered_rule_ids) != len(set(covered_rule_ids)):
+        raise ReportCopyInvalid(["A triggered finding may be covered by only one unified Action."])
+    return catalog
 
 
-def _optimization(value: OptimizationCopy, triggered: set[int]) -> dict[str, Any]:
-    def action_group(items: list[ActionCopy], prefix: str) -> list[dict[str, Any]]:
-        result: list[dict[str, Any]] = []
-        for index, action in enumerate(items, start=1):
-            rule_ids = [rule_id for rule_id in LAYER_RULES[action.affected_layer] if rule_id in triggered]
-            result.extend(_actions([action], rule_ids, f"{prefix}-{index:02d}"))
-        return result
+def _optimization(
+    value: OptimizationCopy,
+    action_catalog: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    known_keys = set(action_catalog)
+    supplied_groups = (
+        value.must_execute_now_action_keys,
+        value.defer_until_later_action_keys,
+        value.do_not_prioritize_yet_action_keys,
+    )
+    supplied_keys = [key for group in supplied_groups for key in group]
+    unknown_keys = sorted(set(supplied_keys) - known_keys)
+    if unknown_keys:
+        raise ReportCopyInvalid([
+            f"Optimization Path references unknown Action keys: {unknown_keys}"
+        ])
+
+    layer_positions = {
+        layer_key: index
+        for index, layer_key in enumerate(REQUIRED_LAYER_KEYS, start=1)
+    }
+    ordered_keys = sorted(
+        action_catalog,
+        key=lambda key: (
+            layer_positions[action_catalog[key]["affected_layer"]],
+            key,
+        ),
+    )
+    earliest_position = min(
+        (
+            layer_positions[action["affected_layer"]]
+            for action in action_catalog.values()
+        ),
+        default=None,
+    )
+    must_keys: list[str] = []
+    defer_keys: list[str] = []
+    later_keys: list[str] = []
+    for key in ordered_keys:
+        position = layer_positions[action_catalog[key]["affected_layer"]]
+        if position == earliest_position:
+            must_keys.append(key)
+        elif position <= 5:
+            defer_keys.append(key)
+        else:
+            later_keys.append(key)
+
+    def resolve(keys: list[str]) -> list[dict[str, Any]]:
+        return [copy_module.deepcopy(action_catalog[key]) for key in keys]
 
     roadmap: list[dict[str, Any]] = []
     for index, phase in enumerate(value.roadmap, start=1):
-        phase_actions: list[dict[str, Any]] = []
-        for action_index, action in enumerate(phase.action_items, start=1):
-            rule_ids = [rule_id for rule_id in LAYER_RULES[action.affected_layer] if rule_id in triggered]
-            phase_actions.extend(_actions([action], rule_ids, f"roadmap-{index:02d}-{action_index:02d}"))
+        unknown_phase_keys = sorted(set(phase.action_keys) - known_keys)
+        if unknown_phase_keys:
+            raise ReportCopyInvalid([
+                f"Roadmap phase {phase.sequence} references unknown Action keys: "
+                f"{unknown_phase_keys}"
+            ])
         roadmap.append({
             "id": f"phase-{index:02d}",
             "phase_title": phase.phase_title,
             "sequence": phase.sequence,
             "goal": phase.goal,
             "entry_condition": phase.entry_condition,
-            "action_items": phase_actions,
+            "action_items": resolve(phase.action_keys),
             "expected_outcomes": phase.expected_outcomes,
         })
 
     return {
-        "must_execute_now": action_group(value.must_execute_now, "must"),
-        "defer_until_later": action_group(value.defer_until_later, "defer"),
-        "do_not_prioritize_yet": action_group(value.do_not_prioritize_yet, "later"),
+        "must_execute_now": resolve(must_keys),
+        "defer_until_later": resolve(defer_keys),
+        "do_not_prioritize_yet": resolve(later_keys),
         "roadmap": roadmap,
         "fix_order_warning": value.fix_order_warning,
         "completion_signals": value.completion_signals,

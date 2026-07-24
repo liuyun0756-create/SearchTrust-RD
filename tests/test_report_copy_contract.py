@@ -6,6 +6,7 @@ from app.report_v21.copy_contract import (
     ReportCopyV21,
     assemble_report_skeleton,
 )
+from app.report_v21.action_requirements import active_action_requirements
 from app.report_v21.evidence_ledger import build_evidence_ledger
 from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.normalize import normalize_report_copy_to_v21
@@ -14,22 +15,47 @@ from app.report_v21.rule_contract import ACTIVE_RULE_IDS
 from app.report_v21.scoring import REQUIRED_LAYER_KEYS, build_client_decision_context
 
 
-def _action(layer_key="entity_presence"):
+def _action(requirement, triggered_ids):
     return {
-        "priority": "high",
-        "task_title": "Add missing business identity details",
-        "affected_layer": layer_key,
+        "action_key": requirement.action_key,
+        "covers_finding_keys": [f"rule_{rule_id}" for rule_id in triggered_ids],
+        "priority": requirement.priority,
+        "task_title": f"Complete {requirement.action_key.replace('_', ' ')}",
+        "affected_layer": requirement.affected_layer,
         "where_to_add": ["Page footer"],
         "what_to_add": ["Verified business details"],
         "example_copy": [],
         "implementation_notes": ["Verify details before publishing."],
         "completion_signals": ["The checked page shows the verified details."],
         "expected_effect": "Makes the business easier to verify.",
-        "effort_level": "small",
+        "effort_level": requirement.effort_level,
     }
 
 
-def _report_copy():
+def _report_copy(triggered_ids=None):
+    triggered_ids = set(triggered_ids or {21, 22, 23, 24, 25})
+    results = {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS}
+    applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+    active = active_action_requirements(results, applicability)
+    catalog = [
+        _action(requirement, active_rule_ids)
+        for requirement, active_rule_ids in active.values()
+    ]
+    key_issues = [
+        {
+            "finding_keys": [f"rule_{rule_id}" for rule_id in active_rule_ids],
+            "issue_title": f"Work is required for {requirement.action_key}",
+            "affected_layer": requirement.affected_layer,
+            "judgement": "The checked page triggered this remediation group.",
+            "explanation": "The corresponding findings require a concrete implementation task.",
+            "why_it_matters": "Completing the task will repair the affected trust signals.",
+            "impacts": ["The affected trust layer remains incomplete."],
+            "suggestions": ["Complete the specified remediation task."],
+            "recommended_action_keys": [requirement.action_key],
+        }
+        for requirement, active_rule_ids in active.values()
+    ]
+    action_keys = [item["action_key"] for item in catalog]
     return {
         "page_level": {
             "current_assessment": "The page has a usable service foundation but incomplete identity detail.",
@@ -44,27 +70,23 @@ def _report_copy():
                 "summary": f"Assessment summary for {key}.",
                 "explanation": f"Assessment explanation for {key}.",
                 "suggested_fixes": ["Keep verified signals complete and consistent."],
-                "action_items": [_action(key)] if key == "entity_presence" else [],
             }
             for key in REQUIRED_LAYER_KEYS
         ],
-        "key_issues": [
-            {
-                "issue_title": "Business identity details are incomplete",
-                "affected_layer": "entity_presence",
-                "judgement": "The checked page is missing several verifiable business details.",
-                "explanation": "Missing identity fields make the business harder to verify from the page alone.",
-                "why_it_matters": "Users and search systems need stable real-world business signals.",
-                "impacts": ["The page can look less complete than competing local pages."],
-                "suggestions": ["Add the verified identity fields to visible page templates."],
-                "recommended_actions": [_action()],
-            }
-        ],
+        "action_catalog": catalog,
+        "key_issues": key_issues,
         "optimization_path": {
-            "must_execute_now": [_action()],
-            "defer_until_later": [],
-            "do_not_prioritize_yet": [],
-            "roadmap": [],
+            "must_execute_now_action_keys": action_keys,
+            "defer_until_later_action_keys": [],
+            "do_not_prioritize_yet_action_keys": [],
+            "roadmap": [{
+                "phase_title": "Complete the active remediation work",
+                "sequence": 1,
+                "goal": "Resolve the confirmed findings.",
+                "entry_condition": "The findings have been confirmed.",
+                "action_keys": action_keys,
+                "expected_outcomes": ["The confirmed findings are addressed."],
+            }],
             "fix_order_warning": "Verify the business identity before expanding promotional copy.",
             "completion_signals": ["Visible identity fields are complete and verified."],
         },
@@ -144,6 +166,54 @@ class ReportCopyContractTests(unittest.TestCase):
         self.assertEqual(projections[0], projections[1])
         self.assertEqual(projections[1], projections[2])
 
+    def test_layer_actions_cover_every_triggered_finding_without_one_action_per_rule(self):
+        triggered_ids = {2, 4, 6, 7, 8, 32, 34}
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(triggered_ids)},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        layer = next(item for item in report["layers"] if item["layer_key"] == "specificity")
+        self.assertEqual(layer["triggered_rule_ids"], [2, 4, 6, 7, 8, 32, 34])
+        self.assertEqual(len(layer["action_items"]), 4)
+        self.assertEqual(
+            {
+                rule_id
+                for action in layer["action_items"]
+                for rule_id in action["related_rule_ids"]
+            },
+            triggered_ids,
+        )
+        layer_action_ids = {action["id"] for action in layer["action_items"]}
+        issue_action_ids = {
+            action["id"]
+            for issue in report["key_issues"]
+            for action in issue["recommended_actions"]
+        }
+        self.assertEqual(layer_action_ids, issue_action_ids)
+        self.assertEqual(
+            layer_action_ids,
+            {action["id"] for action in report["optimization_path"]["must_execute_now"]},
+        )
+
+    def test_missing_catalog_action_is_retryable(self):
+        triggered_ids = {2, 4, 6, 7, 8, 32, 34}
+        payload = _report_copy(triggered_ids)
+        removed = payload["action_catalog"].pop()
+        with self.assertRaises(ReportCopyInvalid) as raised:
+            normalize_report_copy_to_v21(
+                {"report_copy_v2_1": payload},
+                _context(),
+                {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+                {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+                build_evidence_ledger(_context()),
+            )
+        self.assertIn(removed["action_key"], " ".join(raised.exception.details))
+
     def test_client_decision_context_uses_final_key_issues_without_changing_scores(self):
         report = {
             "key_issues": [
@@ -201,28 +271,8 @@ class ReportCopyContractTests(unittest.TestCase):
         self.assertEqual(decision_for()["work_phase_count"], 0)
 
     def test_primary_blocker_uses_earliest_triggered_layer_and_keeps_good_layer_issue(self):
-        payload = copy.deepcopy(_report_copy())
-
-        def issue(layer_key, title, finding_key="layer"):
-            return {
-                "finding_key": finding_key,
-                "issue_title": title,
-                "affected_layer": layer_key,
-                "judgement": title,
-                "explanation": f"Explanation for {title}.",
-                "why_it_matters": f"Why {title} matters.",
-                "impacts": [f"Impact from {title}."],
-                "suggestions": [f"Suggestion for {title}."],
-                "recommended_actions": [_action(layer_key)],
-            }
-
-        payload["key_issues"] = [
-            issue("entity_consistency", "Address identity differs", "rule_27"),
-            issue("entity_consistency", "Phone identity differs", "rule_28"),
-            issue("specificity", "The page needs more specific detail"),
-            issue("accountability", "The page should show more service responsibility"),
-        ]
         triggered_ids = {1, 2, 4, 6, 7, 8, 9, 27, 28, 32, 34}
+        payload = copy.deepcopy(_report_copy(triggered_ids))
         results = {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS}
         applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
 
@@ -252,7 +302,7 @@ class ReportCopyContractTests(unittest.TestCase):
         results = {rule_id: rule_id == 1 for rule_id in ACTIVE_RULE_IDS}
         applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
         report = normalize_report_copy_to_v21(
-            {"report_copy_v2_1": _report_copy()},
+            {"report_copy_v2_1": _report_copy({1})},
             context,
             results,
             applicability,
@@ -277,7 +327,7 @@ class ReportCopyContractTests(unittest.TestCase):
         results = {rule_id: rule_id in {37, 38} for rule_id in ACTIVE_RULE_IDS}
         applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
         report = normalize_report_copy_to_v21(
-            {"report_copy_v2_1": _report_copy()},
+            {"report_copy_v2_1": _report_copy({37, 38})},
             context,
             results,
             applicability,
@@ -325,21 +375,7 @@ class ReportCopyContractTests(unittest.TestCase):
         results.update(backend_results)
         applicability.update(backend_applicability)
         context["backend_gbp_findings"] = findings
-        payload = copy.deepcopy(_report_copy())
-        payload["key_issues"] = []
-        for rule_id, title in ((27, "Address identity differs"), (28, "Phone identity differs")):
-            action = _action("entity_consistency")
-            payload["key_issues"].append({
-                "finding_key": f"rule_{rule_id}",
-                "issue_title": title,
-                "affected_layer": "entity_consistency",
-                "judgement": title,
-                "explanation": "The checked values are not exactly aligned.",
-                "why_it_matters": "Stable identity fields help users verify the business.",
-                "impacts": ["The page and profile can present conflicting identity signals."],
-                "suggestions": ["Confirm and publish one canonical value."],
-                "recommended_actions": [action],
-            })
+        payload = copy.deepcopy(_report_copy({27, 28}))
 
         report = normalize_report_copy_to_v21(
             {"report_copy_v2_1": payload},
@@ -361,18 +397,12 @@ class ReportCopyContractTests(unittest.TestCase):
         ledger = build_evidence_ledger(context)
         results = {rule_id: rule_id in {27, 28} for rule_id in ACTIVE_RULE_IDS}
         applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
-        payload = copy.deepcopy(_report_copy())
-        payload["key_issues"] = [{
-            "finding_key": "rule_27",
-            "issue_title": "Address identity differs",
-            "affected_layer": "entity_consistency",
-            "judgement": "The address differs.",
-            "explanation": "The values are not aligned.",
-            "why_it_matters": "Identity should be stable.",
-            "impacts": ["Conflicting identity signal."],
-            "suggestions": ["Confirm one address."],
-            "recommended_actions": [_action("entity_consistency")],
-        }]
+        payload = copy.deepcopy(_report_copy({27, 28}))
+        payload["key_issues"] = [
+            issue
+            for issue in payload["key_issues"]
+            if issue["finding_keys"] != ["rule_28"]
+        ]
 
         with self.assertRaises(ReportCopyInvalid) as raised:
             normalize_report_copy_to_v21(

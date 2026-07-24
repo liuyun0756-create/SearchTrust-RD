@@ -1,6 +1,8 @@
 import unittest
+import json
 from unittest.mock import AsyncMock, patch
 
+from app.report_v21.action_requirements import serialize_action_requirements
 from app.tasks.dify_client import call_dify_workflow
 
 
@@ -54,12 +56,16 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
                 task_id="english-input-fixture",
                 page_facts={"business_names": ["Example"]},
                 review_corpus='[{"id":"gbp-review-01","text":"Great drain repair."}]',
+                action_requirements=serialize_action_requirements(),
             )
 
         inputs = stream.await_args.args[0]
         self.assertEqual(inputs["language"], "English")
         self.assertIn("business_names", inputs["page_facts"])
         self.assertIn("gbp-review-01", inputs["review_corpus"])
+        requirements = json.loads(inputs["action_requirements"])["requirements"]
+        self.assertTrue(requirements)
+        self.assertIn("candidate_finding_keys", requirements[0])
 
     async def test_retry_exhaustion_preserves_validation_errors(self):
         def reject(_output):
