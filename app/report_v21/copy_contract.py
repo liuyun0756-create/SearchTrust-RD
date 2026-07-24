@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
 
 from app.report_v21.evidence_ledger import build_layer_evidence
 from app.report_v21.action_requirements import (
+    ACTION_REQUIREMENTS_BY_KEY,
     ActionRequirement,
     active_action_requirements,
 )
@@ -205,11 +206,29 @@ def assemble_report_skeleton(
     for index, issue in enumerate(copy.key_issues, start=1):
         layer_key = issue.affected_layer
         status = layer_statuses[layer_key]
+        unknown_issue_action_keys = sorted(
+            set(issue.recommended_action_keys) - set(ACTION_REQUIREMENTS_BY_KEY)
+        )
+        if unknown_issue_action_keys:
+            raise ReportCopyInvalid([
+                f"Key Issue references unknown action keys: {unknown_issue_action_keys}."
+            ])
+        active_issue_action_keys = [
+            action_key
+            for action_key in issue.recommended_action_keys
+            if action_key in action_catalog
+        ]
+        if not active_issue_action_keys:
+            # Dify may draft narrative for a known catalog group that the
+            # authoritative rule vector did not activate. It must not enter the
+            # final report, but it also must not invalidate otherwise complete
+            # active remediation coverage.
+            continue
         if len(issue.recommended_action_keys) != 1:
             raise ReportCopyInvalid([
                 "Every Key Issue must reference exactly one unified Action."
             ])
-        action_key = issue.recommended_action_keys[0]
+        action_key = active_issue_action_keys[0]
         action = action_catalog.get(action_key)
         if action is None:
             raise ReportCopyInvalid([
@@ -316,11 +335,16 @@ def _validated_action_catalog(
 
     expected_keys = set(active_requirements)
     incoming_keys = set(incoming_by_key)
-    if incoming_keys != expected_keys:
+    unknown_keys = incoming_keys - set(ACTION_REQUIREMENTS_BY_KEY)
+    if unknown_keys:
         raise ReportCopyInvalid([
-            "Action catalog must match the active backend remediation groups exactly: "
-            f"missing={sorted(expected_keys - incoming_keys)}, "
-            f"extra={sorted(incoming_keys - expected_keys)}"
+            f"Action catalog contains unknown action keys: {sorted(unknown_keys)}"
+        ])
+    missing_keys = expected_keys - incoming_keys
+    if missing_keys:
+        raise ReportCopyInvalid([
+            "Action catalog must include every active backend remediation group: "
+            f"missing={sorted(missing_keys)}"
         ])
 
     catalog: dict[str, dict[str, Any]] = {}
@@ -365,13 +389,14 @@ def _optimization(
     action_catalog: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     known_keys = set(action_catalog)
+    known_requirement_keys = set(ACTION_REQUIREMENTS_BY_KEY)
     supplied_groups = (
         value.must_execute_now_action_keys,
         value.defer_until_later_action_keys,
         value.do_not_prioritize_yet_action_keys,
     )
     supplied_keys = [key for group in supplied_groups for key in group]
-    unknown_keys = sorted(set(supplied_keys) - known_keys)
+    unknown_keys = sorted(set(supplied_keys) - known_requirement_keys)
     if unknown_keys:
         raise ReportCopyInvalid([
             f"Optimization Path references unknown Action keys: {unknown_keys}"
@@ -412,19 +437,28 @@ def _optimization(
 
     roadmap: list[dict[str, Any]] = []
     for index, phase in enumerate(value.roadmap, start=1):
-        unknown_phase_keys = sorted(set(phase.action_keys) - known_keys)
+        unknown_phase_keys = sorted(
+            set(phase.action_keys) - known_requirement_keys
+        )
         if unknown_phase_keys:
             raise ReportCopyInvalid([
                 f"Roadmap phase {phase.sequence} references unknown Action keys: "
                 f"{unknown_phase_keys}"
             ])
+        active_phase_keys = [
+            key
+            for key in phase.action_keys
+            if key in known_keys
+        ]
+        if not active_phase_keys:
+            continue
         roadmap.append({
             "id": f"phase-{index:02d}",
             "phase_title": phase.phase_title,
             "sequence": phase.sequence,
             "goal": phase.goal,
             "entry_condition": phase.entry_condition,
-            "action_items": resolve(phase.action_keys),
+            "action_items": resolve(active_phase_keys),
             "expected_outcomes": phase.expected_outcomes,
         })
 

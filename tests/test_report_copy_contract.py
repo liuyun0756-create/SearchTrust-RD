@@ -6,7 +6,10 @@ from app.report_v21.copy_contract import (
     ReportCopyV21,
     assemble_report_skeleton,
 )
-from app.report_v21.action_requirements import active_action_requirements
+from app.report_v21.action_requirements import (
+    ACTION_REQUIREMENTS_BY_KEY,
+    active_action_requirements,
+)
 from app.report_v21.evidence_ledger import build_evidence_ledger
 from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.normalize import normalize_report_copy_to_v21
@@ -213,6 +216,81 @@ class ReportCopyContractTests(unittest.TestCase):
                 build_evidence_ledger(_context()),
             )
         self.assertIn(removed["action_key"], " ".join(raised.exception.details))
+
+    def test_known_inactive_actions_and_references_are_discarded(self):
+        triggered_ids = {2, 7}
+        payload = copy.deepcopy(_report_copy(triggered_ids))
+        inactive_requirement = ACTION_REQUIREMENTS_BY_KEY["foundation_entity_scope"]
+        inactive_action = _action(inactive_requirement, (17,))
+        payload["action_catalog"].append(inactive_action)
+        payload["key_issues"].append({
+            "finding_keys": ["rule_17"],
+            "issue_title": "Inactive draft issue",
+            "affected_layer": "foundation",
+            "judgement": "This draft must not enter the final report.",
+            "explanation": "The authoritative rule vector did not activate it.",
+            "why_it_matters": "It is an inactive Dify draft.",
+            "impacts": ["None in the final report."],
+            "suggestions": ["Discard this draft."],
+            "recommended_action_keys": [inactive_requirement.action_key],
+        })
+        payload["optimization_path"]["must_execute_now_action_keys"].append(
+            inactive_requirement.action_key
+        )
+        payload["optimization_path"]["roadmap"].append({
+            "phase_title": "Inactive phase",
+            "sequence": 2,
+            "goal": "This phase must be discarded.",
+            "entry_condition": "The inactive rule would need to trigger.",
+            "action_keys": [inactive_requirement.action_key],
+            "expected_outcomes": ["No inactive work appears."],
+        })
+
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            _context(),
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(_context()),
+        )["report_v2_1"]
+
+        all_action_ids = {
+            action["id"]
+            for layer in report["layers"]
+            for action in layer["action_items"]
+        }
+        self.assertNotIn(
+            f"act-{inactive_requirement.action_key}",
+            all_action_ids,
+        )
+        self.assertNotIn(
+            f"issue-{inactive_requirement.action_key}",
+            {issue["id"] for issue in report["key_issues"]},
+        )
+        self.assertNotIn(
+            inactive_requirement.action_key,
+            {
+                action["id"].removeprefix("act-")
+                for phase in report["optimization_path"]["roadmap"]
+                for action in phase["action_items"]
+            },
+        )
+
+    def test_unknown_action_key_remains_retryable(self):
+        payload = copy.deepcopy(_report_copy({2, 7}))
+        unknown_action = copy.deepcopy(payload["action_catalog"][0])
+        unknown_action["action_key"] = "unknown_action_group"
+        payload["action_catalog"].append(unknown_action)
+
+        with self.assertRaises(ReportCopyInvalid) as raised:
+            normalize_report_copy_to_v21(
+                {"report_copy_v2_1": payload},
+                _context(),
+                {rule_id: rule_id in {2, 7} for rule_id in ACTIVE_RULE_IDS},
+                {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+                build_evidence_ledger(_context()),
+            )
+        self.assertIn("unknown_action_group", " ".join(raised.exception.details))
 
     def test_client_decision_context_uses_final_key_issues_without_changing_scores(self):
         report = {
