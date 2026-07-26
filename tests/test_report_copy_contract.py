@@ -236,6 +236,47 @@ class ReportCopyContractTests(unittest.TestCase):
             {action["id"] for action in report["optimization_path"]["must_execute_now"]},
         )
 
+    def test_backend_rebuilds_dify_finding_links_from_authoritative_vector(self):
+        triggered_ids = {1, 4, 32, 34}
+        copy_payload = _report_copy(triggered_ids)
+        action = next(
+            item
+            for item in copy_payload["action_catalog"]
+            if item["action_key"] == "specificity_verified_local_case"
+        )
+        action["covers_finding_keys"] = ["rule_1", "rule_4", "rule_34"]
+        issue = next(
+            item
+            for item in copy_payload["key_issues"]
+            if item["recommended_action_keys"] == ["specificity_verified_local_case"]
+        )
+        issue["finding_keys"] = ["rule_1"]
+
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": copy_payload},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        layer = next(
+            item for item in report["layers"]
+            if item["layer_key"] == "specificity"
+        )
+        normalized_action = next(
+            item for item in layer["action_items"]
+            if item["id"] == "act-specificity_verified_local_case"
+        )
+        self.assertEqual(normalized_action["related_rule_ids"], [1, 4, 32, 34])
+        normalized_issue = next(
+            item for item in report["key_issues"]
+            if item["recommended_actions"][0]["id"]
+            == "act-specificity_verified_local_case"
+        )
+        self.assertEqual(normalized_issue["related_rule_ids"], [1, 4, 32, 34])
+
     def test_good_layer_with_no_findings_is_presented_as_healthy(self):
         context = _context()
         report = normalize_report_copy_to_v21(

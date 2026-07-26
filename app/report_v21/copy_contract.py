@@ -258,11 +258,6 @@ def assemble_report_skeleton(
             raise ReportCopyInvalid([
                 f"Action {action_key} must use affected_layer {action['affected_layer']}."
             ])
-        expected_finding_keys = [f"rule_{rule_id}" for rule_id in action["related_rule_ids"]]
-        if issue.finding_keys != expected_finding_keys:
-            raise ReportCopyInvalid([
-                f"Key Issue for {action_key} must use finding_keys {expected_finding_keys}."
-            ])
         seen_issue_action_keys.add(action_key)
         triggered_ids = list(action["related_rule_ids"])
         issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
@@ -367,12 +362,7 @@ def _validated_action_catalog(
     covered_rule_ids: list[int] = []
     for action_key, (requirement, triggered_ids) in active_requirements.items():
         incoming = incoming_by_key[action_key]
-        expected_finding_keys = [f"rule_{rule_id}" for rule_id in triggered_ids]
         errors: list[str] = []
-        if incoming.covers_finding_keys != expected_finding_keys:
-            errors.append(
-                f"{action_key}.covers_finding_keys must be {expected_finding_keys}."
-            )
         if incoming.affected_layer != requirement.affected_layer:
             errors.append(
                 f"{action_key}.affected_layer must be {requirement.affected_layer}."
