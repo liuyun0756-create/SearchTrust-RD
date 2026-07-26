@@ -6,10 +6,53 @@ from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
 from app.report_v21.rule_contract import ACTIVE_RULE_IDS
+from app.report_v21.scoring import RULE_FINDING_LABELS
 
 
 Priority = Literal["high", "medium", "low"]
 EffortLevel = Literal["small", "medium", "large"]
+
+
+RULE_REMEDIATION_GUIDANCE: dict[int, str] = {
+    1: "Add place-specific details that would need to change if the city or service area changed.",
+    2: "Replace broad service descriptions with concrete service-specific detail.",
+    3: "Add a verified neighborhood, landmark, facility, or operational geographic anchor.",
+    4: "Add a verified date, time reference, recent activity marker, or service timeline.",
+    6: "Use verified original imagery from the business, team, equipment, or real work.",
+    7: "Describe the team's concrete actions and service process in first-person operational language.",
+    8: "Use calls to action that name the service need and the next step for this page.",
+    9: "Explain who handles the request and what responsibility the business takes during delivery.",
+    10: "Describe verified constraints, complex cases, exclusions, or escalation conditions.",
+    11: "Add a verifiable external clue that supports the page's real-world service claim.",
+    12: "State who is accountable for the outcome and how follow-up or correction is handled.",
+    13: "Replace reusable cluster copy with page-specific material that cannot be repeated unchanged.",
+    14: "Add a distinct user purpose or value block that justifies this page being indexed separately.",
+    15: "Add current, verifiable trust signals that do not depend on historical authority alone.",
+    16: "Give the page a useful role for customers beyond covering a search query.",
+    17: "Clarify the real business entity and the qualified service scope represented by the page.",
+    18: "Limit service claims to verified business categories or establish the missing category relationship.",
+    19: "Use one canonical business identity consistently across the page and related site areas.",
+    20: "Clarify the verified qualification that makes the entity eligible for the targeted service query.",
+    21: "Make the real business name and identity explicit in prominent visible page areas.",
+    22: "Add the verified physical address in an appropriate visible contact location.",
+    23: "Add the verified primary phone number in prominent contact and call-to-action locations.",
+    24: "State the verified service area clearly and consistently.",
+    25: "Publish verified operating or availability hours where customers can find them.",
+    26: "Use the exact canonical business name from the checked GBP record.",
+    27: "Use one canonical address format that exactly matches the checked GBP record.",
+    28: "Use one canonical primary phone number that exactly matches the checked GBP record.",
+    29: "Align the page service-area statement with the checked GBP record.",
+    30: "Add verified community-level locations that are genuinely served.",
+    31: "Add a verified landmark or non-administrative place reference relevant to service delivery.",
+    32: "Add factual local operating context tied to the checked service area.",
+    33: "Define an accurate service radius, boundary, or surrounding-community coverage statement.",
+    34: "Add one verified service case with the problem, response, and outcome.",
+    35: "Describe the verified customer situation or operating context behind a service example.",
+    36: "Add meaningful verified time context to the service example or activity evidence.",
+    37: "Collect or present reviews that name the specific service performed.",
+    38: "Collect or present reviews that include legitimate service-area or place context.",
+    39: "Present review proof whose service topic matches the focus of this page.",
+}
 
 
 @dataclass(frozen=True)
@@ -28,6 +71,15 @@ class ActionRequirement:
     def to_dify_input(self) -> dict[str, Any]:
         value = asdict(self)
         value["candidate_finding_keys"] = list(self.candidate_finding_keys)
+        value["candidate_findings"] = [
+            {
+                "finding_key": finding_key,
+                "finding_label": RULE_FINDING_LABELS[rule_id],
+                "required_change": RULE_REMEDIATION_GUIDANCE[rule_id],
+            }
+            for finding_key in self.candidate_finding_keys
+            for rule_id in (int(finding_key.removeprefix("rule_")),)
+        ]
         return value
 
 
@@ -253,6 +305,21 @@ def active_action_requirements(
     return active
 
 
+def action_finding_details(rule_ids: tuple[int, ...] | list[int]) -> tuple[list[str], list[str]]:
+    """Return deterministic user-facing findings and remediation requirements."""
+    addressed_findings = [
+        RULE_FINDING_LABELS[rule_id]
+        for rule_id in rule_ids
+        if rule_id in RULE_FINDING_LABELS
+    ]
+    required_changes = [
+        RULE_REMEDIATION_GUIDANCE[rule_id]
+        for rule_id in rule_ids
+        if rule_id in RULE_REMEDIATION_GUIDANCE
+    ]
+    return addressed_findings, required_changes
+
+
 def _validate_catalog() -> None:
     action_keys = [item.action_key for item in ACTION_REQUIREMENTS]
     if len(action_keys) != len(set(action_keys)):
@@ -270,6 +337,13 @@ def _validate_catalog() -> None:
         extra = sorted(set(mapped_rule_ids) - set(ACTIVE_RULE_IDS))
         raise RuntimeError(
             f"Action requirement catalog does not cover the active rule contract: "
+            f"missing={missing}, extra={extra}"
+        )
+    if set(RULE_REMEDIATION_GUIDANCE) != set(ACTIVE_RULE_IDS):
+        missing = sorted(set(ACTIVE_RULE_IDS) - set(RULE_REMEDIATION_GUIDANCE))
+        extra = sorted(set(RULE_REMEDIATION_GUIDANCE) - set(ACTIVE_RULE_IDS))
+        raise RuntimeError(
+            "Rule remediation guidance must cover the active rule contract: "
             f"missing={missing}, extra={extra}"
         )
 

@@ -13,6 +13,7 @@ from app.report_v21.evidence_ledger import build_layer_evidence
 from app.report_v21.action_requirements import (
     ACTION_REQUIREMENTS_BY_KEY,
     ActionRequirement,
+    action_finding_details,
     active_action_requirements,
 )
 from app.report_v21.models import (
@@ -177,12 +178,31 @@ def assemble_report_skeleton(
         triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
         status = calculate_layer_status(layer_key, triggered_ids)
         layer_statuses[layer_key] = status
+        layer_actions = [
+            copy_module.deepcopy(action)
+            for action in action_catalog.values()
+            if action["affected_layer"] == layer_key
+        ]
+        if status == "good" and not triggered_ids:
+            presentation_mode = "healthy"
+            suggested_fixes: list[str] = []
+        elif status == "good":
+            presentation_mode = "healthy_with_opportunities"
+            suggested_fixes = _dedupe_strings([
+                required_change
+                for action in layer_actions
+                for required_change in action.get("required_changes", [])
+            ])
+        else:
+            presentation_mode = "attention"
+            suggested_fixes = narrative.suggested_fixes
         layers.append({
             "layer_id": index,
             "layer_key": layer_key,
             "layer_name": LAYER_LABELS[layer_key],
             "layer_label": LAYER_DISPLAY_LABELS[layer_key],
             "status": status,
+            "presentation_mode": presentation_mode,
             "checked_rule_ids": list(LAYER_RULES[layer_key]),
             "triggered_rule_ids": triggered_ids,
             "triggered_findings": [],
@@ -193,12 +213,8 @@ def assemble_report_skeleton(
                 evidence_ledger,
                 context,
             ),
-            "suggested_fixes": narrative.suggested_fixes,
-            "action_items": [
-                copy_module.deepcopy(action)
-                for action in action_catalog.values()
-                if action["affected_layer"] == layer_key
-            ],
+            "suggested_fixes": suggested_fixes,
+            "action_items": layer_actions,
         })
 
     issues: list[dict[str, Any]] = []
@@ -376,12 +392,27 @@ def _validated_action_catalog(
         )
         item["id"] = f"act-{action_key}"
         item["related_rule_ids"] = list(triggered_ids)
+        addressed_findings, required_changes = action_finding_details(triggered_ids)
+        item["addressed_findings"] = addressed_findings
+        item["required_changes"] = required_changes
         catalog[action_key] = item
         covered_rule_ids.extend(triggered_ids)
 
     if len(covered_rule_ids) != len(set(covered_rule_ids)):
         raise ReportCopyInvalid(["A triggered finding may be covered by only one unified Action."])
     return catalog
+
+
+def _dedupe_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        normalized = value.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    return result
 
 
 def _optimization(

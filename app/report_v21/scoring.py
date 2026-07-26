@@ -82,6 +82,41 @@ RULE_FINDING_LABELS: dict[int, str] = {
     39: "Review service topics do not align with the page focus",
 }
 
+GOOD_LAYER_NARRATIVES: dict[str, tuple[str, str]] = {
+    "foundation": (
+        "The page has a sound qualification foundation.",
+        "The assessed foundation signals establish a clear page purpose and a usable basis for the later trust layers.",
+    ),
+    "entity_presence": (
+        "The core business entity is visibly present.",
+        "The assessed identity and contact signals give users a clear business presence to connect with the page.",
+    ),
+    "entity_consistency": (
+        "The assessed entity signals are consistent overall.",
+        "The checked identity fields support a stable connection between the page and the business record.",
+    ),
+    "specificity": (
+        "The page is sufficiently specific overall.",
+        "Most assessed details make the page meaningfully tied to its service purpose instead of reading as a generic template.",
+    ),
+    "real_world_connection": (
+        "The page shows a credible real-world connection.",
+        "The assessed local and operational signals connect the page to genuine service activity and place context.",
+    ),
+    "accountability": (
+        "The page communicates service accountability well.",
+        "The assessed responsibility and delivery signals help users understand who acts, what happens, and how the business stands behind the service.",
+    ),
+    "page_unique_value": (
+        "The page provides distinct standalone value.",
+        "The assessed content gives the page a useful purpose and value that extends beyond a reusable search landing page.",
+    ),
+    "algorithm_fit": (
+        "The page aligns well with the assessed trust signals.",
+        "The current structure and proof provide a sound basis for search systems to interpret the page's purpose and credibility.",
+    ),
+}
+
 LAYER_THRESHOLDS: dict[str, tuple[range, range, range]] = {
     "foundation": (range(0, 2), range(2, 3), range(3, 5)),
     "entity_presence": (range(0, 2), range(2, 4), range(4, 6)),
@@ -153,6 +188,21 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
         if len(layer["triggered_rule_ids"]) != len(incoming_triggered):
             warnings.append(f"Ignored triggered rule ids outside {layer_key}'s fixed assessment scope.")
         layer["status"] = calculate_layer_status(layer_key, layer["triggered_rule_ids"])
+        if layer["status"] == "good" and not layer["triggered_rule_ids"]:
+            layer["presentation_mode"] = "healthy"
+            layer["suggested_fixes"] = []
+            layer["summary"], layer["explanation"] = GOOD_LAYER_NARRATIVES[layer_key]
+        elif layer["status"] == "good":
+            layer["presentation_mode"] = "healthy_with_opportunities"
+            layer["summary"], positive_explanation = GOOD_LAYER_NARRATIVES[layer_key]
+            count = len(layer["triggered_rule_ids"])
+            noun = "opportunity" if count == 1 else "opportunities"
+            layer["explanation"] = (
+                f"{positive_explanation} "
+                f"The {count} confirmed {noun} below can strengthen this layer further."
+            )
+        else:
+            layer["presentation_mode"] = "attention"
 
     return report, _dedupe_strings(warnings), all_available
 

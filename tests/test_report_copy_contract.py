@@ -8,6 +8,7 @@ from app.report_v21.copy_contract import (
 )
 from app.report_v21.action_requirements import (
     ACTION_REQUIREMENTS_BY_KEY,
+    RULE_REMEDIATION_GUIDANCE,
     active_action_requirements,
 )
 from app.report_v21.evidence_ledger import build_evidence_ledger
@@ -15,7 +16,11 @@ from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.normalize import normalize_report_copy_to_v21
 from app.report_v21.review_corpus import build_review_corpus
 from app.report_v21.rule_contract import ACTIVE_RULE_IDS
-from app.report_v21.scoring import REQUIRED_LAYER_KEYS, build_client_decision_context
+from app.report_v21.scoring import (
+    GOOD_LAYER_NARRATIVES,
+    REQUIRED_LAYER_KEYS,
+    build_client_decision_context,
+)
 
 
 def _action(requirement, triggered_ids):
@@ -36,7 +41,11 @@ def _action(requirement, triggered_ids):
 
 
 def _report_copy(triggered_ids=None):
-    triggered_ids = set(triggered_ids or {21, 22, 23, 24, 25})
+    triggered_ids = set(
+        {21, 22, 23, 24, 25}
+        if triggered_ids is None
+        else triggered_ids
+    )
     results = {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS}
     applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
     active = active_action_requirements(results, applicability)
@@ -191,6 +200,30 @@ class ReportCopyContractTests(unittest.TestCase):
             },
             triggered_ids,
         )
+        self.assertEqual(
+            {
+                finding
+                for action in layer["action_items"]
+                for finding in action["addressed_findings"]
+            },
+            set(layer["triggered_findings"]),
+        )
+        for action in layer["action_items"]:
+            self.assertEqual(
+                len(action["addressed_findings"]),
+                len(action["related_rule_ids"]),
+            )
+            self.assertEqual(
+                len(action["required_changes"]),
+                len(action["related_rule_ids"]),
+            )
+            self.assertEqual(
+                action["required_changes"],
+                [
+                    RULE_REMEDIATION_GUIDANCE[rule_id]
+                    for rule_id in action["related_rule_ids"]
+                ],
+            )
         layer_action_ids = {action["id"] for action in layer["action_items"]}
         issue_action_ids = {
             action["id"]
@@ -202,6 +235,55 @@ class ReportCopyContractTests(unittest.TestCase):
             layer_action_ids,
             {action["id"] for action in report["optimization_path"]["must_execute_now"]},
         )
+
+    def test_good_layer_with_no_findings_is_presented_as_healthy(self):
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(set())},
+            context,
+            {rule_id: False for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        for layer in report["layers"]:
+            self.assertEqual(layer["status"], "good")
+            self.assertEqual(layer["presentation_mode"], "healthy")
+            self.assertEqual(layer["triggered_rule_ids"], [])
+            self.assertEqual(layer["suggested_fixes"], [])
+            self.assertEqual(layer["action_items"], [])
+            self.assertEqual(
+                (layer["summary"], layer["explanation"]),
+                GOOD_LAYER_NARRATIVES[layer["layer_key"]],
+            )
+
+    def test_good_layer_with_findings_shows_only_confirmed_opportunities(self):
+        triggered_ids = {1}
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(triggered_ids)},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        layer = next(item for item in report["layers"] if item["layer_key"] == "specificity")
+        self.assertEqual(layer["status"], "good")
+        self.assertEqual(layer["presentation_mode"], "healthy_with_opportunities")
+        self.assertEqual(layer["triggered_rule_ids"], [1])
+        self.assertEqual(
+            layer["suggested_fixes"],
+            [RULE_REMEDIATION_GUIDANCE[1]],
+        )
+        self.assertEqual(layer["summary"], GOOD_LAYER_NARRATIVES["specificity"][0])
+        self.assertIn(
+            GOOD_LAYER_NARRATIVES["specificity"][1],
+            layer["explanation"],
+        )
+        self.assertIn("1 confirmed opportunity", layer["explanation"])
+        self.assertEqual(len(layer["action_items"]), 1)
+        self.assertEqual(layer["action_items"][0]["related_rule_ids"], [1])
 
     def test_missing_catalog_action_is_retryable(self):
         triggered_ids = {2, 4, 6, 7, 8, 32, 34}

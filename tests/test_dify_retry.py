@@ -66,6 +66,13 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
         requirements = json.loads(inputs["action_requirements"])["requirements"]
         self.assertTrue(requirements)
         self.assertIn("candidate_finding_keys", requirements[0])
+        self.assertIn("candidate_findings", requirements[0])
+        candidate = requirements[0]["candidate_findings"][0]
+        self.assertEqual(
+            set(candidate),
+            {"finding_key", "finding_label", "required_change"},
+        )
+        self.assertTrue(candidate["required_change"])
 
     async def test_retry_exhaustion_preserves_validation_errors(self):
         def reject(_output):

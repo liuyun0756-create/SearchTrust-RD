@@ -271,6 +271,8 @@ class ActionItem(_StrictModel):
     task_title: str
     affected_layer: LayerKey
     related_rule_ids: list[int] = Field(default_factory=list)
+    addressed_findings: list[str] = Field(default_factory=list)
+    required_changes: list[str] = Field(default_factory=list)
     where_to_add: list[str] = Field(default_factory=list)
     what_to_add: list[str] = Field(default_factory=list)
     example_copy: list[StrictStr]
@@ -305,6 +307,7 @@ class LayerFinding(_StrictModel):
     layer_name: str
     layer_label: str
     status: LayerStatus
+    presentation_mode: Literal["healthy", "healthy_with_opportunities", "attention"] = "attention"
     checked_rule_ids: list[int] = Field(default_factory=list)
     triggered_rule_ids: list[int] = Field(default_factory=list)
     triggered_findings: list[str] = Field(default_factory=list)
