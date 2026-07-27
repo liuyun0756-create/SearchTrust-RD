@@ -277,6 +277,44 @@ class ReportCopyContractTests(unittest.TestCase):
         )
         self.assertEqual(normalized_issue["related_rule_ids"], [1, 4, 32, 34])
 
+    def test_backend_overrides_dify_owned_action_metadata(self):
+        triggered_ids = {33}
+        copy_payload = _report_copy(triggered_ids)
+        action = copy_payload["action_catalog"][0]
+        action.update({
+            "covers_finding_keys": ["rule_1"],
+            "priority": "high",
+            "affected_layer": "algorithm_fit",
+            "effort_level": "medium",
+        })
+        issue = copy_payload["key_issues"][0]
+        issue["finding_keys"] = ["rule_1"]
+        issue["affected_layer"] = "algorithm_fit"
+
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": copy_payload},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        layer = next(
+            item for item in report["layers"]
+            if item["layer_key"] == "real_world_connection"
+        )
+        normalized_action = layer["action_items"][0]
+        self.assertEqual(normalized_action["priority"], "medium")
+        self.assertEqual(normalized_action["affected_layer"], "real_world_connection")
+        self.assertEqual(normalized_action["effort_level"], "small")
+        self.assertEqual(normalized_action["related_rule_ids"], [33])
+        self.assertEqual(
+            report["key_issues"][0]["affected_layer"],
+            "real_world_connection",
+        )
+        self.assertEqual(report["key_issues"][0]["related_rule_ids"], [33])
+
     def test_good_layer_with_no_findings_is_presented_as_healthy(self):
         context = _context()
         report = normalize_report_copy_to_v21(

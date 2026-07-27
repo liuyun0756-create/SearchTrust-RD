@@ -220,8 +220,6 @@ def assemble_report_skeleton(
     issues: list[dict[str, Any]] = []
     seen_issue_action_keys: set[str] = set()
     for index, issue in enumerate(copy.key_issues, start=1):
-        layer_key = issue.affected_layer
-        status = layer_statuses[layer_key]
         unknown_issue_action_keys = sorted(
             set(issue.recommended_action_keys) - set(ACTION_REQUIREMENTS_BY_KEY)
         )
@@ -250,13 +248,11 @@ def assemble_report_skeleton(
             raise ReportCopyInvalid([
                 f"Key Issue references unknown or inactive action_key {action_key}."
             ])
+        layer_key = action["affected_layer"]
+        status = layer_statuses[layer_key]
         if action_key in seen_issue_action_keys:
             raise ReportCopyInvalid([
                 f"Action {action_key} may be referenced by only one Key Issue."
-            ])
-        if action["affected_layer"] != layer_key:
-            raise ReportCopyInvalid([
-                f"Action {action_key} must use affected_layer {action['affected_layer']}."
             ])
         seen_issue_action_keys.add(action_key)
         triggered_ids = list(action["related_rule_ids"])
@@ -362,25 +358,22 @@ def _validated_action_catalog(
     covered_rule_ids: list[int] = []
     for action_key, (requirement, triggered_ids) in active_requirements.items():
         incoming = incoming_by_key[action_key]
-        errors: list[str] = []
-        if incoming.affected_layer != requirement.affected_layer:
-            errors.append(
-                f"{action_key}.affected_layer must be {requirement.affected_layer}."
-            )
-        if incoming.priority != requirement.priority:
-            errors.append(f"{action_key}.priority must be {requirement.priority}.")
-        if incoming.effort_level != requirement.effort_level:
-            errors.append(
-                f"{action_key}.effort_level must be {requirement.effort_level}."
-            )
-        if errors:
-            raise ReportCopyInvalid(errors)
-
+        # Dify owns the action narrative; the backend owns deterministic
+        # classification and finding coverage for each known action key.
         item = incoming.model_dump(
             mode="json",
-            exclude={"action_key", "covers_finding_keys"},
+            exclude={
+                "action_key",
+                "covers_finding_keys",
+                "priority",
+                "affected_layer",
+                "effort_level",
+            },
         )
         item["id"] = f"act-{action_key}"
+        item["priority"] = requirement.priority
+        item["affected_layer"] = requirement.affected_layer
+        item["effort_level"] = requirement.effort_level
         item["related_rule_ids"] = list(triggered_ids)
         addressed_findings, required_changes = action_finding_details(triggered_ids)
         item["addressed_findings"] = addressed_findings
