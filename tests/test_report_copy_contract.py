@@ -236,6 +236,28 @@ class ReportCopyContractTests(unittest.TestCase):
             {action["id"] for action in report["optimization_path"]["must_execute_now"]},
         )
 
+    def test_all_confirmed_later_layer_work_is_scheduled_not_deprioritized(self):
+        triggered_ids = {1, 9, 13, 15}
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(triggered_ids)},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        path = report["optimization_path"]
+        self.assertEqual(
+            {action["affected_layer"] for action in path["must_execute_now"]},
+            {"specificity"},
+        )
+        self.assertEqual(
+            {action["affected_layer"] for action in path["defer_until_later"]},
+            {"accountability", "page_unique_value", "algorithm_fit"},
+        )
+        self.assertEqual(path["do_not_prioritize_yet"], [])
+
     def test_backend_rebuilds_dify_finding_links_from_authoritative_vector(self):
         triggered_ids = {1, 4, 32, 34}
         copy_payload = _report_copy(triggered_ids)

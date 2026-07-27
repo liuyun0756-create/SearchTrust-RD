@@ -436,15 +436,15 @@ def _optimization(
     )
     must_keys: list[str] = []
     defer_keys: list[str] = []
-    later_keys: list[str] = []
     for key in ordered_keys:
         position = layer_positions[action_catalog[key]["affected_layer"]]
         if position == earliest_position:
             must_keys.append(key)
-        elif position <= 5:
-            defer_keys.append(key)
         else:
-            later_keys.append(key)
+            # Every confirmed finding belongs to the four-stage implementation
+            # plan. Later layers are scheduled after the current phase rather
+            # than described as work that should not be prioritized.
+            defer_keys.append(key)
 
     def resolve(keys: list[str]) -> list[dict[str, Any]]:
         return [copy_module.deepcopy(action_catalog[key]) for key in keys]
@@ -479,7 +479,7 @@ def _optimization(
     return {
         "must_execute_now": resolve(must_keys),
         "defer_until_later": resolve(defer_keys),
-        "do_not_prioritize_yet": resolve(later_keys),
+        "do_not_prioritize_yet": [],
         "roadmap": roadmap,
         "fix_order_warning": value.fix_order_warning,
         "completion_signals": value.completion_signals,
