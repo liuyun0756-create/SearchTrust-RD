@@ -20,6 +20,9 @@ from app.report_v21.scoring import (
     GOOD_LAYER_NARRATIVES,
     REQUIRED_LAYER_KEYS,
     build_client_decision_context,
+    calculate_overall_status,
+    calculate_ranking_potential,
+    calculate_risk_level,
 )
 
 
@@ -515,6 +518,54 @@ class ReportCopyContractTests(unittest.TestCase):
                 "risk_level": report["risk_level"],
             },
         )
+
+    def test_overall_status_counts_medium_layers_without_changing_other_scores(self):
+        statuses = {
+            "foundation": "good",
+            "entity_presence": "good",
+            "entity_consistency": "medium",
+            "specificity": "medium",
+            "real_world_connection": "medium",
+            "accountability": "good",
+            "page_unique_value": "good",
+            "algorithm_fit": "good",
+        }
+        layers = [
+            {"layer_key": layer_key, "status": statuses[layer_key]}
+            for layer_key in REQUIRED_LAYER_KEYS
+        ]
+
+        overall_status = calculate_overall_status(layers)
+        self.assertEqual(overall_status["label"], "Medium Weak")
+        self.assertEqual(overall_status["level"], "medium_weak")
+        self.assertEqual(
+            calculate_ranking_potential(layers)["label"],
+            "Strong Competitive Potential",
+        )
+        self.assertEqual(calculate_risk_level(layers)["label"], "Low")
+
+    def test_overall_status_boundaries_are_monotonic(self):
+        cases = (
+            ([], "Medium"),
+            (["good"] * 8, "Good"),
+            (["medium"] + ["good"] * 7, "Medium"),
+            (["medium"] * 2 + ["good"] * 6, "Medium"),
+            (["medium"] * 3 + ["good"] * 5, "Medium Weak"),
+            (["weak"] + ["good"] * 7, "Medium Weak"),
+            (["weak"] * 3 + ["good"] * 5, "Medium Weak"),
+            (["weak"] * 4 + ["good"] * 4, "Weak"),
+        )
+
+        for statuses, expected_label in cases:
+            with self.subTest(statuses=statuses):
+                layers = [
+                    {"layer_key": layer_key, "status": status}
+                    for layer_key, status in zip(REQUIRED_LAYER_KEYS, statuses)
+                ]
+                self.assertEqual(
+                    calculate_overall_status(layers)["label"],
+                    expected_label,
+                )
 
     def test_client_decision_priority_mapping(self):
         def decision_for(layer_key=None):

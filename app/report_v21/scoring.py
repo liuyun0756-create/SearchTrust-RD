@@ -210,18 +210,17 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
 def calculate_overall_status(layers: list[dict[str, Any]]) -> dict[str, str]:
     status_counts = _status_counts(layers)
     weak_count = status_counts["weak"]
-    good_count = status_counts["good"]
+    medium_count = status_counts["medium"]
+    assessed_count = sum(status_counts.values())
 
     if weak_count >= 4:
         level, label = "weak", "Weak"
-    elif weak_count in {2, 3}:
+    elif weak_count >= 1 or medium_count >= 3:
         level, label = "medium_weak", "Medium Weak"
-    elif weak_count <= 1 and good_count <= 2:
+    elif medium_count >= 1 or assessed_count < len(REQUIRED_LAYER_KEYS):
         level, label = "medium", "Medium"
-    elif good_count >= 3 and weak_count == 0:
-        level, label = "strong", "Good"
     else:
-        level, label = "medium_weak", "Medium Weak"
+        level, label = "strong", "Good"
 
     return {
         "label": label,
