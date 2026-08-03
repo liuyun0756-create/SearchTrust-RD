@@ -27,8 +27,8 @@ The backend overwrites `business_presence_audit` after Dify returns. Dify remain
 ## Business Presence Audit
 
 - GBP x Page checks cover observed business name, phone, address, website, hours, service area, and categories/service intent.
-- Missing public GBP fields are reported as `not_checked`; they are never inferred as mismatches.
-- Service area is `missing` only when an authoritative source explicitly returns an empty service area for a service-area business. Storefront-only businesses can be `not_applicable`.
+- Missing public GBP fields remain `not_checked` when the provider response is insufficient to verify a comparison.
+- Service area is the explicit exception: when GBP was checked, the page identifies a service area, and the GBP response returns no service-area value, the comparison is a `mismatch`. An explicitly empty service area for a service-area business can be `missing`; storefront-only businesses can be `not_applicable`.
 - Review analysis is limited to the 30 most recent publicly returned reviews. The report records the actual sample size and treats a zero-record endpoint response as partial/error when the profile reports existing reviews.
 - Photo and post counts represent public records returned by the configured provider. Missing dates remain explicit limitations.
 - External citations/NAP network checking is deferred and appears only as `not_checked` in Audit Scope.

@@ -61,7 +61,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(rows["business_name"]["status"], "match")
         self.assertEqual(rows["phone"]["status"], "match")
         self.assertEqual(rows["website"]["status"], "match")
-        self.assertEqual(rows["service_area"]["status"], "not_checked")
+        self.assertEqual(rows["service_area"]["status"], "mismatch")
+        self.assertIn("checked GBP response did not return one", rows["service_area"]["explanation"])
         alignment_scope = next(
             item for item in audit["audit_scope"] if item["key"] == "gbp_page_alignment"
         )
@@ -148,7 +149,24 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         audit = build_business_presence_audit(context)
 
         self.assertEqual(audit["review_audit"]["detailed_positive_count"], 1)
-        self.assertIn("bp-action-proof-candidates", {item["id"] for item in audit["proposal_actions"]})
+        action = next(
+            item for item in audit["proposal_actions"]
+            if item["id"] == "bp-action-proof-candidates"
+        )
+        self.assertEqual(action["title"], "Turn detailed reviews into approved customer proof")
+        self.assertIn("service pages, case examples and client proposals", action["rationale"])
+        self.assertTrue(any("Recommend where each approved quote should appear" in item for item in action["recommended_scope"]))
+
+    def test_review_backlog_task_explains_the_agency_deliverable(self):
+        audit = build_business_presence_audit(self.base_context())
+        action = next(
+            item for item in audit["proposal_actions"]
+            if item["id"] == "bp-action-review-backlog"
+        )
+
+        self.assertEqual(action["title"], "Complete replies for the remaining recent reviews")
+        self.assertIn("consistent review-response process", action["rationale"])
+        self.assertTrue(any("approval-ready list" in item for item in action["recommended_scope"]))
 
     def test_explicit_zero_activity_creates_tasks_but_missing_dates_do_not(self):
         context = self.base_context()
@@ -280,6 +298,37 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertTrue(layer["evidence_items"])
         self.assertIn("bp-address", [item["id"] for item in layer["evidence_items"]])
         self.assertEqual([item["id"] for item in issue["evidence_items"]], ["bp-address"])
+
+    def test_missing_page_values_bind_traceable_absence_evidence(self):
+        context = self.base_context()
+        context["page_content"] = "Call (918) 555-0100 for emergency plumbing service."
+        context["page_business"] = {"phone": "(918) 555-0100"}
+        context["gbp_data"].update({
+            "name": "Example Plumbing",
+            "address": "123 Main Street, Tulsa, OK 74101",
+            "hours": "Open 24 hours",
+        })
+        audit = build_business_presence_audit(context)
+        report = {
+            "layers": [{
+                "layer_key": "entity_consistency",
+                "evidence_items": [],
+            }],
+            "key_issues": [],
+        }
+
+        bound = bind_business_presence_evidence(report, audit, context)
+        evidence = {
+            item["id"]: item
+            for item in bound["layers"][0]["evidence_items"]
+        }
+
+        for evidence_id in ("bp-business_name", "bp-address", "bp-opening_hours"):
+            self.assertIsNone(evidence[evidence_id]["extracted_text"])
+            self.assertEqual(
+                evidence[evidence_id]["normalized_value"],
+                "Not found in the checked page scope",
+            )
 
     def test_dify_gbp_payload_excludes_review_and_backend_audit_details(self):
         payload = _build_dify_gbp_payload({

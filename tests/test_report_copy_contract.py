@@ -704,6 +704,60 @@ class ReportCopyContractTests(unittest.TestCase):
                                 for evidence in issue["evidence_items"])
                             for issue, rule_id, key in zip(issues, (27, 28), ("address", "phone"))))
 
+    def test_missing_page_identity_values_do_not_reject_an_otherwise_valid_report(self):
+        context = _context()
+        context["content"] = (
+            "Call (509) 940-7811 for water heater replacement service.\n"
+            "Serving Tri Cities Washington."
+        )
+        context["page_content"] = context["content"]
+        context["page_business"] = {"phone": "(509) 940-7811"}
+        context.update({
+            "input_gbp_url": "",
+            "gbp_url": "",
+            "gbp_lookup_attempted": True,
+            "page_facts": {
+                "business_names": [],
+                "addresses": [],
+                "phones": ["(509) 940-7811"],
+                "service_areas": ["Tri Cities Washington"],
+                "hours": ["24/7"],
+            },
+            "gbp_data": {
+                "name": "Express 24 Hr Plumbing & Drain, LLC",
+                "address": "6503 W Okanogan Ave Ste F, Kennewick, WA 99336",
+                "phone": "+1 509-940-7811",
+                "hours": "Open 24 hours",
+                "service_areas": [],
+            },
+        })
+        results = {rule_id: False for rule_id in ACTIVE_RULE_IDS}
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        backend_results, backend_applicability, findings = evaluate_gbp_rules(context)
+        results.update(backend_results)
+        applicability.update(backend_applicability)
+        context["backend_gbp_findings"] = findings
+        triggered_ids = {rule_id for rule_id, triggered in results.items() if triggered}
+
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(triggered_ids)},
+            context,
+            results,
+            applicability,
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        layer = next(item for item in report["layers"] if item["layer_key"] == "entity_consistency")
+        self.assertTrue(any(
+            item.get("normalized_value") == "Not found in the checked page scope"
+            for item in layer["evidence_items"]
+        ))
+        self.assertTrue(all(
+            item.get("extracted_text") or item.get("normalized_value")
+            for item in layer["evidence_items"]
+            if item.get("source_type") in {"page", "gbp"}
+        ))
+
     def test_medium_entity_consistency_requires_each_triggered_finding_key(self):
         context = _context()
         ledger = build_evidence_ledger(context)

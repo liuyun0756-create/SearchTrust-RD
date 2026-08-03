@@ -229,14 +229,18 @@ def _comparison_to_evidence(item: dict[str, Any], source_url: str | None) -> dic
     status = item.get("status")
     if status not in {"match", "missing", "mismatch", "partial"}:
         return None
+    page_value = item.get("page_value")
+    normalized_value = page_value
+    if status == "missing" and not _optional_text(page_value):
+        normalized_value = "Not found in the checked page scope"
     return {
         "id": item.get("evidence_id") or f"bp-{item.get('key', 'signal')}",
         "source_type": "page",
         "source_label": f"Business Presence Audit: {item.get('label', 'Observed signal')}",
         "source_url": source_url,
         "page_section": "Backend page and GBP comparison",
-        "extracted_text": item.get("page_value"),
-        "normalized_value": item.get("page_value"),
+        "extracted_text": page_value,
+        "normalized_value": normalized_value,
         "expected_value": item.get("gbp_value"),
         "comparison_result": status,
         "confidence": "high" if status in {"match", "mismatch"} else "medium",
@@ -269,10 +273,12 @@ def _compare_signal(
     if key == "service_area":
         observed = bool(gbp.get("service_areas_observed"))
         applicable = gbp.get("service_area_business")
-        if not observed:
-            return "not_checked", "The public GBP response did not expose service-area data."
         if not gbp_value and applicable is False:
             return "not_applicable", "The GBP source identifies a storefront where service-area data is not applicable."
+        if not observed:
+            if page_value and not gbp_value:
+                return "mismatch", "The page identifies a service area, but the checked GBP response did not return one."
+            return "not_checked", "The public GBP response did not expose verifiable service-area data."
         if not gbp_value and applicable is True:
             if page_value:
                 return "missing", "The page names a service area, while the authoritative GBP source explicitly returned none."
@@ -445,11 +451,15 @@ def _build_proposal(
             "id": "bp-action-add-photos",
             "priority": "medium",
             "business_area": "profile_activity",
-            "title": "Add current business photos to the GBP profile",
-            "rationale": "The public GBP response explicitly returned zero photos.",
+            "title": "Create and publish a current GBP photo set",
+            "rationale": (
+                "The GBP profile has no public photos, so prospective customers cannot see "
+                "current visual proof of the business, team or completed work."
+            ),
             "recommended_scope": [
-                "Publish current exterior, team, service and completed-work photos.",
-                "Use only authentic business-owned images with client permission where required.",
+                "Prepare an approved set of authentic exterior, team, service and completed-work photos.",
+                "Upload the approved images to GBP with clear, accurate descriptions.",
+                "Provide the client with a reusable photo checklist for future updates.",
             ],
             "evidence_keys": ["profile-photo-count"],
         })
@@ -459,11 +469,15 @@ def _build_proposal(
             "id": "bp-action-add-posts",
             "priority": "low",
             "business_area": "profile_activity",
-            "title": "Publish an initial GBP update",
-            "rationale": "The public GBP response explicitly returned zero posts.",
+            "title": "Publish the first GBP business update",
+            "rationale": (
+                "The GBP profile has no published updates, leaving no recent public signal about "
+                "services, availability or completed work."
+            ),
             "recommended_scope": [
-                "Publish one accurate service, availability or proof-led update.",
-                "Do not claim an inactivity period because post dates were not available.",
+                "Draft and publish one accurate update about a current service, availability or completed job.",
+                "Include an approved image and a clear next step for prospective customers.",
+                "Provide a simple topic plan for the next three GBP updates.",
             ],
             "evidence_keys": ["profile-post-count"],
         })
@@ -474,44 +488,65 @@ def _build_proposal(
     unanswered = int(reviews.get("unanswered_count") or 0)
     detailed_positive = int(reviews.get("detailed_positive_count") or 0)
     if reviews.get("status") in {"checked", "partial"} and low_unanswered:
+        low_review_label = "review" if low_unanswered == 1 else "reviews"
         actions.append({
             "id": "bp-action-low-rating-replies",
             "priority": "high",
             "business_area": "review_operations",
-            "title": "Respond to low-rating reviews first",
-            "rationale": f"{low_unanswered} of the recent 1-3 star review(s) have no owner reply.",
+            "title": "Resolve unanswered low-rating reviews",
+            "rationale": (
+                f"{low_unanswered} recent 1-3 star {low_review_label} "
+                f"{'has' if low_unanswered == 1 else 'have'} no owner reply. "
+                f"{'This review needs' if low_unanswered == 1 else 'These reviews need'} a timely "
+                "response and may require service-recovery follow-up."
+            ),
             "recommended_scope": [
-                "Draft factual, non-defensive replies for each unanswered 1-3 star review.",
-                "Escalate service-recovery cases before publishing a response.",
+                "Review each unanswered 1-3 star review with the client and identify any service-recovery case.",
+                "Prepare a factual, non-defensive, individualized reply for each review.",
+                "Deliver an approval-ready reply list and flag cases that need private follow-up before publishing.",
             ],
             "evidence_keys": ["reviews-low-rating-unanswered"],
         })
         review_actions += 1
     remaining_unanswered = max(0, unanswered - low_unanswered)
     if reviews.get("status") in {"checked", "partial"} and remaining_unanswered:
+        remaining_review_label = "review" if remaining_unanswered == 1 else "reviews"
         actions.append({
             "id": "bp-action-review-backlog",
             "priority": "medium",
             "business_area": "review_operations",
-            "title": "Clear the remaining recent-review reply backlog",
-            "rationale": f"{remaining_unanswered} additional recent review(s) have no owner reply.",
+            "title": "Complete replies for the remaining recent reviews",
+            "rationale": (
+                f"{remaining_unanswered} additional recent {remaining_review_label} "
+                f"{'has' if remaining_unanswered == 1 else 'have'} no owner reply. "
+                f"Completing {'this reply' if remaining_unanswered == 1 else 'these replies'} gives "
+                "the client a consistent review-response process."
+            ),
             "recommended_scope": [
-                "Prepare concise, specific replies for the remaining unanswered recent reviews.",
-                "Keep replies individualized and avoid repetitive templates.",
+                "Prepare a concise, specific reply for each remaining unanswered recent review.",
+                "Personalize every reply to the customer's feedback and avoid repeated templates.",
+                "Deliver the replies in an approval-ready list with a recommended publishing order.",
             ],
             "evidence_keys": ["reviews-unanswered"],
         })
         review_actions += 1
     if reviews.get("status") in {"checked", "partial"} and detailed_positive:
+        positive_review_label = "review" if detailed_positive == 1 else "reviews"
         actions.append({
             "id": "bp-action-proof-candidates",
             "priority": "low",
             "business_area": "review_operations",
-            "title": "Review detailed positive feedback for proof opportunities",
-            "rationale": f"{detailed_positive} recent 4-5 star review(s) contain at least 80 characters of customer detail.",
+            "title": "Turn detailed reviews into approved customer proof",
+            "rationale": (
+                f"{detailed_positive} recent 4-5 star {positive_review_label} "
+                f"{'includes' if detailed_positive == 1 else 'include'} specific customer detail "
+                "that could support relevant service pages, case examples and client proposals."
+            ),
             "recommended_scope": [
-                "Shortlist useful proof themes without changing the reviewer meaning.",
-                "Obtain client approval and follow platform rules before reusing any quote.",
+                "Select 3-5 reviews with specific service, response or outcome details.",
+                "Organize the strongest proof into reusable themes without changing the reviewer meaning.",
+                "Recommend where each approved quote should appear, such as a service page, case example or proposal.",
+                "Obtain client approval and confirm platform rules before publishing any quote.",
             ],
             "evidence_keys": ["reviews-detailed-positive"],
         })
@@ -525,10 +560,10 @@ def _build_proposal(
     status = "needs_attention" if actions else ("limited" if unavailable else "clear")
 
     if actions:
-        headline = f"{len(actions)} proposal-ready work item(s) identified"
+        headline = f"{len(actions)} client-ready {('task' if len(actions) == 1 else 'tasks')} identified"
         summary = (
-            "The checks below translate objective page, GBP and recent-review observations into "
-            "a one-time audit scope. They do not change the eight-layer score."
+            "Each task below explains why the work is needed and what the agency should deliver. "
+            "These off-site tasks do not change the eight-layer page score."
         )
     elif status == "limited":
         headline = "No confirmed work item from the available data"

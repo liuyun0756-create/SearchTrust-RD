@@ -65,6 +65,20 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertEqual(results, {26: False, 27: False, 28: False, 29: False})
         self.assertTrue(all(item["condition"] == "both_missing" for item in findings.values()))
 
+    def test_checked_gbp_missing_service_area_triggers_rule_29(self):
+        results, _, findings = evaluate_gbp_rules(_context(
+            {
+                "business_names": [],
+                "addresses": [],
+                "phones": [],
+                "service_areas": ["Tulsa"],
+            },
+            {"rating": 4.9, "reviews": 100},
+        ))
+
+        self.assertTrue(results[29])
+        self.assertEqual(findings["rule_29"]["condition"], "gbp_field_missing")
+
 
 if __name__ == "__main__":
     unittest.main()
