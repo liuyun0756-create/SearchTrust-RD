@@ -31,7 +31,11 @@ class _StrictCopyModel(BaseModel):
 
 class CatalogActionCopy(_StrictCopyModel):
     action_key: str
-    covers_finding_keys: list[str] = Field(min_length=1)
+    # Finding coverage is backend-owned and rebuilt from the authoritative
+    # rule vector in ``_validated_action_catalog``. Dify may return narrative
+    # templates for known but inactive actions, so an empty draft coverage
+    # list must not invalidate an otherwise complete report.
+    covers_finding_keys: list[str] = Field(default_factory=list)
     priority: Literal["high", "medium", "low"]
     task_title: str
     affected_layer: LayerKey
@@ -238,54 +242,67 @@ def assemble_report_skeleton(
             # final report, but it also must not invalidate otherwise complete
             # active remediation coverage.
             continue
-        if len(issue.recommended_action_keys) != 1:
-            raise ReportCopyInvalid([
-                "Every Key Issue must reference exactly one unified Action."
-            ])
-        action_key = active_issue_action_keys[0]
-        action = action_catalog.get(action_key)
-        if action is None:
-            raise ReportCopyInvalid([
-                f"Key Issue references unknown or inactive action_key {action_key}."
-            ])
-        layer_key = action["affected_layer"]
-        status = layer_statuses[layer_key]
-        if action_key in seen_issue_action_keys:
-            raise ReportCopyInvalid([
-                f"Action {action_key} may be referenced by only one Key Issue."
-            ])
-        seen_issue_action_keys.add(action_key)
-        triggered_ids = list(action["related_rule_ids"])
-        issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
+        # Dify may consolidate closely related remediation groups into one
+        # narrative issue. Preserve that narrative while projecting one stable
+        # backend issue per authoritative action group.
+        for action_key in active_issue_action_keys:
+            action = action_catalog.get(action_key)
+            if action is None:
+                raise ReportCopyInvalid([
+                    f"Key Issue references unknown or inactive action_key {action_key}."
+                ])
+            layer_key = action["affected_layer"]
+            status = layer_statuses[layer_key]
+            if action_key in seen_issue_action_keys:
+                raise ReportCopyInvalid([
+                    f"Action {action_key} may be referenced by only one Key Issue."
+                ])
+            seen_issue_action_keys.add(action_key)
+            triggered_ids = list(action["related_rule_ids"])
+            issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
 
-        issues.append({
-            "id": f"issue-{action_key}",
-            "issue_title": issue.issue_title,
-            "affected_layer": layer_key,
-            "related_rule_ids": triggered_ids,
-            "severity": _issue_severity(status),
-            "evidence_items": issue_evidence,
-            "judgement": issue.judgement,
-            "explanation": issue.explanation,
-            "why_it_matters": issue.why_it_matters,
-            "impacts": issue.impacts,
-            "suggestions": issue.suggestions,
-            "recommended_actions": [copy_module.deepcopy(action)],
-        })
+            issues.append({
+                "id": f"issue-{action_key}",
+                "issue_title": issue.issue_title,
+                "affected_layer": layer_key,
+                "related_rule_ids": triggered_ids,
+                "severity": _issue_severity(status),
+                "evidence_items": issue_evidence,
+                "judgement": issue.judgement,
+                "explanation": issue.explanation,
+                "why_it_matters": issue.why_it_matters,
+                "impacts": issue.impacts,
+                "suggestions": issue.suggestions,
+                "recommended_actions": [copy_module.deepcopy(action)],
+            })
 
     expected_issue_action_keys = set(action_catalog)
-    if seen_issue_action_keys != expected_issue_action_keys:
-        missing = sorted(expected_issue_action_keys - seen_issue_action_keys)
-        extra = sorted(seen_issue_action_keys - expected_issue_action_keys)
-        missing_findings = sorted({
-            f"rule_{rule_id}"
-            for action_key in missing
-            for rule_id in action_catalog[action_key]["related_rule_ids"]
+    # If Dify omits a separate Key Issue for an otherwise complete active
+    # action, build a conservative issue from backend-owned findings and the
+    # validated Dify action narrative. This keeps a successful structured
+    # report usable without inventing diagnostic facts.
+    for action_key in sorted(expected_issue_action_keys - seen_issue_action_keys):
+        action = action_catalog[action_key]
+        layer_key = action["affected_layer"]
+        triggered_ids = list(action["related_rule_ids"])
+        issues.append({
+            "id": f"issue-{action_key}",
+            "issue_title": action["task_title"],
+            "affected_layer": layer_key,
+            "related_rule_ids": triggered_ids,
+            "severity": _issue_severity(layer_statuses[layer_key]),
+            "evidence_items": build_layer_evidence(
+                triggered_ids,
+                evidence_ledger,
+                context,
+            ),
+            "judgement": "The audit confirmed this remediation group.",
+            "explanation": "The related trust findings require the validated action below.",
+            "why_it_matters": action["expected_effect"],
+            "impacts": list(action.get("addressed_findings", [])),
+            "suggestions": list(action.get("required_changes", [])),
+            "recommended_actions": [copy_module.deepcopy(action)],
         })
-        raise ReportCopyInvalid([
-            "Every active remediation group requires exactly one Key Issue: "
-            f"missing={missing}, missing_findings={missing_findings}, extra={extra}"
-        ])
 
     blocker_key = _primary_blocker(triggered)
     blocker_layer = next(item for item in layers if item["layer_key"] == blocker_key)

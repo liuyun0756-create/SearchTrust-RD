@@ -462,6 +462,31 @@ class ReportCopyContractTests(unittest.TestCase):
             },
         )
 
+    def test_known_inactive_action_with_empty_draft_coverage_is_discarded(self):
+        triggered_ids = {2, 7}
+        payload = copy.deepcopy(_report_copy(triggered_ids))
+        inactive_requirement = ACTION_REQUIREMENTS_BY_KEY["foundation_entity_scope"]
+        inactive_action = _action(inactive_requirement, ())
+        payload["action_catalog"].append(inactive_action)
+
+        context = _context()
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            context,
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        self.assertNotIn(
+            f"act-{inactive_requirement.action_key}",
+            {
+                action["id"]
+                for layer in report["layers"]
+                for action in layer["action_items"]
+            },
+        )
+
     def test_unknown_action_key_remains_retryable(self):
         payload = copy.deepcopy(_report_copy({2, 7}))
         unknown_action = copy.deepcopy(payload["action_catalog"][0])
@@ -758,7 +783,7 @@ class ReportCopyContractTests(unittest.TestCase):
             if item.get("source_type") in {"page", "gbp"}
         ))
 
-    def test_medium_entity_consistency_requires_each_triggered_finding_key(self):
+    def test_missing_key_issue_is_rebuilt_from_validated_action_and_findings(self):
         context = _context()
         ledger = build_evidence_ledger(context)
         results = {rule_id: rule_id in {27, 28} for rule_id in ACTIVE_RULE_IDS}
@@ -770,15 +795,55 @@ class ReportCopyContractTests(unittest.TestCase):
             if issue["finding_keys"] != ["rule_28"]
         ]
 
-        with self.assertRaises(ReportCopyInvalid) as raised:
-            normalize_report_copy_to_v21(
-                {"report_copy_v2_1": payload},
-                context,
-                results,
-                applicability,
-                ledger,
-            )
-        self.assertIn("rule_28", " ".join(raised.exception.details))
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            context,
+            results,
+            applicability,
+            ledger,
+        )["report_v2_1"]
+
+        rebuilt = next(
+            issue
+            for issue in report["key_issues"]
+            if issue["id"] == "issue-entity_consistency_phone"
+        )
+        self.assertEqual(rebuilt["related_rule_ids"], [28])
+        self.assertEqual(len(rebuilt["recommended_actions"]), 1)
+
+    def test_consolidated_key_issue_is_projected_to_each_active_action(self):
+        context = _context()
+        results = {
+            rule_id: rule_id in {2, 4, 7, 34}
+            for rule_id in ACTIVE_RULE_IDS
+        }
+        applicability = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        payload = copy.deepcopy(_report_copy({2, 4, 7, 34}))
+        first_key = "specificity_verified_local_case"
+        second_key = "specificity_concrete_service_copy"
+        consolidated = next(
+            issue
+            for issue in payload["key_issues"]
+            if issue["recommended_action_keys"] == [first_key]
+        )
+        consolidated["recommended_action_keys"] = [first_key, second_key]
+        payload["key_issues"] = [
+            issue
+            for issue in payload["key_issues"]
+            if issue["recommended_action_keys"] != [second_key]
+        ]
+
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            context,
+            results,
+            applicability,
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+
+        issue_ids = {issue["id"] for issue in report["key_issues"]}
+        self.assertIn(f"issue-{first_key}", issue_ids)
+        self.assertIn(f"issue-{second_key}", issue_ids)
 
 
 if __name__ == "__main__":

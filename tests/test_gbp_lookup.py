@@ -253,6 +253,44 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("no_cache", client.requests[0][1]["params"])
         self.assertEqual(client.requests[1][1]["params"]["no_cache"], "true")
 
+    async def test_multi_location_domain_search_requires_page_location_match(self):
+        wrong_place = {
+            "title": "1-Tom-Plumber Tulsa",
+            "address": "9525 E 51st St Ste G, Tulsa, OK 74145",
+            "website": "https://www.1tomplumber.com/",
+        }
+        correct_place = {
+            "title": "1-Tom-Plumber Tri-Cities",
+            "address": "Kennewick, WA 99336",
+            "website": "https://www.1tomplumber.com/tri-cities-wa/",
+        }
+        client = _FakeClient([
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"local_results": [wrong_place, correct_place]},
+            )
+        ])
+        diagnostic = {}
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info",
+            new=AsyncMock(side_effect=lambda value: value),
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="1-Tom-Plumber",
+                city="Richland",
+                website_url=(
+                    "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
+                ),
+                location_hints=["Kennewick", "Pasco", "West Richland"],
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result["name"], "1-Tom-Plumber Tri-Cities")
+        self.assertEqual(diagnostic["code"], "search_match")
+        self.assertIn("Richland", client.requests[0][1]["params"]["q"])
+
     async def test_domain_search_requires_three_no_matches_before_not_found(self):
         empty = _FakeResponse(url="https://serpapi.example/search", payload={})
         client = _FakeClient([empty, empty, empty])

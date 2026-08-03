@@ -994,19 +994,35 @@ def _is_confident_gbp_match(
     *,
     website_url: str | None,
     city: str | None,
+    location_hints: list[str] | None = None,
     require_domain_match: bool = False,
 ) -> bool:
-    """Require an objective domain or city match before accepting search results."""
+    """Require objective domain/location evidence before accepting search results."""
     target_domain = _normalise_domain(website_url)
     result_domain = _normalise_domain(str(result.get("website") or ""))
-    if _domains_match(target_domain, result_domain):
-        return True
+    domain_matches = _domains_match(target_domain, result_domain)
     if require_domain_match:
-        return False
+        return domain_matches
 
-    target_city = _normalise_match_text(city)
+    target_locations = {
+        normalised
+        for value in [city, *(location_hints or [])]
+        if (normalised := _normalise_match_text(value))
+    }
     result_address = _normalise_match_text(str(result.get("address") or ""))
-    return bool(target_city and result_address and target_city in result_address)
+    location_matches = bool(
+        result_address
+        and any(location in result_address for location in target_locations)
+    )
+
+    # Multi-location brands commonly share one root domain across every GBP.
+    # When page-derived location evidence is available, domain equality alone
+    # cannot safely identify the correct branch.
+    if location_hints:
+        return domain_matches and location_matches
+    if domain_matches:
+        return True
+    return location_matches
 
 
 def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
@@ -1026,6 +1042,7 @@ async def fetch_gbp_data(
     city: Optional[str],
     website_url: Optional[str] = None,
     gbp_url: Optional[str] = None,
+    location_hints: Optional[list[str]] = None,
     diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -1114,10 +1131,23 @@ async def fetch_gbp_data(
     strict_domain_fallback = bool(gbp_url and _is_google_maps_url(gbp_url))
     if website_url:
         domain = urlparse(website_url).netloc or website_url
-        query = domain
+        search_location = next(
+            (
+                str(value).strip()
+                for value in [city, *(location_hints or [])]
+                if str(value or "").strip()
+            ),
+            "",
+        )
+        query = (
+            domain
+            if strict_domain_fallback or not location_hints or not search_location
+            else f"{domain} {search_location}"
+        )
         logger.info(
-            "[SerpAPI] querying by domain=%s strict_domain_match=%s",
+            "[SerpAPI] querying by domain=%s location=%s strict_domain_match=%s",
             domain,
+            search_location or "none",
             strict_domain_fallback,
         )
     elif business_name:
@@ -1196,6 +1226,7 @@ async def fetch_gbp_data(
                         candidate,
                         website_url=website_url,
                         city=city,
+                        location_hints=location_hints,
                         require_domain_match=strict_domain_fallback,
                     )
                 ),
@@ -1883,6 +1914,17 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         logger.info("[Scraper] using prefetched GBP data url=%s", url)
     else:
         try:
+            from app.report_v21.page_facts import build_page_facts
+
+            page_facts = build_page_facts(cleaned, business_info)
+            location_hints = [
+                value
+                for value in [
+                    business_info.get("city"),
+                    *page_facts.get("service_areas", []),
+                ]
+                if isinstance(value, str) and value.strip()
+            ]
             gbp_lookup_attempted = bool(
                 gbp_url or business_info.get("name") or business_info.get("city")
             )
@@ -1891,6 +1933,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 city=business_info.get("city"),
                 website_url=url,
                 gbp_url=gbp_url,
+                location_hints=location_hints,
                 diagnostic=gbp_lookup_diagnostic,
             )
         except Exception as exc:  # noqa: BLE001
