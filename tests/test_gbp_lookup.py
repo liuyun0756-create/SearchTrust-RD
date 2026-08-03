@@ -6,6 +6,14 @@ from app.tasks import scraper
 
 SHORT_URL = "https://maps.app.goo.gl/spB4reXT8NAMvS8V8"
 PAGE_SHORT_URL = "https://goo.gl/maps/BmutfbtV5uvo62km7"
+SHARE_URL = "https://share.google/sLiv8JcVCQxW0UVMj"
+TRI_CITIES_PLACE_ID = "ChIJgx6lgF55mFQRq17Gwkb_p0Y"
+TRI_CITIES_DIRECTIONS_URL = (
+    "https://www.google.com/maps/dir/?api=1&"
+    "destination=6250+W+Clearwater+Ave%2C+Ste+101%2C+Kennewick%2C+WA+99336&"
+    f"destination_place_id={TRI_CITIES_PLACE_ID}"
+)
+TRI_CITIES_DATA_ID = "0x5498795e80a51e83:0x46a7ff46c2c65eab"
 TULSA_URL = (
     "https://www.google.com/maps/place/Spot+On+Plumbing+of+Tulsa+Plumbers/"
     "data=!4m6!3m5!1s0x87b68befcc42b925:0x20f8d8fccd659226"
@@ -13,9 +21,10 @@ TULSA_URL = (
 
 
 class _FakeResponse:
-    def __init__(self, *, url: str, payload=None):
+    def __init__(self, *, url: str, payload=None, text=""):
         self.url = url
         self._payload = payload or {}
+        self.text = text
 
     def raise_for_status(self):
         return None
@@ -61,6 +70,44 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(scraper.extract_maps_url_from_content(content), TULSA_URL)
 
+    def test_extracts_google_directions_place_id_before_share_link(self):
+        content = (
+            f"[Google Business Profile]({SHARE_URL})\n"
+            f"[Get Directions]({TRI_CITIES_DIRECTIONS_URL})"
+        )
+
+        self.assertEqual(
+            scraper.extract_maps_url_from_content(content),
+            TRI_CITIES_DIRECTIONS_URL,
+        )
+        self.assertEqual(
+            scraper._extract_google_place_id(TRI_CITIES_DIRECTIONS_URL),
+            TRI_CITIES_PLACE_ID,
+        )
+
+    def test_extracts_share_google_link_when_no_exact_maps_link_exists(self):
+        self.assertEqual(
+            scraper.extract_maps_url_from_content(
+                f"[Google Business Profile]({SHARE_URL})"
+            ),
+            SHARE_URL,
+        )
+
+    def test_derives_multi_location_branch_root_without_affecting_generic_paths(self):
+        page_url = "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
+        content = "[Tri-Cities](https://www.1tomplumber.com/tri-cities-wa/)"
+
+        self.assertEqual(
+            scraper._derive_branch_root_url(page_url, content),
+            "https://www.1tomplumber.com/tri-cities-wa/",
+        )
+        self.assertIsNone(
+            scraper._derive_branch_root_url(
+                "https://single-store.example/services/plumbing/",
+                "[Services](/services/)",
+            )
+        )
+
     async def test_resolves_maps_short_url_to_data_id_url(self):
         client = _FakeClient([_FakeResponse(url=TULSA_URL)])
         with patch("app.tasks.scraper.httpx.AsyncClient", return_value=client):
@@ -71,6 +118,60 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             scraper._extract_data_id_from_gbp_url(resolved),
             "0x87b68befcc42b925:0x20f8d8fccd659226",
         )
+
+    async def test_resolves_directions_place_id_from_google_response_body(self):
+        client = _FakeClient([
+            _FakeResponse(
+                url=TRI_CITIES_DIRECTIONS_URL,
+                text=f'<script>window.APP_INITIALIZATION_STATE="{TRI_CITIES_DATA_ID}"</script>',
+            )
+        ])
+        with patch("app.tasks.scraper.httpx.AsyncClient", return_value=client):
+            resolved = await scraper._resolve_gbp_url(TRI_CITIES_DIRECTIONS_URL)
+
+        self.assertEqual(
+            scraper._extract_data_id_from_gbp_url(resolved),
+            TRI_CITIES_DATA_ID,
+        )
+
+    async def test_scrape_uses_branch_root_place_id_for_multi_location_page(self):
+        page_url = "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
+        branch_url = "https://www.1tomplumber.com/tri-cities-wa/"
+        main_content = (
+            f"[Tri-Cities]({branch_url})\n"
+            f"[Google Business Profile]({SHARE_URL})\n"
+            "# Plumbing Services in Tri-Cities"
+        )
+        branch_content = f"[Get Directions]({TRI_CITIES_DIRECTIONS_URL})"
+        fetch_page = AsyncMock(side_effect=[
+            scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            ),
+            scraper.ScrapeResult(
+                content=branch_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(branch_content),
+            ),
+        ])
+        fetch_gbp = AsyncMock(return_value={"name": "1-Tom-Plumber Tri-Cities"})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", fetch_gbp
+        ):
+            result = await scraper.scrape(page_url)
+
+        self.assertEqual(result["gbp_url"], TRI_CITIES_DIRECTIONS_URL)
+        self.assertEqual(result["gbp"]["name"], "1-Tom-Plumber Tri-Cities")
+        self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
+        self.assertEqual(fetch_gbp.await_args.kwargs["gbp_url"], TRI_CITIES_DIRECTIONS_URL)
 
     async def test_short_url_resolution_retries_and_caches_success(self):
         client = _FakeClient([

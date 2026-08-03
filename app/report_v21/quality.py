@@ -63,6 +63,53 @@ def validate_evidence_quality(report: dict[str, Any], context: dict[str, Any]) -
     return _dedupe(errors)
 
 
+def prune_unsupported_evidence(report: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    """Remove evidence cards that cannot be traced to an audited source.
+
+    Evidence is presentation support, not the authoritative rule decision.
+    Invalid or unavailable evidence therefore degrades to an empty evidence
+    section instead of invalidating the full report.
+    """
+    warnings: list[str] = []
+    scoped_context = {**context, "gbp_status": report.get("gbp_status")}
+
+    def clean(owner: str, value: Any) -> list[dict[str, Any]]:
+        kept: list[dict[str, Any]] = []
+        for item in _records(value):
+            item_errors = _validate_traceability([item], scoped_context, owner)
+            if not _has_direct_evidence([item]) or item_errors:
+                warnings.extend(item_errors)
+                if not item_errors:
+                    warnings.append(f"{owner}: unsupported evidence was omitted from the report.")
+                continue
+            kept.append(item)
+        return kept
+
+    layers = _records(report.get("layers"))
+    for layer in layers:
+        key = str(layer.get("layer_key") or "unknown layer")
+        layer["evidence_items"] = clean(
+            f"{key} layer",
+            layer.get("evidence_items"),
+        )
+
+    for issue in _records(report.get("key_issues")):
+        owner = str(issue.get("issue_title") or issue.get("id") or "key issue")
+        issue["evidence_items"] = clean(
+            f"{owner} key issue",
+            issue.get("evidence_items"),
+        )
+
+    blocker = _record(report.get("primary_blocking_layer"))
+    if blocker:
+        blocker["evidence_items"] = clean(
+            "primary blocking layer",
+            blocker.get("evidence_items"),
+        )
+
+    return _dedupe(warnings)
+
+
 def _has_direct_evidence(items: list[dict[str, Any]]) -> bool:
     return any(
         item.get("source_type") in DIRECT_SOURCES

@@ -27,6 +27,7 @@ separator format used by the original Dify web_scraper node.
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import logging
 import random
@@ -35,7 +36,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 
@@ -797,24 +798,76 @@ def extract_maps_url_from_content(content: str) -> Optional[str]:
     """
     从页面内容中提取可用于精确 GBP 查询的 Google Maps URL。
 
-    优先使用包含 data_id 的 Google Maps 长链；页面仅暴露 goo.gl/maps 或
-    maps.app.goo.gl 短链时也保留该链接，后续统一展开并按 CID 查询。
+    优先使用包含 data_id 的 Google Maps 长链，其次使用包含
+    destination_place_id / query_place_id 的导航或地点链接。页面仅暴露
+    Maps 短链或 share.google GBP 链接时也保留，后续统一展开。
 
     Returns
     -------
     Google Maps 长链或短链，未找到时返回 None。
     """
+    normalised_content = html.unescape(content or "")
     patterns = (
         r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*',
+        r'https://(?:www\.)?google\.com/maps/(?:dir|search|place)/[^\s\'"<>]*(?:destination_place_id|query_place_id|place_id)=[^\s\'"<>&]+[^\s\'"<>]*',
         r'https://maps\.app\.goo\.gl/[^\s\'"<>]+',
         r'https://goo\.gl/maps/[^\s\'"<>]+',
+        r'https://share\.google/[^\s\'"<>]+',
     )
     for pattern in patterns:
-        match = re.search(pattern, content, re.IGNORECASE)
+        match = re.search(pattern, normalised_content, re.IGNORECASE)
         if match:
             url = match.group(0).rstrip("),.;]")
             logger.info("[Scraper] extracted Google Maps URL from content: %s", url)
             return url
+    return None
+
+
+def _extract_google_place_id(gbp_url: str) -> Optional[str]:
+    """Extract an exact Google Place ID from Maps navigation/search URLs."""
+    if not gbp_url:
+        return None
+    try:
+        query = parse_qs(urlparse(html.unescape(gbp_url)).query)
+    except ValueError:
+        return None
+    for key in ("destination_place_id", "query_place_id", "place_id"):
+        values = query.get(key) or []
+        if values and values[0].strip():
+            return values[0].strip()
+    return None
+
+
+def _has_exact_gbp_identifier(gbp_url: str | None) -> bool:
+    """Return whether a URL identifies one Google place rather than a search."""
+    value = gbp_url or ""
+    return bool(_extract_data_id_from_gbp_url(value) or _extract_google_place_id(value))
+
+
+def _derive_branch_root_url(page_url: str, content: str) -> Optional[str]:
+    """Derive a multi-location branch root such as ``/tri-cities-wa/``.
+
+    Location slugs end in a US state abbreviation. Requiring that shape keeps
+    ordinary single-location paths such as ``/services/plumbing/`` on the
+    existing lookup path.
+    """
+    try:
+        parsed = urlparse(page_url)
+    except ValueError:
+        return None
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    if len(segments) < 2 or not re.fullmatch(
+        r"[a-z0-9-]+-[a-z]{2}", segments[0], re.IGNORECASE
+    ):
+        return None
+    branch_root = f"{parsed.scheme}://{parsed.netloc}/{segments[0]}/"
+    decoded_content = html.unescape(unquote(content or ""))
+    relative_root = f"/{segments[0]}/"
+    if (
+        branch_root.lower() in decoded_content.lower()
+        or relative_root.lower() in decoded_content.lower()
+    ):
+        return branch_root
     return None
 
 
@@ -893,7 +946,7 @@ async def _resolve_gbp_url(
     gbp_url: str,
     diagnostic: dict[str, Any] | None = None,
 ) -> str:
-    """Expand Google Maps short links with bounded retries and caching."""
+    """Resolve short links and Place-ID URLs to a URL containing a data_id."""
     if not gbp_url or _extract_data_id_from_gbp_url(gbp_url):
         return gbp_url
 
@@ -901,7 +954,10 @@ async def _resolve_gbp_url(
         host = (urlparse(gbp_url).hostname or "").lower()
     except ValueError:
         return gbp_url
-    if host not in {"maps.app.goo.gl", "goo.gl"}:
+    is_short_link = host in {"maps.app.goo.gl", "goo.gl"}
+    is_share_link = host == "share.google"
+    is_place_id_link = bool(_extract_google_place_id(gbp_url))
+    if not (is_short_link or is_share_link or is_place_id_link):
         return gbp_url
 
     cached = _get_cached_gbp_url(gbp_url)
@@ -921,14 +977,32 @@ async def _resolve_gbp_url(
                 response = await client.get(gbp_url)
                 response.raise_for_status()
             resolved = str(response.url)
-            if _is_google_maps_url(resolved) and _extract_data_id_from_gbp_url(resolved):
-                _cache_gbp_url(gbp_url, resolved)
+            data_id = _extract_data_id_from_gbp_url(resolved)
+            if not data_id:
+                data_id_match = re.search(
+                    r"0x[0-9a-fA-F]+:0x[0-9a-fA-F]+",
+                    getattr(response, "text", "") or "",
+                )
+                data_id = data_id_match.group(0) if data_id_match else None
+            if data_id:
+                resolved_with_data_id = (
+                    resolved
+                    if _extract_data_id_from_gbp_url(resolved)
+                    else f"{resolved}#data_id={data_id}"
+                )
+                _cache_gbp_url(gbp_url, resolved_with_data_id)
                 logger.info(
                     "[SerpAPI] resolved GBP short URL attempt=%d/%d to %s",
                     attempt,
                     _GBP_LOOKUP_ATTEMPTS,
-                    resolved,
+                    resolved_with_data_id,
                 )
+                return resolved_with_data_id
+            if is_share_link:
+                # Some GBP share links resolve to a Google Search knowledge
+                # panel instead of Maps. Preserve that resolved entity URL and
+                # let branch-aware search verification handle the fallback.
+                _cache_gbp_url(gbp_url, resolved)
                 return resolved
             last_error = f"Google Maps returned a URL without a data_id: {resolved}"
             logger.warning(
@@ -1871,14 +1945,50 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         raw_content_length, appended,
     )
 
-    # ── GBP: if data_id in gbp_url, run in parallel with business info ────────
+    # ── GBP URL auto-discovery ──────────────────────────────────────────────
+    # Multi-location service pages often expose only a generic GBP share link,
+    # while their branch root exposes a Directions URL with an exact Place ID.
+    # Fetch that one branch page only for GBP discovery; do not append it to
+    # the audit content or change the page assessment.
+    if not gbp_url:
+        discovered_gbp_url = extract_maps_url_from_content(combined_content)
+        if not _has_exact_gbp_identifier(discovered_gbp_url):
+            branch_root_url = _derive_branch_root_url(url, combined_content)
+            if branch_root_url and branch_root_url.rstrip("/") != url.rstrip("/"):
+                logger.info(
+                    "[Scraper] checking multi-location branch root for exact GBP url=%s",
+                    branch_root_url,
+                )
+                try:
+                    _, branch_root_content = await _fetch_sub_page(branch_root_url)
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "[Scraper] branch-root GBP discovery failed url=%s: %s",
+                        branch_root_url,
+                        exc,
+                    )
+                    branch_root_content = None
+                branch_gbp_url = extract_maps_url_from_content(branch_root_content or "")
+                if _has_exact_gbp_identifier(branch_gbp_url):
+                    discovered_gbp_url = branch_gbp_url
+                    logger.info(
+                        "[Scraper] exact GBP identifier found on branch root url=%s",
+                        branch_root_url,
+                    )
+                elif not discovered_gbp_url and branch_gbp_url:
+                    discovered_gbp_url = branch_gbp_url
+        gbp_url = discovered_gbp_url
+        if gbp_url:
+            logger.info("[Scraper] auto-filled gbp_url from page content url=%s", url)
+
+    # ── GBP: exact identifiers can be fetched before heuristic extraction ────
     gbp_prefetch: Optional[dict[str, Any]] = None
     gbp_lookup_attempted = False
     gbp_error: str | None = None
     gbp_lookup_diagnostic: dict[str, Any] = {}
-    has_data_id = bool(_extract_data_id_from_gbp_url(gbp_url or ""))
-    if has_data_id:
-        logger.info("[Scraper] data_id detected — fetching GBP in parallel with business info")
+    has_exact_gbp_identifier = _has_exact_gbp_identifier(gbp_url)
+    if has_exact_gbp_identifier:
+        logger.info("[Scraper] exact GBP identifier detected — fetching in parallel")
         gbp_lookup_attempted = True
         gbp_prefetch_result = await fetch_gbp_data(
             business_name=None,

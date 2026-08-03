@@ -26,7 +26,10 @@ from app.report_v21.scoring import LAYER_RULES, calculate_layer_status
 
 
 class _StrictCopyModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    # The final Dify node owns presentation copy, not the objective rule
+    # vector.  Ignore forward-compatible fields and allow optional narrative
+    # sections to be absent without rejecting an otherwise usable analysis.
+    model_config = ConfigDict(extra="ignore", strict=True)
 
 
 class CatalogActionCopy(_StrictCopyModel):
@@ -36,50 +39,50 @@ class CatalogActionCopy(_StrictCopyModel):
     # templates for known but inactive actions, so an empty draft coverage
     # list must not invalidate an otherwise complete report.
     covers_finding_keys: list[str] = Field(default_factory=list)
-    priority: Literal["high", "medium", "low"]
-    task_title: str
-    affected_layer: LayerKey
+    priority: Literal["high", "medium", "low"] = "medium"
+    task_title: str = ""
+    affected_layer: LayerKey = "foundation"
     where_to_add: list[str] = Field(default_factory=list)
     what_to_add: list[str] = Field(default_factory=list)
     example_copy: list[StrictStr] = Field(default_factory=list)
     implementation_notes: list[str] = Field(default_factory=list)
     completion_signals: list[str] = Field(default_factory=list)
-    expected_effect: str
-    effort_level: Literal["small", "medium", "large"]
+    expected_effect: str = ""
+    effort_level: Literal["small", "medium", "large"] = "medium"
 
 
 class LayerCopy(_StrictCopyModel):
     layer_key: LayerKey
-    summary: str
-    explanation: str
+    summary: str = ""
+    explanation: str = ""
     suggested_fixes: list[str] = Field(default_factory=list)
 
 
 class KeyIssueCopy(_StrictCopyModel):
-    finding_keys: list[str] = Field(min_length=1)
-    issue_title: str
-    affected_layer: LayerKey
-    judgement: str
-    explanation: str
-    why_it_matters: str
+    finding_keys: list[str] = Field(default_factory=list)
+    issue_title: str = ""
+    affected_layer: LayerKey = "foundation"
+    judgement: str = ""
+    explanation: str = ""
+    why_it_matters: str = ""
     impacts: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
-    recommended_action_keys: list[str] = Field(min_length=1, max_length=3)
+    recommended_action_keys: list[str] = Field(default_factory=list, max_length=3)
 
 
 class PageLevelCopy(_StrictCopyModel):
-    current_assessment: str
-    existing_foundation: str
-    main_limitation: str
-    likely_search_outcome: str
-    competitive_interpretation: str
+    current_assessment: str = ""
+    existing_foundation: str = ""
+    main_limitation: str = ""
+    likely_search_outcome: str = ""
+    competitive_interpretation: str = ""
 
 
 class RoadmapPhaseCopy(_StrictCopyModel):
-    phase_title: str
+    phase_title: str = ""
     sequence: int = Field(ge=1)
-    goal: str
-    entry_condition: str
+    goal: str = ""
+    entry_condition: str = ""
     action_keys: list[str] = Field(default_factory=list)
     expected_outcomes: list[str] = Field(default_factory=list)
 
@@ -89,26 +92,26 @@ class OptimizationCopy(_StrictCopyModel):
     defer_until_later_action_keys: list[str] = Field(default_factory=list)
     do_not_prioritize_yet_action_keys: list[str] = Field(default_factory=list)
     roadmap: list[RoadmapPhaseCopy] = Field(default_factory=list)
-    fix_order_warning: str
+    fix_order_warning: str = ""
     completion_signals: list[str] = Field(default_factory=list)
 
 
 class ClientSummaryCopy(_StrictCopyModel):
-    title: str
-    plain_language_summary: str
-    why_it_matters: str
-    first_priority: str
-    not_first_priority: str
-    expected_change: str
+    title: str = ""
+    plain_language_summary: str = ""
+    why_it_matters: str = ""
+    first_priority: str = ""
+    not_first_priority: str = ""
+    expected_change: str = ""
 
 
 class ReportCopyV21(_StrictCopyModel):
-    page_level: PageLevelCopy
+    page_level: PageLevelCopy = Field(default_factory=PageLevelCopy)
     layers: list[LayerCopy] = Field(min_length=8, max_length=8)
     action_catalog: list[CatalogActionCopy] = Field(default_factory=list)
     key_issues: list[KeyIssueCopy] = Field(default_factory=list)
-    optimization_path: OptimizationCopy
-    client_summary: ClientSummaryCopy
+    optimization_path: OptimizationCopy = Field(default_factory=OptimizationCopy)
+    client_summary: ClientSummaryCopy = Field(default_factory=ClientSummaryCopy)
 
 
 class ReportCopyInvalid(RuntimeError):
@@ -125,13 +128,172 @@ def parse_report_copy(outputs: Any) -> ReportCopyV21:
     if not isinstance(outputs, dict):
         raise ReportCopyInvalid(["Dify outputs must be an object."])
     value = outputs.get("report_copy_v2_1")
-    parsed = _parse_json(value)
+    try:
+        parsed = {} if value is None else _parse_json(value)
+    except ReportCopyInvalid:
+        # Narrative JSON is optional. The authoritative rule vector has
+        # already been parsed separately, so malformed presentation copy may
+        # safely degrade to deterministic backend copy.
+        parsed = {}
     if isinstance(parsed, dict) and isinstance(parsed.get("report_copy_v2_1"), dict):
         parsed = parsed["report_copy_v2_1"]
+    parsed = _complete_report_copy(parsed)
     try:
         return ReportCopyV21.model_validate(parsed)
     except ValidationError as exc:
         raise ReportCopyInvalid([str(error) for error in exc.errors()]) from exc
+
+
+def _complete_report_copy(value: Any) -> Any:
+    """Fill only presentation structure that is safe to derive locally.
+
+    The rule vector remains mandatory and is validated before this function is
+    reached.  Missing prose must not turn a completed rule assessment into a
+    failed report.
+    """
+    if not isinstance(value, dict):
+        return value
+
+    completed = copy_module.deepcopy(value)
+    raw_layers = completed.get("layers")
+    by_key: dict[str, dict[str, Any]] = {}
+    if isinstance(raw_layers, list):
+        for item in raw_layers:
+            if not isinstance(item, dict):
+                continue
+            layer_key = item.get("layer_key")
+            if layer_key in REQUIRED_LAYER_KEYS and layer_key not in by_key:
+                by_key[layer_key] = item
+    completed["layers"] = []
+    for layer_key in REQUIRED_LAYER_KEYS:
+        incoming_layer = by_key.get(layer_key, {})
+        completed["layers"].append({
+            "layer_key": layer_key,
+            "summary": _copy_text(incoming_layer.get("summary")),
+            "explanation": _copy_text(incoming_layer.get("explanation")),
+            "suggested_fixes": _copy_string_list(incoming_layer.get("suggested_fixes")),
+        })
+
+    page_level = completed.get("page_level")
+    page_level = page_level if isinstance(page_level, dict) else {}
+    completed["page_level"] = {
+        key: _copy_text(page_level.get(key))
+        for key in (
+            "current_assessment",
+            "existing_foundation",
+            "main_limitation",
+            "likely_search_outcome",
+            "competitive_interpretation",
+        )
+    }
+
+    raw_actions = completed.get("action_catalog")
+    completed["action_catalog"] = [
+        _normalize_action_copy(item)
+        for item in raw_actions
+        if isinstance(item, dict) and _copy_text(item.get("action_key"))
+    ] if isinstance(raw_actions, list) else []
+
+    raw_issues = completed.get("key_issues")
+    completed["key_issues"] = [
+        _normalize_issue_copy(item)
+        for item in raw_issues
+        if isinstance(item, dict)
+    ] if isinstance(raw_issues, list) else []
+
+    optimization = completed.get("optimization_path")
+    completed["optimization_path"] = _normalize_optimization_copy(
+        optimization if isinstance(optimization, dict) else {}
+    )
+    client_summary = completed.get("client_summary")
+    client_summary = client_summary if isinstance(client_summary, dict) else {}
+    completed["client_summary"] = {
+        key: _copy_text(client_summary.get(key))
+        for key in (
+            "title",
+            "plain_language_summary",
+            "why_it_matters",
+            "first_priority",
+            "not_first_priority",
+            "expected_change",
+        )
+    }
+    return completed
+
+
+def _normalize_action_copy(value: dict[str, Any]) -> dict[str, Any]:
+    priority = value.get("priority")
+    affected_layer = value.get("affected_layer")
+    effort_level = value.get("effort_level")
+    return {
+        "action_key": _copy_text(value.get("action_key")),
+        "covers_finding_keys": _copy_string_list(value.get("covers_finding_keys")),
+        "priority": priority if priority in {"high", "medium", "low"} else "medium",
+        "task_title": _copy_text(value.get("task_title")),
+        "affected_layer": affected_layer if affected_layer in REQUIRED_LAYER_KEYS else "foundation",
+        "where_to_add": _copy_string_list(value.get("where_to_add")),
+        "what_to_add": _copy_string_list(value.get("what_to_add")),
+        "example_copy": _copy_string_list(value.get("example_copy")),
+        "implementation_notes": _copy_string_list(value.get("implementation_notes")),
+        "completion_signals": _copy_string_list(value.get("completion_signals")),
+        "expected_effect": _copy_text(value.get("expected_effect")),
+        "effort_level": effort_level if effort_level in {"small", "medium", "large"} else "medium",
+    }
+
+
+def _normalize_issue_copy(value: dict[str, Any]) -> dict[str, Any]:
+    affected_layer = value.get("affected_layer")
+    return {
+        "finding_keys": _copy_string_list(value.get("finding_keys")),
+        "issue_title": _copy_text(value.get("issue_title")),
+        "affected_layer": affected_layer if affected_layer in REQUIRED_LAYER_KEYS else "foundation",
+        "judgement": _copy_text(value.get("judgement")),
+        "explanation": _copy_text(value.get("explanation")),
+        "why_it_matters": _copy_text(value.get("why_it_matters")),
+        "impacts": _copy_string_list(value.get("impacts")),
+        "suggestions": _copy_string_list(value.get("suggestions")),
+        "recommended_action_keys": _copy_string_list(
+            value.get("recommended_action_keys")
+        )[:3],
+    }
+
+
+def _normalize_optimization_copy(value: dict[str, Any]) -> dict[str, Any]:
+    raw_roadmap = value.get("roadmap")
+    roadmap: list[dict[str, Any]] = []
+    if isinstance(raw_roadmap, list):
+        for index, item in enumerate(raw_roadmap, start=1):
+            if not isinstance(item, dict):
+                continue
+            sequence = item.get("sequence")
+            roadmap.append({
+                "phase_title": _copy_text(item.get("phase_title")),
+                "sequence": sequence if isinstance(sequence, int) and sequence >= 1 else index,
+                "goal": _copy_text(item.get("goal")),
+                "entry_condition": _copy_text(item.get("entry_condition")),
+                "action_keys": _copy_string_list(item.get("action_keys")),
+                "expected_outcomes": _copy_string_list(item.get("expected_outcomes")),
+            })
+    return {
+        "must_execute_now_action_keys": _copy_string_list(value.get("must_execute_now_action_keys")),
+        "defer_until_later_action_keys": _copy_string_list(value.get("defer_until_later_action_keys")),
+        "do_not_prioritize_yet_action_keys": _copy_string_list(value.get("do_not_prioritize_yet_action_keys")),
+        "roadmap": roadmap,
+        "fix_order_warning": _copy_text(value.get("fix_order_warning")),
+        "completion_signals": _copy_string_list(value.get("completion_signals")),
+    }
+
+
+def _copy_text(value: Any) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _copy_string_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if not isinstance(value, list):
+        return []
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
 
 
 def validate_english_copy(copy: ReportCopyV21) -> None:
@@ -200,6 +362,22 @@ def assemble_report_skeleton(
         else:
             presentation_mode = "attention"
             suggested_fixes = narrative.suggested_fixes
+        fallback_summary = (
+            "The audit identified confirmed opportunities in this trust layer."
+            if triggered_ids
+            else "The assessed signals did not identify a material issue in this trust layer."
+        )
+        fallback_explanation = (
+            "The triggered assessment signals indicate that this layer should be strengthened."
+            if triggered_ids
+            else "The checked signals currently support this layer."
+        )
+        if status != "good" and not suggested_fixes:
+            suggested_fixes = _dedupe_strings([
+                required_change
+                for action in layer_actions
+                for required_change in action.get("required_changes", [])
+            ])
         layers.append({
             "layer_id": index,
             "layer_key": layer_key,
@@ -210,8 +388,8 @@ def assemble_report_skeleton(
             "checked_rule_ids": list(LAYER_RULES[layer_key]),
             "triggered_rule_ids": triggered_ids,
             "triggered_findings": [],
-            "summary": narrative.summary,
-            "explanation": narrative.explanation,
+            "summary": narrative.summary.strip() or fallback_summary,
+            "explanation": narrative.explanation.strip() or fallback_explanation,
             "evidence_items": build_layer_evidence(
                 triggered_ids,
                 evidence_ledger,
@@ -224,13 +402,6 @@ def assemble_report_skeleton(
     issues: list[dict[str, Any]] = []
     seen_issue_action_keys: set[str] = set()
     for index, issue in enumerate(copy.key_issues, start=1):
-        unknown_issue_action_keys = sorted(
-            set(issue.recommended_action_keys) - set(ACTION_REQUIREMENTS_BY_KEY)
-        )
-        if unknown_issue_action_keys:
-            raise ReportCopyInvalid([
-                f"Key Issue references unknown action keys: {unknown_issue_action_keys}."
-            ])
         active_issue_action_keys = [
             action_key
             for action_key in issue.recommended_action_keys
@@ -248,29 +419,25 @@ def assemble_report_skeleton(
         for action_key in active_issue_action_keys:
             action = action_catalog.get(action_key)
             if action is None:
-                raise ReportCopyInvalid([
-                    f"Key Issue references unknown or inactive action_key {action_key}."
-                ])
+                continue
             layer_key = action["affected_layer"]
             status = layer_statuses[layer_key]
             if action_key in seen_issue_action_keys:
-                raise ReportCopyInvalid([
-                    f"Action {action_key} may be referenced by only one Key Issue."
-                ])
+                continue
             seen_issue_action_keys.add(action_key)
             triggered_ids = list(action["related_rule_ids"])
             issue_evidence = build_layer_evidence(triggered_ids, evidence_ledger, context)
 
             issues.append({
                 "id": f"issue-{action_key}",
-                "issue_title": issue.issue_title,
+                "issue_title": issue.issue_title.strip() or action["task_title"],
                 "affected_layer": layer_key,
                 "related_rule_ids": triggered_ids,
                 "severity": _issue_severity(status),
                 "evidence_items": issue_evidence,
-                "judgement": issue.judgement,
-                "explanation": issue.explanation,
-                "why_it_matters": issue.why_it_matters,
+                "judgement": issue.judgement.strip() or "The audit confirmed this remediation group.",
+                "explanation": issue.explanation.strip() or "The related trust findings require attention.",
+                "why_it_matters": issue.why_it_matters.strip() or action["expected_effect"],
                 "impacts": issue.impacts,
                 "suggestions": issue.suggestions,
                 "recommended_actions": [copy_module.deepcopy(action)],
@@ -312,6 +479,60 @@ def assemble_report_skeleton(
         if blocker_issue
         else blocker_layer["summary"]
     )
+    first_blocker_action = next(
+        (
+            action
+            for action in action_catalog.values()
+            if action["affected_layer"] == blocker_key
+        ),
+        None,
+    )
+    page_level_copy = copy.page_level.model_dump(mode="json")
+    page_level_copy["current_assessment"] = (
+        page_level_copy["current_assessment"]
+        or "The audit identified confirmed trust opportunities that should be addressed in layer order."
+    )
+    page_level_copy["existing_foundation"] = (
+        page_level_copy["existing_foundation"]
+        or "The checked page provides enough service context to complete the trust assessment."
+    )
+    page_level_copy["main_limitation"] = (
+        page_level_copy["main_limitation"]
+        or f"The earliest confirmed constraint is {LAYER_LABELS[blocker_key]}."
+    )
+    page_level_copy["likely_search_outcome"] = (
+        page_level_copy["likely_search_outcome"]
+        or "Performance may remain less stable until the confirmed trust gaps are repaired."
+    )
+    page_level_copy["competitive_interpretation"] = (
+        page_level_copy["competitive_interpretation"]
+        or "Pages with clearer verified trust signals may be easier to interpret and defend."
+    )
+    client_summary = copy.client_summary.model_dump(mode="json")
+    client_summary["title"] = (
+        client_summary["title"]
+        or f"Strengthen {LAYER_LABELS[blocker_key]} first"
+    )
+    client_summary["plain_language_summary"] = (
+        client_summary["plain_language_summary"]
+        or "The audit found confirmed trust gaps that should be repaired from the earliest affected layer upward."
+    )
+    client_summary["why_it_matters"] = (
+        client_summary["why_it_matters"]
+        or "Later optimization is less dependable while earlier trust signals remain incomplete."
+    )
+    client_summary["first_priority"] = (
+        client_summary["first_priority"]
+        or str((first_blocker_action or {}).get("task_title") or primary_reason)
+    )
+    client_summary["not_first_priority"] = (
+        client_summary["not_first_priority"]
+        or "Do not begin with broad expansion before the earliest confirmed trust gap is addressed."
+    )
+    client_summary["expected_change"] = (
+        client_summary["expected_change"]
+        or "The page should become easier to verify and support with specific trust signals."
+    )
 
     return {
         "schema_version": "2.1",
@@ -332,10 +553,10 @@ def assemble_report_skeleton(
         },
         "page_level": {
             "label": "Pending",
-            "what_it_looks_like": copy.page_level.current_assessment,
+            "what_it_looks_like": page_level_copy["current_assessment"],
             "strengths": [],
             "missing_elements": [],
-            **copy.page_level.model_dump(mode="json"),
+            **page_level_copy,
         },
         "layers": layers,
         "key_issues": issues,
@@ -343,7 +564,7 @@ def assemble_report_skeleton(
             copy.optimization_path,
             action_catalog,
         ),
-        "client_summary": copy.client_summary.model_dump(mode="json"),
+        "client_summary": client_summary,
     }
 
 
@@ -353,53 +574,51 @@ def _validated_action_catalog(
 ) -> dict[str, dict[str, Any]]:
     incoming_by_key: dict[str, CatalogActionCopy] = {}
     for value in values:
-        if value.action_key in incoming_by_key:
-            raise ReportCopyInvalid([f"Duplicate action_key {value.action_key}."])
-        incoming_by_key[value.action_key] = value
-
-    expected_keys = set(active_requirements)
-    incoming_keys = set(incoming_by_key)
-    unknown_keys = incoming_keys - set(ACTION_REQUIREMENTS_BY_KEY)
-    if unknown_keys:
-        raise ReportCopyInvalid([
-            f"Action catalog contains unknown action keys: {sorted(unknown_keys)}"
-        ])
-    missing_keys = expected_keys - incoming_keys
-    if missing_keys:
-        raise ReportCopyInvalid([
-            "Action catalog must include every active backend remediation group: "
-            f"missing={sorted(missing_keys)}"
-        ])
+        if value.action_key not in ACTION_REQUIREMENTS_BY_KEY:
+            continue
+        incoming_by_key.setdefault(value.action_key, value)
 
     catalog: dict[str, dict[str, Any]] = {}
-    covered_rule_ids: list[int] = []
     for action_key, (requirement, triggered_ids) in active_requirements.items():
-        incoming = incoming_by_key[action_key]
+        incoming = incoming_by_key.get(action_key)
+        addressed_findings, required_changes = action_finding_details(triggered_ids)
         # Dify owns the action narrative; the backend owns deterministic
-        # classification and finding coverage for each known action key.
-        item = incoming.model_dump(
-            mode="json",
-            exclude={
-                "action_key",
-                "covers_finding_keys",
-                "priority",
-                "affected_layer",
-                "effort_level",
-            },
+        # classification and finding coverage for each known action key.  If
+        # Dify omitted an action, use the fixed remediation requirement rather
+        # than rejecting and rerunning the entire workflow.
+        item = (
+            incoming.model_dump(
+                mode="json",
+                exclude={
+                    "action_key",
+                    "covers_finding_keys",
+                    "priority",
+                    "affected_layer",
+                    "effort_level",
+                },
+            )
+            if incoming is not None
+            else {}
         )
         item["id"] = f"act-{action_key}"
         item["priority"] = requirement.priority
         item["affected_layer"] = requirement.affected_layer
         item["effort_level"] = requirement.effort_level
         item["related_rule_ids"] = list(triggered_ids)
-        addressed_findings, required_changes = action_finding_details(triggered_ids)
         item["addressed_findings"] = addressed_findings
         item["required_changes"] = required_changes
+        item["task_title"] = str(item.get("task_title") or requirement.task_goal)
+        item["where_to_add"] = list(item.get("where_to_add") or [])
+        item["what_to_add"] = list(item.get("what_to_add") or required_changes)
+        item["example_copy"] = list(item.get("example_copy") or [])
+        item["implementation_notes"] = list(item.get("implementation_notes") or [])
+        item["completion_signals"] = list(item.get("completion_signals") or [])
+        item["expected_effect"] = str(
+            item.get("expected_effect")
+            or f"Addresses the confirmed {LAYER_LABELS[requirement.affected_layer]} trust findings."
+        )
         catalog[action_key] = item
-        covered_rule_ids.extend(triggered_ids)
 
-    if len(covered_rule_ids) != len(set(covered_rule_ids)):
-        raise ReportCopyInvalid(["A triggered finding may be covered by only one unified Action."])
     return catalog
 
 
@@ -420,18 +639,6 @@ def _optimization(
     action_catalog: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     known_keys = set(action_catalog)
-    known_requirement_keys = set(ACTION_REQUIREMENTS_BY_KEY)
-    supplied_groups = (
-        value.must_execute_now_action_keys,
-        value.defer_until_later_action_keys,
-        value.do_not_prioritize_yet_action_keys,
-    )
-    supplied_keys = [key for group in supplied_groups for key in group]
-    unknown_keys = sorted(set(supplied_keys) - known_requirement_keys)
-    if unknown_keys:
-        raise ReportCopyInvalid([
-            f"Optimization Path references unknown Action keys: {unknown_keys}"
-        ])
 
     layer_positions = {
         layer_key: index
@@ -468,14 +675,6 @@ def _optimization(
 
     roadmap: list[dict[str, Any]] = []
     for index, phase in enumerate(value.roadmap, start=1):
-        unknown_phase_keys = sorted(
-            set(phase.action_keys) - known_requirement_keys
-        )
-        if unknown_phase_keys:
-            raise ReportCopyInvalid([
-                f"Roadmap phase {phase.sequence} references unknown Action keys: "
-                f"{unknown_phase_keys}"
-            ])
         active_phase_keys = [
             key
             for key in phase.action_keys
@@ -493,13 +692,42 @@ def _optimization(
             "expected_outcomes": phase.expected_outcomes,
         })
 
+    if not roadmap and ordered_keys:
+        phase_definitions = (
+            (1, {"foundation", "entity_presence", "entity_consistency"}, "Stabilize the business entity"),
+            (2, {"specificity", "real_world_connection"}, "Build local credibility"),
+            (3, {"accountability", "page_unique_value"}, "Add accountable, unique proof"),
+            (4, {"algorithm_fit"}, "Reassess search-era fit"),
+        )
+        for sequence, layer_keys, title in phase_definitions:
+            phase_keys = [
+                key
+                for key in ordered_keys
+                if action_catalog[key]["affected_layer"] in layer_keys
+            ]
+            if not phase_keys:
+                continue
+            roadmap.append({
+                "id": f"phase-{sequence:02d}",
+                "phase_title": title,
+                "sequence": sequence,
+                "goal": title,
+                "entry_condition": "The related findings have been confirmed by the audit.",
+                "action_items": resolve(phase_keys),
+                "expected_outcomes": [
+                    "The confirmed trust findings in this phase are addressed and verified."
+                ],
+            })
+
     return {
         "must_execute_now": resolve(must_keys),
         "defer_until_later": resolve(defer_keys),
         "do_not_prioritize_yet": [],
         "roadmap": roadmap,
-        "fix_order_warning": value.fix_order_warning,
-        "completion_signals": value.completion_signals,
+        "fix_order_warning": value.fix_order_warning or "Repair earlier affected layers before expanding later-stage optimization.",
+        "completion_signals": value.completion_signals or [
+            "Each confirmed action is implemented and verified on the checked page."
+        ],
     }
 
 

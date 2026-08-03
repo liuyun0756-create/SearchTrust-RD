@@ -18,7 +18,7 @@ from app.report_v21.coverage import build_data_coverage, build_gbp_alignment, bu
 from app.report_v21.dedupe import dedupe_report_v21
 from app.report_v21.gbp_guard import BLOCKED_GBP_CLAIM_PHRASES
 from app.report_v21.models import LAYER_DISPLAY_LABELS, LAYER_LABELS, REQUIRED_LAYER_KEYS, ReportV21
-from app.report_v21.quality import validate_evidence_quality
+from app.report_v21.quality import prune_unsupported_evidence, validate_evidence_quality
 from app.report_v21.scoring import apply_deterministic_scoring
 from app.report_v21.validate import GOOGLE_CERTAINTY_PHRASES, OLD_LAYER_LABELS, validate_report_v21
 
@@ -245,9 +245,16 @@ def normalize_report_copy_to_v21(
             [f"Backend report assembly failed Pydantic validation: {exc.errors()}"],
         ) from exc
 
-    evidence_errors = validate_evidence_quality(report, context)
-    if evidence_errors:
-        raise ReportV21OutputInvalid(evidence_errors)
+    evidence_notes = prune_unsupported_evidence(report, context)
+    evidence_notes.extend(validate_evidence_quality(report, context))
+    if evidence_notes:
+        _append_limitations(
+            report,
+            [
+                "Some supporting evidence was unavailable or could not be traced; "
+                "the affected evidence sections were omitted."
+            ],
+        )
     validation = validate_report_v21(report)
     if not validation.get("valid"):
         raise ReportV21OutputInvalid(

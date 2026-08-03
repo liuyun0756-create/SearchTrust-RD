@@ -1,5 +1,6 @@
 import copy
 import unittest
+from unittest.mock import patch
 
 from app.report_v21.copy_contract import (
     ReportCopyInvalid,
@@ -389,19 +390,26 @@ class ReportCopyContractTests(unittest.TestCase):
         self.assertEqual(len(layer["action_items"]), 1)
         self.assertEqual(layer["action_items"][0]["related_rule_ids"], [1])
 
-    def test_missing_catalog_action_is_retryable(self):
+    def test_missing_catalog_action_uses_backend_fallback(self):
         triggered_ids = {2, 4, 6, 7, 8, 32, 34}
         payload = _report_copy(triggered_ids)
         removed = payload["action_catalog"].pop()
-        with self.assertRaises(ReportCopyInvalid) as raised:
-            normalize_report_copy_to_v21(
-                {"report_copy_v2_1": payload},
-                _context(),
-                {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
-                {rule_id: True for rule_id in ACTIVE_RULE_IDS},
-                build_evidence_ledger(_context()),
-            )
-        self.assertIn(removed["action_key"], " ".join(raised.exception.details))
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            _context(),
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(_context()),
+        )["report_v2_1"]
+        fallback = next(
+            action
+            for layer in report["layers"]
+            for action in layer["action_items"]
+            if action["id"] == f"act-{removed['action_key']}"
+        )
+        requirement = ACTION_REQUIREMENTS_BY_KEY[removed["action_key"]]
+        self.assertEqual(fallback["task_title"], requirement.task_goal)
+        self.assertTrue(fallback["required_changes"])
 
     def test_known_inactive_actions_and_references_are_discarded(self):
         triggered_ids = {2, 7}
@@ -487,21 +495,89 @@ class ReportCopyContractTests(unittest.TestCase):
             },
         )
 
-    def test_unknown_action_key_remains_retryable(self):
+    def test_unknown_action_key_is_ignored(self):
         payload = copy.deepcopy(_report_copy({2, 7}))
         unknown_action = copy.deepcopy(payload["action_catalog"][0])
         unknown_action["action_key"] = "unknown_action_group"
         payload["action_catalog"].append(unknown_action)
 
-        with self.assertRaises(ReportCopyInvalid) as raised:
-            normalize_report_copy_to_v21(
-                {"report_copy_v2_1": payload},
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": payload},
+            _context(),
+            {rule_id: rule_id in {2, 7} for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(_context()),
+        )["report_v2_1"]
+        self.assertNotIn(
+            "act-unknown_action_group",
+            {
+                action["id"]
+                for layer in report["layers"]
+                for action in layer["action_items"]
+            },
+        )
+
+    def test_missing_optional_copy_sections_are_completed_by_backend(self):
+        triggered_ids = {2}
+        report = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": {}},
+            _context(),
+            {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+            {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+            build_evidence_ledger(_context()),
+        )["report_v2_1"]
+
+        self.assertEqual(len(report["layers"]), 8)
+        specificity = next(
+            layer for layer in report["layers"] if layer["layer_key"] == "specificity"
+        )
+        self.assertEqual(specificity["triggered_rule_ids"], [2])
+        self.assertTrue(specificity["summary"])
+        self.assertTrue(specificity["action_items"])
+        self.assertTrue(report["key_issues"])
+
+    def test_missing_or_malformed_narrative_payload_does_not_retry_rules(self):
+        triggered_ids = {2}
+        for outputs in ({"rule_results": {}}, {"report_copy_v2_1": "not-json"}):
+            with self.subTest(outputs=outputs):
+                report = normalize_report_copy_to_v21(
+                    outputs,
+                    _context(),
+                    {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
+                    {rule_id: True for rule_id in ACTIVE_RULE_IDS},
+                    build_evidence_ledger(_context()),
+                )["report_v2_1"]
+                specificity = next(
+                    layer
+                    for layer in report["layers"]
+                    if layer["layer_key"] == "specificity"
+                )
+                self.assertEqual(specificity["triggered_rule_ids"], [2])
+                self.assertTrue(specificity["action_items"])
+
+    def test_missing_evidence_degrades_without_rejecting_report(self):
+        triggered_ids = {21, 22, 23, 24, 25}
+        with patch("app.report_v21.copy_contract.build_layer_evidence", return_value=[]):
+            report = normalize_report_copy_to_v21(
+                {"report_copy_v2_1": _report_copy(triggered_ids)},
                 _context(),
-                {rule_id: rule_id in {2, 7} for rule_id in ACTIVE_RULE_IDS},
+                {rule_id: rule_id in triggered_ids for rule_id in ACTIVE_RULE_IDS},
                 {rule_id: True for rule_id in ACTIVE_RULE_IDS},
                 build_evidence_ledger(_context()),
+            )["report_v2_1"]
+
+        entity_presence = next(
+            layer for layer in report["layers"] if layer["layer_key"] == "entity_presence"
+        )
+        self.assertEqual(entity_presence["status"], "weak")
+        self.assertEqual(entity_presence["evidence_items"], [])
+        self.assertTrue(entity_presence["action_items"])
+        self.assertTrue(
+            any(
+                "evidence" in limitation.lower()
+                for limitation in report["data_coverage"]["limitations"]
             )
-        self.assertIn("unknown_action_group", " ".join(raised.exception.details))
+        )
 
     def test_client_decision_context_uses_final_key_issues_without_changing_scores(self):
         report = {
