@@ -7,6 +7,8 @@ from app.tasks import scraper
 SHORT_URL = "https://maps.app.goo.gl/spB4reXT8NAMvS8V8"
 PAGE_SHORT_URL = "https://goo.gl/maps/BmutfbtV5uvo62km7"
 SHARE_URL = "https://share.google/sLiv8JcVCQxW0UVMj"
+REVIEW_PLACE_ID = "ChIJTdp_-Yp4mFQRkrkIsju9-Yo"
+REVIEW_URL = f"https://search.google.com/local/reviews?placeid={REVIEW_PLACE_ID}"
 TRI_CITIES_PLACE_ID = "ChIJgx6lgF55mFQRq17Gwkb_p0Y"
 TRI_CITIES_DIRECTIONS_URL = (
     "https://www.google.com/maps/dir/?api=1&"
@@ -91,6 +93,35 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 f"[Google Business Profile]({SHARE_URL})"
             ),
             SHARE_URL,
+        )
+
+    def test_extracts_place_id_from_google_review_link(self):
+        content = f"[Read our Google reviews]({REVIEW_URL})"
+
+        self.assertEqual(scraper.extract_maps_url_from_content(content), REVIEW_URL)
+        self.assertEqual(scraper._extract_google_place_id(REVIEW_URL), REVIEW_PLACE_ID)
+        self.assertTrue(scraper._has_exact_gbp_identifier(REVIEW_URL))
+
+    def test_extracts_business_identity_from_json_ld(self):
+        content = """
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Columbia Basin Plumbing",
+          "telephone": "+15096195003",
+          "address": {"@type": "PostalAddress", "addressLocality": "Kennewick"}
+        }
+        </script>
+        """
+
+        self.assertEqual(
+            scraper.extract_business_info(content),
+            {
+                "name": "Columbia Basin Plumbing",
+                "city": "Kennewick",
+                "phone": "+15096195003",
+            },
         )
 
     def test_derives_multi_location_branch_root_without_affecting_generic_paths(self):
@@ -231,6 +262,39 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         params = client.requests[0][1]["params"]
         self.assertNotIn("type", params)
         self.assertEqual(params["data_cid"], "2375887383727280678")
+
+    async def test_review_place_id_uses_exact_place_lookup_without_resolution(self):
+        place = {
+            "title": "Columbia Basin Plumbing",
+            "phone": "+1 509-619-5003",
+            "address": "7103 W Clearwater Ave B, Kennewick, WA 99336",
+            "website": "https://columbiabasinplumbing.com/",
+            "data_id": "0x549878f9fd6a3a4d:0x2a39b20ae908ba92",
+        }
+        client = _FakeClient([
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": place})
+        ])
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper._resolve_gbp_url", new=AsyncMock()
+        ) as resolve, patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Columbia Basin Plumbing",
+                city="Kennewick",
+                website_url="https://columbiabasinplumbing.com/repairs-installs/",
+                gbp_url=REVIEW_URL,
+            )
+
+        self.assertEqual(result["name"], "Columbia Basin Plumbing")
+        resolve.assert_not_awaited()
+        params = client.requests[0][1]["params"]
+        self.assertEqual(params["place_id"], REVIEW_PLACE_ID)
+        self.assertNotIn("data_cid", params)
+        self.assertNotIn("q", params)
 
     async def test_exact_lookup_retries_empty_results_without_cache(self):
         place = {
@@ -385,6 +449,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                     "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
                 ),
                 location_hints=["Kennewick", "Pasco", "West Richland"],
+                require_location_match=True,
                 diagnostic=diagnostic,
             )
 
@@ -476,6 +541,82 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, {})
         enrich.assert_not_awaited()
+
+    def test_single_store_accepts_name_and_city_when_candidate_website_is_missing(self):
+        candidate = {
+            "title": "Columbia Basin Plumbing",
+            "address": "7103 W Clearwater Ave B, Kennewick, WA 99336",
+            "phone": "+1 509-619-5003",
+            "website": "",
+        }
+
+        self.assertTrue(
+            scraper._is_confident_gbp_match(
+                candidate,
+                website_url="https://columbiabasinplumbing.com/repairs-installs/",
+                business_name="Columbia Basin Plumbing",
+                phone="+1 509-619-5003",
+                city="Kennewick",
+                location_hints=["Kennewick", "Richland", "Pasco"],
+            )
+        )
+
+    def test_single_store_rejects_conflicting_candidate_website(self):
+        candidate = {
+            "title": "Columbia Basin Plumbing",
+            "address": "Kennewick, WA",
+            "website": "https://different-plumber.example/",
+        }
+
+        self.assertFalse(
+            scraper._is_confident_gbp_match(
+                candidate,
+                website_url="https://columbiabasinplumbing.com/repairs-installs/",
+                business_name="Columbia Basin Plumbing",
+                phone=None,
+                city="Kennewick",
+                location_hints=["Kennewick"],
+            )
+        )
+
+    def test_multi_location_still_rejects_wrong_city_on_shared_domain(self):
+        wrong_branch = {
+            "title": "1-Tom-Plumber Tulsa",
+            "address": "9525 E 51st St Ste G, Tulsa, OK 74145",
+            "website": "https://www.1tomplumber.com/",
+        }
+
+        self.assertFalse(
+            scraper._is_confident_gbp_match(
+                wrong_branch,
+                website_url="https://www.1tomplumber.com/tri-cities-wa/services/plumbing/",
+                business_name="1-Tom-Plumber Tri-Cities",
+                phone="509-555-0100",
+                city="Richland",
+                location_hints=["Kennewick", "Pasco", "West Richland"],
+                require_location_match=True,
+            )
+        )
+
+    def test_multi_location_accepts_unique_phone_when_candidate_address_is_missing(self):
+        correct_branch = {
+            "title": "1-Tom-Plumber Tri-Cities",
+            "address": "",
+            "phone": "509-555-0100",
+            "website": "https://www.1tomplumber.com/tri-cities-wa/",
+        }
+
+        self.assertTrue(
+            scraper._is_confident_gbp_match(
+                correct_branch,
+                website_url="https://www.1tomplumber.com/tri-cities-wa/services/plumbing/",
+                business_name="1-Tom-Plumber Tri-Cities",
+                phone="(509) 555-0100",
+                city="Richland",
+                location_hints=["Kennewick", "Pasco", "West Richland"],
+                require_location_match=True,
+            )
+        )
 
 
 if __name__ == "__main__":

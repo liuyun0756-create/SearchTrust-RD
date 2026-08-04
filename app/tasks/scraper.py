@@ -893,9 +893,13 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
     dict with keys: ``name``, ``city``, ``phone`` (all Optional[str])
     """
     result: dict[str, Optional[str]] = {"name": None, "city": None, "phone": None}
+    schema_identity = _extract_json_ld_business_identity(content)
 
     # ── Business name ─────────────────────────────────────────────────────────
     name_candidates: list[tuple[str, str]] = []  # (source, value)
+
+    if schema_identity.get("name"):
+        name_candidates.append(("json_ld", str(schema_identity["name"])))
 
     # H2/H3 with "Choose/Trust/About [Business Name]"
     m = re.search(
@@ -947,7 +951,7 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
                     name_candidates.append(("title", brand))
                 break
 
-    for source in ("h2_choose", "og_site_name", "copyright", "logo", "title"):
+    for source in ("json_ld", "h2_choose", "og_site_name", "copyright", "logo", "title"):
         for src, val in name_candidates:
             if src == source:
                 result["name"] = val
@@ -965,6 +969,9 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
         "click", "here", "more", "info", "information", "learn",
     }
     city_candidates: list[tuple[str, str]] = []
+
+    if schema_identity.get("city"):
+        city_candidates.append(("json_ld", str(schema_identity["city"])))
 
     # 📍 or label pattern — must be followed by a real city name (short, no verbs)
     for match in re.findall(
@@ -987,7 +994,7 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
         if len(val) > 3 and val.lower() not in skip_words:
             city_candidates.append(("prep", val))
 
-    for source in ("label", "prep"):
+    for source in ("json_ld", "label", "prep"):
         for src, val in city_candidates:
             if src == source:
                 result["city"] = val
@@ -996,6 +1003,9 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
             break
 
     # ── Phone ─────────────────────────────────────────────────────────────────
+    if schema_identity.get("phone"):
+        result["phone"] = str(schema_identity["phone"])
+
     phone_patterns = [
         # 📞 **(xxx) xxx-xxxx** 格式（contact页面常见）
         r"📞\s*\*+\s*\(?\d{3}\)?[-\s\.]?\d{3}[-\s\.]\d{4}\s*\*+",
@@ -1007,6 +1017,8 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
         r"\+?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{2,4}[-\s\.]?[0-9]{2,4}",
     ]
     for pat in phone_patterns:
+        if result["phone"]:
+            break
         matches = re.findall(pat, content, re.IGNORECASE)
         if matches:
             phone = re.sub(r"[\*📞]", "", matches[0]).strip()
@@ -1017,6 +1029,55 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
 
     logger.debug("Extracted business info: %s", result)
     return result
+
+
+def _extract_json_ld_business_identity(content: str) -> dict[str, Optional[str]]:
+    """Extract authoritative business identity fields from preserved JSON-LD."""
+    identity: dict[str, Optional[str]] = {"name": None, "city": None, "phone": None}
+    business_types = {
+        "localbusiness",
+        "organization",
+        "plumber",
+        "homeandconstructionbusiness",
+        "professionalservice",
+    }
+    for raw_script in re.findall(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        content or "",
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        try:
+            parsed = json.loads(html.unescape(raw_script).strip())
+        except (json.JSONDecodeError, TypeError):
+            continue
+        for record in _schema_records(parsed):
+            raw_types = record.get("@type")
+            type_values = raw_types if isinstance(raw_types, list) else [raw_types]
+            normalized_types = {
+                str(value).strip().lower()
+                for value in type_values
+                if isinstance(value, str) and value.strip()
+            }
+            if not normalized_types.intersection(business_types):
+                continue
+
+            name = str(record.get("name") or "").strip()
+            phone = str(record.get("telephone") or "").strip()
+            address = record.get("address")
+            city = (
+                str(address.get("addressLocality") or "").strip()
+                if isinstance(address, dict)
+                else ""
+            )
+            if name and not identity["name"]:
+                identity["name"] = name
+            if city and not identity["city"]:
+                identity["city"] = city
+            if phone and not identity["phone"]:
+                identity["phone"] = phone
+            if all(identity.values()):
+                return identity
+    return identity
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1039,6 +1100,7 @@ def extract_maps_url_from_content(content: str) -> Optional[str]:
     patterns = (
         r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*',
         r'https://(?:www\.)?google\.com/maps/(?:dir|search|place)/[^\s\'"<>]*(?:destination_place_id|query_place_id|place_id)=[^\s\'"<>&]+[^\s\'"<>]*',
+        r'https://search\.google\.com/local/reviews\?[^\s\'"<>]*placeid=[^\s\'"<>&]+[^\s\'"<>]*',
         r'https://maps\.app\.goo\.gl/[^\s\'"<>]+',
         r'https://goo\.gl/maps/[^\s\'"<>]+',
         r'https://share\.google/[^\s\'"<>]+',
@@ -1060,7 +1122,7 @@ def _extract_google_place_id(gbp_url: str) -> Optional[str]:
         query = parse_qs(urlparse(html.unescape(gbp_url)).query)
     except ValueError:
         return None
-    for key in ("destination_place_id", "query_place_id", "place_id"):
+    for key in ("destination_place_id", "query_place_id", "place_id", "placeid"):
         values = query.get(key) or []
         if values and values[0].strip():
             return values[0].strip()
@@ -1137,6 +1199,7 @@ def _is_google_maps_url(value: str) -> bool:
         "google.com",
         "www.google.com",
         "maps.google.com",
+        "search.google.com",
         "maps.app.goo.gl",
         "goo.gl",
     }
@@ -1292,20 +1355,49 @@ def _normalise_match_text(value: str | None) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
 
 
+def _business_names_match(left: str | None, right: str | None) -> bool:
+    target = _normalise_match_text(left)
+    candidate = _normalise_match_text(right)
+    return bool(
+        target
+        and candidate
+        and (
+            target == candidate
+            or (len(target) >= 6 and target in candidate)
+            or (len(candidate) >= 6 and candidate in target)
+        )
+    )
+
+
+def _phones_match(left: str | None, right: str | None) -> bool:
+    target = re.sub(r"\D", "", left or "")[-10:]
+    candidate = re.sub(r"\D", "", right or "")[-10:]
+    return bool(len(target) == 10 and target == candidate)
+
+
 def _is_confident_gbp_match(
     result: dict[str, Any],
     *,
     website_url: str | None,
+    business_name: str | None,
+    phone: str | None,
     city: str | None,
     location_hints: list[str] | None = None,
     require_domain_match: bool = False,
+    require_location_match: bool = False,
 ) -> bool:
-    """Require objective domain/location evidence before accepting search results."""
+    """Accept single-store matches while keeping branch-level safeguards."""
     target_domain = _normalise_domain(website_url)
     result_domain = _normalise_domain(str(result.get("website") or ""))
     domain_matches = _domains_match(target_domain, result_domain)
     if require_domain_match:
         return domain_matches
+
+    name_matches = _business_names_match(
+        business_name,
+        str(result.get("title") or result.get("name") or ""),
+    )
+    phone_matches = _phones_match(phone, str(result.get("phone") or ""))
 
     target_locations = {
         normalised
@@ -1318,14 +1410,21 @@ def _is_confident_gbp_match(
         and any(location in result_address for location in target_locations)
     )
 
-    # Multi-location brands commonly share one root domain across every GBP.
-    # When page-derived location evidence is available, domain equality alone
-    # cannot safely identify the correct branch.
-    if location_hints:
-        return domain_matches and location_matches
+    # Multi-location brands commonly share one root domain across every GBP,
+    # so a branch must also match its location or unique phone. A single-store
+    # page can safely use the original domain-first rule.
+    if require_location_match:
+        return bool(
+            (domain_matches or name_matches)
+            and (location_matches or phone_matches)
+        )
     if domain_matches:
         return True
-    return location_matches
+    if result_domain:
+        return False
+    if phone_matches and (name_matches or not business_name):
+        return True
+    return bool(name_matches and location_matches)
 
 
 def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
@@ -1346,6 +1445,8 @@ async def fetch_gbp_data(
     website_url: Optional[str] = None,
     gbp_url: Optional[str] = None,
     location_hints: Optional[list[str]] = None,
+    phone: Optional[str] = None,
+    require_location_match: bool = False,
     diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -1369,22 +1470,32 @@ async def fetch_gbp_data(
         return {}
 
     # ── 优先级 1：gbp_url 含 data_id，直接拉 place details ──────────────────
-    resolved_gbp_url = await _resolve_gbp_url(gbp_url or "", diagnostic=diagnostic)
+    place_id_from_url = _extract_google_place_id(gbp_url or "")
+    resolved_gbp_url = (
+        gbp_url or ""
+        if place_id_from_url
+        else await _resolve_gbp_url(gbp_url or "", diagnostic=diagnostic)
+    )
+    place_id_from_url = place_id_from_url or _extract_google_place_id(resolved_gbp_url)
     data_id_from_url = _extract_data_id_from_gbp_url(resolved_gbp_url)
     data_cid_from_url = _data_cid_from_data_id(data_id_from_url)
     exact_failure = ""
-    if data_id_from_url and data_cid_from_url:
+    if place_id_from_url or (data_id_from_url and data_cid_from_url):
         logger.info(
-            "[SerpAPI] gbp_url contains data_id=%s data_cid=%s — fetching place details directly",
+            "[SerpAPI] exact GBP identifier place_id=%s data_id=%s data_cid=%s — fetching place details directly",
+            place_id_from_url,
             data_id_from_url,
             data_cid_from_url,
         )
         params: dict[str, str] = {
             "engine":  "google_maps",
-            "data_cid": data_cid_from_url,
             "hl":      "en",
             "api_key": settings.SERPAPI_KEY,
         }
+        if place_id_from_url:
+            params["place_id"] = place_id_from_url
+        elif data_cid_from_url:
+            params["data_cid"] = data_cid_from_url
         for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
             request_params = dict(params)
             if attempt > 1:
@@ -1401,29 +1512,37 @@ async def fetch_gbp_data(
                 if isinstance(place, dict) and place:
                     gbp_info = _build_gbp_info(place)
                     gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
+                    if place_id_from_url:
+                        gbp_info["place_id"] = place_id_from_url
                     _set_gbp_lookup_diagnostic(
                         diagnostic,
                         status="checked",
-                        code="exact_cid_match",
-                        message=f"GBP profile resolved by exact Google Maps CID on attempt {attempt}.",
+                        code="exact_place_id_match" if place_id_from_url else "exact_cid_match",
+                        message=(
+                            f"GBP profile resolved by exact Google Place ID on attempt {attempt}."
+                            if place_id_from_url
+                            else f"GBP profile resolved by exact Google Maps CID on attempt {attempt}."
+                        ),
                     )
                     return await _enrich_gbp_info(gbp_info)
-                exact_failure = "SerpAPI returned no place_results for the exact Google Maps CID."
+                exact_failure = "SerpAPI returned no place_results for the exact Google identifier."
                 metadata = data.get("search_metadata")
                 search_id = metadata.get("id") if isinstance(metadata, dict) else None
                 logger.warning(
-                    "[SerpAPI] exact CID lookup returned no place attempt=%d/%d data_id=%s search_id=%s",
+                    "[SerpAPI] exact lookup returned no place attempt=%d/%d place_id=%s data_id=%s search_id=%s",
                     attempt,
                     _GBP_LOOKUP_ATTEMPTS,
+                    place_id_from_url,
                     data_id_from_url,
                     search_id,
                 )
             except Exception as exc:  # noqa: BLE001
                 exact_failure = str(exc)
                 logger.warning(
-                    "[SerpAPI] exact CID lookup failed attempt=%d/%d data_id=%s: %s",
+                    "[SerpAPI] exact lookup failed attempt=%d/%d place_id=%s data_id=%s: %s",
                     attempt,
                     _GBP_LOOKUP_ATTEMPTS,
+                    place_id_from_url,
                     data_id_from_url,
                     exc,
                 )
@@ -1528,9 +1647,12 @@ async def fetch_gbp_data(
                     if _is_confident_gbp_match(
                         candidate,
                         website_url=website_url,
+                        business_name=business_name,
+                        phone=phone,
                         city=city,
                         location_hints=location_hints,
                         require_domain_match=strict_domain_fallback,
+                        require_location_match=require_location_match,
                     )
                 ),
                 None,
@@ -2179,10 +2301,11 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     # while their branch root exposes a Directions URL with an exact Place ID.
     # Fetch that one branch page only for GBP discovery; do not append it to
     # the audit content or change the page assessment.
+    branch_root_url = _derive_branch_root_url(url, combined_content)
+    require_location_match = branch_root_url is not None
     if not gbp_url:
         discovered_gbp_url = extract_maps_url_from_content(combined_content)
         if not _has_exact_gbp_identifier(discovered_gbp_url):
-            branch_root_url = _derive_branch_root_url(url, combined_content)
             if branch_root_url and branch_root_url.rstrip("/") != url.rstrip("/"):
                 logger.info(
                     "[Scraper] checking multi-location branch root for exact GBP url=%s",
@@ -2265,7 +2388,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 if isinstance(value, str) and value.strip()
             ]
             gbp_lookup_attempted = bool(
-                gbp_url or business_info.get("name") or business_info.get("city")
+                gbp_url or url or business_info.get("name") or business_info.get("city")
             )
             gbp_data = await fetch_gbp_data(
                 business_name=business_info.get("name"),
@@ -2273,6 +2396,8 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 website_url=url,
                 gbp_url=gbp_url,
                 location_hints=location_hints,
+                phone=business_info.get("phone"),
+                require_location_match=require_location_match,
                 diagnostic=gbp_lookup_diagnostic,
             )
         except Exception as exc:  # noqa: BLE001
