@@ -1,19 +1,20 @@
 """
 app/tasks/scraper.py
 ────────────────────
-Dual-layer scraper: Firecrawl (primary) → Jina Reader (fallback).
+Three-layer scraper: Firecrawl (primary) → Jina Reader → direct HTTP.
 
 Public API
 ----------
 scrape(url)              — Main entry point
-fetch_page_content(url)  — Waterfall: Firecrawl → Jina
+fetch_page_content(url)  — Waterfall: Firecrawl → Jina → direct HTTP
 fetch_gbp_data(...)      — SerpAPI Google Maps / GBP lookup
 extract_business_info()  — Regex heuristics to pull name / city / phone
 
 Scraper levels
 --------------
-1. Jina Reader  — free, fast, clean Markdown output
-2. Firecrawl    — paid-per-call, stronger JS rendering, reliable last resort
+1. Firecrawl    — paid-per-call, stronger JS rendering, reliable primary
+2. Jina Reader  — free, fast, clean Markdown output
+3. Direct HTTP  — server-rendered HTML fallback with safe redirect handling
 
 Sub-page scraping
 -----------------
@@ -36,11 +37,12 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 import httpx
 
 from app.core.config import settings
+from app.models.request import _is_ssrf_safe
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +70,10 @@ _USER_AGENTS: list[str] = [
 # HTTP status codes that are unrecoverable — no point retrying
 _NO_RETRY_CODES: frozenset[int] = frozenset({400, 401, 403, 404, 410})
 
-# Content that looks like a successful HTTP 200 but is actually an error page
-_FAILURE_KEYWORDS: tuple[str, ...] = (
+# Content that can indicate a successful HTTP 200 is actually an error page.
+# These are signals, not a flat blacklist: legitimate sites commonly load
+# reCAPTCHA, JavaScript fallbacks, or Cloudflare assets alongside real content.
+_FAILURE_SIGNALS: tuple[str, ...] = (
     "access denied",
     "403 forbidden",
     "captcha",
@@ -80,6 +84,24 @@ _FAILURE_KEYWORDS: tuple[str, ...] = (
     "verify you are human",
     "ray id",               # Cloudflare ray-id footer
 )
+
+# These phrases are sufficiently specific to reject a compact response on
+# their own. Less-specific signals such as "captcha" must appear in
+# combination; otherwise normal pages with protected forms are false positives.
+_STRONG_FAILURE_SIGNALS: frozenset[str] = frozenset({
+    "access denied",
+    "403 forbidden",
+    "browser check",
+    "ddos protection",
+    "verify you are human",
+})
+
+# Reader services normally reduce challenge pages to a short message while a
+# usable business page is substantially longer. Keep this deliberately larger
+# than SCRAPER_MIN_CONTENT_LENGTH so the decision uses both context and size.
+_CHALLENGE_PAGE_MAX_LENGTH = 15_000
+_MAX_DIRECT_REDIRECTS = 5
+_REDIRECT_CODES: frozenset[int] = frozenset({301, 302, 303, 307, 308})
 
 _GBP_LOOKUP_ATTEMPTS = 3
 _GBP_SHORT_URL_CACHE_TTL = 24 * 60 * 60
@@ -94,6 +116,7 @@ _GBP_SHORT_URL_CACHE: dict[str, tuple[float, str]] = {}
 class ScraperSource(str, Enum):
     JINA = "jina"
     FIRECRAWL = "firecrawl"
+    DIRECT = "direct"
 
 
 @dataclass
@@ -112,20 +135,30 @@ class ScrapeResult:
 
 def _is_valid_content(text: str) -> bool:
     """
-    Return True only when the scraped text passes both length and
-    anti-pattern checks.
+    Return True only when the scraped text passes both length and challenge-page
+    checks.
 
     A response that is technically HTTP 200 but contains a Cloudflare
-    challenge page or an access-denied message is treated as a failure.
+    challenge page or an access-denied message is treated as a failure. A
+    legitimate page is not rejected merely because a form loads reCAPTCHA.
     """
     min_len = settings.SCRAPER_MIN_CONTENT_LENGTH
     if not text or len(text) < min_len:
         logger.debug("Content too short: %d < %d chars", len(text) if text else 0, min_len)
         return False
     text_lower = text.lower()
-    for kw in _FAILURE_KEYWORDS:
-        if kw in text_lower:
-            logger.warning("Content contains failure signal: %r", kw)
+    matched_signals = {
+        signal for signal in _FAILURE_SIGNALS if signal in text_lower
+    }
+
+    if len(text) <= _CHALLENGE_PAGE_MAX_LENGTH:
+        strong_matches = matched_signals & _STRONG_FAILURE_SIGNALS
+        if strong_matches or len(matched_signals) >= 2:
+            logger.warning(
+                "Content looks like a challenge page len=%d signals=%s",
+                len(text),
+                sorted(matched_signals),
+            )
             return False
     return True
 
@@ -288,6 +321,200 @@ async def _fetch_firecrawl(url: str) -> Optional[str]:
                 logger.warning("[Firecrawl] error attempt=%d url=%s: %s", attempt, url, exc)
 
     logger.error("[Firecrawl] all %d attempts failed url=%s", settings.SCRAPER_RETRY, url)
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Level 3 — direct HTTP fallback
+# ────────────────────────────────────────────────────────────────────────────
+
+_HTML_BLOCK_TAG_RE = re.compile(
+    r"</?(?:address|article|aside|blockquote|br|dd|div|dl|dt|fieldset|figcaption|"
+    r"figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|"
+    r"tbody|td|tfoot|th|thead|tr|ul)[^>]*>",
+    re.IGNORECASE,
+)
+_HTML_SCRIPT_RE = re.compile(
+    r"<(script|style|noscript|template|svg)\b[^>]*>.*?</\1\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_HTML_LINK_RE = re.compile(
+    r"<a\b[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_HTML_TAG_RE = re.compile(r"<[^>]+>", re.DOTALL)
+_JSON_LD_SCRIPT_RE = re.compile(
+    r"<script\b[^>]*type=[\"']application/ld\+json[\"'][^>]*>.*?</script\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _html_to_readable_text(raw_html: str) -> str:
+    """Convert HTML into compact readable text while preserving links/schema."""
+    if not raw_html:
+        return ""
+
+    json_ld_blocks = _JSON_LD_SCRIPT_RE.findall(raw_html)
+    without_scripts = _HTML_SCRIPT_RE.sub("\n", raw_html)
+
+    def replace_link(match: re.Match[str]) -> str:
+        href = html.unescape(match.group(1).strip())
+        label = html.unescape(_HTML_TAG_RE.sub(" ", match.group(2)))
+        label = re.sub(r"\s+", " ", label).strip()
+        if not label:
+            return href
+        return f"[{label}]({href})"
+
+    readable = _HTML_LINK_RE.sub(replace_link, without_scripts)
+    readable = _HTML_BLOCK_TAG_RE.sub("\n", readable)
+    readable = _HTML_TAG_RE.sub(" ", readable)
+    readable = html.unescape(readable).replace("\xa0", " ")
+
+    lines: list[str] = []
+    previous_blank = False
+    for raw_line in readable.splitlines():
+        line = re.sub(r"[\t \f\v]+", " ", raw_line).strip()
+        if not line:
+            if lines and not previous_blank:
+                lines.append("")
+            previous_blank = True
+            continue
+        lines.append(line)
+        previous_blank = False
+
+    text = "\n".join(lines).strip()
+    if json_ld_blocks:
+        text += "\n\n" + "\n".join(json_ld_blocks)
+    return text
+
+
+async def _fetch_direct(url: str) -> Optional[str]:
+    """Fetch server-rendered HTML without a third-party reader service.
+
+    Redirects are followed manually so every target receives the same SSRF
+    validation as the original analysis URL.
+    """
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
+        "User-Agent": random.choice(_USER_AGENTS),
+    }
+
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(float(settings.SCRAPER_TIMEOUT + 10)),
+        follow_redirects=False,
+    ) as client:
+        for attempt in range(1, settings.SCRAPER_RETRY + 1):
+            if attempt > 1:
+                wait = 2 ** (attempt - 1)
+                logger.info(
+                    "[Direct] retry in %ds (attempt %d/%d)",
+                    wait,
+                    attempt,
+                    settings.SCRAPER_RETRY,
+                )
+                await asyncio.sleep(wait)
+
+            try:
+                current_url = url
+                resp: Optional[httpx.Response] = None
+                for redirect_count in range(_MAX_DIRECT_REDIRECTS + 1):
+                    if not _is_ssrf_safe(current_url):
+                        logger.warning("[Direct] blocked unsafe URL: %s", current_url)
+                        return None
+
+                    resp = await client.get(current_url, headers=headers)
+                    if resp.status_code not in _REDIRECT_CODES:
+                        break
+
+                    location = resp.headers.get("location")
+                    if not location:
+                        logger.warning(
+                            "[Direct] redirect missing Location status=%d url=%s",
+                            resp.status_code,
+                            current_url,
+                        )
+                        return None
+
+                    next_url = urljoin(str(resp.url), location)
+                    if not _is_ssrf_safe(next_url):
+                        logger.warning(
+                            "[Direct] blocked unsafe redirect from=%s to=%s",
+                            current_url,
+                            next_url,
+                        )
+                        return None
+                    logger.info(
+                        "[Direct] following redirect %d/%d from=%s to=%s",
+                        redirect_count + 1,
+                        _MAX_DIRECT_REDIRECTS,
+                        current_url,
+                        next_url,
+                    )
+                    current_url = next_url
+                else:
+                    logger.warning("[Direct] too many redirects url=%s", url)
+                    return None
+
+                if resp is None:
+                    return None
+                if resp.status_code in _NO_RETRY_CODES:
+                    logger.warning(
+                        "[Direct] unrecoverable status=%d url=%s",
+                        resp.status_code,
+                        url,
+                    )
+                    return None
+                if resp.status_code == 429:
+                    try:
+                        retry_after = int(resp.headers.get("Retry-After", "10"))
+                    except ValueError:
+                        retry_after = 10
+                    logger.warning("[Direct] rate-limited; waiting %ds url=%s", retry_after, url)
+                    await asyncio.sleep(retry_after)
+                    continue
+                if resp.status_code != 200:
+                    logger.warning(
+                        "[Direct] status=%d attempt=%d url=%s",
+                        resp.status_code,
+                        attempt,
+                        url,
+                    )
+                    continue
+
+                content_type = resp.headers.get("content-type", "").lower()
+                if content_type and not any(
+                    allowed in content_type
+                    for allowed in ("text/html", "application/xhtml+xml", "text/plain")
+                ):
+                    logger.warning("[Direct] unsupported content-type=%s url=%s", content_type, url)
+                    return None
+
+                content = _html_to_readable_text(resp.text)
+                if _is_valid_content(content):
+                    logger.info(
+                        "[Direct] success attempt=%d raw_len=%d text_len=%d url=%s",
+                        attempt,
+                        len(resp.text),
+                        len(content),
+                        url,
+                    )
+                    return content
+
+                logger.warning(
+                    "[Direct] content invalid raw_len=%d text_len=%d attempt=%d url=%s",
+                    len(resp.text),
+                    len(content),
+                    attempt,
+                    url,
+                )
+            except httpx.TimeoutException:
+                logger.warning("[Direct] timeout attempt=%d url=%s", attempt, url)
+            except httpx.ConnectError as exc:
+                logger.warning("[Direct] connect error attempt=%d url=%s: %s", attempt, url, exc)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("[Direct] error attempt=%d url=%s: %s", attempt, url, exc)
+
+    logger.error("[Direct] all %d attempts failed url=%s", settings.SCRAPER_RETRY, url)
     return None
 
 
@@ -500,6 +727,7 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
 
     Level 1: Firecrawl    (paid-per-call, stronger JS rendering, reliable primary)
     Level 2: Jina Reader  (free, fast, clean Markdown output, fallback)
+    Level 3: direct HTTP  (server-rendered HTML fallback, no vendor dependency)
 
     Returns
     -------
@@ -508,6 +736,7 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     levels: list[tuple[ScraperSource, Any]] = [
         (ScraperSource.FIRECRAWL, _fetch_firecrawl),
         (ScraperSource.JINA,      _fetch_jina),
+        (ScraperSource.DIRECT,    _fetch_direct),
     ]
 
     for source, fetcher in levels:
