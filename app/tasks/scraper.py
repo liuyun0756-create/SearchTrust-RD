@@ -2146,7 +2146,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     2. /map     discover full site URL list (sitemap-based, 1 credit)
     3. Filter   depth ≤ 2, same host, no blocklisted segments
     4. /batch/scrape  fetch the selected sub-pages concurrently
-    5. Concatenate all page content with === PATH === separators
+    5. Keep the target page separate from supporting-page discovery content
     6. Extract business info (name, city, phone) via regex
     7. Fetch GBP data from SerpAPI
 
@@ -2160,7 +2160,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     Returns
     -------
     dict with keys:
-        ``content``        — full combined page text (main + sub-pages)
+        ``content``        — cleaned target-page text only
         ``business``       — extracted business metadata (dict)
         ``gbp``            — GBP data from SerpAPI (dict, may be empty)
         ``scraper_source`` — "firecrawl_batch" | "firecrawl" | "jina"
@@ -2177,6 +2177,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
 
+    target_content = ""
     combined_content = ""
     appended: list[str] = []
     scraper_source = "firecrawl_batch"
@@ -2194,7 +2195,8 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         # ── Step 1: fetch main page via /scrape ───────────────────────────────
         main_result = await fetch_page_content(url)
         if main_result:
-            combined_content = main_result.content
+            target_content = main_result.content
+            combined_content = target_content
             scraper_source = main_result.source.value
             logger.info(
                 "[Scraper] main page OK source=%s len=%d url=%s",
@@ -2253,17 +2255,21 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 logger.info("[Scraper] sub-page appended url=%s", page_url)
 
         # If main page scrape failed, fall through to Option B
-        if not combined_content:
+        if not target_content:
             logger.warning("[Scraper] Firecrawl main page failed — falling back url=%s", url)
 
     # ── Option B: fallback — /scrape main page + manual sub-page discovery ───
-    if not combined_content:
+    if not target_content:
         main_result = await fetch_page_content(url)
         if main_result is None:
             raise RuntimeError(
                 f"Page scraping failed (all scrapers failed) for url={url}"
             )
-        combined_content = main_result.content
+        target_content = main_result.content
+        # Discard any supporting-only batch result from a failed primary target
+        # fetch.  The audit must always have a real target page as its base.
+        combined_content = target_content
+        appended.clear()
         scraper_source = main_result.source.value
         logger.info(
             "[Scraper] main page OK source=%s len=%d url=%s",
@@ -2290,10 +2296,11 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                     combined_content += f"\n\n=== {tag} ===\n{sub_content}\n=== END {tag} ==="
                     appended.append(sub_url)
 
-    raw_content_length = len(combined_content)
+    raw_content_length = len(target_content)
+    discovery_content_length = len(combined_content)
     logger.info(
-        "[Scraper] content assembled — len=%d sub_pages=%s",
-        raw_content_length, appended,
+        "[Scraper] content assembled — target_len=%d discovery_len=%d sub_pages=%s",
+        raw_content_length, discovery_content_length, appended,
     )
 
     # ── GBP URL auto-discovery ──────────────────────────────────────────────
@@ -2352,9 +2359,10 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         gbp_prefetch = gbp_prefetch_result
 
     # ── Business info ─────────────────────────────────────────────────────────
-    # Use raw content for regex-based extraction (phone/address patterns need
-    # the full unmodified text; clean_content may strip some context lines).
-    business_info = extract_business_info(combined_content)
+    # Keep target-page facts isolated for the audit, while the wider discovery
+    # snapshot can still improve GBP lookup without entering Dify page rules.
+    target_business_info = extract_business_info(target_content)
+    discovery_business_info = extract_business_info(combined_content)
 
     # ── GBP URL auto-fill ─────────────────────────────────────────────────────
     if not gbp_url:
@@ -2363,9 +2371,9 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             logger.info("[Scraper] auto-filled gbp_url from page content url=%s", url)
 
     # ── Clean content for LLM consumption ────────────────────────────────────
-    cleaned = clean_content(combined_content)
+    cleaned = clean_content(target_content)
     logger.info(
-        "[Scraper] content cleaned — raw=%d cleaned=%d chars (%.0f%% reduction) url=%s",
+        "[Scraper] target content cleaned — raw=%d cleaned=%d chars (%.0f%% reduction) url=%s",
         raw_content_length, len(cleaned),
         100 * (1 - len(cleaned) / raw_content_length) if raw_content_length else 0,
         url,
@@ -2378,25 +2386,28 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         try:
             from app.report_v21.page_facts import build_page_facts
 
-            page_facts = build_page_facts(cleaned, business_info)
+            page_facts = build_page_facts(cleaned, target_business_info)
             location_hints = [
                 value
                 for value in [
-                    business_info.get("city"),
+                    discovery_business_info.get("city"),
                     *page_facts.get("service_areas", []),
                 ]
                 if isinstance(value, str) and value.strip()
             ]
             gbp_lookup_attempted = bool(
-                gbp_url or url or business_info.get("name") or business_info.get("city")
+                gbp_url
+                or url
+                or discovery_business_info.get("name")
+                or discovery_business_info.get("city")
             )
             gbp_data = await fetch_gbp_data(
-                business_name=business_info.get("name"),
-                city=business_info.get("city"),
+                business_name=discovery_business_info.get("name"),
+                city=discovery_business_info.get("city"),
                 website_url=url,
                 gbp_url=gbp_url,
                 location_hints=location_hints,
-                phone=business_info.get("phone"),
+                phone=discovery_business_info.get("phone"),
                 require_location_match=require_location_match,
                 diagnostic=gbp_lookup_diagnostic,
             )
@@ -2415,7 +2426,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "url":                url,
         "content":            cleaned,           # cleaned for LLM rule engine
         "raw_content_length": raw_content_length, # original length for debugging
-        "business":           business_info,
+        "business":           target_business_info,
         "gbp":                gbp_data,
         "gbp_url":            gbp_url,
         "gbp_lookup_attempted": gbp_lookup_attempted,

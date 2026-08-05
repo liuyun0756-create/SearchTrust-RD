@@ -204,6 +204,82 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
         self.assertEqual(fetch_gbp.await_args.kwargs["gbp_url"], TRI_CITIES_DIRECTIONS_URL)
 
+    async def test_scrape_keeps_supporting_pages_out_of_dify_content(self):
+        page_url = "https://example.com/services/emergency/"
+        support_url = "https://example.com/about-us/"
+        main_content = "# Emergency Plumbing\nTARGET PAGE ONLY\n[About](/about-us/)"
+        support_content = """
+        # About Our Team
+        SUPPORTING PAGE MUST NOT REACH DIFY
+        <script type="application/ld+json">
+        {
+          "@type": "Plumber",
+          "name": "Supporting Business Identity",
+          "telephone": "+15551234567",
+          "address": {"addressLocality": "Tulsa"}
+        }
+        </script>
+        """
+        main_result = scraper.ScrapeResult(
+            content=main_content,
+            source=scraper.ScraperSource.FIRECRAWL,
+            elapsed=0.1,
+            content_length=len(main_content),
+        )
+        fetch_gbp = AsyncMock(return_value={})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", "test-key"), patch(
+            "app.tasks.scraper.fetch_page_content", new=AsyncMock(return_value=main_result)
+        ), patch(
+            "app.tasks.scraper.firecrawl_map", new=AsyncMock(return_value=[support_url])
+        ), patch(
+            "app.tasks.scraper.firecrawl_batch_scrape",
+            new=AsyncMock(return_value=[{"url": support_url, "markdown": support_content}]),
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", new=fetch_gbp
+        ):
+            result = await scraper.scrape(page_url)
+
+        self.assertEqual(result["content"], scraper.clean_content(main_content))
+        self.assertNotIn("SUPPORTING PAGE MUST NOT REACH DIFY", result["content"])
+        self.assertIsNone(result["business"]["phone"])
+        self.assertEqual(fetch_gbp.await_args.kwargs["phone"], "+15551234567")
+        self.assertEqual(result["raw_content_length"], len(main_content))
+        self.assertEqual(result["sub_pages"], [support_url])
+
+    async def test_fallback_scrape_also_keeps_supporting_pages_out_of_content(self):
+        page_url = "https://example.com/services/emergency/"
+        support_url = "https://example.com/contact/"
+        main_content = "# Emergency Plumbing\nTARGET FALLBACK CONTENT"
+        support_content = "# Contact\nFALLBACK SUPPORTING CONTENT"
+        fetch_page = AsyncMock(side_effect=[
+            scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            ),
+            scraper.ScrapeResult(
+                content=support_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(support_content),
+            ),
+        ])
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", new=fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[support_url]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", new=AsyncMock(return_value={})
+        ):
+            result = await scraper.scrape(page_url)
+
+        self.assertEqual(result["content"], scraper.clean_content(main_content))
+        self.assertNotIn("FALLBACK SUPPORTING CONTENT", result["content"])
+        self.assertEqual(result["sub_pages"], [support_url])
+
     async def test_short_url_resolution_retries_and_caches_success(self):
         client = _FakeClient([
             TimeoutError("temporary redirect timeout"),
