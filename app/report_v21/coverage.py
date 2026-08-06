@@ -273,8 +273,18 @@ def _string_list(value: Any) -> list[str]:
 def _has_usable_gbp_data(value: Any) -> bool:
     if not isinstance(value, dict) or not value:
         return False
-    useful_keys = ("name", "address", "phone", "rating", "reviews", "website", "data_id", "review_list")
-    return any(bool(value.get(key)) for key in useful_keys)
+    name = _optional_str(value.get("name"))
+    normalized_name = "".join(character for character in (name or "").casefold() if character.isalnum())
+    meaningful_name = bool(
+        normalized_name
+        and any(character.isalpha() for character in normalized_name)
+        and normalized_name not in {"level", "floor", "map", "location", "place"}
+    )
+    identity_anchor = any(
+        _optional_str(value.get(key))
+        for key in ("address", "phone", "website")
+    )
+    return meaningful_name and identity_anchor
 
 
 def _has_reviews(value: Any) -> bool:

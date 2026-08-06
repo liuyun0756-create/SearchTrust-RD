@@ -102,7 +102,7 @@ class ReportV21ContractTests(unittest.TestCase):
             "not_checked": ({}, "not_available"),
             "checked": ({
                 "input_gbp_url": "https://maps.google.com/?cid=fixture",
-                "gbp_data": {"name": "Spot On Plumbing"},
+                "gbp_data": {"name": "Spot On Plumbing", "phone": "(918) 555-0100"},
             }, "user_provided"),
             "not_found": ({
                 "input_gbp_url": "https://www.google.com/maps?cid=fixture",
@@ -128,7 +128,7 @@ class ReportV21ContractTests(unittest.TestCase):
         report = self.normalize(
             self.contract_compliant_projection(self.real_dify_output),
             gbp_url="https://maps.google.com/?cid=discovered",
-            gbp_data={"name": "Spot On Plumbing"},
+            gbp_data={"name": "Spot On Plumbing", "website": "https://spotonplumbing.com/"},
             gbp_lookup_attempted=True,
         )
 
@@ -201,7 +201,10 @@ class ReportV21ContractTests(unittest.TestCase):
         evidence["source_label"] = "GBP lookup error"
         evidence["explanation"] = "The supplied GBP check failed."
 
-        normalized = self.normalize(payload, gbp_data={"name": "Spot On Plumbing"})
+        normalized = self.normalize(
+            payload,
+            gbp_data={"name": "Spot On Plumbing", "phone": "(918) 555-0100"},
+        )
         serialized = json.dumps(normalized)
 
         self.assertEqual(normalized["gbp_status"]["status"], "checked")
@@ -216,6 +219,26 @@ class ReportV21ContractTests(unittest.TestCase):
         )
         self.assertNotIn("GBP lookup error", serialized)
         self.assertNotIn("could not be reliably checked", serialized)
+
+    def test_malformed_map_feature_is_not_treated_as_checked_gbp(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            gbp_url="https://maps.app.goo.gl/fixture",
+            gbp_data={
+                "name": "1",
+                "type": "Level",
+                "data_id": "0x89c25a3d39d14e47:0x988bcf12109e9b29",
+            },
+            gbp_lookup_attempted=True,
+            gbp_lookup_diagnostic={
+                "status": "not_found",
+                "code": "strict_fallback_no_match",
+                "message": "No verified business profile matched the target identity.",
+            },
+        )
+
+        self.assertEqual(report["gbp_status"]["status"], "not_found")
+        self.assertFalse(report["data_coverage"]["gbp_checked"])
 
     def test_dedupe_preserves_example_copy_arrays(self):
         report = self.normalize(self.contract_compliant_projection(self.real_dify_output))

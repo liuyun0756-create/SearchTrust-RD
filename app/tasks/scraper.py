@@ -342,6 +342,7 @@ _HTML_LINK_RE = re.compile(
     r"<a\b[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a\s*>",
     re.IGNORECASE | re.DOTALL,
 )
+_HTML_IMAGE_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE | re.DOTALL)
 _HTML_TAG_RE = re.compile(r"<[^>]+>", re.DOTALL)
 _JSON_LD_SCRIPT_RE = re.compile(
     r"<script\b[^>]*type=[\"']application/ld\+json[\"'][^>]*>.*?</script\s*>",
@@ -357,6 +358,37 @@ def _html_to_readable_text(raw_html: str) -> str:
     json_ld_blocks = _JSON_LD_SCRIPT_RE.findall(raw_html)
     without_scripts = _HTML_SCRIPT_RE.sub("\n", raw_html)
 
+    def replace_image(match: re.Match[str]) -> str:
+        """Preserve only image alts that are structurally marked as a logo."""
+        tag = match.group(0)
+        alt_match = re.search(r'\balt=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+        if not alt_match:
+            return " "
+
+        alt = html.unescape(alt_match.group(1)).strip()
+        if "logo" not in f"{tag} {alt}".lower():
+            return " "
+
+        brand = re.sub(
+            r"\b(?:official|company|business)?\s*logo\b",
+            " ",
+            alt,
+            flags=re.IGNORECASE,
+        )
+        brand = " ".join(brand.split()).strip(" -|:")
+        normalized = _normalise_match_text(brand)
+        if (
+            len(normalized) < 3
+            or not any(character.isalpha() for character in normalized)
+            or normalized in {"company", "business", "site", "website", "home"}
+        ):
+            return " "
+
+        src_match = re.search(r'\bsrc=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+        src = html.unescape(src_match.group(1)).strip() if src_match else "#"
+        safe_brand = re.sub(r"[\[\]\r\n]", " ", brand).strip()
+        return f"\n![{safe_brand} logo]({src})\n"
+
     def replace_link(match: re.Match[str]) -> str:
         href = html.unescape(match.group(1).strip())
         label = html.unescape(_HTML_TAG_RE.sub(" ", match.group(2)))
@@ -365,7 +397,8 @@ def _html_to_readable_text(raw_html: str) -> str:
             return href
         return f"[{label}]({href})"
 
-    readable = _HTML_LINK_RE.sub(replace_link, without_scripts)
+    with_logo_alts = _HTML_IMAGE_RE.sub(replace_image, without_scripts)
+    readable = _HTML_LINK_RE.sub(replace_link, with_logo_alts)
     readable = _HTML_BLOCK_TAG_RE.sub("\n", readable)
     readable = _HTML_TAG_RE.sub(" ", readable)
     readable = html.unescape(readable).replace("\xa0", " ")
@@ -885,7 +918,8 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
     heuristics.  Used only to build the SerpAPI GBP query — not part of the
     SEO rule analysis.
 
-    Priority order for business name: copyright → logo alt → h1 title
+    Priority order for business name: structured data → explicit headings →
+    logo alt → site metadata → copyright → h1 title
     Priority order for city: emoji/label pattern → preposition pattern
 
     Returns
@@ -899,7 +933,16 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
     name_candidates: list[tuple[str, str]] = []  # (source, value)
 
     if schema_identity.get("name"):
-        name_candidates.append(("json_ld", str(schema_identity["name"])))
+        schema_name = str(schema_identity["name"]).strip()
+        domain_shaped = bool(
+            re.fullmatch(
+                r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}",
+                schema_name.lower(),
+            )
+        )
+        name_candidates.append(
+            ("json_ld_domain" if domain_shaped else "json_ld", schema_name)
+        )
 
     # H2/H3 with "Choose/Trust/About [Business Name]"
     m = re.search(
@@ -911,6 +954,28 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
         val = m.group(1).strip()
         if 2 < len(val) < 60:
             name_candidates.append(("h2_choose", val))
+
+    # Logo alt text is often the only human-readable brand name on small sites.
+    # Prefer it over an og:site_name that merely repeats the website domain.
+    logo_candidates: list[str] = []
+    for tag in re.findall(r"<img\b[^>]*>", content, re.IGNORECASE):
+        alt_match = re.search(r'\balt=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+        if not alt_match:
+            continue
+        alt = html.unescape(alt_match.group(1)).strip()
+        if "logo" in tag.lower() or "logo" in alt.lower():
+            logo_candidates.append(alt)
+
+    for alt in re.findall(r"!\[([^\]]+)\]\([^)]+\)", content):
+        if "logo" in alt.lower():
+            logo_candidates.append(html.unescape(alt).strip())
+
+    for value in logo_candidates:
+        val = re.sub(r"\b(?:official|company|business)?\s*logo\b", " ", value, flags=re.IGNORECASE)
+        val = " ".join(val.split()).strip(" -|:")
+        if 3 < len(val) < 60 and _is_meaningful_business_title(val):
+            name_candidates.append(("logo", val))
+            break
 
     # og:site_name from Firecrawl metadata
     m = re.search(r'og:site_name["\s:=]+([^"\n<]{2,60})', content, re.IGNORECASE)
@@ -929,14 +994,14 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
         if 2 < len(val) < 50:
             name_candidates.append(("copyright", val))
 
-    # Image alt / logo description
+    # Firecrawl image descriptions (kept as a lower-priority logo fallback).
     for match in re.findall(
         r"Image\s*\d*:\s*([A-Za-z0-9\s&\-\.']+?)(?:\]|\)|\n|$)", content
     ):
         val = match.strip()
         skip = {"logo", "image", "icon", "loading", "banner", "header", "footer", "background"}
         if 3 < len(val) < 50 and not any(w in val.lower() for w in skip):
-            name_candidates.append(("logo", val))
+            name_candidates.append(("image_description", val))
             break
 
     # H1 / title with separator
@@ -951,7 +1016,16 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
                     name_candidates.append(("title", brand))
                 break
 
-    for source in ("json_ld", "h2_choose", "og_site_name", "copyright", "logo", "title"):
+    for source in (
+        "json_ld",
+        "h2_choose",
+        "logo",
+        "og_site_name",
+        "copyright",
+        "image_description",
+        "title",
+        "json_ld_domain",
+    ):
         for src, val in name_candidates:
             if src == source:
                 result["name"] = val
@@ -1271,11 +1345,24 @@ async def _resolve_gbp_url(
             resolved = str(response.url)
             data_id = _extract_data_id_from_gbp_url(resolved)
             if not data_id:
-                data_id_match = re.search(
+                body_data_ids = list(dict.fromkeys(re.findall(
                     r"0x[0-9a-fA-F]+:0x[0-9a-fA-F]+",
                     getattr(response, "text", "") or "",
-                )
-                data_id = data_id_match.group(0) if data_id_match else None
+                )))
+                if len(body_data_ids) == 1:
+                    data_id = body_data_ids[0]
+                elif len(body_data_ids) > 1:
+                    last_error = (
+                        "Google Maps response contained multiple data IDs, so the target "
+                        "business could not be identified safely."
+                    )
+                    logger.warning(
+                        "[SerpAPI] ambiguous GBP response body attempt=%d/%d url=%s data_id_count=%d",
+                        attempt,
+                        _GBP_LOOKUP_ATTEMPTS,
+                        gbp_url,
+                        len(body_data_ids),
+                    )
             if data_id:
                 resolved_with_data_id = (
                     resolved
@@ -1390,8 +1477,8 @@ def _is_confident_gbp_match(
     target_domain = _normalise_domain(website_url)
     result_domain = _normalise_domain(str(result.get("website") or ""))
     domain_matches = _domains_match(target_domain, result_domain)
-    if require_domain_match:
-        return domain_matches
+    if require_domain_match and not domain_matches:
+        return False
 
     name_matches = _business_names_match(
         business_name,
@@ -1418,6 +1505,8 @@ def _is_confident_gbp_match(
             (domain_matches or name_matches)
             and (location_matches or phone_matches)
         )
+    if require_domain_match:
+        return True
     if domain_matches:
         return True
     if result_domain:
@@ -1425,6 +1514,72 @@ def _is_confident_gbp_match(
     if phone_matches and (name_matches or not business_name):
         return True
     return bool(name_matches and location_matches)
+
+
+def _is_meaningful_business_title(value: Any) -> bool:
+    """Reject UI labels and numeric map features masquerading as businesses."""
+    normalized = _normalise_match_text(str(value or ""))
+    return bool(
+        len(normalized) >= 3
+        and any(character.isalpha() for character in normalized)
+        and normalized not in {"level", "floor", "map", "location", "place"}
+    )
+
+
+def _is_confident_exact_gbp_match(
+    result: dict[str, Any],
+    *,
+    website_url: str | None,
+    business_name: str | None,
+    phone: str | None,
+    city: str | None,
+    location_hints: list[str] | None = None,
+    require_location_match: bool = False,
+) -> bool:
+    """Verify an exact-ID response before allowing it to drive backend L3 rules."""
+    title = str(result.get("title") or result.get("name") or "")
+    if not _is_meaningful_business_title(title):
+        return False
+
+    # A real GBP response must expose at least one public identity anchor.
+    if not any(str(result.get(key) or "").strip() for key in ("address", "phone", "website")):
+        return False
+
+    target_domain = _normalise_domain(website_url)
+    result_domain = _normalise_domain(str(result.get("website") or ""))
+    domain_matches = _domains_match(target_domain, result_domain)
+    name_matches = _business_names_match(business_name, title)
+    phone_matches = _phones_match(phone, str(result.get("phone") or ""))
+
+    target_locations = {
+        normalized
+        for value in [city, *(location_hints or [])]
+        if (normalized := _normalise_match_text(value))
+    }
+    result_address = _normalise_match_text(str(result.get("address") or ""))
+    location_matches = bool(
+        result_address
+        and any(location in result_address for location in target_locations)
+    )
+
+    available_checks: list[bool] = []
+    if target_domain:
+        available_checks.append(domain_matches)
+    if _normalise_match_text(business_name):
+        available_checks.append(name_matches)
+    if len(re.sub(r"\D", "", phone or "")[-10:]) == 10:
+        available_checks.append(phone_matches)
+    if target_locations:
+        available_checks.append(location_matches)
+
+    if not available_checks:
+        return False
+    required_matches = 2 if len(available_checks) >= 2 else 1
+    if sum(available_checks) < required_matches:
+        return False
+    if require_location_match and target_locations and not (location_matches or phone_matches):
+        return False
+    return True
 
 
 def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
@@ -1439,6 +1594,75 @@ def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
     return None
 
 
+def _is_serpapi_no_results_error(message: str | None) -> bool:
+    """Treat SerpAPI's no-result payload as a completed empty search."""
+    normalized = _normalise_match_text(message)
+    return bool(
+        normalized
+        and any(
+            marker in normalized
+            for marker in (
+                "hasn t returned any results",
+                "has not returned any results",
+                "no results found",
+                "no results",
+                "did not return any results",
+            )
+        )
+    )
+
+
+def _gbp_search_queries(
+    *,
+    website_url: str | None,
+    business_name: str | None,
+    city: str | None,
+    location_hints: list[str] | None,
+    phone: str | None,
+    address: str | None,
+    strict_domain_fallback: bool,
+) -> list[str]:
+    """Build ordered, distinct GBP queries without widening strict CID fallback."""
+    search_location = next(
+        (
+            str(value).strip()
+            for value in [city, *(location_hints or [])]
+            if str(value or "").strip()
+        ),
+        "",
+    )
+    queries: list[str] = []
+
+    if website_url:
+        domain = urlparse(website_url).netloc or website_url
+        queries.append(
+            domain
+            if strict_domain_fallback or not search_location
+            else f"{domain} {search_location}"
+        )
+        if strict_domain_fallback:
+            return queries
+
+    normalized_name = _normalise_match_text(business_name)
+    normalized_domain = _normalise_match_text(_normalise_domain(website_url))
+    if normalized_name and normalized_name != normalized_domain:
+        queries.append(f"{business_name} {search_location}".strip())
+
+    phone_digits = re.sub(r"\D", "", phone or "")
+    if len(phone_digits) >= 10:
+        # The page extractor may omit or duplicate a US country-code prefix.
+        # Google Maps can search the canonical last ten digits reliably.
+        queries.append(f"{phone_digits[-10:]} {search_location}".strip())
+
+    if address and str(address).strip():
+        queries.append(str(address).strip())
+
+    if not queries and business_name:
+        queries.append(f"{business_name} {search_location}".strip())
+
+    return list(dict.fromkeys(query for query in queries if query))
+
+
 async def fetch_gbp_data(
     business_name: Optional[str],
     city: Optional[str],
@@ -1446,6 +1670,7 @@ async def fetch_gbp_data(
     gbp_url: Optional[str] = None,
     location_hints: Optional[list[str]] = None,
     phone: Optional[str] = None,
+    address: Optional[str] = None,
     require_location_match: bool = False,
     diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -1510,6 +1735,31 @@ async def fetch_gbp_data(
                     raise ValueError(payload_error)
                 place = data.get("place_results") or (data.get("local_results") or [None])[0]
                 if isinstance(place, dict) and place:
+                    if not _is_confident_exact_gbp_match(
+                        place,
+                        website_url=website_url,
+                        business_name=business_name,
+                        phone=phone,
+                        city=city,
+                        location_hints=location_hints,
+                        require_location_match=require_location_match,
+                    ):
+                        exact_failure = (
+                            "SerpAPI returned an exact-ID object that did not match enough "
+                            "target business identity signals."
+                        )
+                        logger.warning(
+                            "[SerpAPI] rejected exact lookup result attempt=%d/%d "
+                            "place_id=%s data_id=%s title=%r",
+                            attempt,
+                            _GBP_LOOKUP_ATTEMPTS,
+                            place_id_from_url,
+                            data_id_from_url,
+                            place.get("title") or place.get("name"),
+                        )
+                        if attempt < _GBP_LOOKUP_ATTEMPTS:
+                            await asyncio.sleep(2 ** (attempt - 1))
+                        continue
                     gbp_info = _build_gbp_info(place)
                     gbp_info["data_id"] = gbp_info.get("data_id") or data_id_from_url
                     if place_id_from_url:
@@ -1551,44 +1801,29 @@ async def fetch_gbp_data(
 
     # ── 优先级 2 & 3：构建搜索查询 ──────────────────────────────────────────
     strict_domain_fallback = bool(gbp_url and _is_google_maps_url(gbp_url))
-    if website_url:
-        domain = urlparse(website_url).netloc or website_url
-        search_location = next(
-            (
-                str(value).strip()
-                for value in [city, *(location_hints or [])]
-                if str(value or "").strip()
-            ),
-            "",
+    queries = _gbp_search_queries(
+        website_url=website_url,
+        business_name=business_name,
+        city=city,
+        location_hints=location_hints,
+        phone=phone,
+        address=address,
+        strict_domain_fallback=strict_domain_fallback,
+    )
+    if strict_domain_fallback and not website_url:
+        message = (
+            "The supplied Google Maps URL could not be resolved and no website domain "
+            "was available for a safe fallback."
         )
-        query = (
-            domain
-            if strict_domain_fallback or not location_hints or not search_location
-            else f"{domain} {search_location}"
+        _set_gbp_lookup_diagnostic(
+            diagnostic,
+            status="error",
+            code="safe_fallback_unavailable",
+            message=message,
         )
-        logger.info(
-            "[SerpAPI] querying by domain=%s location=%s strict_domain_match=%s",
-            domain,
-            search_location or "none",
-            strict_domain_fallback,
-        )
-    elif business_name:
-        if strict_domain_fallback:
-            message = (
-                "The supplied Google Maps URL could not be resolved and no website domain "
-                "was available for a safe fallback."
-            )
-            _set_gbp_lookup_diagnostic(
-                diagnostic,
-                status="error",
-                code="safe_fallback_unavailable",
-                message=message,
-            )
-            logger.warning("[SerpAPI] %s", message)
-            return {}
-        query = f"{business_name} {city or ''}".strip()
-        logger.info("[SerpAPI] querying by name+city=%s", query)
-    else:
+        logger.warning("[SerpAPI] %s", message)
+        return {}
+    if not queries:
         logger.info("[SerpAPI] no query params — skipping GBP lookup")
         _set_gbp_lookup_diagnostic(
             diagnostic,
@@ -1602,21 +1837,33 @@ async def fetch_gbp_data(
         )
         return {}
 
-    params: dict[str, str] = {
-        "engine": "google_maps",
-        "q": query,
-        "type": "search",
-        "hl": "en",
-        "api_key": settings.SERPAPI_KEY,
-    }
+    # Strict fallback keeps the previous three retries of the one safe domain
+    # query. Normal auto-discovery spends the request budget on distinct clues
+    # instead of repeating a query that Google Maps already rejected.
+    request_queries = (
+        queries * _GBP_LOOKUP_ATTEMPTS
+        if strict_domain_fallback or len(queries) == 1
+        else queries
+    )
+    logger.info(
+        "[SerpAPI] GBP search plan queries=%s strict_domain_match=%s",
+        request_queries,
+        strict_domain_fallback,
+    )
 
     last_request_error = ""
     last_no_match_code = ""
     last_no_match_message = ""
-    last_outcome = ""
-    for attempt in range(1, _GBP_LOOKUP_ATTEMPTS + 1):
-        request_params = dict(params)
-        if attempt > 1:
+    completed_search = False
+    for attempt, query in enumerate(request_queries, start=1):
+        request_params: dict[str, str] = {
+            "engine": "google_maps",
+            "q": query,
+            "type": "search",
+            "hl": "en",
+            "api_key": settings.SERPAPI_KEY,
+        }
+        if attempt > 1 and query == request_queries[attempt - 2]:
             request_params["no_cache"] = "true"
         try:
             async with httpx.AsyncClient(
@@ -1627,8 +1874,10 @@ async def fetch_gbp_data(
                 resp.raise_for_status()
             data: dict[str, Any] = resp.json()
             payload_error = _serpapi_payload_error(data)
-            if payload_error:
+            if payload_error and not _is_serpapi_no_results_error(payload_error):
                 raise ValueError(payload_error)
+
+            completed_search = True
 
             candidates: list[dict[str, Any]] = []
             place_result = data.get("place_results")
@@ -1680,34 +1929,29 @@ async def fetch_gbp_data(
             )
             last_no_match_code = code
             last_no_match_message = message
-            last_outcome = "no_match"
             logger.warning(
                 "[SerpAPI] no confident match attempt=%d/%d query=%r strict_domain_match=%s "
                 "candidate_count=%d exact_failure=%s",
                 attempt,
-                _GBP_LOOKUP_ATTEMPTS,
+                len(request_queries),
                 query,
                 strict_domain_fallback,
                 len(candidates),
                 exact_failure,
             )
-            if attempt < _GBP_LOOKUP_ATTEMPTS:
-                await asyncio.sleep(2 ** (attempt - 1))
-
         except Exception as exc:  # noqa: BLE001
             last_request_error = str(exc)
-            last_outcome = "error"
             logger.warning(
                 "[SerpAPI] fallback request failed attempt=%d/%d query=%r: %s",
                 attempt,
-                _GBP_LOOKUP_ATTEMPTS,
+                len(request_queries),
                 query,
                 exc,
             )
-            if attempt < _GBP_LOOKUP_ATTEMPTS:
-                await asyncio.sleep(2 ** (attempt - 1))
+        if attempt < len(request_queries) and query == request_queries[attempt]:
+            await asyncio.sleep(2 ** min(attempt - 1, 2))
 
-    if last_outcome == "no_match":
+    if completed_search:
         _set_gbp_lookup_diagnostic(
             diagnostic,
             status="not_found",
@@ -1721,7 +1965,7 @@ async def fetch_gbp_data(
         status="error",
         code="serpapi_request_failed",
         message=(
-            f"GBP lookup failed after {_GBP_LOOKUP_ATTEMPTS} attempts: {last_request_error}. "
+            f"GBP lookup failed after {len(request_queries)} attempts: {last_request_error}. "
             f"Exact lookup detail: {exact_failure or 'not available'}"
         ),
     )
@@ -2346,7 +2590,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     gbp_error: str | None = None
     gbp_lookup_diagnostic: dict[str, Any] = {}
     has_exact_gbp_identifier = _has_exact_gbp_identifier(gbp_url)
-    if has_exact_gbp_identifier:
+    if has_exact_gbp_identifier and not require_location_match:
         logger.info("[Scraper] exact GBP identifier detected — fetching in parallel")
         gbp_lookup_attempted = True
         gbp_prefetch_result = await fetch_gbp_data(
@@ -2356,7 +2600,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             gbp_url=gbp_url,
             diagnostic=gbp_lookup_diagnostic,
         )
-        gbp_prefetch = gbp_prefetch_result
+        gbp_prefetch = gbp_prefetch_result or None
 
     # ── Business info ─────────────────────────────────────────────────────────
     # Keep target-page facts isolated for the audit, while the wider discovery
@@ -2408,6 +2652,14 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 gbp_url=gbp_url,
                 location_hints=location_hints,
                 phone=discovery_business_info.get("phone"),
+                address=next(
+                    (
+                        value
+                        for value in page_facts.get("addresses", [])
+                        if isinstance(value, str) and value.strip()
+                    ),
+                    None,
+                ),
                 require_location_match=require_location_match,
                 diagnostic=gbp_lookup_diagnostic,
             )

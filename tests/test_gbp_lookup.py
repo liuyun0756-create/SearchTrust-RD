@@ -124,6 +124,43 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             },
         )
 
+    def test_prefers_human_logo_name_over_domain_site_name(self):
+        content = """
+        <script type="application/ld+json">
+        {
+          "@type": "Organization",
+          "name": "nycityplumbingsolutions.com"
+        }
+        </script>
+        <meta property="og:site_name" content="nycityplumbingsolutions.com" />
+        <img class="custom-logo" alt="ny city plumbing solutions logo"
+             src="https://nycityplumbingsolutions.com/logo.png" />
+        614 49th Street Brooklyn New York
+        Call 1800-990-1591
+        """
+
+        info = scraper.extract_business_info(content)
+
+        self.assertEqual(info["name"], "ny city plumbing solutions")
+
+    def test_direct_html_conversion_preserves_only_structural_logo_alt(self):
+        html_content = """
+        <header>
+          <a href="/">
+            <img class="custom-logo" src="/mentor.jpg" alt="Mentor Mechanical" />
+          </a>
+          <img class="hero-photo" src="/plumber.jpg" alt="Plumber repairing a boiler" />
+        </header>
+        <main>Serving New York City.</main>
+        """
+
+        readable = scraper._html_to_readable_text(html_content)
+        info = scraper.extract_business_info(readable)
+
+        self.assertIn("Mentor Mechanical logo", readable)
+        self.assertNotIn("Plumber repairing a boiler", readable)
+        self.assertEqual(info["name"], "Mentor Mechanical")
+
     def test_derives_multi_location_branch_root_without_affecting_generic_paths(self):
         page_url = "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
         content = "[Tri-Cities](https://www.1tomplumber.com/tri-cities-wa/)"
@@ -164,6 +201,27 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             scraper._extract_data_id_from_gbp_url(resolved),
             TRI_CITIES_DATA_ID,
         )
+
+    async def test_does_not_guess_first_data_id_from_ambiguous_google_body(self):
+        ambiguous_body = (
+            '<script>nearby="0x1111111111111111:0x2222222222222222";'
+            'target="0x3333333333333333:0x4444444444444444"</script>'
+        )
+        responses = [
+            _FakeResponse(url=SHORT_URL, text=ambiguous_body)
+            for _ in range(scraper._GBP_LOOKUP_ATTEMPTS)
+        ]
+        client = _FakeClient(responses)
+        diagnostic = {}
+
+        with patch("app.tasks.scraper.httpx.AsyncClient", return_value=client), patch(
+            "app.tasks.scraper.asyncio.sleep", new=AsyncMock()
+        ):
+            resolved = await scraper._resolve_gbp_url(SHORT_URL, diagnostic=diagnostic)
+
+        self.assertEqual(resolved, SHORT_URL)
+        self.assertIsNone(scraper._extract_data_id_from_gbp_url(resolved))
+        self.assertEqual(diagnostic["code"], "short_url_resolution_failed")
 
     async def test_scrape_uses_branch_root_place_id_for_multi_location_page(self):
         page_url = "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
@@ -464,7 +522,57 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["code"], "strict_domain_fallback_match")
         self.assertEqual(len(client.requests), 4)
 
-    async def test_domain_search_retries_empty_result_and_recovers(self):
+    async def test_malformed_exact_result_uses_verified_domain_fallback(self):
+        malformed = {
+            "title": "1",
+            "type": "Level",
+        }
+        correct = {
+            "title": "A&E NYC Plumbing",
+            "phone": "(646) 392-7164",
+            "address": "40 Fulton St, New York, NY 10038",
+            "website": "https://www.topplumbernyc.com/",
+            "data_id": "0x89c25a0000000000:0x1234567890abcdef",
+        }
+        malformed_response = _FakeResponse(
+            url="https://serpapi.example/search",
+            payload={"place_results": malformed},
+        )
+        client = _FakeClient([
+            malformed_response,
+            malformed_response,
+            malformed_response,
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"place_results": correct},
+            ),
+        ])
+        diagnostic = {}
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper._resolve_gbp_url", new=AsyncMock(return_value=TULSA_URL)
+        ), patch("app.tasks.scraper.httpx.AsyncClient", return_value=client), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ), patch("app.tasks.scraper.asyncio.sleep", new=AsyncMock()):
+            result = await scraper.fetch_gbp_data(
+                business_name="A&E NYC Plumbing",
+                city="New York",
+                website_url="https://www.topplumbernyc.com/dishwashers/",
+                gbp_url=SHORT_URL,
+                phone="6463927164",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result["name"], "A&E NYC Plumbing")
+        self.assertEqual(result["phone"], "(646) 392-7164")
+        self.assertEqual(diagnostic["code"], "strict_domain_fallback_match")
+        self.assertEqual(len(client.requests), 4)
+        self.assertEqual(
+            client.requests[-1][1]["params"]["q"],
+            "www.topplumbernyc.com",
+        )
+
+    async def test_domain_no_result_switches_to_name_query_and_recovers(self):
         place = {
             "title": "Spot On Plumbing of Tulsa Plumbers",
             "phone": "(918) 844-7961",
@@ -492,7 +600,141 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["code"], "search_match")
         self.assertEqual(len(client.requests), 2)
         self.assertNotIn("no_cache", client.requests[0][1]["params"])
-        self.assertEqual(client.requests[1][1]["params"]["no_cache"], "true")
+        self.assertEqual(
+            client.requests[0][1]["params"]["q"],
+            "spotonplumbing.com Tulsa",
+        )
+        self.assertEqual(
+            client.requests[1][1]["params"]["q"],
+            "Spot On Plumbing Tulsa",
+        )
+
+    async def test_serpapi_no_results_error_falls_back_to_human_business_name(self):
+        correct = {
+            "title": "Nyc Plumbing Solutions",
+            "phone": "+1 800-990-1591",
+            "address": "614 49th St, Brooklyn, NY 11220",
+            "website": "https://nycityplumbingsolutions.com/",
+        }
+        client = _FakeClient([
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "Google Maps hasn't returned any results for this query."},
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"place_results": correct},
+            ),
+        ])
+        diagnostic = {}
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Nyc Plumbing Solutions",
+                city="New York",
+                website_url=(
+                    "https://nycityplumbingsolutions.com/"
+                    "bathroom-plumbing-services/"
+                ),
+                phone="1800-990-1591",
+                address="614 49th Street Brooklyn, NY 11220",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result["name"], "Nyc Plumbing Solutions")
+        self.assertEqual(diagnostic["status"], "checked")
+        self.assertEqual(
+            [request[1]["params"]["q"] for request in client.requests],
+            [
+                "nycityplumbingsolutions.com New York",
+                "Nyc Plumbing Solutions New York",
+            ],
+        )
+
+    async def test_auto_discovery_falls_back_to_phone_after_domain_and_name(self):
+        correct = {
+            "title": "Nyc Plumbing Solutions",
+            "phone": "+1 800-990-1591",
+            "address": "614 49th St, Brooklyn, NY 11220",
+            "website": "https://nycityplumbingsolutions.com/",
+        }
+        empty = _FakeResponse(url="https://serpapi.example/search", payload={})
+        client = _FakeClient([
+            empty,
+            empty,
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"place_results": correct},
+            ),
+        ])
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Nyc Plumbing Solutions",
+                city="New York",
+                website_url="https://nycityplumbingsolutions.com/services/",
+                phone="1800-990-1591",
+                address="614 49th Street Brooklyn, NY 11220",
+            )
+
+        self.assertEqual(result["name"], "Nyc Plumbing Solutions")
+        self.assertEqual(
+            client.requests[2][1]["params"]["q"],
+            "8009901591 New York",
+        )
+
+    async def test_serpapi_no_results_payload_is_not_reported_as_system_error(self):
+        no_results = _FakeResponse(
+            url="https://serpapi.example/search",
+            payload={"error": "Google Maps hasn't returned any results for this query."},
+        )
+        client = _FakeClient([no_results, no_results, no_results, no_results])
+        diagnostic = {}
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Nyc Plumbing Solutions",
+                city="New York",
+                website_url="https://nycityplumbingsolutions.com/services/",
+                phone="1800-990-1591",
+                address="614 49th Street Brooklyn, NY 11220",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result, {})
+        self.assertEqual(diagnostic["status"], "not_found")
+        self.assertEqual(diagnostic["code"], "search_no_match")
+
+    async def test_transport_failures_remain_a_system_error(self):
+        client = _FakeClient([
+            TimeoutError("temporary timeout"),
+            RuntimeError("SerpAPI unavailable"),
+        ])
+        diagnostic = {}
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper.httpx.AsyncClient", return_value=client
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Nyc Plumbing Solutions",
+                city="New York",
+                website_url="https://nycityplumbingsolutions.com/services/",
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result, {})
+        self.assertEqual(diagnostic["status"], "error")
+        self.assertEqual(diagnostic["code"], "serpapi_request_failed")
 
     async def test_multi_location_domain_search_requires_page_location_match(self):
         wrong_place = {
@@ -533,7 +775,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["code"], "search_match")
         self.assertIn("Richland", client.requests[0][1]["params"]["q"])
 
-    async def test_domain_search_requires_three_no_matches_before_not_found(self):
+    async def test_domain_search_exhausts_distinct_queries_before_not_found(self):
         empty = _FakeResponse(url="https://serpapi.example/search", payload={})
         client = _FakeClient([empty, empty, empty])
         diagnostic = {}
@@ -550,7 +792,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, {})
-        self.assertEqual(len(client.requests), 3)
+        self.assertEqual(len(client.requests), 2)
         self.assertEqual(diagnostic["status"], "not_found")
         self.assertEqual(diagnostic["code"], "search_no_match")
 

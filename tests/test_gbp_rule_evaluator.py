@@ -56,16 +56,16 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertTrue(all(applicability.values()))
         self.assertTrue(all(item["condition"] == "gbp_unavailable" for item in findings.values()))
 
-    def test_both_missing_does_not_create_a_comparison_mismatch_when_gbp_is_checked(self):
+    def test_profile_without_identity_fields_is_not_treated_as_checked(self):
         results, _, findings = evaluate_gbp_rules(_context(
             {"business_names": [], "addresses": [], "phones": [], "service_areas": []},
             {"rating": 4.9, "reviews": 100},
         ))
 
-        self.assertEqual(results, {26: False, 27: False, 28: False, 29: False})
-        self.assertTrue(all(item["condition"] == "both_missing" for item in findings.values()))
+        self.assertTrue(all(results.values()))
+        self.assertTrue(all(item["condition"] == "gbp_unavailable" for item in findings.values()))
 
-    def test_checked_gbp_missing_service_area_triggers_rule_29(self):
+    def test_unverified_profile_does_not_claim_a_missing_service_area(self):
         results, _, findings = evaluate_gbp_rules(_context(
             {
                 "business_names": [],
@@ -77,7 +77,7 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         ))
 
         self.assertTrue(results[29])
-        self.assertEqual(findings["rule_29"]["condition"], "gbp_field_missing")
+        self.assertEqual(findings["rule_29"]["condition"], "gbp_unavailable")
 
 
 if __name__ == "__main__":
