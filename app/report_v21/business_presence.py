@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from app.report_v21.coverage import build_gbp_status
+from app.report_v21.evidence_ledger import build_layer_evidence
 
 
 _GBP_RULE_TO_COMPARISON_KEY = {
@@ -54,7 +55,13 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
 
     gbp_status = build_gbp_status(context)["status"]
     page = _extract_page_signals(content, page_business, _text(context.get("url")))
-    comparisons = _build_comparisons(page, gbp, gbp_status)
+    backend_findings = context.get("backend_gbp_findings")
+    comparisons = _build_comparisons(
+        page,
+        gbp,
+        gbp_status,
+        backend_findings if isinstance(backend_findings, dict) else {},
+    )
     profile = _build_profile_activity(gbp, gbp_status)
     reviews = _build_review_audit(gbp, gbp_status)
 
@@ -134,8 +141,40 @@ def bind_business_presence_evidence(
     audit: dict[str, Any],
     context: dict[str, Any],
 ) -> dict[str, Any]:
-    """Reuse objective alignment records in L3 and related report findings."""
+    """Bind the canonical rule 26-29 evidence to every L3 presentation.
+
+    Business Presence must not create a second interpretation of the same four
+    fields.  The layer, its key issues and its blocker all reuse evidence built
+    directly from the backend rule findings.
+    """
     bound_report = copy.deepcopy(report)
+    if not isinstance(context.get("backend_gbp_findings"), dict):
+        return _bind_legacy_business_presence_evidence(bound_report, audit, context)
+
+    layer_rule_ids: list[int] = []
+
+    for layer in bound_report.get("layers", []):
+        if isinstance(layer, dict) and layer.get("layer_key") == "entity_consistency":
+            layer_rule_ids = _l3_rule_ids(layer.get("triggered_rule_ids"))
+            layer["evidence_items"] = build_layer_evidence(layer_rule_ids, {}, context)
+
+    for issue in bound_report.get("key_issues", []):
+        if isinstance(issue, dict) and issue.get("affected_layer") == "entity_consistency":
+            related_rule_ids = _l3_rule_ids(issue.get("related_rule_ids"))
+            issue["evidence_items"] = build_layer_evidence(related_rule_ids, {}, context)
+
+    blocker = bound_report.get("primary_blocking_layer")
+    if isinstance(blocker, dict) and blocker.get("layer_key") == "entity_consistency":
+        blocker["evidence_items"] = build_layer_evidence(layer_rule_ids, {}, context)
+    return bound_report
+
+
+def _bind_legacy_business_presence_evidence(
+    report: dict[str, Any],
+    audit: dict[str, Any],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Preserve evidence behavior for stored reports without backend findings."""
     source_url = _optional_text(context.get("url"))
     evidence_by_key = {
         str(item.get("key")): converted
@@ -146,13 +185,13 @@ def bind_business_presence_evidence(
     }
     evidence = list(evidence_by_key.values())
     if not evidence:
-        return bound_report
+        return report
 
-    for layer in bound_report.get("layers", []):
+    for layer in report.get("layers", []):
         if isinstance(layer, dict) and layer.get("layer_key") == "entity_consistency":
             layer["evidence_items"] = _merge_evidence(layer.get("evidence_items"), evidence)
 
-    for issue in bound_report.get("key_issues", []):
+    for issue in report.get("key_issues", []):
         if isinstance(issue, dict) and issue.get("affected_layer") == "entity_consistency":
             related_rule_ids = issue.get("related_rule_ids") if isinstance(issue.get("related_rule_ids"), list) else []
             issue_evidence = [
@@ -162,10 +201,18 @@ def bind_business_presence_evidence(
             ]
             issue["evidence_items"] = _merge_evidence(issue.get("evidence_items"), issue_evidence)
 
-    blocker = bound_report.get("primary_blocking_layer")
+    blocker = report.get("primary_blocking_layer")
     if isinstance(blocker, dict) and blocker.get("layer_key") == "entity_consistency":
         blocker["evidence_items"] = _merge_evidence(blocker.get("evidence_items"), evidence)
-    return bound_report
+    return report
+
+
+def _l3_rule_ids(value: Any) -> list[int]:
+    return [
+        rule_id
+        for rule_id in value
+        if isinstance(rule_id, int) and rule_id in _GBP_RULE_TO_COMPARISON_KEY
+    ] if isinstance(value, list) else []
 
 
 def _extract_page_signals(content: str, business: dict[str, Any], url: str) -> dict[str, Any]:
@@ -187,7 +234,12 @@ def _extract_page_signals(content: str, business: dict[str, Any], url: str) -> d
     }
 
 
-def _build_comparisons(page: dict[str, Any], gbp: dict[str, Any], gbp_status: str) -> list[dict[str, Any]]:
+def _build_comparisons(
+    page: dict[str, Any],
+    gbp: dict[str, Any],
+    gbp_status: str,
+    backend_findings: dict[str, Any],
+) -> list[dict[str, Any]]:
     specs = (
         ("business_name", "Business name", "name", "text"),
         ("phone", "Phone", "phone", "phone"),
@@ -199,16 +251,27 @@ def _build_comparisons(page: dict[str, Any], gbp: dict[str, Any], gbp_status: st
     )
     rows: list[dict[str, Any]] = []
     for key, label, gbp_key, mode in specs:
-        page_value = page.get(key)
-        gbp_value = gbp.get(gbp_key)
-        status, explanation = _compare_signal(
-            key=key,
-            page_value=page_value,
-            gbp_value=gbp_value,
-            gbp=gbp,
-            gbp_status=gbp_status,
-            mode=mode,
+        rule_id = next(
+            (candidate for candidate, comparison_key in _GBP_RULE_TO_COMPARISON_KEY.items() if comparison_key == key),
+            None,
         )
+        finding = backend_findings.get(f"rule_{rule_id}") if rule_id is not None else None
+        if isinstance(finding, dict):
+            page_value = finding.get("page_values")
+            gbp_value = finding.get("gbp_values")
+            status = _finding_status(str(finding.get("condition") or "gbp_unavailable"))
+            explanation = str(finding.get("explanation") or "Backend GBP comparison.")
+        else:
+            page_value = page.get(key)
+            gbp_value = gbp.get(gbp_key)
+            status, explanation = _compare_signal(
+                key=key,
+                page_value=page_value,
+                gbp_value=gbp_value,
+                gbp=gbp,
+                gbp_status=gbp_status,
+                mode=mode,
+            )
         rows.append({
             "key": key,
             "evidence_id": f"bp-{key}",
@@ -223,6 +286,17 @@ def _build_comparisons(page: dict[str, Any], gbp: dict[str, Any], gbp_status: st
             "included_in_score": False,
         })
     return rows
+
+
+def _finding_status(condition: str) -> str:
+    return {
+        "match": "match",
+        "mismatch": "mismatch",
+        "page_missing": "missing",
+        "gbp_field_missing": "mismatch",
+        "both_missing": "not_checked",
+        "gbp_unavailable": "not_checked",
+    }.get(condition, "not_checked")
 
 
 def _comparison_to_evidence(item: dict[str, Any], source_url: str | None) -> dict[str, Any] | None:

@@ -11,7 +11,7 @@ from app.report_v21.scoring import RULE_FINDING_LABELS
 
 
 GBP_RULE_SPECS: dict[int, tuple[str, str, str, Callable[[str], str], bool]] = {
-    26: ("business_name", "business_names", "name", lambda value: _normalize_text(value), True),
+    26: ("business_name", "business_names", "name", lambda value: _normalize_name(value), True),
     27: ("address", "addresses", "address", lambda value: _normalize_text(value), True),
     28: ("phone", "phones", "phone", lambda value: _normalize_phone(value), True),
     29: ("service_area", "service_areas", "service_areas", lambda value: _normalize_text(value), True),
@@ -98,6 +98,16 @@ def _normalized_values(values: list[str], normalizer: Callable[[str], str]) -> l
 
 def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value).strip()).casefold()
+
+
+def _normalize_name(value: str) -> str:
+    """Keep every visible business-name difference significant for L3.
+
+    Unicode and whitespace are canonicalized only to avoid invisible transport
+    differences.  Case and punctuation remain intact, so values such as
+    ``Drain LLC.`` and ``Drain, LLC`` do not silently become a match.
+    """
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value).strip())
 
 
 def _normalize_phone(value: str) -> str:

@@ -1001,7 +1001,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-    def test_supporting_page_phone_cannot_bind_a_branch_by_itself(self):
+    def test_single_store_name_and_domain_are_enough_without_using_supporting_phone(self):
         candidate = {
             "title": "Shared Brand Plumbing",
             "phone": "+1 918-555-0100",
@@ -1018,7 +1018,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             ),
         ]
 
-        self.assertFalse(
+        self.assertTrue(
             scraper._is_confident_gbp_match(
                 candidate,
                 website_url="https://sharedbrand.example/services/",
@@ -1076,7 +1076,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-    def test_auto_discovered_exact_profile_with_conflicting_phone_is_rejected(self):
+    def test_auto_discovered_exact_profile_keeps_phone_difference_for_l3(self):
         candidate = {
             "title": "Example Plumbing",
             "phone": "+1 918-555-0199",
@@ -1084,7 +1084,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             "website": "https://exampleplumbing.com/",
         }
 
-        self.assertFalse(
+        self.assertTrue(
             scraper._is_confident_exact_gbp_match(
                 candidate,
                 website_url="https://exampleplumbing.com/services/",
@@ -1094,6 +1094,87 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 user_provided_gbp=False,
             )
         )
+
+    def test_single_store_accepts_two_identity_matches_and_records_other_differences(self):
+        candidate = {
+            "title": "Spot On Plumbing of Tulsa Plumbers",
+            "phone": "+1 918-844-7961",
+            "address": "1911 W Reno St, Broken Arrow, OK 74012",
+            "website": "https://spotonplumbing.com/",
+        }
+
+        decision = scraper._evaluate_gbp_candidate(
+            candidate,
+            website_url="https://spotonplumbing.com/emergency-services/",
+            business_name="Spot On Plumbing",
+            phone="(918) 818-3901",
+            address="1911 West Reno Street, Broken Arrow, OK 74012",
+            city="Tulsa",
+        )
+
+        self.assertTrue(decision["accepted"])
+        self.assertGreaterEqual(decision["identity_match_count"], 2)
+        self.assertIn("phone_mismatch", decision["differences"])
+        self.assertEqual(decision["conflicts"], [])
+
+    def test_candidate_collision_automatically_requires_branch_anchor(self):
+        candidates = [
+            {
+                "title": "1-Tom-Plumber Tulsa",
+                "address": "9525 E 51st St Ste G, Tulsa, OK 74145",
+                "website": "https://www.1tomplumber.com/",
+                "data_id": "tulsa",
+            },
+            {
+                "title": "1-Tom-Plumber Tri-Cities",
+                "address": "7103 W Clearwater Ave, Kennewick, WA 99336",
+                "website": "https://www.1tomplumber.com/tri-cities-wa/",
+                "data_id": "tri-cities",
+            },
+        ]
+
+        selected, decision = scraper._select_verified_gbp_candidate(
+            candidates,
+            website_url="https://www.1tomplumber.com/tri-cities-wa/services/plumbing/",
+            business_name="1-Tom-Plumber",
+            phone=None,
+            address=None,
+            city="Kennewick",
+            location_hints=["Kennewick", "Richland", "Pasco"],
+        )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected["data_id"], "tri-cities")
+        self.assertTrue(decision["branch_selection_risk"])
+
+    def test_candidate_collision_without_target_branch_anchor_is_ambiguous(self):
+        candidates = [
+            {
+                "title": "Shared Brand Plumbing Tulsa",
+                "address": "10 Main St, Tulsa, OK",
+                "website": "https://sharedbrand.example/",
+                "data_id": "tulsa",
+            },
+            {
+                "title": "Shared Brand Plumbing Dallas",
+                "address": "20 Main St, Dallas, TX",
+                "website": "https://sharedbrand.example/",
+                "data_id": "dallas",
+            },
+        ]
+
+        selected, decision = scraper._select_verified_gbp_candidate(
+            candidates,
+            website_url="https://sharedbrand.example/services/",
+            business_name="Shared Brand Plumbing",
+            phone=None,
+            address=None,
+            city=None,
+        )
+
+        self.assertIsNone(selected)
+        self.assertEqual(decision["status"], "ambiguous")
+        self.assertTrue(decision["branch_selection_risk"])
 
     def test_multi_location_still_rejects_wrong_city_on_shared_domain(self):
         wrong_branch = {

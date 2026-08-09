@@ -15,6 +15,27 @@ def _context(page_facts, gbp_data, *, checked=True):
 
 
 class GbpRuleEvaluatorTests(unittest.TestCase):
+    def test_business_name_keeps_punctuation_and_case_strict(self):
+        page_name = "Express 24 Hr Plumbing & Drain LLC."
+        for gbp_name in (
+            "Express 24 Hr Plumbing & Drain, LLC",
+            "express 24 Hr Plumbing & Drain LLC.",
+        ):
+            results, _, findings = evaluate_gbp_rules(_context(
+                {"business_names": [page_name], "phones": ["(509) 940-7811"]},
+                {"name": gbp_name, "phone": "(509) 940-7811"},
+            ))
+
+            self.assertTrue(results[26])
+            self.assertEqual(findings["rule_26"]["condition"], "mismatch")
+
+        results, _, findings = evaluate_gbp_rules(_context(
+            {"business_names": [page_name], "phones": ["(509) 940-7811"]},
+            {"name": page_name, "phone": "(509) 940-7811"},
+        ))
+        self.assertFalse(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "match")
+
     def test_exact_identity_comparison_is_deterministic(self):
         context = _context(
             {

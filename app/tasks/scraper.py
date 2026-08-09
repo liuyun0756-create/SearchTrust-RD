@@ -1910,7 +1910,14 @@ def _evaluate_gbp_candidate(
     require_domain_match: bool = False,
     require_location_match: bool = False,
 ) -> dict[str, Any]:
-    """Return a transparent precision-first entity decision for one candidate."""
+    """Return an explainable entity decision for one GBP candidate.
+
+    Candidate identification and L3 comparison are intentionally separate.
+    Two matching identity fields are enough to identify an ordinary single
+    listing; fields that differ remain audit evidence instead of rejecting the
+    listing.  When branch-selection risk is present, at least one branch anchor
+    (address, phone or target location) must also match.
+    """
     title = str(result.get("title") or result.get("name") or "")
     result_phone = str(result.get("phone") or "")
     result_address_raw = str(result.get("address") or "")
@@ -1918,7 +1925,8 @@ def _evaluate_gbp_candidate(
     result_domain = _normalise_domain(str(result.get("website") or ""))
 
     matches: list[str] = []
-    conflicts: list[str] = []
+    differences: list[str] = []
+    blockers: list[str] = []
     score = 0
 
     domain_matches = _domains_match(target_domain, result_domain)
@@ -1966,32 +1974,46 @@ def _evaluate_gbp_candidate(
             matches.append(label)
             score += weight
 
-    if require_domain_match and not domain_matches:
-        conflicts.append("required_domain_mismatch")
+    # A mismatch is useful L3 evidence. It is not, by itself, proof that this
+    # is a different business once two other identity fields align.
+    if business_names and title and not name_matches:
+        differences.append("name_mismatch")
     if phones and result_phone and not phone_matches:
-        conflicts.append("phone_conflict")
+        differences.append("phone_mismatch")
     if address and result_address_raw and _addresses_conflict(address, result_address_raw):
-        conflicts.append("address_conflict")
-    if require_location_match and target_locations and not (
-        location_matches or phone_matches or address_matches
-    ):
-        conflicts.append("branch_location_unverified")
+        differences.append("address_mismatch")
+    if target_domain and result_domain and not domain_matches:
+        differences.append("domain_mismatch")
 
-    unique_anchor = phone_matches or address_matches
-    supporting = {"domain", "name", "location"}.intersection(matches)
+    identity_matches = {"name", "domain", "address", "phone"}.intersection(matches)
+    branch_anchor_matches = {
+        label
+        for label, matched in (
+            ("address", address_matches),
+            ("phone", phone_matches),
+            ("location", location_matches),
+        )
+        if matched
+    }
+    if require_location_match and not branch_anchor_matches:
+        blockers.append("branch_anchor_unverified")
+
     accepted = bool(
         _is_meaningful_business_title(title)
-        and not conflicts
-        and (
-            (unique_anchor and len(supporting) >= 1)
-            or supporting == {"domain", "name", "location"}
-        )
+        and len(identity_matches) >= 2
+        and not blockers
     )
     return {
         "accepted": accepted,
         "score": score,
         "matches": matches,
-        "conflicts": conflicts,
+        "identity_match_count": len(identity_matches),
+        "branch_anchor_matches": sorted(branch_anchor_matches),
+        "branch_selection_risk": require_location_match,
+        "differences": differences,
+        # Keep this key for existing diagnostics while making clear that only
+        # branch-selection failures block a candidate.
+        "conflicts": blockers,
         "title": title,
     }
 
@@ -2006,6 +2028,55 @@ def _candidate_identity_key(candidate: dict[str, Any]) -> str:
         re.sub(r"\D", "", str(candidate.get("phone") or ""))[-10:],
         _normalise_match_text(str(candidate.get("address") or "")),
     ))
+
+
+def _candidate_pool_has_branch_collision(
+    candidates: list[dict[str, Any]],
+    *,
+    website_url: str | None,
+    business_name: str | None,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
+) -> bool:
+    """Detect evidence that one brand/domain exposes multiple GBP locations.
+
+    This is deliberately a risk detector, not a claim that the company is
+    definitively multi-location.  It only tightens selection when the returned
+    candidate pool itself contains distinct branch anchors.
+    """
+    target_domain = _normalise_domain(website_url)
+    business_names = list(dict.fromkeys([
+        *([business_name] if business_name else []),
+        *_identity_signal_values(identity_signals, "name", scopes={"target_page"}),
+    ]))
+    if not business_names:
+        business_names = _identity_signal_values(identity_signals, "name")
+
+    eligible: list[dict[str, Any]] = []
+    for candidate in candidates:
+        title = str(candidate.get("title") or candidate.get("name") or "")
+        candidate_domain = _normalise_domain(str(candidate.get("website") or ""))
+        if not _is_meaningful_business_title(title):
+            continue
+        if target_domain and not _domains_match(target_domain, candidate_domain):
+            continue
+        if business_names and not any(_business_names_match(name, title) for name in business_names):
+            continue
+        eligible.append(candidate)
+
+    if len(eligible) < 2:
+        return False
+
+    addresses = {
+        " ".join(_normalise_address(str(candidate.get("address") or "")))
+        for candidate in eligible
+        if _normalise_address(str(candidate.get("address") or ""))
+    }
+    phones = {
+        re.sub(r"\D", "", str(candidate.get("phone") or ""))[-10:]
+        for candidate in eligible
+        if len(re.sub(r"\D", "", str(candidate.get("phone") or ""))) >= 10
+    }
+    return len(addresses) >= 2 or len(phones) >= 2
 
 
 def _select_verified_gbp_candidate(
@@ -2028,6 +2099,16 @@ def _select_verified_gbp_candidate(
         if key.strip("|"):
             unique.setdefault(key, candidate)
 
+    branch_selection_risk = bool(
+        require_location_match
+        or _candidate_pool_has_branch_collision(
+            list(unique.values()),
+            website_url=website_url,
+            business_name=business_name,
+            identity_signals=identity_signals,
+        )
+    )
+
     evaluations: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for candidate in unique.values():
         evaluation = _evaluate_gbp_candidate(
@@ -2040,7 +2121,7 @@ def _select_verified_gbp_candidate(
             location_hints=location_hints,
             identity_signals=identity_signals,
             require_domain_match=require_domain_match,
-            require_location_match=require_location_match,
+            require_location_match=branch_selection_risk,
         )
         evaluations.append((candidate, evaluation))
 
@@ -2054,16 +2135,46 @@ def _select_verified_gbp_candidate(
             "title": evaluation["title"],
             "score": evaluation["score"],
             "matches": evaluation["matches"],
+            "identity_match_count": evaluation["identity_match_count"],
+            "branch_anchor_matches": evaluation["branch_anchor_matches"],
+            "branch_selection_risk": evaluation["branch_selection_risk"],
+            "differences": evaluation["differences"],
             "conflicts": evaluation["conflicts"],
             "accepted": evaluation["accepted"],
         }
         for _, evaluation in evaluations
     ]
     if not accepted:
-        return None, {"status": "not_found", "candidates": summary}
+        unresolved_branches = bool(
+            branch_selection_risk
+            and any(
+                evaluation["identity_match_count"] >= 2
+                and not evaluation["branch_anchor_matches"]
+                for _, evaluation in evaluations
+            )
+        )
+        if unresolved_branches:
+            return None, {
+                "status": "ambiguous",
+                "branch_selection_risk": True,
+                "candidates": summary,
+            }
+        return None, {
+            "status": "not_found",
+            "branch_selection_risk": branch_selection_risk,
+            "candidates": summary,
+        }
     if len(accepted) > 1 and int(accepted[0][1]["score"]) - int(accepted[1][1]["score"]) < 2:
-        return None, {"status": "ambiguous", "candidates": summary}
-    return accepted[0][0], {"status": "checked", "candidates": summary}
+        return None, {
+            "status": "ambiguous",
+            "branch_selection_risk": branch_selection_risk,
+            "candidates": summary,
+        }
+    return accepted[0][0], {
+        "status": "checked",
+        "branch_selection_risk": branch_selection_risk,
+        "candidates": summary,
+    }
 
 
 def _is_confident_gbp_match(

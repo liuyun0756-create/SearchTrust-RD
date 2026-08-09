@@ -129,13 +129,20 @@ def _validate_traceability(
 ) -> list[str]:
     errors: list[str] = []
     content = _normalized(context.get("content"))
+    structured_page_payload = _normalized(json.dumps({
+        "page_facts": context.get("page_facts") or {},
+        "page_business": context.get("page_business") or {},
+        "business": context.get("business") or {},
+        "schema_data": context.get("schema_data") or {},
+    }, ensure_ascii=False))
     gbp_payload = _normalized(json.dumps(context.get("gbp_data") or {}, ensure_ascii=False))
     review_payload = _normalized(json.dumps(context.get("review_corpus") or [], ensure_ascii=False))
     gbp_checked = _text(_record(context.get("gbp_status")).get("status")) == "checked"
 
     for item in items:
         source_type = item.get("source_type")
-        extracted = _normalized(item.get("extracted_text"))
+        raw_extracted = _text(item.get("extracted_text"))
+        extracted = _normalized(raw_extracted)
         normalized_value = _normalized(item.get("normalized_value"))
         label = _text(item.get("source_label")) or "evidence item"
 
@@ -144,12 +151,14 @@ def _validate_traceability(
         if not (extracted or normalized_value):
             errors.append(f"{owner}: {label} must include an original excerpt or normalized value.")
             continue
-        if source_type in {"page", "contact_page", "about_page", "site_internal"} and extracted and content:
-            if extracted not in content:
+        if source_type in {"page", "contact_page", "about_page", "site_internal"} and extracted:
+            if not _page_excerpt_is_traceable(raw_extracted, content, structured_page_payload):
                 errors.append(f"{owner}: page excerpt for {label} was not found in scraped content.")
         if source_type == "gbp":
             if not gbp_checked:
                 errors.append(f"{owner}: GBP evidence cannot support a conclusion until GBP is checked.")
+            elif _is_verified_missing_gbp_evidence(item, context):
+                continue
             elif (extracted or normalized_value) and gbp_payload and not (
                 (extracted and extracted in gbp_payload)
                 or (normalized_value and normalized_value in gbp_payload)
@@ -158,6 +167,24 @@ def _validate_traceability(
         if source_type == "review" and extracted and review_payload and extracted not in review_payload:
             errors.append(f"{owner}: review excerpt for {label} was not found in the task review corpus.")
     return errors
+
+
+def _page_excerpt_is_traceable(extracted: str, content: str, structured_payload: str) -> bool:
+    excerpts = [_normalized(part) for part in extracted.splitlines() if _normalized(part)]
+    return bool(excerpts) and all(
+        excerpt in content or excerpt in structured_payload
+        for excerpt in excerpts
+    )
+
+
+def _is_verified_missing_gbp_evidence(item: dict[str, Any], context: dict[str, Any]) -> bool:
+    evidence_id = _text(item.get("id"))
+    match = re.fullmatch(r"ev-rule-(2[6-9])-gbp-missing", evidence_id)
+    if not match:
+        return False
+    findings = _record(context.get("backend_gbp_findings"))
+    finding = _record(findings.get(f"rule_{match.group(1)}"))
+    return finding.get("condition") in {"gbp_field_missing", "both_missing"}
 
 
 def _records(value: Any) -> list[dict[str, Any]]:

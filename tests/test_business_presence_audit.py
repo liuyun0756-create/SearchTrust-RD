@@ -4,6 +4,7 @@ from app.report_v21.business_presence import (
     bind_business_presence_evidence,
     build_business_presence_audit,
 )
+from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.tasks.pipeline import _build_dify_gbp_payload
 from app.tasks.scraper import extract_business_info
 
@@ -298,6 +299,67 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertTrue(layer["evidence_items"])
         self.assertIn("bp-address", [item["id"] for item in layer["evidence_items"]])
         self.assertEqual([item["id"] for item in issue["evidence_items"]], ["bp-address"])
+
+    def test_modern_l3_and_alignment_share_the_same_four_results_and_values(self):
+        context = self.base_context()
+        context["page_facts"] = {
+            "business_names": ["Express 24 Hr Plumbing & Drain LLC."],
+            "addresses": [],
+            "phones": ["(509) 940-7811", "202.787-.4145"],
+            "service_areas": ["Tri Cities Washington", "Our Service Area"],
+        }
+        context["gbp_data"].update({
+            "name": "Express 24 Hr Plumbing & Drain, LLC",
+            "address": "6503 W Okanogan Ave Ste f, Kennewick, WA 99336",
+            "phone": "(509) 940-7811",
+            "service_areas": ["Tri Cities Washington"],
+        })
+        _, _, findings = evaluate_gbp_rules(context)
+        context["backend_gbp_findings"] = findings
+
+        audit = build_business_presence_audit(context)
+        rows = {row["key"]: row for row in audit["gbp_page_alignment"]}
+        self.assertEqual(
+            {key: rows[key]["status"] for key in ("business_name", "address", "phone", "service_area")},
+            {
+                "business_name": "mismatch",
+                "address": "missing",
+                "phone": "mismatch",
+                "service_area": "mismatch",
+            },
+        )
+        for rule_id, key in ((26, "business_name"), (27, "address"), (28, "phone"), (29, "service_area")):
+            self.assertEqual(rows[key]["page_value"], ", ".join(findings[f"rule_{rule_id}"]["page_values"]) or None)
+            self.assertEqual(rows[key]["gbp_value"], ", ".join(findings[f"rule_{rule_id}"]["gbp_values"]) or None)
+
+        report = {
+            "layers": [{
+                "layer_key": "entity_consistency",
+                "triggered_rule_ids": [26, 27, 28, 29],
+                "evidence_items": [{"id": "workflow-contradiction"}],
+            }],
+            "key_issues": [{
+                "affected_layer": "entity_consistency",
+                "related_rule_ids": [26, 27, 28, 29],
+                "evidence_items": [],
+            }],
+            "primary_blocking_layer": {
+                "layer_key": "entity_consistency",
+                "evidence_items": [],
+            },
+        }
+        bound = bind_business_presence_evidence(report, audit, context)
+        evidence = bound["layers"][0]["evidence_items"]
+        evidence_by_id = {item["id"]: item for item in evidence}
+
+        self.assertNotIn("workflow-contradiction", evidence_by_id)
+        self.assertEqual(evidence_by_id["ev-rule-26-page-01"]["extracted_text"], findings["rule_26"]["page_values"][0])
+        self.assertEqual(evidence_by_id["ev-rule-26-gbp-01"]["extracted_text"], findings["rule_26"]["gbp_values"][0])
+        self.assertEqual(evidence_by_id["ev-rule-27-page-missing"]["comparison_result"], rows["address"]["status"])
+        self.assertEqual(evidence_by_id["ev-rule-27-gbp-01"]["extracted_text"], findings["rule_27"]["gbp_values"][0])
+        self.assertEqual(evidence_by_id["ev-rule-28-page-02"]["comparison_result"], rows["phone"]["status"])
+        self.assertEqual(evidence_by_id["ev-rule-29-gbp-01"]["comparison_result"], rows["service_area"]["status"])
+        self.assertFalse(any(item["source_label"].startswith("Business Presence Audit") for item in evidence))
 
     def test_missing_page_values_bind_traceable_absence_evidence(self):
         context = self.base_context()
