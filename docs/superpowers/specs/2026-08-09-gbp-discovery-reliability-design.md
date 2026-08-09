@@ -24,16 +24,18 @@ turning an active backend analysis into a failed report.
 
 ## Identity evidence
 
-Page extraction produces a collection of identity signals rather than choosing
-one name and one city immediately. Every signal records:
+Page extraction produces a collection of name, phone, and locality signals
+rather than choosing one name and one city immediately. Every signal records:
 
-- field: name, phone, address, domain, locality, or exact Maps identifier;
-- normalized and raw values;
+- field and raw value;
 - source: JSON-LD, visible page content, metadata, image alt, link, page URL, or
   supporting page;
 - scope: target page, same-site support, brand-wide, or branch-specific;
-- quality: strong, supporting, or unusable;
-- conflicts with other strong values.
+- quality: strong, supporting, or weak.
+
+Page URL domain, extracted street address, and exact Maps identifiers remain
+separate verification anchors. Candidate evaluation records their normalized
+matches and conflicts alongside the signal evidence.
 
 Generic theme/image labels, sentence fragments, service headings, third-party
 credits, and shared brand-wide values remain available for diagnostics but are
@@ -71,14 +73,15 @@ anchors.
 
 ## GBP states and report behavior
 
-- `checked`: system-discovered and verified.
-- `user_provided`: requested exact profile successfully fetched.
+- `checked` + source `system_discovered`: automatically discovered and verified.
+- `checked` + source `user_provided`: requested exact profile successfully fetched.
 - `not_found`: search completed with no viable candidates.
 - `ambiguous`: candidates exist but no unique safe selection is possible.
 - `error`: provider, network, or parsing failure.
 - `not_checked`: no lookup ran.
 
-Only `checked` and `user_provided` may produce GBP comparison evidence. Other
+Only `checked` may produce GBP comparison evidence, and its source records
+whether the target was provided by the user or discovered by the system. Other
 states produce a page-only report; GBP comparison rules are not assessed rather
 than failed. Dify receives no GBP facts in those states.
 

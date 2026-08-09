@@ -20,6 +20,11 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
         else None
     )
     source = _gbp_source(input_gbp_url, gbp_url, gbp_data)
+    diagnostic_status = (
+        _optional_str(lookup_diagnostic.get("status"))
+        if isinstance(lookup_diagnostic, dict)
+        else None
+    )
 
     if gbp_error:
         return {
@@ -35,6 +40,16 @@ def build_gbp_status(context: dict[str, Any]) -> dict[str, str | None]:
             "source": source,
             "gbp_url": gbp_url,
             "reason": None,
+        }
+
+    if diagnostic_status == "ambiguous":
+        return {
+            "status": "ambiguous",
+            "source": source,
+            "gbp_url": gbp_url,
+            "reason": diagnostic_reason or (
+                "Multiple GBP candidates were plausible, so no profile was connected automatically."
+            ),
         }
 
     if not input_gbp_url and lookup_attempted:

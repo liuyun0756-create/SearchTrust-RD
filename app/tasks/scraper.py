@@ -129,6 +129,41 @@ class ScrapeResult:
     content_length: int
 
 
+@dataclass(frozen=True)
+class IdentitySignal:
+    """One page-derived business identity clue with retained provenance."""
+
+    field: str
+    value: str
+    source: str
+    quality: str
+    scope: str = "page"
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "field": self.field,
+            "value": self.value,
+            "source": self.source,
+            "quality": self.quality,
+            "scope": self.scope,
+        }
+
+
+_GENERIC_BRAND_WORDS: frozenset[str] = frozenset({
+    "logo", "official", "company", "business", "site", "website", "home",
+    "header", "footer", "mobile", "desktop", "sticky", "light", "dark",
+    "white", "black", "color", "colour", "primary", "secondary", "default",
+    "image", "icon", "brand", "mark", "new", "final", "small", "large",
+})
+_LOCALITY_SENTENCE_WORDS: frozenset[str] = frozenset({
+    "a", "an", "the", "this", "that", "these", "those", "is", "are", "was",
+    "were", "be", "been", "being", "not", "no", "our", "your", "their",
+    "morning", "evening", "today", "tomorrow", "available", "open", "closed",
+    "service", "services", "repair", "repairs", "plumbing", "call", "contact",
+})
+_IDENTITY_QUALITY_WEIGHT = {"strong": 5, "supporting": 3, "weak": 1}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Content quality gate
 # ─────────────────────────────────────────────────────────────────────────────
@@ -369,19 +404,8 @@ def _html_to_readable_text(raw_html: str) -> str:
         if "logo" not in f"{tag} {alt}".lower():
             return " "
 
-        brand = re.sub(
-            r"\b(?:official|company|business)?\s*logo\b",
-            " ",
-            alt,
-            flags=re.IGNORECASE,
-        )
-        brand = " ".join(brand.split()).strip(" -|:")
-        normalized = _normalise_match_text(brand)
-        if (
-            len(normalized) < 3
-            or not any(character.isalpha() for character in normalized)
-            or normalized in {"company", "business", "site", "website", "home"}
-        ):
+        brand = _clean_logo_brand(alt)
+        if not _is_usable_brand_candidate(brand):
             return " "
 
         src_match = re.search(r'\bsrc=["\']([^"\']+)["\']', tag, re.IGNORECASE)
@@ -912,7 +936,7 @@ def clean_content(text: str) -> str:
 # Business info extractor
 # ─────────────────────────────────────────────────────────────────────────────
 
-def extract_business_info(content: str) -> dict[str, Optional[str]]:
+def _extract_business_info_legacy(content: str) -> dict[str, Optional[str]]:
     """
     Extract business name, city and phone from raw page text using regex
     heuristics.  Used only to build the SerpAPI GBP query — not part of the
@@ -1102,6 +1126,348 @@ def extract_business_info(content: str) -> dict[str, Optional[str]]:
                 break
 
     logger.debug("Extracted business info: %s", result)
+    return result
+
+
+def _clean_logo_brand(value: str | None) -> str:
+    cleaned = html.unescape(str(value or ""))
+    cleaned = re.sub(
+        r"\b(?:official|company|business)?\s*logo\b",
+        " ",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return " ".join(cleaned.split()).strip(" -|:_")
+
+
+def _is_usable_brand_candidate(value: str | None) -> bool:
+    normalized = _normalise_match_text(value)
+    if len(normalized) < 3 or not any(character.isalpha() for character in normalized):
+        return False
+    words = normalized.split()
+    meaningful = [word for word in words if word not in _GENERIC_BRAND_WORDS]
+    return bool(meaningful and not all(len(word) <= 2 for word in meaningful))
+
+
+def _looks_like_locality(value: str | None) -> bool:
+    candidate = " ".join(str(value or "").strip(" ,.-").split())
+    if not candidate or len(candidate) > 45 or any(char.isdigit() for char in candidate):
+        return False
+    words = _normalise_match_text(candidate).split()
+    if not 1 <= len(words) <= 5:
+        return False
+    if any(word in _LOCALITY_SENTENCE_WORDS for word in words):
+        return False
+    # Regex fallbacks operate on prose. Requiring name-like capitalization
+    # prevents fragments such as "the morning is not" from becoming a city.
+    original_words = re.findall(r"[A-Za-z][A-Za-z'.-]*", candidate)
+    return bool(
+        original_words
+        and all(word[0].isupper() or word.isupper() for word in original_words)
+    )
+
+
+def _looks_like_page_topic(value: str | None) -> bool:
+    """Distinguish common SEO/service title fragments from a brand fragment."""
+    normalized = _normalise_match_text(value)
+    return bool(
+        normalized
+        and re.search(
+            r"\b(?:services?|repairs?|installation|replacement|maintenance|"
+            r"plumbers?|drain cleaning|water heater|emergency|near me|contact|about)\b",
+            normalized,
+        )
+    )
+
+
+def _append_identity_signal(
+    signals: list[IdentitySignal],
+    *,
+    field: str,
+    value: str | None,
+    source: str,
+    quality: str,
+    scope: str,
+) -> None:
+    cleaned = " ".join(html.unescape(str(value or "")).split()).strip(" -|:")
+    if not cleaned:
+        return
+    if field == "name" and not _is_usable_brand_candidate(cleaned):
+        return
+    if field == "city" and source != "json_ld" and not _looks_like_locality(cleaned):
+        return
+    normalized = _normalise_match_text(cleaned) if field != "phone" else re.sub(r"\D", "", cleaned)[-10:]
+    if not normalized:
+        return
+    if any(
+        signal.field == field
+        and (
+            _normalise_match_text(signal.value)
+            if field != "phone"
+            else re.sub(r"\D", "", signal.value)[-10:]
+        ) == normalized
+        and signal.source == source
+        for signal in signals
+    ):
+        return
+    signals.append(IdentitySignal(field, cleaned, source, quality, scope))
+
+
+def extract_business_identity_signals(
+    content: str,
+    *,
+    scope: str = "page",
+) -> list[IdentitySignal]:
+    """Collect identity evidence without collapsing provenance prematurely."""
+    signals: list[IdentitySignal] = []
+    schema_identity = _extract_json_ld_business_identity(content)
+    schema_name = str(schema_identity.get("name") or "").strip()
+    schema_name_is_domain = bool(
+        re.fullmatch(r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}", schema_name.lower())
+    )
+    _append_identity_signal(
+        signals,
+        field="name",
+        value=schema_name,
+        source="json_ld",
+        quality="weak" if schema_name_is_domain else "strong",
+        scope=scope,
+    )
+    _append_identity_signal(
+        signals,
+        field="city",
+        value=schema_identity.get("city"),
+        source="json_ld",
+        quality="strong",
+        scope=scope,
+    )
+    _append_identity_signal(
+        signals,
+        field="phone",
+        value=schema_identity.get("phone"),
+        source="json_ld",
+        quality="strong",
+        scope=scope,
+    )
+
+    heading_match = re.search(
+        r"##\s+(?:Why|How|About).*?(?:Choose|Trust|Love|Prefer)\s+"
+        r"([A-Z][A-Za-z0-9\s&\-\.']{2,50}?)(?:['’][sS]\b|\n|$|\?)",
+        content,
+        re.IGNORECASE,
+    )
+    if heading_match:
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=heading_match.group(1),
+            source="visible_brand_heading",
+            quality="supporting",
+            scope=scope,
+        )
+
+    logo_values: list[str] = []
+    for tag in re.findall(r"<img\b[^>]*>", content, re.IGNORECASE):
+        alt_match = re.search(r'\balt=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+        if alt_match and "logo" in f"{tag} {alt_match.group(1)}".lower():
+            logo_values.append(alt_match.group(1))
+    for alt, src in re.findall(r"!\[([^\]]+)\]\(([^)]+)\)", content):
+        if "logo" in f"{alt} {src}".lower():
+            logo_values.append(alt)
+    for value in logo_values:
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=_clean_logo_brand(value),
+            source="logo_alt",
+            quality="supporting",
+            scope=scope,
+        )
+
+    meta_patterns = (
+        r'<meta[^>]+property=["\']og:site_name["\'][^>]+content=["\']([^"\']+)',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:site_name["\']',
+        r'og:site_name["\s:=]+([^"\n<]{2,80})',
+    )
+    for pattern in meta_patterns:
+        match = re.search(pattern, content, re.IGNORECASE)
+        if match:
+            site_name = match.group(1).strip().strip('"\'')
+            site_name_is_domain = bool(
+                re.fullmatch(r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}", site_name.lower())
+            )
+            _append_identity_signal(
+                signals,
+                field="name",
+                value=site_name,
+                source="og_site_name",
+                quality="weak" if site_name_is_domain else "supporting",
+                scope=scope,
+            )
+            break
+
+    copyright_match = re.search(
+        r"Copyright\s*©?\s*\d{4}\s+([^\n]+?)(?:\s+All\s+rights|$|\n)",
+        content,
+        re.IGNORECASE,
+    )
+    if copyright_match:
+        owner = re.split(r"\s*\|\s*|\s+Powered\s+by\s+", copyright_match.group(1), maxsplit=1, flags=re.IGNORECASE)[0]
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=owner,
+            source="copyright_owner",
+            quality="weak",
+            scope=scope,
+        )
+
+    title_values = [
+        match.group(1).strip()
+        for match in re.finditer(r"<title[^>]*>(.*?)</title>", content, re.IGNORECASE | re.DOTALL)
+    ]
+    title_values.extend(
+        match.group(1).strip()
+        for match in re.finditer(r"^Title:\s*([^\n]+)", content, re.IGNORECASE | re.MULTILINE)
+    )
+    heading = re.search(r"^#\s+([^\n]+)", content, re.MULTILINE)
+    if heading:
+        title_values.append(heading.group(1).strip())
+    for title in title_values:
+        separator = next((sep for sep in (" | ", " – ", " — ", " - ") if sep in title), None)
+        if not separator:
+            continue
+        parts = [part.strip() for part in title.split(separator) if part.strip()]
+        if len(parts) < 2:
+            continue
+        first_quality = "weak"
+        last_quality = "supporting"
+        if _looks_like_page_topic(parts[-1]) and not _looks_like_page_topic(parts[0]):
+            first_quality = "supporting"
+            last_quality = "weak"
+        elif _looks_like_page_topic(parts[0]) and not _looks_like_page_topic(parts[-1]):
+            first_quality = "weak"
+            last_quality = "supporting"
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=parts[-1],
+            source="title_suffix",
+            quality=last_quality,
+            scope=scope,
+        )
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=parts[0],
+            source="title_prefix",
+            quality=first_quality,
+            scope=scope,
+        )
+
+    for match in re.findall(
+        r"(?:📍)\s*(?:serving\s+|located\s+in\s+|based\s+in\s+)?"
+        r"([A-Za-z\s\-,]{3,45}?)(?:\n|$|&|\|)",
+        content,
+        re.IGNORECASE,
+    ):
+        _append_identity_signal(
+            signals,
+            field="city",
+            value=re.sub(
+                r"^(serving|located in|based in|throughout)\s+",
+                "",
+                match.strip(),
+                flags=re.IGNORECASE,
+            ),
+            source="visible_location_label",
+            quality="supporting",
+            scope=scope,
+        )
+    for match in re.findall(
+        r"(?:in|serving|located in|based in|throughout|across)\s+"
+        r"([A-Za-z\s\-]{3,35}?)(?:\s+and\s+|\s*[,\.!?]|\s+area|\s+neighborhood|\s+region)",
+        content,
+        re.IGNORECASE,
+    ):
+        _append_identity_signal(
+            signals,
+            field="city",
+            value=match,
+            source="prose_location",
+            quality="weak",
+            scope=scope,
+        )
+
+    phone_patterns = (
+        r"(?:phone|tel|call)[:：]?\s*\+?[\d\s\-\.\(\)]{7,22}",
+        r"\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}",
+    )
+    for pattern in phone_patterns:
+        for match in re.findall(pattern, content, re.IGNORECASE):
+            phone = re.sub(r"^(?:phone|tel|call)[:：]?\s*", "", match, flags=re.IGNORECASE).strip()
+            if len(re.sub(r"\D", "", phone)) >= 10:
+                _append_identity_signal(
+                    signals,
+                    field="phone",
+                    value=phone,
+                    source="visible_phone",
+                    quality="strong",
+                    scope=scope,
+                )
+    return signals
+
+
+def _select_identity_value(signals: list[IdentitySignal], field: str) -> str | None:
+    candidates = [signal for signal in signals if signal.field == field]
+    if not candidates:
+        return None
+    groups: dict[str, list[IdentitySignal]] = {}
+    for signal in candidates:
+        key = (
+            re.sub(r"\D", "", signal.value)[-10:]
+            if field == "phone"
+            else _normalise_match_text(signal.value)
+        )
+        if key:
+            groups.setdefault(key, []).append(signal)
+    if not groups:
+        return None
+
+    eligible_groups = {
+        key: values
+        for key, values in groups.items()
+        if (
+            any(signal.quality in {"strong", "supporting"} for signal in values)
+            or len({signal.source for signal in values}) >= 2
+        )
+    }
+    if not eligible_groups:
+        return None
+
+    def rank(item: tuple[str, list[IdentitySignal]]) -> tuple[int, int, int]:
+        _, values = item
+        source_count = len({signal.source for signal in values})
+        score = sum(_IDENTITY_QUALITY_WEIGHT.get(signal.quality, 0) for signal in values)
+        return score, source_count, -candidates.index(values[0])
+
+    _, winning = max(eligible_groups.items(), key=rank)
+    return winning[0].value
+
+
+def extract_business_info(content: str) -> dict[str, Optional[str]]:
+    """Return selected lookup hints while retaining full evidence separately."""
+    signals = extract_business_identity_signals(content)
+    result = {
+        "name": _select_identity_value(signals, "name"),
+        "city": _select_identity_value(signals, "city"),
+        "phone": _select_identity_value(signals, "phone"),
+    }
+    logger.debug(
+        "Extracted business info=%s evidence=%s",
+        result,
+        [signal.as_dict() for signal in signals],
+    )
     return result
 
 
@@ -1462,6 +1828,244 @@ def _phones_match(left: str | None, right: str | None) -> bool:
     return bool(len(target) == 10 and target == candidate)
 
 
+_ADDRESS_TOKEN_ALIASES = {
+    "street": "st", "road": "rd", "avenue": "ave", "boulevard": "blvd",
+    "drive": "dr", "lane": "ln", "court": "ct", "highway": "hwy",
+    "suite": "ste", "north": "n", "south": "s", "east": "e", "west": "w",
+}
+
+
+def _normalise_address(value: str | None) -> list[str]:
+    tokens = _normalise_match_text(value).split()
+    return [_ADDRESS_TOKEN_ALIASES.get(token, token) for token in tokens]
+
+
+def _addresses_match(left: str | None, right: str | None) -> bool:
+    target = _normalise_address(left)
+    candidate = _normalise_address(right)
+    if not target or not candidate:
+        return False
+    target_numbers = [token for token in target if token.isdigit()]
+    candidate_numbers = [token for token in candidate if token.isdigit()]
+    if target_numbers and candidate_numbers and target_numbers[0] != candidate_numbers[0]:
+        return False
+    target_words = {token for token in target if not token.isdigit() and len(token) > 1}
+    candidate_words = {token for token in candidate if not token.isdigit() and len(token) > 1}
+    return bool(
+        target_numbers
+        and candidate_numbers
+        and len(target_words.intersection(candidate_words)) >= 2
+    )
+
+
+def _addresses_conflict(left: str | None, right: str | None) -> bool:
+    target_numbers = [token for token in _normalise_address(left) if token.isdigit()]
+    candidate_numbers = [token for token in _normalise_address(right) if token.isdigit()]
+    return bool(
+        target_numbers
+        and candidate_numbers
+        and target_numbers[0] != candidate_numbers[0]
+    )
+
+
+def _identity_signal_values(
+    signals: list[IdentitySignal] | list[dict[str, Any]] | None,
+    field: str,
+    *,
+    scopes: set[str] | None = None,
+) -> list[str]:
+    values: list[str] = []
+    for signal in signals or []:
+        if isinstance(signal, IdentitySignal):
+            signal_field = signal.field
+            value = signal.value
+            quality = signal.quality
+            scope = signal.scope
+        elif isinstance(signal, dict):
+            signal_field = str(signal.get("field") or "")
+            value = str(signal.get("value") or "")
+            quality = str(signal.get("quality") or "")
+            scope = str(signal.get("scope") or "")
+        else:
+            continue
+        if signal_field != field or quality not in {"strong", "supporting"}:
+            continue
+        if scopes is not None and scope not in scopes:
+            continue
+        if value.strip():
+            values.append(value.strip())
+    return list(dict.fromkeys(values))
+
+
+def _evaluate_gbp_candidate(
+    result: dict[str, Any],
+    *,
+    website_url: str | None,
+    business_name: str | None,
+    phone: str | None,
+    address: str | None,
+    city: str | None,
+    location_hints: list[str] | None = None,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
+    require_domain_match: bool = False,
+    require_location_match: bool = False,
+) -> dict[str, Any]:
+    """Return a transparent precision-first entity decision for one candidate."""
+    title = str(result.get("title") or result.get("name") or "")
+    result_phone = str(result.get("phone") or "")
+    result_address_raw = str(result.get("address") or "")
+    target_domain = _normalise_domain(website_url)
+    result_domain = _normalise_domain(str(result.get("website") or ""))
+
+    matches: list[str] = []
+    conflicts: list[str] = []
+    score = 0
+
+    domain_matches = _domains_match(target_domain, result_domain)
+    primary_business_names = _identity_signal_values(
+        identity_signals,
+        "name",
+        scopes={"target_page"},
+    )
+    business_names = list(dict.fromkeys([
+        *([business_name] if business_name else []),
+        *primary_business_names,
+    ]))
+    if not business_names:
+        business_names = _identity_signal_values(identity_signals, "name")
+    phones = list(dict.fromkeys([
+        *([phone] if phone else []),
+        *_identity_signal_values(identity_signals, "phone", scopes={"target_page"}),
+    ]))
+    name_matches = any(_business_names_match(value, title) for value in business_names)
+    phone_matches = any(_phones_match(value, result_phone) for value in phones)
+    address_matches = _addresses_match(address, result_address_raw)
+    target_locations = {
+        normalized
+        for value in [
+            city,
+            *(location_hints or []),
+            *_identity_signal_values(identity_signals, "city", scopes={"target_page"}),
+        ]
+        if (normalized := _normalise_match_text(value))
+    }
+    normalized_result_address = _normalise_match_text(result_address_raw)
+    location_matches = bool(
+        normalized_result_address
+        and any(location in normalized_result_address for location in target_locations)
+    )
+
+    for matched, label, weight in (
+        (phone_matches, "phone", 6),
+        (address_matches, "address", 6),
+        (domain_matches, "domain", 3),
+        (name_matches, "name", 3),
+        (location_matches, "location", 2),
+    ):
+        if matched:
+            matches.append(label)
+            score += weight
+
+    if require_domain_match and not domain_matches:
+        conflicts.append("required_domain_mismatch")
+    if phones and result_phone and not phone_matches:
+        conflicts.append("phone_conflict")
+    if address and result_address_raw and _addresses_conflict(address, result_address_raw):
+        conflicts.append("address_conflict")
+    if require_location_match and target_locations and not (
+        location_matches or phone_matches or address_matches
+    ):
+        conflicts.append("branch_location_unverified")
+
+    unique_anchor = phone_matches or address_matches
+    supporting = {"domain", "name", "location"}.intersection(matches)
+    accepted = bool(
+        _is_meaningful_business_title(title)
+        and not conflicts
+        and (
+            (unique_anchor and len(supporting) >= 1)
+            or supporting == {"domain", "name", "location"}
+        )
+    )
+    return {
+        "accepted": accepted,
+        "score": score,
+        "matches": matches,
+        "conflicts": conflicts,
+        "title": title,
+    }
+
+
+def _candidate_identity_key(candidate: dict[str, Any]) -> str:
+    for key in ("data_id", "place_id"):
+        value = str(candidate.get(key) or "").strip()
+        if value:
+            return f"{key}:{value}"
+    return "|".join((
+        _normalise_match_text(str(candidate.get("title") or candidate.get("name") or "")),
+        re.sub(r"\D", "", str(candidate.get("phone") or ""))[-10:],
+        _normalise_match_text(str(candidate.get("address") or "")),
+    ))
+
+
+def _select_verified_gbp_candidate(
+    candidates: list[dict[str, Any]],
+    *,
+    website_url: str | None,
+    business_name: str | None,
+    phone: str | None,
+    address: str | None,
+    city: str | None,
+    location_hints: list[str] | None = None,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
+    require_domain_match: bool = False,
+    require_location_match: bool = False,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Select one safe candidate or explain why no automatic choice is valid."""
+    unique: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        key = _candidate_identity_key(candidate)
+        if key.strip("|"):
+            unique.setdefault(key, candidate)
+
+    evaluations: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for candidate in unique.values():
+        evaluation = _evaluate_gbp_candidate(
+            candidate,
+            website_url=website_url,
+            business_name=business_name,
+            phone=phone,
+            address=address,
+            city=city,
+            location_hints=location_hints,
+            identity_signals=identity_signals,
+            require_domain_match=require_domain_match,
+            require_location_match=require_location_match,
+        )
+        evaluations.append((candidate, evaluation))
+
+    accepted = sorted(
+        (item for item in evaluations if item[1]["accepted"]),
+        key=lambda item: int(item[1]["score"]),
+        reverse=True,
+    )
+    summary = [
+        {
+            "title": evaluation["title"],
+            "score": evaluation["score"],
+            "matches": evaluation["matches"],
+            "conflicts": evaluation["conflicts"],
+            "accepted": evaluation["accepted"],
+        }
+        for _, evaluation in evaluations
+    ]
+    if not accepted:
+        return None, {"status": "not_found", "candidates": summary}
+    if len(accepted) > 1 and int(accepted[0][1]["score"]) - int(accepted[1][1]["score"]) < 2:
+        return None, {"status": "ambiguous", "candidates": summary}
+    return accepted[0][0], {"status": "checked", "candidates": summary}
+
+
 def _is_confident_gbp_match(
     result: dict[str, Any],
     *,
@@ -1469,51 +2073,25 @@ def _is_confident_gbp_match(
     business_name: str | None,
     phone: str | None,
     city: str | None,
+    address: str | None = None,
     location_hints: list[str] | None = None,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
     require_domain_match: bool = False,
     require_location_match: bool = False,
 ) -> bool:
-    """Accept single-store matches while keeping branch-level safeguards."""
-    target_domain = _normalise_domain(website_url)
-    result_domain = _normalise_domain(str(result.get("website") or ""))
-    domain_matches = _domains_match(target_domain, result_domain)
-    if require_domain_match and not domain_matches:
-        return False
-
-    name_matches = _business_names_match(
-        business_name,
-        str(result.get("title") or result.get("name") or ""),
-    )
-    phone_matches = _phones_match(phone, str(result.get("phone") or ""))
-
-    target_locations = {
-        normalised
-        for value in [city, *(location_hints or [])]
-        if (normalised := _normalise_match_text(value))
-    }
-    result_address = _normalise_match_text(str(result.get("address") or ""))
-    location_matches = bool(
-        result_address
-        and any(location in result_address for location in target_locations)
-    )
-
-    # Multi-location brands commonly share one root domain across every GBP,
-    # so a branch must also match its location or unique phone. A single-store
-    # page can safely use the original domain-first rule.
-    if require_location_match:
-        return bool(
-            (domain_matches or name_matches)
-            and (location_matches or phone_matches)
-        )
-    if require_domain_match:
-        return True
-    if domain_matches:
-        return True
-    if result_domain:
-        return False
-    if phone_matches and (name_matches or not business_name):
-        return True
-    return bool(name_matches and location_matches)
+    """Compatibility wrapper around the explainable candidate evaluator."""
+    return bool(_evaluate_gbp_candidate(
+        result,
+        website_url=website_url,
+        business_name=business_name,
+        phone=phone,
+        address=address,
+        city=city,
+        location_hints=location_hints,
+        identity_signals=identity_signals,
+        require_domain_match=require_domain_match,
+        require_location_match=require_location_match,
+    )["accepted"])
 
 
 def _is_meaningful_business_title(value: Any) -> bool:
@@ -1533,8 +2111,11 @@ def _is_confident_exact_gbp_match(
     business_name: str | None,
     phone: str | None,
     city: str | None,
+    address: str | None = None,
     location_hints: list[str] | None = None,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
     require_location_match: bool = False,
+    user_provided_gbp: bool = False,
 ) -> bool:
     """Verify an exact-ID response before allowing it to drive backend L3 rules."""
     title = str(result.get("title") or result.get("name") or "")
@@ -1545,41 +2126,22 @@ def _is_confident_exact_gbp_match(
     if not any(str(result.get(key) or "").strip() for key in ("address", "phone", "website")):
         return False
 
-    target_domain = _normalise_domain(website_url)
-    result_domain = _normalise_domain(str(result.get("website") or ""))
-    domain_matches = _domains_match(target_domain, result_domain)
-    name_matches = _business_names_match(business_name, title)
-    phone_matches = _phones_match(phone, str(result.get("phone") or ""))
+    # The user explicitly selected this comparison target. Differences between
+    # it and the page are audit evidence, not a reason to silently replace it.
+    if user_provided_gbp:
+        return True
 
-    target_locations = {
-        normalized
-        for value in [city, *(location_hints or [])]
-        if (normalized := _normalise_match_text(value))
-    }
-    result_address = _normalise_match_text(str(result.get("address") or ""))
-    location_matches = bool(
-        result_address
-        and any(location in result_address for location in target_locations)
-    )
-
-    available_checks: list[bool] = []
-    if target_domain:
-        available_checks.append(domain_matches)
-    if _normalise_match_text(business_name):
-        available_checks.append(name_matches)
-    if len(re.sub(r"\D", "", phone or "")[-10:]) == 10:
-        available_checks.append(phone_matches)
-    if target_locations:
-        available_checks.append(location_matches)
-
-    if not available_checks:
-        return False
-    required_matches = 2 if len(available_checks) >= 2 else 1
-    if sum(available_checks) < required_matches:
-        return False
-    if require_location_match and target_locations and not (location_matches or phone_matches):
-        return False
-    return True
+    return bool(_evaluate_gbp_candidate(
+        result,
+        website_url=website_url,
+        business_name=business_name,
+        phone=phone,
+        address=address,
+        city=city,
+        location_hints=location_hints,
+        identity_signals=identity_signals,
+        require_location_match=require_location_match,
+    )["accepted"])
 
 
 def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
@@ -1672,6 +2234,8 @@ async def fetch_gbp_data(
     phone: Optional[str] = None,
     address: Optional[str] = None,
     require_location_match: bool = False,
+    user_provided_gbp: bool = False,
+    identity_signals: list[IdentitySignal] | list[dict[str, Any]] | None = None,
     diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -1740,9 +2304,12 @@ async def fetch_gbp_data(
                         website_url=website_url,
                         business_name=business_name,
                         phone=phone,
+                        address=address,
                         city=city,
                         location_hints=location_hints,
+                        identity_signals=identity_signals,
                         require_location_match=require_location_match,
+                        user_provided_gbp=user_provided_gbp,
                     ):
                         exact_failure = (
                             "SerpAPI returned an exact-ID object that did not match enough "
@@ -1810,6 +2377,26 @@ async def fetch_gbp_data(
         address=address,
         strict_domain_fallback=strict_domain_fallback,
     )
+    if not strict_domain_fallback:
+        search_location = next(
+            (
+                str(value).strip()
+                for value in [
+                    city,
+                    *(location_hints or []),
+                    *_identity_signal_values(identity_signals, "city"),
+                ]
+                if str(value or "").strip()
+            ),
+            "",
+        )
+        for name_value in _identity_signal_values(identity_signals, "name")[:3]:
+            queries.append(f"{name_value} {search_location}".strip())
+        for phone_value in _identity_signal_values(identity_signals, "phone")[:2]:
+            digits = re.sub(r"\D", "", phone_value)[-10:]
+            if len(digits) == 10:
+                queries.append(f"{digits} {search_location}".strip())
+        queries = list(dict.fromkeys(query for query in queries if query))[:8]
     if strict_domain_fallback and not website_url:
         message = (
             "The supplied Google Maps URL could not be resolved and no website domain "
@@ -1837,13 +2424,15 @@ async def fetch_gbp_data(
         )
         return {}
 
-    # Strict fallback keeps the previous three retries of the one safe domain
-    # query. Normal auto-discovery spends the request budget on distinct clues
-    # instead of repeating a query that Google Maps already rejected.
+    # An exact-ID lookup already receives transport/no-result retries above.
+    # If it falls back to a strict domain search, repeating the same completed
+    # Google Maps query cannot add identity evidence and only wastes provider
+    # calls. Normal single-clue auto-discovery keeps its retry behaviour for
+    # resilience when no independent query is available.
     request_queries = (
-        queries * _GBP_LOOKUP_ATTEMPTS
-        if strict_domain_fallback or len(queries) == 1
-        else queries
+        queries
+        if strict_domain_fallback
+        else queries * _GBP_LOOKUP_ATTEMPTS if len(queries) == 1 else queries
     )
     logger.info(
         "[SerpAPI] GBP search plan queries=%s strict_domain_match=%s",
@@ -1855,6 +2444,7 @@ async def fetch_gbp_data(
     last_no_match_code = ""
     last_no_match_message = ""
     completed_search = False
+    candidate_pool: list[dict[str, Any]] = []
     for attempt, query in enumerate(request_queries, start=1):
         request_params: dict[str, str] = {
             "engine": "google_maps",
@@ -1888,37 +2478,7 @@ async def fetch_gbp_data(
                 candidates.append(local_results)
             elif isinstance(local_results, list):
                 candidates.extend(item for item in local_results if isinstance(item, dict))
-
-            matched_raw = next(
-                (
-                    candidate
-                    for candidate in candidates
-                    if _is_confident_gbp_match(
-                        candidate,
-                        website_url=website_url,
-                        business_name=business_name,
-                        phone=phone,
-                        city=city,
-                        location_hints=location_hints,
-                        require_domain_match=strict_domain_fallback,
-                        require_location_match=require_location_match,
-                    )
-                ),
-                None,
-            )
-            if matched_raw is not None:
-                gbp_info = _build_gbp_info(matched_raw)
-                _set_gbp_lookup_diagnostic(
-                    diagnostic,
-                    status="checked",
-                    code="strict_domain_fallback_match" if strict_domain_fallback else "search_match",
-                    message=(
-                        "Exact CID lookup was unavailable; GBP profile was verified by exact website domain."
-                        if strict_domain_fallback
-                        else "GBP profile was verified by website domain or city."
-                    ),
-                )
-                return await _enrich_gbp_info(gbp_info)
+            candidate_pool.extend(candidates)
 
             code = "strict_fallback_no_match" if strict_domain_fallback else "search_no_match"
             message = (
@@ -1952,11 +2512,47 @@ async def fetch_gbp_data(
             await asyncio.sleep(2 ** min(attempt - 1, 2))
 
     if completed_search:
+        matched_raw, selection = _select_verified_gbp_candidate(
+            candidate_pool,
+            website_url=website_url,
+            business_name=business_name,
+            phone=phone,
+            address=address,
+            city=city,
+            location_hints=location_hints,
+            identity_signals=identity_signals,
+            require_domain_match=strict_domain_fallback,
+            require_location_match=require_location_match,
+        )
+        if diagnostic is not None:
+            diagnostic["candidate_decisions"] = selection.get("candidates", [])
+        if matched_raw is not None:
+            gbp_info = _build_gbp_info(matched_raw)
+            _set_gbp_lookup_diagnostic(
+                diagnostic,
+                status="checked",
+                code="strict_domain_fallback_match" if strict_domain_fallback else "search_match",
+                message="GBP profile was selected from independently verified identity signals.",
+            )
+            return await _enrich_gbp_info(gbp_info)
+        if selection.get("status") == "ambiguous":
+            _set_gbp_lookup_diagnostic(
+                diagnostic,
+                status="ambiguous",
+                code="multiple_confident_candidates",
+                message=(
+                    "Multiple GBP candidates matched with similar confidence, so no profile "
+                    "was connected automatically."
+                ),
+            )
+            return {}
         _set_gbp_lookup_diagnostic(
             diagnostic,
             status="not_found",
             code=last_no_match_code,
-            message=last_no_match_message,
+            message=last_no_match_message or (
+                "GBP search completed, but no candidate passed strict entity verification."
+            ),
         )
         return {}
 
@@ -2416,6 +3012,8 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     RuntimeError when all scrapers fail on the main page.
     """
     logger.info("[Scraper] fetching url=%s", url)
+    input_gbp_url = gbp_url
+    user_provided_gbp = bool(str(input_gbp_url or "").strip())
 
     from urllib.parse import urlparse
     parsed = urlparse(url)
@@ -2590,14 +3188,15 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     gbp_error: str | None = None
     gbp_lookup_diagnostic: dict[str, Any] = {}
     has_exact_gbp_identifier = _has_exact_gbp_identifier(gbp_url)
-    if has_exact_gbp_identifier and not require_location_match:
-        logger.info("[Scraper] exact GBP identifier detected — fetching in parallel")
+    if has_exact_gbp_identifier and user_provided_gbp:
+        logger.info("[Scraper] user-provided exact GBP identifier detected — fetching directly")
         gbp_lookup_attempted = True
         gbp_prefetch_result = await fetch_gbp_data(
             business_name=None,
             city=None,
             website_url=url,
             gbp_url=gbp_url,
+            user_provided_gbp=True,
             diagnostic=gbp_lookup_diagnostic,
         )
         gbp_prefetch = gbp_prefetch_result or None
@@ -2607,6 +3206,8 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     # snapshot can still improve GBP lookup without entering Dify page rules.
     target_business_info = extract_business_info(target_content)
     discovery_business_info = extract_business_info(combined_content)
+    target_identity_signals = extract_business_identity_signals(target_content, scope="target_page")
+    discovery_identity_signals = extract_business_identity_signals(combined_content, scope="site_discovery")
 
     # ── GBP URL auto-fill ─────────────────────────────────────────────────────
     if not gbp_url:
@@ -2634,7 +3235,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             location_hints = [
                 value
                 for value in [
-                    discovery_business_info.get("city"),
+                    target_business_info.get("city"),
                     *page_facts.get("service_areas", []),
                 ]
                 if isinstance(value, str) and value.strip()
@@ -2646,12 +3247,18 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 or discovery_business_info.get("city")
             )
             gbp_data = await fetch_gbp_data(
-                business_name=discovery_business_info.get("name"),
-                city=discovery_business_info.get("city"),
+                business_name=(
+                    target_business_info.get("name")
+                    or discovery_business_info.get("name")
+                ),
+                city=target_business_info.get("city"),
                 website_url=url,
                 gbp_url=gbp_url,
                 location_hints=location_hints,
-                phone=discovery_business_info.get("phone"),
+                # Supporting pages may contain a different branch phone. They
+                # can widen search recall through identity_signals, but only a
+                # target-page phone is a unique verification anchor.
+                phone=target_business_info.get("phone"),
                 address=next(
                     (
                         value
@@ -2661,6 +3268,11 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                     None,
                 ),
                 require_location_match=require_location_match,
+                user_provided_gbp=user_provided_gbp,
+                identity_signals=[
+                    *target_identity_signals,
+                    *discovery_identity_signals,
+                ],
                 diagnostic=gbp_lookup_diagnostic,
             )
         except Exception as exc:  # noqa: BLE001
@@ -2684,6 +3296,8 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp_lookup_attempted": gbp_lookup_attempted,
         "gbp_error":          gbp_error,
         "gbp_lookup_diagnostic": gbp_lookup_diagnostic or None,
+        "identity_signals": [signal.as_dict() for signal in discovery_identity_signals],
+        "target_identity_signals": [signal.as_dict() for signal in target_identity_signals],
         "scraper_source":     scraper_source,
         "sub_pages":          appended,
     }

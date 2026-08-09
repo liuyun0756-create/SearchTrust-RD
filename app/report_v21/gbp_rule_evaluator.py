@@ -36,11 +36,10 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
         normalized_gbp = _normalized_values(gbp_values, normalizer)
 
         if not gbp_checked:
-            triggered = True
+            triggered = False
             condition = "gbp_unavailable"
             explanation = (
-                "A checked GBP reference was unavailable, so this identity field could not be aligned "
-                "with the page value."
+                "A checked GBP reference was unavailable, so this comparison was not assessed."
             )
         elif not normalized_page and not normalized_gbp:
             triggered = False
@@ -66,16 +65,14 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
             )
 
         results[rule_id] = triggered
-        # Product policy treats an unavailable GBP reference as a failed comparison,
-        # not as an inapplicable rule. The report still records that GBP was unavailable.
-        applicability[rule_id] = True
+        applicability[rule_id] = gbp_checked
         findings[f"rule_{rule_id}"] = {
             "finding_key": f"rule_{rule_id}",
             "rule_id": rule_id,
             "affected_layer": "entity_consistency",
             "field": field,
             "triggered": triggered,
-            "applicable": True,
+            "applicable": gbp_checked,
             "condition": condition,
             "finding": RULE_FINDING_LABELS[rule_id],
             "explanation": explanation,

@@ -161,6 +161,56 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("Plumber repairing a boiler", readable)
         self.assertEqual(info["name"], "Mentor Mechanical")
 
+    def test_generic_logo_variant_is_not_used_as_a_business_name(self):
+        content = """
+        <title>Plumbers NYC – Mentor Mechanical</title>
+        <img class="custom-logo logo-white" alt="logo white" src="/white.svg" />
+        <meta property="og:site_name" content="Mentor Mechanical" />
+        """
+
+        signals = scraper.extract_business_identity_signals(content)
+        info = scraper.extract_business_info(content)
+
+        self.assertEqual(info["name"], "Mentor Mechanical")
+        self.assertNotIn(
+            "logo white",
+            [signal.value.lower() for signal in signals if signal.field == "name"],
+        )
+
+    def test_markdown_title_and_logo_url_preserve_real_brand_evidence(self):
+        content = """
+        Title: Mentor Mechanical | Plumbers NYC
+        ![Mentor Mechanical](https://example.com/assets/header-logo.svg)
+        """
+
+        signals = scraper.extract_business_identity_signals(content)
+        info = scraper.extract_business_info(content)
+
+        self.assertEqual(info["name"], "Mentor Mechanical")
+        self.assertIn(
+            "Mentor Mechanical",
+            [signal.value for signal in signals if signal.source == "logo_alt"],
+        )
+
+    def test_sentence_fragment_is_not_accepted_as_a_city(self):
+        info = scraper.extract_business_info(
+            "Our team works in the morning is not always the same. Call today."
+        )
+
+        self.assertIsNone(info["city"])
+
+    def test_copyright_owner_is_evidence_but_not_a_standalone_brand(self):
+        content = "Copyright © 2026 Site Builder Pro | Powered by Agency Platform"
+
+        signals = scraper.extract_business_identity_signals(content)
+        info = scraper.extract_business_info(content)
+
+        self.assertIn(
+            "Site Builder Pro",
+            [signal.value for signal in signals if signal.source == "copyright_owner"],
+        )
+        self.assertIsNone(info["name"])
+
     def test_derives_multi_location_branch_root_without_affecting_generic_paths(self):
         page_url = "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/"
         content = "[Tri-Cities](https://www.1tomplumber.com/tri-cities-wa/)"
@@ -301,7 +351,15 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["content"], scraper.clean_content(main_content))
         self.assertNotIn("SUPPORTING PAGE MUST NOT REACH DIFY", result["content"])
         self.assertIsNone(result["business"]["phone"])
-        self.assertEqual(fetch_gbp.await_args.kwargs["phone"], "+15551234567")
+        self.assertIsNone(fetch_gbp.await_args.kwargs["phone"])
+        self.assertIn(
+            "+15551234567",
+            [
+                signal.value
+                for signal in fetch_gbp.await_args.kwargs["identity_signals"]
+                if signal.field == "phone" and signal.scope == "site_discovery"
+            ],
+        )
         self.assertEqual(result["raw_content_length"], len(main_content))
         self.assertEqual(result["sub_pages"], [support_url])
 
@@ -389,6 +447,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 city="Tulsa",
                 website_url="https://spotonplumbing.com/emergency-services/",
                 gbp_url=SHORT_URL,
+                user_provided_gbp=True,
             )
 
         self.assertEqual(result["name"], "Spot On Plumbing of Tulsa Plumbers")
@@ -421,6 +480,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 city="Kennewick",
                 website_url="https://columbiabasinplumbing.com/repairs-installs/",
                 gbp_url=REVIEW_URL,
+                user_provided_gbp=True,
             )
 
         self.assertEqual(result["name"], "Columbia Basin Plumbing")
@@ -453,6 +513,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 city="Tulsa",
                 website_url="https://spotonplumbing.com/emergency-services/",
                 gbp_url=SHORT_URL,
+                phone="9188447961",
                 diagnostic=diagnostic,
             )
 
@@ -483,6 +544,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 city="Tulsa",
                 website_url="https://spotonplumbing.com/emergency-services/",
                 gbp_url=SHORT_URL,
+                phone="9188447961",
                 diagnostic=diagnostic,
             )
 
@@ -515,6 +577,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 city="Tulsa",
                 website_url="https://spotonplumbing.com/emergency-services/",
                 gbp_url=SHORT_URL,
+                phone="9188447961",
                 diagnostic=diagnostic,
             )
 
@@ -582,6 +645,7 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         client = _FakeClient([
             _FakeResponse(url="https://serpapi.example/search", payload={}),
             _FakeResponse(url="https://serpapi.example/search", payload={"place_results": place}),
+            _FakeResponse(url="https://serpapi.example/search", payload={}),
         ])
         diagnostic = {}
         with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
@@ -593,12 +657,13 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 business_name="Spot On Plumbing",
                 city="Tulsa",
                 website_url="https://spotonplumbing.com/emergency-services/",
+                phone="9188447961",
                 diagnostic=diagnostic,
             )
 
         self.assertEqual(result["name"], "Spot On Plumbing of Tulsa Plumbers")
         self.assertEqual(diagnostic["code"], "search_match")
-        self.assertEqual(len(client.requests), 2)
+        self.assertEqual(len(client.requests), 3)
         self.assertNotIn("no_cache", client.requests[0][1]["params"])
         self.assertEqual(
             client.requests[0][1]["params"]["q"],
@@ -625,6 +690,8 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 url="https://serpapi.example/search",
                 payload={"place_results": correct},
             ),
+            _FakeResponse(url="https://serpapi.example/search", payload={}),
+            _FakeResponse(url="https://serpapi.example/search", payload={}),
         ])
         diagnostic = {}
 
@@ -652,6 +719,8 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             [
                 "nycityplumbingsolutions.com New York",
                 "Nyc Plumbing Solutions New York",
+                "8009901591 New York",
+                "614 49th Street Brooklyn, NY 11220",
             ],
         )
 
@@ -894,6 +963,135 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 phone=None,
                 city="Kennewick",
                 location_hints=["Kennewick"],
+            )
+        )
+
+    def test_alternate_gbp_website_is_accepted_with_exact_phone_and_name(self):
+        candidate = {
+            "title": "Doodyman to the Rescue",
+            "phone": "+1 516-354-8336",
+            "address": "60 Merrick Rd, Rockville Centre, NY 11570",
+            "website": "https://thedoodyman.com/",
+        }
+
+        self.assertTrue(
+            scraper._is_confident_gbp_match(
+                candidate,
+                website_url="https://doodymantotherescue.com/services/home-plumbing-repair/",
+                business_name="Doodyman to the Rescue",
+                phone="5163548336",
+                city="Rockville Centre",
+            )
+        )
+
+    def test_name_and_city_without_unique_anchor_are_not_enough(self):
+        candidate = {
+            "title": "Mentor Mechanical",
+            "address": "New York, NY",
+            "website": "",
+        }
+
+        self.assertFalse(
+            scraper._is_confident_gbp_match(
+                candidate,
+                website_url="https://mentormechanicalcorp.com/plumbers-nyc/",
+                business_name="Mentor Mechanical",
+                phone=None,
+                city="New York",
+            )
+        )
+
+    def test_supporting_page_phone_cannot_bind_a_branch_by_itself(self):
+        candidate = {
+            "title": "Shared Brand Plumbing",
+            "phone": "+1 918-555-0100",
+            "address": "Tulsa, OK",
+            "website": "https://sharedbrand.example/",
+        }
+        supporting_signals = [
+            scraper.IdentitySignal(
+                field="phone",
+                value="9185550100",
+                source="visible_phone",
+                quality="strong",
+                scope="site_discovery",
+            ),
+        ]
+
+        self.assertFalse(
+            scraper._is_confident_gbp_match(
+                candidate,
+                website_url="https://sharedbrand.example/services/",
+                business_name="Shared Brand Plumbing",
+                phone=None,
+                city=None,
+                identity_signals=supporting_signals,
+            )
+        )
+
+    def test_equally_strong_candidates_are_left_ambiguous(self):
+        candidates = [
+            {
+                "title": "Example Plumbing",
+                "address": "10 Main St, Tulsa, OK",
+                "website": "https://exampleplumbing.com/",
+                "data_id": "candidate-a",
+            },
+            {
+                "title": "Example Plumbing",
+                "address": "20 Main St, Tulsa, OK",
+                "website": "https://exampleplumbing.com/",
+                "data_id": "candidate-b",
+            },
+        ]
+
+        selected, decision = scraper._select_verified_gbp_candidate(
+            candidates,
+            website_url="https://exampleplumbing.com/services/",
+            business_name="Example Plumbing",
+            phone=None,
+            address=None,
+            city="Tulsa",
+        )
+
+        self.assertIsNone(selected)
+        self.assertEqual(decision["status"], "ambiguous")
+
+    def test_user_selected_exact_profile_is_the_comparison_target(self):
+        candidate = {
+            "title": "Different Public Profile Name",
+            "phone": "+1 212-555-0199",
+            "address": "New York, NY",
+            "website": "https://different.example/",
+        }
+
+        self.assertTrue(
+            scraper._is_confident_exact_gbp_match(
+                candidate,
+                website_url="https://page.example/service/",
+                business_name="Page Business Name",
+                phone="2125550100",
+                city="New York",
+                user_provided_gbp=True,
+            )
+        )
+
+    def test_auto_discovered_exact_profile_with_conflicting_phone_is_rejected(self):
+        candidate = {
+            "title": "Example Plumbing",
+            "phone": "+1 918-555-0199",
+            "address": "Tulsa, OK",
+            "website": "https://exampleplumbing.com/",
+        }
+
+        self.assertFalse(
+            scraper._is_confident_exact_gbp_match(
+                candidate,
+                website_url="https://exampleplumbing.com/services/",
+                business_name="Example Plumbing",
+                phone="9185550100",
+                city="Tulsa",
+                user_provided_gbp=False,
             )
         )
 

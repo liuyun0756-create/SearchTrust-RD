@@ -155,6 +155,25 @@ class ReportV21ContractTests(unittest.TestCase):
         )
         self.assertFalse(report["data_coverage"]["gbp_checked"])
 
+    def test_ambiguous_auto_discovery_is_not_treated_as_checked(self):
+        report = self.normalize(
+            self.contract_compliant_projection(self.real_dify_output),
+            gbp_lookup_attempted=True,
+            gbp_lookup_diagnostic={
+                "status": "ambiguous",
+                "code": "multiple_confident_candidates",
+                "message": "Two GBP candidates matched with similar confidence.",
+            },
+        )
+
+        self.assertEqual(report["gbp_status"]["status"], "ambiguous")
+        self.assertEqual(report["gbp_status"]["source"], "not_available")
+        self.assertEqual(
+            report["gbp_status"]["reason"],
+            "Two GBP candidates matched with similar confidence.",
+        )
+        self.assertFalse(report["data_coverage"]["gbp_checked"])
+
     def test_gbp_not_found_uses_backend_lookup_diagnostic(self):
         report = self.normalize(
             self.contract_compliant_projection(self.real_dify_output),

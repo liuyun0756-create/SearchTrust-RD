@@ -40,7 +40,7 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertEqual(findings["rule_26"]["condition"], "mismatch")
         self.assertEqual(findings["rule_27"]["condition"], "mismatch")
 
-    def test_missing_gbp_snapshot_triggers_comparison_rules_without_claiming_match(self):
+    def test_missing_gbp_snapshot_does_not_trigger_comparison_rules(self):
         results, applicability, findings = evaluate_gbp_rules(_context(
             {
                 "business_names": ["Spot On Plumbing"],
@@ -52,21 +52,22 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
             checked=False,
         ))
 
-        self.assertTrue(all(results.values()))
-        self.assertTrue(all(applicability.values()))
+        self.assertFalse(any(results.values()))
+        self.assertFalse(any(applicability.values()))
         self.assertTrue(all(item["condition"] == "gbp_unavailable" for item in findings.values()))
 
     def test_profile_without_identity_fields_is_not_treated_as_checked(self):
-        results, _, findings = evaluate_gbp_rules(_context(
+        results, applicability, findings = evaluate_gbp_rules(_context(
             {"business_names": [], "addresses": [], "phones": [], "service_areas": []},
             {"rating": 4.9, "reviews": 100},
         ))
 
-        self.assertTrue(all(results.values()))
+        self.assertFalse(any(results.values()))
+        self.assertFalse(any(applicability.values()))
         self.assertTrue(all(item["condition"] == "gbp_unavailable" for item in findings.values()))
 
     def test_unverified_profile_does_not_claim_a_missing_service_area(self):
-        results, _, findings = evaluate_gbp_rules(_context(
+        results, applicability, findings = evaluate_gbp_rules(_context(
             {
                 "business_names": [],
                 "addresses": [],
@@ -76,7 +77,8 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
             {"rating": 4.9, "reviews": 100},
         ))
 
-        self.assertTrue(results[29])
+        self.assertFalse(results[29])
+        self.assertFalse(applicability[29])
         self.assertEqual(findings["rule_29"]["condition"], "gbp_unavailable")
 
 

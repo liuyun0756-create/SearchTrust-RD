@@ -19,7 +19,7 @@ LayerKey = Literal[
 ]
 
 LayerStatus = Literal["good", "medium", "weak", "not_checked"]
-GBPStatusValue = Literal["checked", "not_checked", "not_found", "error"]
+GBPStatusValue = Literal["checked", "not_checked", "not_found", "ambiguous", "error"]
 GBPSource = Literal["user_provided", "system_discovered", "not_available"]
 ComparisonResult = Literal["match", "missing", "mismatch", "partial", "not_checked"]
 Confidence = Literal["high", "medium", "low"]
