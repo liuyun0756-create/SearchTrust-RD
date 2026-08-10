@@ -40,12 +40,12 @@ MISSING_EVIDENCE_STRATEGIES: dict[int, dict[str, Any]] = {
     3: {"label": "Geographic context", "terms": ("serving", "service area", "community", "city", "county", "near")},
     4: {"label": "Time and activity context", "kinds": ("text", "cta"), "terms": ("24/7", "24 hours", "same day", "today", "recent", "since", "year")},
     6: {"label": "Page imagery", "kinds": ("image",)},
-    7: {"label": "Service process", "terms": ("we", "our team", "technician", "diagnose", "inspect", "repair", "install")},
+    7: {"label": "First-person work detail", "terms": ("our technician", "our team", "we diagnosed", "we inspected", "we repaired", "we installed")},
     8: {"label": "Calls to action", "kinds": ("cta",), "terms": ("call", "book", "schedule", "quote", "estimate", "contact", "request")},
-    9: {"label": "Service responsibility and follow-up", "terms": ("technician", "our team", "we", "assess", "quote", "repair", "responsible", "warranty", "guarantee", "follow up")},
-    10: {"label": "Service responsibility and follow-up", "terms": ("diagnose", "assess", "quote", "repair", "parts", "limitations", "warranty", "follow up", "return visit")},
+    9: {"label": "Operational responsibility", "terms": ("our technician", "our team will", "we will", "handled by", "responsible for", "service request", "follow up")},
+    10: {"label": "Limits and complex cases", "terms": ("limitation", "exclusion", "complex case", "additional work", "parts availability", "not included", "cannot", "escalat")},
     11: {"label": "Verifiable trust signals", "terms": ("license", "licensed", "insured", "certified", "award", "association", "warranty")},
-    12: {"label": "Service responsibility and follow-up", "terms": ("assess", "quote", "repair", "warranty", "guarantee", "follow up", "correction", "our team", "technician")},
+    12: {"label": "Outcome and follow-up", "terms": ("warranty", "guarantee", "follow up", "return visit", "correction", "make it right", "satisfaction")},
     14: {"label": "Page purpose and value", "terms": ("service", "repair", "install", "why choose", "benefit")},
     21: {"label": "Business identity", "terms": ("company", "business", "plumbing", "contractor", "contact")},
     22: {"label": "Address", "terms": ("address", "location", "contact", "street", "road", "avenue")},
@@ -53,37 +53,49 @@ MISSING_EVIDENCE_STRATEGIES: dict[int, dict[str, Any]] = {
     24: {"label": "Service area", "terms": ("serving", "service area", "areas we serve", "community", "city")},
     25: {"label": "Business hours", "kinds": ("text", "cta"), "terms": ("hours", "open", "24/7", "monday", "saturday", "sunday")},
     30: {"label": "Geographic context", "terms": ("serving", "service area", "community", "neighborhood", "city", "county")},
-    31: {"label": "Geographic context", "terms": ("serving", "service area", "community", "neighborhood", "near", "city")},
+    31: {"label": "Landmark reference", "terms": ("landmark", "near ", "next to", "located by", "downtown", "district")},
     32: {"label": "Local context", "terms": ("local", "serving", "service area", "community", "neighborhood", "city")},
-    33: {"label": "Service boundary", "terms": ("serving", "service area", "miles", "radius", "surrounding", "nearby", "coverage")},
-    34: {"label": "Service examples", "terms": ("repair", "install", "job", "project", "customer", "homeowner", "technician")},
+    33: {"label": "Service boundary", "terms": ("miles", "radius", "boundary", "surrounding", "nearby", "coverage")},
+    34: {"label": "Specific service case", "terms": ("job", "project", "customer", "homeowner", "technician found", "technician repaired")},
     35: {"label": "Customer context", "terms": ("customer", "homeowner", "business owner", "property", "home", "commercial")},
     36: {"label": "Time and activity context", "terms": ("same day", "today", "recent", "last", "since", "year", "hour", "minute")},
 }
 
 SHORT_MISSING_LABELS: dict[int, str] = {
-    3: "No geographic or real-world anchor found",
-    4: "No dated activity or service timeline found",
-    6: "No clearly original page imagery identified",
-    7: "No concrete first-person work detail found",
-    8: "No page-specific call to action found",
-    9: "No operational responsibility statement found",
-    10: "No limits or complex-case guidance found",
-    11: "No externally verifiable trust clue found",
-    12: "No outcome or follow-up responsibility stated",
-    14: "No distinct standalone page value found",
-    21: "No clear business identity found",
-    22: "No street address found",
-    23: "No contact phone number found",
-    24: "No clear service-area statement found",
-    25: "No business hours found",
-    30: "No community-level location detail found",
-    31: "No concrete landmark reference found",
-    32: "No factual local operating context found",
-    33: "No service radius or operating boundary stated",
-    34: "No specific service case found",
-    35: "No customer situation described",
-    36: "No meaningful time context found",
+    3: "Not found: a real-world geographic or entity anchor, such as a neighborhood, landmark, or local institution.",
+    4: "Not found: meaningful time or activity evidence, such as a dated job, recent project, or service timeline.",
+    6: "Not found: clearly original imagery, such as real team, vehicle, jobsite, or completed-work photos.",
+    7: "Not found: concrete first-person work detail, such as what the team inspected, diagnosed, repaired, or installed.",
+    8: "Not found: a page-specific next step. Examples include booking this service, requesting a service-specific estimate, or calling about this exact need.",
+    9: "Not found: a clear statement of who handles the service request and owns delivery.",
+    10: "Not found: practical limits or complex-case guidance, such as exclusions, escalation, parts constraints, or additional work.",
+    11: "Not found: a verifiable trust signal, such as a license, certification, association, award, or warranty.",
+    12: "Not found: outcome or follow-up accountability, such as a guarantee, correction process, return visit, or named follow-up.",
+    14: "Not found: a distinct reason for this page to exist separately, such as unique service proof, expertise, or local value.",
+    21: "Not found: a clear business identity, such as a visible canonical business name tied to the service.",
+    22: "Not found: a visible street address, such as the business's customer-facing service location.",
+    23: "Not found: a visible contact phone number that a customer can use for this business.",
+    24: "Not found: a clear service-area statement, such as named cities, communities, or a defined coverage area.",
+    25: "Not found: visible business hours, such as weekday hours, weekend hours, or 24-hour availability.",
+    30: "Not found: community-level location detail, such as a neighborhood, district, or named nearby community.",
+    31: "Not found: a concrete landmark reference, such as a known road, facility, district, or place near the service area.",
+    32: "Not found: factual local operating context, such as local conditions, property types, regulations, or service realities.",
+    33: "Not found: a service radius or operating boundary, such as mileage, surrounding communities, or a defined coverage limit.",
+    34: "Not found: a specific service case, such as a real customer problem, diagnosis, completed job, or outcome.",
+    35: "Not found: a concrete customer situation, such as the property type, problem context, or service need.",
+    36: "Not found: meaningful time context, such as when work occurred, how long it took, or when service is available.",
+}
+
+REVIEW_EVIDENCE_LABELS: dict[int, str] = {
+    37: "Review service detail",
+    38: "Review geographic context",
+    39: "Review topic alignment",
+}
+
+REVIEW_MISSING_LABELS: dict[int, str] = {
+    37: "Not found: review text that names the specific service performed, problem handled, or outcome delivered.",
+    38: "Not found: review text with geographic context, such as a city, neighborhood, or local service area.",
+    39: "Not found: review text whose service topic can be compared with the focus of this page.",
 }
 
 
@@ -364,11 +376,14 @@ def _review_rule_evidence(
     return [{
         "id": f"ev-rule-{rule_id}-review-scope",
         "source_type": "review",
-        "source_label": "Checked review corpus",
+        "source_label": REVIEW_EVIDENCE_LABELS.get(rule_id, "Checked review corpus"),
         "source_url": str(context.get("url") or "") or None,
         "page_section": checked_scope,
         "extracted_text": None,
-        "normalized_value": "No review text was found in the review corpus available to this task.",
+        "normalized_value": REVIEW_MISSING_LABELS.get(
+            rule_id,
+            "Not found: review text in the review corpus available to this task.",
+        ),
         "expected_value": finding,
         "comparison_result": "missing",
         "confidence": "high",
@@ -570,9 +585,13 @@ def _source_text(value: Any) -> str:
 
 def _dedupe_evidence(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str, str, str]] = set()
     for item in items:
+        evidence_id = str(item.get("id") or "")
+        rule_match = re.search(r"(?:^|-)rule-(\d+)(?:-|$)", evidence_id)
+        rule_key = rule_match.group(1) if rule_match else evidence_id
         key = (
+            rule_key,
             str(item.get("source_type")),
             str(item.get("extracted_text") or item.get("normalized_value")),
             str(item.get("comparison_result")),

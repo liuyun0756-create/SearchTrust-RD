@@ -25,8 +25,8 @@ class EvidenceReadabilityTests(unittest.TestCase):
         ledger = build_evidence_ledger(context)
 
         cta = build_layer_evidence([8], ledger, context)[0]
-        geography = build_layer_evidence([31], ledger, context)[0]
-        responsibility = build_layer_evidence([10], ledger, context)[0]
+        geography = build_layer_evidence([30], ledger, context)[0]
+        responsibility = build_layer_evidence([9], ledger, context)[0]
         imagery = build_layer_evidence([6], ledger, context)[0]
 
         self.assertEqual(cta["source_label"], "Calls to action")
@@ -53,8 +53,100 @@ class EvidenceReadabilityTests(unittest.TestCase):
         evidence = build_layer_evidence([22], build_evidence_ledger(context), context)[0]
 
         self.assertEqual(evidence["source_label"], "Address")
-        self.assertEqual(evidence["normalized_value"], "No street address found")
+        self.assertEqual(
+            evidence["normalized_value"],
+            "Not found: a visible street address, such as the business's customer-facing service location.",
+        )
         self.assertNotIn("Not found in the checked scope", evidence["normalized_value"])
+
+    def test_each_triggered_rule_keeps_its_own_evidence_when_excerpt_is_shared(self):
+        content = (
+            "Our technicians handle the service request, explain limitations, "
+            "and provide warranty follow up."
+        )
+        context = {
+            "url": "https://example.com/service/",
+            "content": content,
+            "page_content": content,
+        }
+
+        evidence = build_layer_evidence(
+            [9, 10, 12],
+            build_evidence_ledger(context),
+            context,
+        )
+
+        self.assertEqual(len(evidence), 3)
+        self.assertEqual(
+            {item["id"].split("-")[2] for item in evidence},
+            {"9", "10", "12"},
+        )
+
+    def test_missing_rules_use_distinct_fixed_explanations(self):
+        context = {
+            "url": "https://example.com/service/",
+            "content": "General information about plumbing services.",
+            "page_content": "General information about plumbing services.",
+        }
+
+        evidence = build_layer_evidence(
+            [9, 10, 12],
+            build_evidence_ledger(context),
+            context,
+        )
+
+        self.assertEqual(len(evidence), 3)
+        self.assertEqual(
+            [item["source_label"] for item in evidence],
+            ["Operational responsibility", "Limits and complex cases", "Outcome and follow-up"],
+        )
+        for item in evidence:
+            self.assertTrue(str(item["normalized_value"]).startswith("Not found:"))
+        self.assertIn("who handles the service request", evidence[0]["normalized_value"])
+        self.assertIn("exclusions", evidence[1]["normalized_value"])
+        self.assertIn("return visit", evidence[2]["normalized_value"])
+
+    def test_missing_rule_evidence_is_backfilled_without_discarding_real_evidence(self):
+        content = "Our Service Area\nServing Tri-Cities Washington."
+        context = {
+            "url": "https://example.com/service/",
+            "content": content,
+            "page_content": content,
+        }
+
+        evidence = build_layer_evidence(
+            [3, 31, 33],
+            build_evidence_ledger(context),
+            context,
+        )
+
+        self.assertGreaterEqual(len(evidence), 3)
+        evidence_rules = {
+            item["id"].split("-")[2]
+            for item in evidence
+            if item["id"].startswith("ev-rule-")
+        }
+        self.assertEqual(evidence_rules, {"3", "31", "33"})
+
+    def test_multiple_real_excerpts_for_one_rule_are_all_preserved(self):
+        context = {
+            "url": "https://example.com/service/",
+            "content": "Customer reviews",
+            "page_content": "Customer reviews",
+            "review_corpus": [
+                {"id": "review-1", "text": "Fast shower installation."},
+                {"id": "review-2", "text": "Professional drain repair."},
+                {"id": "review-3", "text": "Clear explanation and timely service."},
+            ],
+        }
+
+        evidence = build_layer_evidence(
+            [38],
+            build_evidence_ledger(context),
+            context,
+        )
+
+        self.assertEqual(len(evidence), 3)
 
     def test_cleaned_multi_line_context_survives_traceability_pruning(self):
         context = self.context()

@@ -226,6 +226,47 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
+    def test_extracts_unique_stable_branch_link_from_location_selector(self):
+        page_url = "https://www.rotorooter.com/plumbing/emergency-plumber/"
+        branch_url = "https://www.rotorooter.com/manhattan/"
+        content = (
+            "Enter ZIP, City or Postal Code\n"
+            f"[MANHATTAN, NY]({branch_url})\n"
+            f"[View Location details]({branch_url})\n"
+            "[Locations](https://www.rotorooter.com/locations/)"
+        )
+
+        self.assertTrue(scraper._has_dynamic_location_selector(content))
+        self.assertEqual(
+            scraper._extract_dynamic_location_page_urls(page_url, content),
+            [branch_url],
+        )
+
+    def test_does_not_guess_between_multiple_location_selector_branches(self):
+        page_url = "https://example.com/services/emergency/"
+        content = (
+            "Select your location\n"
+            "[View Location details](/manhattan/)\n"
+            "[View Location details](/brooklyn/)"
+        )
+
+        self.assertEqual(
+            scraper._extract_dynamic_location_page_urls(page_url, content),
+            [],
+        )
+
+    def test_plain_locations_navigation_is_not_a_dynamic_selector(self):
+        content = "[Locations](/locations/) [Contact Us](/contact/)"
+
+        self.assertFalse(scraper._has_dynamic_location_selector(content))
+        self.assertEqual(
+            scraper._extract_dynamic_location_page_urls(
+                "https://example.com/services/emergency/",
+                content,
+            ),
+            [],
+        )
+
     async def test_resolves_maps_short_url_to_data_id_url(self):
         client = _FakeClient([_FakeResponse(url=TULSA_URL)])
         with patch("app.tasks.scraper.httpx.AsyncClient", return_value=client):
@@ -311,6 +352,95 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["gbp"]["name"], "1-Tom-Plumber Tri-Cities")
         self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
         self.assertEqual(fetch_gbp.await_args.kwargs["gbp_url"], TRI_CITIES_DIRECTIONS_URL)
+
+    async def test_scrape_uses_stable_dynamic_branch_only_for_gbp_discovery(self):
+        page_url = "https://www.rotorooter.com/plumbing/emergency-plumber/"
+        branch_url = "https://www.rotorooter.com/manhattan/"
+        main_content = (
+            "# 24 Hour Emergency Plumbing\n"
+            "Enter ZIP, City or Postal Code\n"
+            f"[MANHATTAN, NY]({branch_url})\n"
+            f"[View Location details]({branch_url})"
+        )
+        branch_content = """
+        # Roto-Rooter Manhattan
+        Location: 450 7th Ave Ste B, New York, NY 10123
+        Phone: (212) 687-1662
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Roto-Rooter Manhattan",
+          "telephone": "+12126871662",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "450 7th Ave Ste B",
+            "addressLocality": "New York",
+            "addressRegion": "NY",
+            "postalCode": "10123"
+          }
+        }
+        </script>
+        """
+        fetch_page = AsyncMock(side_effect=[
+            scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            ),
+            scraper.ScrapeResult(
+                content=branch_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(branch_content),
+            ),
+        ])
+        fetch_gbp = AsyncMock(return_value={"name": "RR Plumbing Roto-Rooter"})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", fetch_gbp
+        ):
+            result = await scraper.scrape(page_url)
+
+        lookup = fetch_gbp.await_args.kwargs
+        self.assertTrue(lookup["require_location_match"])
+        self.assertEqual(lookup["city"], "New York")
+        self.assertEqual(lookup["phone"], "+12126871662")
+        self.assertIn("450 7th Ave Ste B", lookup["address"])
+        self.assertNotIn("450 7th Ave", result["content"])
+        self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
+
+    async def test_scrape_requires_branch_anchor_when_selector_has_no_stable_link(self):
+        page_url = "https://example.com/services/emergency/"
+        main_content = (
+            "# Emergency Plumbing\n"
+            "Enter ZIP, City or Postal Code\n"
+            "Choose a location to continue."
+        )
+        fetch_page = AsyncMock(return_value=scraper.ScrapeResult(
+            content=main_content,
+            source=scraper.ScraperSource.JINA,
+            elapsed=0.1,
+            content_length=len(main_content),
+        ))
+        fetch_gbp = AsyncMock(return_value={})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", fetch_gbp
+        ):
+            await scraper.scrape(page_url)
+
+        self.assertTrue(fetch_gbp.await_args.kwargs["require_location_match"])
+        self.assertEqual(fetch_page.await_count, 1)
 
     async def test_scrape_keeps_supporting_pages_out_of_dify_content(self):
         page_url = "https://example.com/services/emergency/"

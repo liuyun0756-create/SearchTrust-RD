@@ -45,10 +45,15 @@ Call today.
         ledger = build_evidence_ledger(context)
         evidence = build_layer_evidence([37, 38], ledger, context)
 
-        self.assertEqual(len(evidence), 1)
-        self.assertEqual(evidence[0]["source_type"], "review")
-        self.assertEqual(evidence[0]["comparison_result"], "missing")
-        self.assertIn("No review text was found", evidence[0]["normalized_value"])
+        self.assertEqual(len(evidence), 2)
+        self.assertEqual(
+            [item["source_label"] for item in evidence],
+            ["Review service detail", "Review geographic context"],
+        )
+        for item in evidence:
+            self.assertEqual(item["source_type"], "review")
+            self.assertEqual(item["comparison_result"], "missing")
+            self.assertTrue(item["normalized_value"].startswith("Not found:"))
 
     def test_same_snapshot_serializes_identically_three_times(self):
         gbp = {"review_list": [{"text": "Great service in Tulsa.", "rating": 5}]}
