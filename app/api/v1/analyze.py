@@ -159,6 +159,7 @@ async def submit_analysis(
                 page_type=body.page_type.value,
                 language=body.language.value,
                 gbp_url=gbp_url,
+                location_context=body.location_context or "",
                 created_at=created_at,
             )
         finally:

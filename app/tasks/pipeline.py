@@ -76,6 +76,7 @@ async def run_pipeline(
     language: str,
     gbp_url: str,
     created_at: str,
+    location_context: str = "",
 ) -> dict[str, Any]:
     """
     Full SEO analysis pipeline as a plain async function.
@@ -92,6 +93,7 @@ async def run_pipeline(
             language=language,
             gbp_url=gbp_url,
             created_at=created_at,
+            location_context=location_context,
         )
     except asyncio.CancelledError:
         # Task was explicitly cancelled via DELETE /task/{id} — not an error,
@@ -124,6 +126,7 @@ async def _run_pipeline_inner(
     language: str,
     gbp_url: str,
     created_at: str,
+    location_context: str = "",
 ) -> dict[str, Any]:
     """
     Actual pipeline logic. Separated from run_pipeline() so that the
@@ -146,7 +149,11 @@ async def _run_pipeline_inner(
 
     try:
         logger.info("Pipeline stage=scraping task_id=%s url=%s gbp_url=%s", task_id, url, gbp_url)
-        scrape_result = await scrape(url, gbp_url=gbp_url)
+        scrape_result = await scrape(
+            url,
+            gbp_url=gbp_url,
+            location_context=location_context,
+        )
     except RuntimeError as exc:
         logger.error("Scraping failed task_id=%s: %s", task_id, exc)
         _update_state(
@@ -203,6 +210,7 @@ async def _run_pipeline_inner(
         "dify_page_type": dify_page_type,
         "generated_at": created_at,
         "input_gbp_url": gbp_url,
+        "location_context": location_context,
         "gbp_url": final_gbp_url,
         "gbp_data": gbp_data,
         "page_content": content,

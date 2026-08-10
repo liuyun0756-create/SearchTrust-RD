@@ -1541,9 +1541,9 @@ def extract_maps_url_from_content(content: str) -> Optional[str]:
         r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*',
         r'https://(?:www\.)?google\.com/maps/(?:dir|search|place)/[^\s\'"<>]*(?:destination_place_id|query_place_id|place_id)=[^\s\'"<>&]+[^\s\'"<>]*',
         r'https://search\.google\.com/local/reviews\?[^\s\'"<>]*placeid=[^\s\'"<>&]+[^\s\'"<>]*',
-        r'https://maps\.app\.goo\.gl/[^\s\'"<>]+',
-        r'https://goo\.gl/maps/[^\s\'"<>]+',
-        r'https://share\.google/[^\s\'"<>]+',
+        r'https://maps\.app\.goo\.gl/[^\s\'"<>\)\]]+',
+        r'https://goo\.gl/maps/[^\s\'"<>\)\]]+',
+        r'https://share\.google/[^\s\'"<>\)\]]+',
     )
     for pattern in patterns:
         match = re.search(pattern, normalised_content, re.IGNORECASE)
@@ -1700,6 +1700,96 @@ def _extract_dynamic_location_page_urls(page_url: str, content: str) -> list[str
     if len(locality_candidates) == 1:
         return locality_candidates
     return []
+
+
+def _location_branch_url_candidates(page_url: str, location_context: str | None) -> list[str]:
+    """Build a small set of same-domain branch-page discovery candidates.
+
+    These URLs are never trusted by construction. They are fetched only when
+    the user supplied a target location, and the response must independently
+    contain that location before it can contribute GBP lookup evidence.
+    """
+    raw_context = str(location_context or "").strip()
+    if not raw_context:
+        return []
+    try:
+        parsed = urlparse(page_url)
+    except ValueError:
+        return []
+    if not parsed.scheme or not parsed.netloc:
+        return []
+
+    parts = [part.strip() for part in raw_context.split(",") if part.strip()]
+    locality = parts[0] if parts else raw_context
+    region_match = re.search(r"\b([A-Za-z]{2})\b", " ".join(parts[1:]))
+    region = region_match.group(1).lower() if region_match else ""
+
+    def _slug(value: str) -> str:
+        return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", value.lower())).strip("-")
+
+    locality_slug = _slug(locality)
+    if not locality_slug:
+        return []
+    slugs = [locality_slug]
+    if region:
+        slugs.append(f"{locality_slug}-{region}")
+
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    candidates = [
+        f"{origin}/{prefix}{slug}/"
+        for slug in slugs
+        for prefix in ("", "locations/")
+    ]
+    return list(dict.fromkeys(candidates))[:4]
+
+
+def _branch_content_matches_location_context(
+    content: str,
+    location_context: str | None,
+    page_url: str | None = None,
+) -> bool:
+    """Verify that a fetched discovery page actually represents the target locality."""
+    raw_context = str(location_context or "").strip()
+    if not content or not raw_context:
+        return False
+    locality = raw_context.split(",", 1)[0].strip()
+    normalized_locality = _normalise_match_text(locality)
+    readable = _normalise_match_text(html.unescape(content))
+    if len(normalized_locality) < 3 or normalized_locality not in readable:
+        return False
+
+    if page_url:
+        path_slug = re.sub(
+            r"-+", "-", re.sub(r"[^a-z0-9]+", "-", urlparse(page_url).path.lower())
+        ).strip("-")
+        locality_slug = re.sub(
+            r"-+", "-", re.sub(r"[^a-z0-9]+", "-", locality.lower())
+        ).strip("-")
+        if locality_slug and locality_slug not in path_slug:
+            return False
+
+    # A location word alone can occur in generic navigation. Require at least
+    # one branch-style public identity anchor before accepting the page.
+    info = extract_business_info(content)
+    has_phone = bool(str(info.get("phone") or "").strip())
+    has_address = bool(re.search(
+        r"\b\d{1,6}\s+[A-Za-z0-9][A-Za-z0-9 .#'\-]{2,80}",
+        html.unescape(content),
+    ))
+    region_match = re.search(r"(?:^|,)\s*([A-Za-z]{2})(?:\s|,|$)", raw_context)
+    if region_match and has_address:
+        region = re.escape(region_match.group(1))
+        # Tie the requested state to an address-shaped fragment. This rejects
+        # geo-personalized content from another branch even when the requested
+        # city still appears in navigation or the page title.
+        has_address = bool(re.search(
+            rf"\b\d{{1,6}}\s+.{{0,180}}\b{region}\b",
+            html.unescape(content),
+            flags=re.IGNORECASE | re.DOTALL,
+        ))
+    if region_match:
+        return has_address
+    return has_phone or has_address
 
 
 def _extract_data_id_from_gbp_url(gbp_url: str) -> Optional[str]:
@@ -2048,19 +2138,34 @@ def _evaluate_gbp_candidate(
     name_matches = any(_business_names_match(value, title) for value in business_names)
     phone_matches = any(_phones_match(value, result_phone) for value in phones)
     address_matches = _addresses_match(address, result_address_raw)
-    target_locations = {
-        normalized
-        for value in [
-            city,
-            *(location_hints or []),
-            *_identity_signal_values(identity_signals, "city", scopes={"target_page"}),
-        ]
-        if (normalized := _normalise_match_text(value))
-    }
+    target_locations: set[str] = set()
+    for value in [
+        city,
+        *(location_hints or []),
+        *_identity_signal_values(identity_signals, "city", scopes={"target_page"}),
+    ]:
+        normalized = _normalise_match_text(value)
+        if normalized:
+            target_locations.add(normalized)
+        locality = _normalise_match_text(str(value or "").split(",", 1)[0])
+        if len(locality) >= 3:
+            target_locations.add(locality)
     normalized_result_address = _normalise_match_text(result_address_raw)
+    normalized_result_location_surface = " ".join(
+        value
+        for value in (
+            normalized_result_address,
+            _normalise_match_text(str(result.get("website") or "")),
+            _normalise_match_text(title),
+        )
+        if value
+    )
     location_matches = bool(
-        normalized_result_address
-        and any(location in normalized_result_address for location in target_locations)
+        normalized_result_location_surface
+        and any(
+            location in normalized_result_location_surface
+            for location in target_locations
+        )
     )
 
     for matched, label, weight in (
@@ -2394,6 +2499,7 @@ def _gbp_search_queries(
     phone: str | None,
     address: str | None,
     strict_domain_fallback: bool,
+    require_location_match: bool = False,
 ) -> list[str]:
     """Build ordered, distinct GBP queries without widening strict CID fallback."""
     search_location = next(
@@ -2409,9 +2515,9 @@ def _gbp_search_queries(
     if website_url:
         domain = urlparse(website_url).netloc or website_url
         queries.append(
-            domain
-            if strict_domain_fallback or not search_location
-            else f"{domain} {search_location}"
+            f"{domain} {search_location}"
+            if search_location and (require_location_match or not strict_domain_fallback)
+            else domain
         )
         if strict_domain_fallback:
             return queries
@@ -2587,6 +2693,7 @@ async def fetch_gbp_data(
         phone=phone,
         address=address,
         strict_domain_fallback=strict_domain_fallback,
+        require_location_match=require_location_match,
     )
     if not strict_domain_fallback:
         search_location = next(
@@ -3187,7 +3294,11 @@ async def _fetch_sub_page(
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
+async def scrape(
+    url: str,
+    gbp_url: Optional[str] = None,
+    location_context: Optional[str] = None,
+) -> dict[str, Any]:
     """
     Full scraping pipeline for a single URL.
 
@@ -3366,7 +3477,12 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
     dynamic_location_page_url = next(iter(dynamic_location_page_urls), None)
     branch_discovery_url = branch_root_url or dynamic_location_page_url
     has_location_selector = _has_dynamic_location_selector(target_content)
-    require_location_match = bool(branch_root_url or has_location_selector)
+    normalized_location_context = re.sub(
+        r"\s+", " ", str(location_context or "")
+    ).strip(" ,")
+    require_location_match = bool(
+        branch_root_url or has_location_selector or normalized_location_context
+    )
     branch_discovery_content: str | None = None
 
     if (
@@ -3386,6 +3502,46 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 branch_discovery_url,
                 exc,
             )
+
+    # A browser-side selector often does not expose its selected branch as a
+    # link in the server response. When the user provides a target locality,
+    # probe a bounded set of same-domain branch routes and accept one only
+    # after its content independently confirms that locality and exposes a
+    # branch phone/address. No context means no guessed branch.
+    if (
+        not user_provided_gbp
+        and not branch_discovery_url
+        and normalized_location_context
+    ):
+        for candidate_url in _location_branch_url_candidates(
+            url, normalized_location_context
+        ):
+            logger.info(
+                "[Scraper] verifying location-derived branch candidate url=%s context=%s",
+                candidate_url,
+                normalized_location_context,
+            )
+            try:
+                _, candidate_content = await _fetch_sub_page(candidate_url)
+            except Exception as exc:  # noqa: BLE001
+                logger.info(
+                    "[Scraper] location-derived branch candidate failed url=%s: %s",
+                    candidate_url,
+                    exc,
+                )
+                continue
+            if _branch_content_matches_location_context(
+                candidate_content or "",
+                normalized_location_context,
+                candidate_url,
+            ):
+                branch_discovery_url = candidate_url
+                branch_discovery_content = candidate_content
+                logger.info(
+                    "[Scraper] verified location-derived branch page url=%s",
+                    candidate_url,
+                )
+                break
 
     if not gbp_url:
         discovered_gbp_url = extract_maps_url_from_content(combined_content)
@@ -3482,6 +3638,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
             location_hints = [
                 value
                 for value in [
+                    normalized_location_context,
                     branch_business_info.get("city"),
                     *branch_page_facts.get("service_areas", []),
                     target_business_info.get("city"),
@@ -3489,41 +3646,60 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
                 ]
                 if isinstance(value, str) and value.strip()
             ]
+            unresolved_dynamic_branch = bool(
+                has_location_selector
+                and not branch_discovery_url
+                and not normalized_location_context
+                and not gbp_url
+            )
             gbp_lookup_attempted = bool(
                 gbp_url
                 or url
                 or discovery_business_info.get("name")
                 or discovery_business_info.get("city")
             )
-            gbp_data = await fetch_gbp_data(
-                business_name=(
-                    target_business_info.get("name")
-                    or discovery_business_info.get("name")
-                ),
-                city=(
-                    branch_business_info.get("city")
-                    or target_business_info.get("city")
-                ),
-                website_url=url,
-                gbp_url=gbp_url,
-                location_hints=location_hints,
-                # A stable branch page is discovery-only evidence. Its phone
-                # and address may identify the branch, while the strict L3
-                # comparison still uses the untouched target-page facts.
-                phone=(
-                    branch_business_info.get("phone")
-                    or target_business_info.get("phone")
-                ),
-                address=branch_address or target_address,
-                require_location_match=require_location_match,
-                user_provided_gbp=user_provided_gbp,
-                identity_signals=[
-                    *target_identity_signals,
-                    *discovery_identity_signals,
-                    *branch_identity_signals,
-                ],
-                diagnostic=gbp_lookup_diagnostic,
-            )
+            if unresolved_dynamic_branch:
+                _set_gbp_lookup_diagnostic(
+                    gbp_lookup_diagnostic,
+                    status="not_found",
+                    code="branch_location_context_missing",
+                    message=(
+                        "The page uses a browser-side location selector, but the submitted "
+                        "URL did not identify one branch. No GBP profile was guessed."
+                    ),
+                )
+                gbp_data = {}
+            else:
+                gbp_data = await fetch_gbp_data(
+                    business_name=(
+                        branch_business_info.get("name")
+                        or target_business_info.get("name")
+                        or discovery_business_info.get("name")
+                    ),
+                    city=(
+                        branch_business_info.get("city")
+                        or target_business_info.get("city")
+                    ),
+                    website_url=url,
+                    gbp_url=gbp_url,
+                    location_hints=location_hints,
+                    # A stable branch page is discovery-only evidence. Its phone
+                    # and address may identify the branch, while the strict L3
+                    # comparison still uses the untouched target-page facts.
+                    phone=(
+                        branch_business_info.get("phone")
+                        or target_business_info.get("phone")
+                    ),
+                    address=branch_address or target_address,
+                    require_location_match=require_location_match,
+                    user_provided_gbp=user_provided_gbp,
+                    identity_signals=[
+                        *target_identity_signals,
+                        *discovery_identity_signals,
+                        *branch_identity_signals,
+                    ],
+                    diagnostic=gbp_lookup_diagnostic,
+                )
         except Exception as exc:  # noqa: BLE001
             logger.warning("[Scraper] GBP fetch failed url=%s: %s; continuing without GBP", url, exc)
             gbp_error = str(exc)
@@ -3545,6 +3721,7 @@ async def scrape(url: str, gbp_url: Optional[str] = None) -> dict[str, Any]:
         "gbp_lookup_attempted": gbp_lookup_attempted,
         "gbp_error":          gbp_error,
         "gbp_lookup_diagnostic": gbp_lookup_diagnostic or None,
+        "location_context": normalized_location_context or None,
         "identity_signals": [signal.as_dict() for signal in discovery_identity_signals],
         "target_identity_signals": [signal.as_dict() for signal in target_identity_signals],
         "scraper_source":     scraper_source,

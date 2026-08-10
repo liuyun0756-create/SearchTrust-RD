@@ -7,6 +7,7 @@ Pydantic request models for the SEO Trust Path Analysis API.
 from __future__ import annotations
 
 import ipaddress
+import re
 import socket
 from enum import Enum
 from typing import Optional
@@ -186,6 +187,10 @@ class AnalyzeRequest(BaseModel):
         Used to query GBP data via domain matching (more accurate than
         name+city search). If not provided, GBP lookup falls back to
         business name + city extracted from page content.
+    location_context:
+        Optional city, state or postal-code context for a multi-location
+        brand page whose selected branch is stored in browser state instead
+        of the submitted URL.
     """
 
     url: HttpUrl = Field(
@@ -210,6 +215,15 @@ class AnalyzeRequest(BaseModel):
             "If omitted, falls back to business name + city extracted from the page."
         ),
         examples=["https://nxtlvlautospa.com"],
+    )
+    location_context: Optional[str] = Field(
+        default=None,
+        max_length=120,
+        description=(
+            "Optional target city, state, or postal code used only to resolve "
+            "a branch for multi-location pages."
+        ),
+        examples=["Manhattan, NY"],
     )
 
     # ── Validators ────────────────────────────────────────────────────────────
@@ -238,6 +252,15 @@ class AnalyzeRequest(BaseModel):
             v = "https://" + v
         return v
 
+    @field_validator("location_context", mode="before")
+    @classmethod
+    def normalise_location_context(cls, v: Optional[str]) -> Optional[str]:
+        """Keep user-supplied branch context short and presentation-safe."""
+        if v is None:
+            return None
+        value = re.sub(r"\s+", " ", str(v)).strip(" ,")
+        return value or None
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -245,6 +268,7 @@ class AnalyzeRequest(BaseModel):
                 "page_type": "本地服务落地页",
                 "language": "English",
                 "gbp_url": "https://www.example.com",
+                "location_context": "Manhattan, NY",
             }
         }
     }

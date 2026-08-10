@@ -95,6 +95,14 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
             SHARE_URL,
         )
 
+    def test_short_maps_url_stops_before_adjacent_social_links(self):
+        content = (
+            f"[Map]({SHORT_URL})"
+            "[Facebook](https://www.facebook.com/RotoRooterNewYork/)"
+        )
+
+        self.assertEqual(scraper.extract_maps_url_from_content(content), SHORT_URL)
+
     def test_extracts_place_id_from_google_review_link(self):
         content = f"[Read our Google reviews]({REVIEW_URL})"
 
@@ -415,6 +423,129 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("450 7th Ave", result["content"])
         self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
 
+    async def test_scrape_resolves_user_location_to_verified_branch_page(self):
+        page_url = "https://www.rotorooter.com/plumbing/emergency-plumber/"
+        branch_url = "https://www.rotorooter.com/manhattan/"
+        main_content = """
+        # 24 Hour Emergency Plumbing
+        Roto-Rooter provides emergency plumbing services nationwide.
+        """
+        branch_content = """
+        # Roto-Rooter Manhattan
+        Location: 450 7th Ave Ste B, New York, NY 10123
+        Phone: (212) 687-1662
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Roto-Rooter Manhattan",
+          "telephone": "+12126871662",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "450 7th Ave Ste B",
+            "addressLocality": "New York",
+            "addressRegion": "NY",
+            "postalCode": "10123"
+          }
+        }
+        </script>
+        """
+        fetch_page = AsyncMock(side_effect=[
+            scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            ),
+            scraper.ScrapeResult(
+                content=branch_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(branch_content),
+            ),
+        ])
+        fetch_gbp = AsyncMock(return_value={"name": "RR Plumbing Roto-Rooter"})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", fetch_gbp
+        ):
+            result = await scraper.scrape(
+                page_url,
+                location_context="  Manhattan,   NY ",
+            )
+
+        lookup = fetch_gbp.await_args.kwargs
+        self.assertEqual(fetch_page.await_args_list[1].args[0], branch_url)
+        self.assertEqual(lookup["business_name"], "Roto-Rooter Manhattan")
+        self.assertEqual(lookup["city"], "New York")
+        self.assertEqual(lookup["phone"], "+12126871662")
+        self.assertIn("450 7th Ave Ste B", lookup["address"])
+        self.assertIn("Manhattan, NY", lookup["location_hints"])
+        self.assertTrue(lookup["require_location_match"])
+        self.assertEqual(result["location_context"], "Manhattan, NY")
+        self.assertNotIn("450 7th Ave", result["content"])
+
+    def test_location_branch_candidates_are_bounded_and_same_domain(self):
+        self.assertEqual(
+            scraper._location_branch_url_candidates(
+                "https://www.rotorooter.com/plumbing/emergency-plumber/",
+                "Manhattan, NY",
+            ),
+            [
+                "https://www.rotorooter.com/manhattan/",
+                "https://www.rotorooter.com/locations/manhattan/",
+                "https://www.rotorooter.com/manhattan-ny/",
+                "https://www.rotorooter.com/locations/manhattan-ny/",
+            ],
+        )
+
+    def test_branch_content_requires_location_and_public_identity_anchor(self):
+        self.assertFalse(
+            scraper._branch_content_matches_location_context(
+                "Choose Manhattan from our locations navigation.",
+                "Manhattan, NY",
+                "https://www.rotorooter.com/manhattan/",
+            )
+        )
+        self.assertFalse(
+            scraper._branch_content_matches_location_context(
+                "Roto-Rooter Brooklyn | 10233 Topanga Canyon Blvd, Chatsworth, CA 91311 | Phone: (310) 595-1403",
+                "Manhattan, NY",
+                "https://www.rotorooter.com/manhattan/",
+            )
+        )
+        self.assertTrue(
+            scraper._branch_content_matches_location_context(
+                "Roto-Rooter Manhattan | 450 7th Ave Ste B, New York, NY 10123 | (212) 687-1662",
+                "Manhattan, NY",
+                "https://www.rotorooter.com/manhattan/",
+            )
+        )
+
+    def test_branch_location_can_match_verified_candidate_website_path(self):
+        decision = scraper._evaluate_gbp_candidate(
+            {
+                "title": "RR Plumbing Roto-Rooter",
+                "address": "450 7th Ave Ste B, New York, NY 10123",
+                "phone": "(212) 687-1215",
+                "website": "https://www.rotorooter.com/manhattan/",
+            },
+            website_url="https://www.rotorooter.com/plumbing/emergency-plumber/",
+            business_name="Roto-Rooter",
+            phone=None,
+            address=None,
+            city=None,
+            location_hints=["Manhattan, NY"],
+            require_location_match=True,
+        )
+
+        self.assertTrue(decision["accepted"])
+        self.assertIn("location", decision["branch_anchor_matches"])
+
     async def test_scrape_requires_branch_anchor_when_selector_has_no_stable_link(self):
         page_url = "https://example.com/services/emergency/"
         main_content = (
@@ -437,10 +568,14 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         ), patch(
             "app.tasks.scraper.fetch_gbp_data", fetch_gbp
         ):
-            await scraper.scrape(page_url)
+            result = await scraper.scrape(page_url)
 
-        self.assertTrue(fetch_gbp.await_args.kwargs["require_location_match"])
+        fetch_gbp.assert_not_awaited()
         self.assertEqual(fetch_page.await_count, 1)
+        self.assertEqual(
+            result["gbp_lookup_diagnostic"]["code"],
+            "branch_location_context_missing",
+        )
 
     async def test_scrape_keeps_supporting_pages_out_of_dify_content(self):
         page_url = "https://example.com/services/emergency/"
@@ -681,6 +816,39 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["name"], "Spot On Plumbing of Tulsa Plumbers")
         self.assertEqual(diagnostic["code"], "strict_domain_fallback_match")
         self.assertTrue(client.requests[0][1]["params"]["q"].endswith("spotonplumbing.com"))
+
+    async def test_branch_strict_domain_fallback_keeps_target_location_in_query(self):
+        place = {
+            "title": "RR Plumbing Roto-Rooter",
+            "phone": "(212) 687-1215",
+            "address": "450 7th Ave Ste B, New York, NY 10123",
+            "website": "https://www.rotorooter.com/manhattan/",
+        }
+        client = _FakeClient([
+            _FakeResponse(url="https://serpapi.example/search", payload={"place_results": place})
+        ])
+        diagnostic = {}
+        with patch.object(scraper.settings, "SERPAPI_KEY", "test-key"), patch(
+            "app.tasks.scraper._resolve_gbp_url", new=AsyncMock(return_value=SHORT_URL)
+        ), patch("app.tasks.scraper.httpx.AsyncClient", return_value=client), patch(
+            "app.tasks.scraper._enrich_gbp_info", new=AsyncMock(side_effect=lambda value: value)
+        ):
+            result = await scraper.fetch_gbp_data(
+                business_name="Roto-Rooter Manhattan",
+                city="New York",
+                website_url="https://www.rotorooter.com/plumbing/emergency-plumber/",
+                gbp_url=SHORT_URL,
+                location_hints=["Manhattan, NY"],
+                address="450 7th Ave Ste B, New York, NY 10123",
+                require_location_match=True,
+                diagnostic=diagnostic,
+            )
+
+        self.assertEqual(result["name"], "RR Plumbing Roto-Rooter")
+        self.assertEqual(
+            client.requests[0][1]["params"]["q"],
+            "www.rotorooter.com New York",
+        )
 
     async def test_empty_exact_lookup_uses_strict_domain_fallback(self):
         place = {
