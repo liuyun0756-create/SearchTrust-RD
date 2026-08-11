@@ -62,8 +62,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(rows["business_name"]["status"], "match")
         self.assertEqual(rows["phone"]["status"], "match")
         self.assertEqual(rows["website"]["status"], "match")
-        self.assertEqual(rows["service_area"]["status"], "mismatch")
-        self.assertIn("checked GBP response did not return one", rows["service_area"]["explanation"])
+        self.assertEqual(rows["service_area"]["status"], "missing")
+        self.assertIn("did not return it", rows["service_area"]["explanation"])
         alignment_scope = next(
             item for item in audit["audit_scope"] if item["key"] == "gbp_page_alignment"
         )
@@ -322,10 +322,10 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(
             {key: rows[key]["status"] for key in ("business_name", "address", "phone", "service_area")},
             {
-                "business_name": "mismatch",
+                "business_name": "missing",
                 "address": "missing",
-                "phone": "mismatch",
-                "service_area": "mismatch",
+                "phone": "missing",
+                "service_area": "missing",
             },
         )
         for rule_id, key in ((26, "business_name"), (27, "address"), (28, "phone"), (29, "service_area")):

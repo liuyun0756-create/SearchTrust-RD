@@ -56,6 +56,22 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
     gbp_status = build_gbp_status(context)["status"]
     page = _extract_page_signals(content, page_business, _text(context.get("url")))
     backend_findings = context.get("backend_gbp_findings")
+    if not isinstance(backend_findings, dict):
+        # Historical reports and direct callers must still use the canonical
+        # L3 facts/comparator instead of maintaining a second interpretation.
+        from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules  # noqa: PLC0415
+        from app.report_v21.page_facts import build_page_facts  # noqa: PLC0415
+
+        page_facts = context.get("page_facts")
+        if not isinstance(page_facts, dict):
+            page_facts = build_page_facts(
+                content,
+                page_business,
+                context.get("target_identity_signals"),
+            )
+        derived_context = dict(context)
+        derived_context["page_facts"] = page_facts
+        _, _, backend_findings = evaluate_gbp_rules(derived_context)
     comparisons = _build_comparisons(
         page,
         gbp,
@@ -291,11 +307,12 @@ def _build_comparisons(
 def _finding_status(condition: str) -> str:
     return {
         "match": "match",
-        "mismatch": "mismatch",
+        "mismatch": "missing",
         "page_missing": "missing",
-        "gbp_field_missing": "mismatch",
+        "gbp_field_missing": "missing",
         "both_missing": "not_checked",
         "gbp_unavailable": "not_checked",
+        "field_not_applicable": "not_applicable",
     }.get(condition, "not_checked")
 
 
@@ -351,7 +368,7 @@ def _compare_signal(
             return "not_applicable", "The GBP source identifies a storefront where service-area data is not applicable."
         if not observed:
             if page_value and not gbp_value:
-                return "mismatch", "The page identifies a service area, but the checked GBP response did not return one."
+                return "missing", "The page identifies a service area, but the checked GBP response did not return one."
             return "not_checked", "The public GBP response did not expose verifiable service-area data."
         if not gbp_value and applicable is True:
             if page_value:
@@ -363,12 +380,17 @@ def _compare_signal(
     if not page_value:
         return "missing", "GBP exposes this signal, but the scraped page did not expose a comparable value."
     if not gbp_value:
+        if key in _GBP_RULE_TO_COMPARISON_KEY.values():
+            return "missing", "The page exposes this signal, but the public GBP response did not return it."
         return "not_checked", "The page exposes this signal, but the public GBP response did not return it."
 
     left = _normalize(page_value, mode)
     right = _normalize(gbp_value, mode)
     if left == right:
         return "match", "The normalized page and GBP values match."
+
+    if key in _GBP_RULE_TO_COMPARISON_KEY.values():
+        return "missing", "The normalized page and GBP values are not exactly equal."
 
     left_tokens = _tokens(left)
     right_tokens = _tokens(right)

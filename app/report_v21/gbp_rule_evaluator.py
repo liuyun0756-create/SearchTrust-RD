@@ -34,6 +34,11 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
         gbp_values = _values(gbp.get(gbp_key))
         normalized_page = _normalized_values(page_values, normalizer)
         normalized_gbp = _normalized_values(gbp_values, normalizer)
+        field_applicable = gbp_checked and not (
+            rule_id == 29
+            and bool(gbp.get("service_areas_observed"))
+            and gbp.get("service_area_business") is False
+        )
 
         if not gbp_checked:
             triggered = False
@@ -41,6 +46,10 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
             explanation = (
                 "A checked GBP reference was unavailable, so this comparison was not assessed."
             )
+        elif not field_applicable:
+            triggered = False
+            condition = "field_not_applicable"
+            explanation = "The checked GBP identifies a storefront where service-area data is not applicable."
         elif not normalized_page and not normalized_gbp:
             triggered = False
             condition = "both_missing"
@@ -65,19 +74,24 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
             )
 
         results[rule_id] = triggered
-        applicability[rule_id] = gbp_checked
+        applicability[rule_id] = field_applicable
         findings[f"rule_{rule_id}"] = {
             "finding_key": f"rule_{rule_id}",
             "rule_id": rule_id,
             "affected_layer": "entity_consistency",
             "field": field,
             "triggered": triggered,
-            "applicable": gbp_checked,
+            "applicable": field_applicable,
             "condition": condition,
             "finding": RULE_FINDING_LABELS[rule_id],
             "explanation": explanation,
             "page_values": page_values,
             "gbp_values": gbp_values,
+            "page_observations": _page_observations(page_facts, page_key, page_values),
+            "gbp_observations": [
+                {"value": value, "source": "public_gbp", "scope": "gbp_profile"}
+                for value in gbp_values
+            ],
             "gbp_status": gbp_status,
         }
 
@@ -94,6 +108,31 @@ def _values(value: Any) -> list[str]:
 def _normalized_values(values: list[str], normalizer: Callable[[str], str]) -> list[str]:
     normalized = [normalizer(value) for value in values]
     return list(dict.fromkeys(value for value in normalized if value))
+
+
+def _page_observations(
+    page_facts: dict[str, Any],
+    page_key: str,
+    page_values: list[str],
+) -> list[dict[str, str]]:
+    observations = page_facts.get("observations")
+    raw_items = observations.get(page_key) if isinstance(observations, dict) else None
+    if isinstance(raw_items, list):
+        selected = [
+            {
+                "value": str(item.get("value") or "").strip(),
+                "source": str(item.get("source") or "checked_page"),
+                "scope": str(item.get("scope") or "target_page"),
+            }
+            for item in raw_items
+            if isinstance(item, dict) and str(item.get("value") or "").strip()
+        ]
+        if [item["value"] for item in selected] == page_values:
+            return selected
+    return [
+        {"value": value, "source": "checked_page", "scope": "target_page"}
+        for value in page_values
+    ]
 
 
 def _normalize_text(value: str) -> str:

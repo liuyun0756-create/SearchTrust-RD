@@ -498,11 +498,12 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
         gbp_values = _values(backend_finding.get("gbp_values"))
     comparison_result = {
         "match": "match",
-        "mismatch": "mismatch",
+        "mismatch": "missing",
         "page_missing": "missing",
-        "gbp_field_missing": "mismatch",
+        "gbp_field_missing": "missing",
         "both_missing": "not_checked",
         "gbp_unavailable": "not_checked",
+        "field_not_applicable": "not_applicable",
     }.get(condition, "mismatch")
     items: list[dict[str, Any]] = []
 

@@ -171,3 +171,64 @@ class RuleContractTests(unittest.TestCase):
         self.assertNotIn("https", facts["service_areas"])
         self.assertNotIn("spotonplumbing", facts["service_areas"])
         self.assertNotIn("2026 Spot On Pl", facts["addresses"])
+
+    def test_page_facts_recover_plumbingbo_name_from_visible_raw_sources(self):
+        samples = (
+            ("PlumbingBO is a leading plumbing company.", "visible_self_identification"),
+            ("@ 2024 PlumbingBO - Local Plumbing Services", "visible_footer_owner"),
+            ("![PlumbingBO](https://example.com/assets/logo.png)", "visible_logo_alt"),
+        )
+
+        for content, source in samples:
+            with self.subTest(source=source):
+                facts = build_page_facts(content)
+                self.assertEqual(facts["business_names"], ["PlumbingBO"])
+                self.assertEqual(
+                    facts["observations"]["business_names"],
+                    [{"value": "PlumbingBO", "source": source, "scope": "target_page"}],
+                )
+
+    def test_page_facts_preserve_raw_values_and_sources_for_all_l3_fields(self):
+        facts = build_page_facts(
+            """
+            PlumbingBO is a leading plumbing company.
+            Call +1 (315) 228-9299.
+            153 7th Avenue, New York, NY 10011
+            Serving New York, Brooklyn and Queens.
+            """
+        )
+
+        self.assertEqual(facts["business_names"], ["PlumbingBO"])
+        self.assertIn("+1 (315) 228-9299", facts["phones"])
+        self.assertIn("153 7th Avenue, New York, NY 10011", facts["addresses"])
+        self.assertEqual(facts["service_areas"], ["New York", "Brooklyn", "Queens"])
+        for field in ("business_names", "phones", "addresses", "service_areas"):
+            self.assertEqual(
+                facts[field],
+                [item["value"] for item in facts["observations"][field]],
+            )
+
+    def test_visible_identity_signal_outranks_weak_domain_name(self):
+        facts = build_page_facts(
+            "",
+            None,
+            [
+                {
+                    "field": "name",
+                    "value": "plumbingbo.com",
+                    "source": "json_ld",
+                    "quality": "weak",
+                    "scope": "target_page",
+                },
+                {
+                    "field": "name",
+                    "value": "PlumbingBO",
+                    "source": "logo_alt",
+                    "quality": "supporting",
+                    "scope": "target_page",
+                },
+            ],
+        )
+
+        self.assertEqual(facts["business_names"], ["PlumbingBO"])
+        self.assertEqual(facts["observations"]["business_names"][0]["source"], "logo_alt")

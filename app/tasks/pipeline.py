@@ -195,7 +195,11 @@ async def _run_pipeline_inner(
     # Resolve English page_type to the Chinese value Dify expects
     dify_page_type = resolve_page_type(input_page_type)
     dify_gbp_data = _build_dify_gbp_payload(gbp_data)
-    page_facts = build_page_facts(content, scrape_result.get("business"))
+    page_facts = build_page_facts(
+        content,
+        scrape_result.get("business"),
+        scrape_result.get("target_identity_signals"),
+    )
     review_corpus = build_review_corpus(
         content,
         gbp_data,

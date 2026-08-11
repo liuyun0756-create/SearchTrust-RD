@@ -3614,10 +3614,15 @@ async def scrape(
         try:
             from app.report_v21.page_facts import build_page_facts
 
-            page_facts = build_page_facts(cleaned, target_business_info)
+            page_facts = build_page_facts(
+                cleaned,
+                target_business_info,
+                [signal.as_dict() for signal in target_identity_signals],
+            )
             branch_page_facts = build_page_facts(
                 clean_content(branch_discovery_content or ""),
                 branch_business_info,
+                [signal.as_dict() for signal in branch_identity_signals],
             )
             branch_address = next(
                 (

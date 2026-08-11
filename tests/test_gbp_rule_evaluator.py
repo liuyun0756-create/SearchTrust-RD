@@ -61,6 +61,55 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertEqual(findings["rule_26"]["condition"], "mismatch")
         self.assertEqual(findings["rule_27"]["condition"], "mismatch")
 
+    def test_plumbingbo_uses_raw_page_name_and_remains_strict(self):
+        page_facts = {
+            "business_names": ["PlumbingBO"],
+            "addresses": [],
+            "phones": [],
+            "service_areas": [],
+            "observations": {
+                "business_names": [{
+                    "value": "PlumbingBO",
+                    "source": "visible_footer_owner",
+                    "scope": "target_page",
+                }],
+            },
+        }
+        results, _, findings = evaluate_gbp_rules(_context(
+            page_facts,
+            {"name": "Local Plumbing Company - PlumbingBO", "phone": "(315) 228-9299"},
+        ))
+
+        self.assertTrue(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "mismatch")
+        self.assertEqual(findings["rule_26"]["page_values"], ["PlumbingBO"])
+        self.assertEqual(
+            findings["rule_26"]["page_observations"][0]["source"],
+            "visible_footer_owner",
+        )
+
+    def test_storefront_service_area_is_not_applicable(self):
+        results, applicability, findings = evaluate_gbp_rules(_context(
+            {
+                "business_names": ["Example Plumbing"],
+                "addresses": [],
+                "phones": [],
+                "service_areas": [],
+            },
+            {
+                "name": "Example Plumbing",
+                "phone": "(918) 555-0100",
+                "service_areas": [],
+                "service_areas_observed": True,
+                "service_area_business": False,
+            },
+        ))
+
+        self.assertFalse(results[29])
+        self.assertFalse(applicability[29])
+        self.assertFalse(findings["rule_29"]["applicable"])
+        self.assertEqual(findings["rule_29"]["condition"], "field_not_applicable")
+
     def test_missing_gbp_snapshot_does_not_trigger_comparison_rules(self):
         results, applicability, findings = evaluate_gbp_rules(_context(
             {
