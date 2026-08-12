@@ -275,11 +275,15 @@ def _build_comparisons(
         if isinstance(finding, dict):
             page_value = finding.get("page_values")
             gbp_value = finding.get("gbp_values")
+            page_observations = finding.get("page_observations") if isinstance(finding.get("page_observations"), list) else []
+            gbp_observations = finding.get("gbp_observations") if isinstance(finding.get("gbp_observations"), list) else []
             status = _finding_status(str(finding.get("condition") or "gbp_unavailable"))
             explanation = str(finding.get("explanation") or "Backend GBP comparison.")
         else:
             page_value = page.get(key)
             gbp_value = gbp.get(gbp_key)
+            page_observations = []
+            gbp_observations = []
             status, explanation = _compare_signal(
                 key=key,
                 page_value=page_value,
@@ -295,13 +299,23 @@ def _build_comparisons(
             "status": status,
             "page_value": _display(page_value),
             "gbp_value": _display(gbp_value),
-            "page_source": "Observed in scraped page content" if page_value else None,
-            "gbp_source": "Observed in public GBP result" if gbp_value not in (None, "", []) else None,
+            "page_source": _observation_source_label(page_observations, "Observed in target page") if page_value else None,
+            "gbp_source": _observation_source_label(gbp_observations, "Observed in public GBP result") if gbp_value not in (None, "", []) else None,
             "explanation": explanation,
             "related_layer": "entity_consistency",
             "included_in_score": False,
         })
     return rows
+
+
+def _observation_source_label(observations: list[Any], fallback: str) -> str:
+    labels = list(dict.fromkeys(
+        str(item.get("source_label") or item.get("source_type") or item.get("source") or "").strip()
+        for item in observations
+        if isinstance(item, dict)
+        and str(item.get("source_label") or item.get("source_type") or item.get("source") or "").strip()
+    ))
+    return "; ".join(labels) if labels else fallback
 
 
 def _finding_status(condition: str) -> str:

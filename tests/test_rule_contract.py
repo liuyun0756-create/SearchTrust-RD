@@ -174,19 +174,20 @@ class RuleContractTests(unittest.TestCase):
 
     def test_page_facts_recover_plumbingbo_name_from_visible_raw_sources(self):
         samples = (
-            ("PlumbingBO is a leading plumbing company.", "visible_self_identification"),
-            ("@ 2024 PlumbingBO - Local Plumbing Services", "visible_footer_owner"),
-            ("![PlumbingBO](https://example.com/assets/logo.png)", "visible_logo_alt"),
+            ("PlumbingBO is a leading plumbing company.", "page.dom.self_identification"),
+            ("@ 2024 PlumbingBO - Local Plumbing Services", "page.dom.footer_owner"),
+            ("![PlumbingBO](https://example.com/assets/logo.png)", "page.dom.logo_alt"),
         )
 
         for content, source in samples:
             with self.subTest(source=source):
                 facts = build_page_facts(content)
                 self.assertEqual(facts["business_names"], ["PlumbingBO"])
-                self.assertEqual(
-                    facts["observations"]["business_names"],
-                    [{"value": "PlumbingBO", "source": source, "scope": "target_page"}],
-                )
+                observation = facts["observations"]["business_names"][0]
+                self.assertEqual(observation["source_type"], source)
+                self.assertEqual(observation["source_scope"], "target_page")
+                self.assertEqual(observation["validation"], "valid")
+                self.assertTrue(observation["eligible_for_l3"])
 
     def test_page_facts_preserve_raw_values_and_sources_for_all_l3_fields(self):
         facts = build_page_facts(
@@ -231,4 +232,126 @@ class RuleContractTests(unittest.TestCase):
         )
 
         self.assertEqual(facts["business_names"], ["PlumbingBO"])
-        self.assertEqual(facts["observations"]["business_names"][0]["source"], "logo_alt")
+        self.assertEqual(facts["observations"]["business_names"][0]["source_type"], "page.dom.logo_alt")
+
+    def test_page_facts_block_url_numbers_malformed_phones_and_generic_names(self):
+        content = """
+        # Pipe replacement for homeowners
+        [Facebook](https://www.facebook.com/people/Waterhouse/100068143147443/)
+        Call [(212) 777-3003](tel:+12127773003)
+        Phone: 202.787-.4145
+        """
+
+        facts = build_page_facts(
+            content,
+            {"name": "for", "phone": "202.787-.4145"},
+            source_url="https://www.waterhouse.nyc/pipe-replacement",
+        )
+
+        self.assertEqual(facts["business_names"], [])
+        self.assertEqual(facts["phones"], ["(212) 777-3003"])
+        phone = facts["observations"]["phones"][0]
+        self.assertEqual(phone["source_type"], "page.dom.tel_href")
+        self.assertEqual(phone["normalized_value"], "+12127773003")
+        self.assertEqual(phone["source_url"], "https://www.waterhouse.nyc/pipe-replacement")
+        all_values = [
+            item["value"]
+            for items in facts["candidate_observations"].values()
+            for item in items
+        ]
+        self.assertNotIn("100068143147443", all_values)
+        self.assertTrue(any(
+            item.get("rejection_reason") == "generic_name"
+            for item in facts["rejected_observations"]["business_names"]
+        ))
+
+    def test_page_facts_classify_structured_sources_for_all_l3_fields(self):
+        structured = """
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Example Plumbing",
+          "telephone": "+12125550100",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "10 Main St",
+            "addressLocality": "New York",
+            "addressRegion": "NY",
+            "postalCode": "10001"
+          },
+          "areaServed": [{"@type": "City", "name": "New York"}, "Brooklyn"]
+        }
+        </script>
+        """
+
+        facts = build_page_facts("Visible service page", structured_content=structured)
+
+        self.assertEqual(facts["business_names"], ["Example Plumbing"])
+        self.assertEqual(facts["phones"], ["+12125550100"])
+        self.assertEqual(facts["addresses"], ["10 Main St, New York, NY, 10001"])
+        self.assertEqual(facts["service_areas"], ["New York", "Brooklyn"])
+        expected_sources = {
+            "business_names": "page.jsonld.local_business.name",
+            "phones": "page.jsonld.telephone",
+            "addresses": "page.jsonld.postal_address",
+            "service_areas": "page.jsonld.area_served",
+        }
+        for field, source_type in expected_sources.items():
+            self.assertTrue(all(
+                item["source_type"] == source_type
+                and item["eligible_for_l3"] is True
+                for item in facts["observations"][field]
+            ))
+
+    def test_secondary_phone_is_audited_but_not_compared_as_primary(self):
+        facts = build_page_facts("""
+        Phone: (212) 777-3003
+        Fax: (212) 777-3004
+        """)
+
+        self.assertEqual(facts["phones"], ["(212) 777-3003"])
+        self.assertTrue(any(
+            item.get("value") == "(212) 777-3004"
+            and item.get("rejection_reason") == "secondary_phone_not_primary_identity"
+            for item in facts["rejected_observations"]["phones"]
+        ))
+
+    def test_waterhouse_brand_outranks_third_party_review_logo(self):
+        facts = build_page_facts("""
+        Pipe Replacement | WaterHouse Plumbing | New York City, NY
+        Waterhouse Plumbing, the top plumbing services in New York City.
+        ![Google : colorful logo](https://cdn.example/google-icon.svg)
+        Contact [Waterhouse Plumbing](/)
+        [Call (212) 777-3003](tel:+12127773003)
+        https://www.facebook.com/people/Waterhouse-Plumbing/100068143147443/
+        """)
+
+        self.assertEqual(facts["business_names"], ["Waterhouse Plumbing"])
+        self.assertEqual(facts["phones"], ["(212) 777-3003"])
+        self.assertTrue(any(
+            item.get("value") == "Google : colorful"
+            and item.get("rejection_reason") == "third_party_or_descriptor_logo"
+            for item in facts["rejected_observations"]["business_names"]
+        ))
+
+    def test_corroborated_plumbingbo_brand_outranks_conflicting_jsonld_titles(self):
+        content = """
+        PlumbingBO is a leading plumbing company.
+        @ 2024 PlumbingBO - Local Plumbing Services
+        <script type="application/ld+json">
+        [
+          {"@type":"Plumber","name":"Plumbing Services - PlumbingBO"},
+          {"@type":"Organization","name":"PlumbingBO - Plumbing Services"}
+        ]
+        </script>
+        """
+
+        facts = build_page_facts(content)
+
+        self.assertEqual(facts["business_names"], ["PlumbingBO"])
+        self.assertTrue(all(
+            item.get("eligible_for_l3") is False
+            for item in facts["rejected_observations"]["business_names"]
+            if item.get("source_type") == "page.jsonld.local_business.name"
+        ))

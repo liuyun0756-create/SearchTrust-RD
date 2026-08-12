@@ -496,6 +496,11 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
     if isinstance(backend_finding, dict):
         page_values = _values(backend_finding.get("page_values"))
         gbp_values = _values(backend_finding.get("gbp_values"))
+    page_observations = (
+        backend_finding.get("page_observations")
+        if isinstance(backend_finding, dict) and isinstance(backend_finding.get("page_observations"), list)
+        else []
+    )
     comparison_result = {
         "match": "match",
         "mismatch": "missing",
@@ -509,14 +514,21 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
 
     if page_values:
         for index, value in enumerate(page_values[:4], start=1):
+            observation = next(
+                (
+                    item for item in page_observations
+                    if isinstance(item, dict) and str(item.get("value") or "") == value
+                ),
+                {},
+            )
             items.append({
                 "id": f"ev-rule-{rule_id}-page-{index:02d}",
                 "source_type": "page",
-                "source_label": f"Page {field_label}",
-                "source_url": str(context.get("url") or "") or None,
-                "page_section": "Structured page-to-GBP comparison",
+                "source_label": str(observation.get("source_label") or f"Page {field_label}"),
+                "source_url": str(observation.get("source_url") or context.get("url") or "") or None,
+                "page_section": str(observation.get("locator") or "Structured page-to-GBP comparison"),
                 "extracted_text": value,
-                "normalized_value": None,
+                "normalized_value": observation.get("normalized_value"),
                 "expected_value": "; ".join(gbp_values) or "GBP field not available",
                 "comparison_result": comparison_result,
                 "confidence": "high",

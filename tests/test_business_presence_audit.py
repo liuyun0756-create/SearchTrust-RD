@@ -324,7 +324,9 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             {
                 "business_name": "missing",
                 "address": "missing",
-                "phone": "missing",
+                # The malformed extra candidate is now rejected before L3;
+                # the validated primary page number equals the GBP number.
+                "phone": "match",
                 "service_area": "missing",
             },
         )

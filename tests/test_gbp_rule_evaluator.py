@@ -151,6 +151,55 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertFalse(applicability[29])
         self.assertEqual(findings["rule_29"]["condition"], "gbp_unavailable")
 
+    def test_l3_ignores_rejected_or_non_target_page_observations(self):
+        page_facts = {
+            "version": "3",
+            "business_names": ["Injected Supporting Brand"],
+            "phones": ["(201) 878-8483"],
+            "observations": {
+                "business_names": [{
+                    "value": "Injected Supporting Brand",
+                    "source_type": "page.dom.visible_brand",
+                    "scope": "site_discovery",
+                    "validation": "valid",
+                    "eligible_for_l3": True,
+                }],
+                "phones": [{
+                    "value": "(201) 878-8483",
+                    "source_type": "page.dom.visible_phone",
+                    "scope": "target_page",
+                    "validation": "rejected",
+                    "eligible_for_l3": False,
+                }],
+            },
+        }
+
+        results, _, findings = evaluate_gbp_rules(_context(
+            page_facts,
+            {"name": "WaterHouse Plumbing Company", "phone": "(212) 777-3003"},
+        ))
+
+        self.assertTrue(results[26])
+        self.assertTrue(results[28])
+        self.assertEqual(findings["rule_26"]["condition"], "page_missing")
+        self.assertEqual(findings["rule_28"]["condition"], "page_missing")
+        self.assertEqual(findings["rule_26"]["page_values"], [])
+        self.assertEqual(findings["rule_28"]["page_values"], [])
+
+    def test_phone_formatting_is_canonical_but_digits_remain_strict(self):
+        matching, _, finding = evaluate_gbp_rules(_context(
+            {"phones": ["212.777.3003"]},
+            {"name": "Example Plumbing", "phone": "(212) 777-3003"},
+        ))
+        different, _, _ = evaluate_gbp_rules(_context(
+            {"phones": ["(201) 777-3003"]},
+            {"name": "Example Plumbing", "phone": "(212) 777-3003"},
+        ))
+
+        self.assertFalse(matching[28])
+        self.assertEqual(finding["rule_28"]["normalized_page_values"], ["+12127773003"])
+        self.assertTrue(different[28])
+
 
 if __name__ == "__main__":
     unittest.main()

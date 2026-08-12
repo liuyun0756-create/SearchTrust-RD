@@ -72,6 +72,54 @@ class ScraperContentQualityTests(unittest.TestCase):
 
 
 class ScraperWaterfallTests(unittest.IsolatedAsyncioTestCase):
+    async def test_firecrawl_keeps_markdown_and_same_page_structured_html(self):
+        captured = {}
+
+        class Response:
+            status_code = 200
+
+            def json(self):
+                return {
+                    "data": {
+                        "markdown": "# Example Plumbing\nCall (212) 555-0100. " * 10,
+                        "html": '<main><a href="tel:+12125550100">(212) 555-0100</a></main>',
+                        "rawHtml": (
+                            '<script type="application/ld+json">'
+                            '{"@type":"Plumber","name":"Example Plumbing"}'
+                            "</script>"
+                        ),
+                        "links": ["https://example.com/contact"],
+                    }
+                }
+
+        class Client:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def post(self, url, *, headers, json):
+                captured["payload"] = json
+                return Response()
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", "test-key"), patch.object(
+            scraper.settings, "SCRAPER_MIN_CONTENT_LENGTH", 50
+        ), patch.object(scraper.httpx, "AsyncClient", Client):
+            result = await scraper._fetch_firecrawl("https://example.com/service")
+
+        self.assertIsInstance(result, scraper.FetchedPageContent)
+        self.assertIn("Example Plumbing", result.content)
+        self.assertIn('href="tel:+12125550100"', result.structured_content)
+        self.assertIn('application/ld+json', result.structured_content)
+        self.assertEqual(
+            captured["payload"]["formats"],
+            ["markdown", "html", "rawHtml", "links"],
+        )
+
     async def test_direct_http_is_used_after_reader_services_fail(self):
         direct_content = "Direct server-rendered page content. " * 20
         with patch.object(

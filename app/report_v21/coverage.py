@@ -205,25 +205,55 @@ def build_schema_summary(context: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def build_gbp_alignment(context: dict[str, Any]) -> list[dict[str, Any]]:
-    """Build conservative, deterministic page-to-GBP alignment rows.
-
-    Address and service area are deliberately marked not checked until the
-    scraper exposes dedicated page extractors.  The UI can still disclose the
-    actual GBP values without inventing a page comparison.
-    """
+    """Build alignment rows from the same backend findings that own L3."""
     profile = build_gbp_profile(context)
     if not profile:
         return []
     business = context.get("business") if isinstance(context.get("business"), dict) else {}
+    findings = context.get("backend_gbp_findings") if isinstance(context.get("backend_gbp_findings"), dict) else {}
     url = _optional_str(context.get("url"))
     rows = [
-        _alignment_row("name", "Business name", business.get("name"), profile.get("name"), ["entity_presence", "entity_consistency"]),
-        _alignment_row("phone", "Phone", business.get("phone"), profile.get("phone"), ["entity_presence", "entity_consistency"]),
-        _alignment_row("address", "Address", None, profile.get("address"), ["entity_presence", "entity_consistency"]),
+        _alignment_row_from_finding("name", "Business name", findings.get("rule_26"), business.get("name"), profile.get("name"), ["entity_presence", "entity_consistency"]),
+        _alignment_row_from_finding("phone", "Phone", findings.get("rule_28"), business.get("phone"), profile.get("phone"), ["entity_presence", "entity_consistency"]),
+        _alignment_row_from_finding("address", "Address", findings.get("rule_27"), None, profile.get("address"), ["entity_presence", "entity_consistency"]),
         _alignment_row("website", "Website", url, profile.get("website"), ["entity_presence", "entity_consistency"]),
-        _alignment_row("service_area", "Service area", None, ", ".join(profile.get("service_areas") or []) or None, ["real_world_connection"]),
+        _alignment_row_from_finding("service_area", "Service area", findings.get("rule_29"), None, ", ".join(profile.get("service_areas") or []) or None, ["real_world_connection"]),
     ]
     return rows
+
+
+def _alignment_row_from_finding(
+    field_key: str,
+    field_label: str,
+    finding: Any,
+    fallback_page_value: Any,
+    fallback_gbp_value: Any,
+    related_layer_keys: list[str],
+) -> dict[str, Any]:
+    if not isinstance(finding, dict):
+        return _alignment_row(
+            field_key, field_label, fallback_page_value, fallback_gbp_value, related_layer_keys,
+        )
+    page_values = _string_list(finding.get("page_values"))
+    gbp_values = _string_list(finding.get("gbp_values"))
+    condition = str(finding.get("condition") or "gbp_unavailable")
+    status = {
+        "match": "match",
+        "mismatch": "missing",
+        "page_missing": "missing",
+        "gbp_field_missing": "missing",
+        "both_missing": "not_checked",
+        "gbp_unavailable": "not_checked",
+        "field_not_applicable": "not_checked",
+    }.get(condition, "not_checked")
+    return _alignment_row(
+        field_key,
+        field_label,
+        ", ".join(page_values) or None,
+        ", ".join(gbp_values) or None,
+        related_layer_keys,
+        status_override=status,
+    )
 
 
 def _alignment_row(
@@ -232,11 +262,15 @@ def _alignment_row(
     page_value: Any,
     gbp_value: Any,
     related_layer_keys: list[str],
+    *,
+    status_override: str | None = None,
 ) -> dict[str, Any]:
     page_text = _optional_str(page_value)
     gbp_text = _optional_str(gbp_value)
     comparable = field_key in {"name", "phone", "website"}
-    if not comparable or not page_text or not gbp_text:
+    if status_override:
+        status = status_override
+    elif not comparable or not page_text or not gbp_text:
         status = "not_checked"
     elif _comparison_key(field_key, page_text) == _comparison_key(field_key, gbp_text):
         status = "match"
@@ -245,7 +279,7 @@ def _alignment_row(
     if status == "match":
         impact = "The checked page signal agrees with the verified GBP record."
         suggested_fix = "Keep this value consistent across visible page templates and structured data."
-    elif status == "mismatch":
+    elif status in {"mismatch", "missing"}:
         impact = "Different values can make it harder to connect the page to one stable business entity."
         suggested_fix = "Confirm the canonical value, then update the page and GBP record where appropriate."
     else:

@@ -7,6 +7,7 @@ import unicodedata
 from typing import Any, Callable
 
 from app.report_v21.coverage import build_gbp_status
+from app.report_v21.page_facts import normalize_phone
 from app.report_v21.scoring import RULE_FINDING_LABELS
 
 
@@ -30,7 +31,8 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
     findings: dict[str, Any] = {}
 
     for rule_id, (field, page_key, gbp_key, normalizer, compare_as_set) in GBP_RULE_SPECS.items():
-        page_values = _values(page_facts.get(page_key))
+        page_observations = _page_observations(page_facts, page_key)
+        page_values = [str(item["value"]) for item in page_observations]
         gbp_values = _values(gbp.get(gbp_key))
         normalized_page = _normalized_values(page_values, normalizer)
         normalized_gbp = _normalized_values(gbp_values, normalizer)
@@ -87,9 +89,23 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
             "explanation": explanation,
             "page_values": page_values,
             "gbp_values": gbp_values,
-            "page_observations": _page_observations(page_facts, page_key, page_values),
+            "normalized_page_values": normalized_page,
+            "normalized_gbp_values": normalized_gbp,
+            "page_observations": page_observations,
             "gbp_observations": [
-                {"value": value, "source": "public_gbp", "scope": "gbp_profile"}
+                {
+                    "value": value,
+                    "raw_value": value,
+                    "normalized_value": normalizer(value),
+                    "source": f"gbp.public.{gbp_key}",
+                    "source_type": f"gbp.public.{gbp_key}",
+                    "source_label": f"GBP · {field.replace('_', ' ').title()}",
+                    "source_system": "gbp",
+                    "scope": "gbp_profile",
+                    "source_scope": "gbp_profile",
+                    "validation": "valid",
+                    "eligible_for_l3": True,
+                }
                 for value in gbp_values
             ],
             "gbp_status": gbp_status,
@@ -113,24 +129,47 @@ def _normalized_values(values: list[str], normalizer: Callable[[str], str]) -> l
 def _page_observations(
     page_facts: dict[str, Any],
     page_key: str,
-    page_values: list[str],
-) -> list[dict[str, str]]:
+) -> list[dict[str, Any]]:
+    """Return only validated target-page observations eligible for L3.
+
+    Version-2 stored reports did not have eligibility metadata, so their value
+    arrays remain a read-only compatibility fallback. New reports cannot enter
+    L3 through those arrays when a version-3 observation ledger exists.
+    """
     observations = page_facts.get("observations")
     raw_items = observations.get(page_key) if isinstance(observations, dict) else None
     if isinstance(raw_items, list):
         selected = [
-            {
-                "value": str(item.get("value") or "").strip(),
-                "source": str(item.get("source") or "checked_page"),
-                "scope": str(item.get("scope") or "target_page"),
-            }
+            dict(item)
             for item in raw_items
-            if isinstance(item, dict) and str(item.get("value") or "").strip()
+            if (
+                isinstance(item, dict)
+                and str(item.get("value") or "").strip()
+                and str(item.get("scope") or item.get("source_scope") or "target_page")
+                in {"page", "target_page"}
+                and item.get("eligible_for_l3") is not False
+                and str(item.get("validation") or "valid") == "valid"
+            )
         ]
-        if [item["value"] for item in selected] == page_values:
-            return selected
+        for item in selected:
+            item["value"] = str(item.get("value") or "").strip()
+        return selected
+    if str(page_facts.get("version") or "") == "3":
+        # Version 3 is fail-closed: an absent observation list cannot be
+        # bypassed by injecting the compatibility value arrays.
+        return []
+    page_values = _values(page_facts.get(page_key))
     return [
-        {"value": value, "source": "checked_page", "scope": "target_page"}
+        {
+            "value": value,
+            "raw_value": value,
+            "source": "legacy.checked_page",
+            "source_type": "legacy.checked_page",
+            "scope": "target_page",
+            "source_scope": "target_page",
+            "validation": "valid",
+            "eligible_for_l3": True,
+        }
         for value in page_values
     ]
 
@@ -150,7 +189,5 @@ def _normalize_name(value: str) -> str:
 
 
 def _normalize_phone(value: str) -> str:
-    digits = re.sub(r"\D", "", value)
-    if len(digits) == 11 and digits.startswith("1"):
-        digits = digits[1:]
-    return digits
+    normalized, _ = normalize_phone(value)
+    return normalized

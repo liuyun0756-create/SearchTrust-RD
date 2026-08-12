@@ -199,6 +199,8 @@ async def _run_pipeline_inner(
         content,
         scrape_result.get("business"),
         scrape_result.get("target_identity_signals"),
+        structured_content=str(scrape_result.get("target_structured_content") or ""),
+        source_url=url,
     )
     review_corpus = build_review_corpus(
         content,
@@ -226,6 +228,7 @@ async def _run_pipeline_inner(
         "scraper_source": scrape_result.get("scraper_source"),
         "sub_pages": scrape_result.get("sub_pages"),
         "raw_content_length": scrape_result.get("raw_content_length"),
+        "content_sha256": scrape_result.get("content_sha256"),
         "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
         "gbp_error": scrape_result.get("gbp_error"),
         "gbp_lookup_diagnostic": scrape_result.get("gbp_lookup_diagnostic"),
@@ -359,6 +362,16 @@ async def _run_pipeline_inner(
 
     # gbp_data 有内容返回 true，空则返回 false，不暴露原始数据
     final_report["gbp_connected"] = bool(gbp_data)
+    # Persist the compact provenance ledger outside the public v2.1 schema so
+    # any accepted or rejected L3 value can be traced after the task finishes.
+    final_report["page_fact_audit"] = {
+        "parser_version": page_facts.get("version"),
+        "snapshot_sha256": scrape_result.get("content_sha256"),
+        "source_url": url,
+        "scraper_source": scrape_result.get("scraper_source"),
+        "observations": page_facts.get("observations") or {},
+        "rejected_observations": page_facts.get("rejected_observations") or {},
+    }
 
     try:
         from app.report_v21.normalize import (  # noqa: PLC0415

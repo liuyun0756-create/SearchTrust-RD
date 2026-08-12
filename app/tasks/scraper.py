@@ -28,6 +28,7 @@ separator format used by the original Dify web_scraper node.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import html
 import json
 import logging
@@ -127,6 +128,16 @@ class ScrapeResult:
     source: ScraperSource
     elapsed: float          # wall-clock seconds for this level
     content_length: int
+    structured_content: str = ""
+    content_sha256: str = ""
+
+
+@dataclass(frozen=True)
+class FetchedPageContent:
+    """Readable page text plus same-page rendered HTML for fact extraction."""
+
+    content: str
+    structured_content: str = ""
 
 
 @dataclass(frozen=True)
@@ -154,6 +165,11 @@ _GENERIC_BRAND_WORDS: frozenset[str] = frozenset({
     "header", "footer", "mobile", "desktop", "sticky", "light", "dark",
     "white", "black", "color", "colour", "primary", "secondary", "default",
     "image", "icon", "brand", "mark", "new", "final", "small", "large",
+    "a", "an", "and", "for", "of", "our", "the", "to", "with", "your",
+})
+_THIRD_PARTY_LOGO_WORDS: frozenset[str] = frozenset({
+    "facebook", "google", "instagram", "linkedin", "pinterest", "tiktok",
+    "twitter", "yelp", "youtube", "colorful", "monochrome", "review", "reviews",
 })
 _LOCALITY_SENTENCE_WORDS: frozenset[str] = frozenset({
     "a", "an", "the", "this", "that", "these", "those", "is", "are", "was",
@@ -274,7 +290,7 @@ async def _fetch_jina(url: str) -> Optional[str]:
 # Level 2 — Firecrawl
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def _fetch_firecrawl(url: str) -> Optional[str]:
+async def _fetch_firecrawl(url: str) -> Optional[str | FetchedPageContent]:
     """
     Fetch page content via Firecrawl (https://docs.firecrawl.dev).
 
@@ -292,7 +308,9 @@ async def _fetch_firecrawl(url: str) -> Optional[str]:
     }
     payload: dict[str, Any] = {
         "url": url,
-        "formats": ["markdown"],
+        # Markdown remains the LLM input. Rendered/raw HTML is retained only for
+        # deterministic, source-classified page-fact extraction.
+        "formats": ["markdown", "html", "rawHtml", "links"],
         "onlyMainContent": False,       # 保留评论区等动态内容
         "waitFor": 5000,                # 等待 5 秒让评论/JS 内容加载完
         "timeout": settings.SCRAPER_TIMEOUT * 1000,
@@ -335,18 +353,24 @@ async def _fetch_firecrawl(url: str) -> Optional[str]:
                     continue
 
                 data: dict[str, Any] = resp.json()
-                # Firecrawl v1: data.data.markdown  — v0: data.markdown
-                content: str = (
-                    data.get("data", {}).get("markdown", "")
-                    or data.get("markdown", "")
-                )
+                # Firecrawl v1: data.data.*  — v0: data.*
+                page_data = data.get("data") if isinstance(data.get("data"), dict) else data
+                content = str(page_data.get("markdown") or "")
+                rendered_html = str(page_data.get("html") or "")
+                raw_html = str(page_data.get("rawHtml") or "")
+                structured_content = rendered_html or raw_html
+                # Prefer Firecrawl's cleaned rendered HTML for semantic DOM
+                # facts, but retain JSON-LD from raw HTML when the cleaned
+                # representation omits script blocks.
+                if rendered_html and raw_html:
+                    structured_content += "\n" + "\n".join(_JSON_LD_SCRIPT_RE.findall(raw_html))
 
                 if _is_valid_content(content):
                     logger.info(
                         "[Firecrawl] success attempt=%d len=%d url=%s",
                         attempt, len(content), url,
                     )
-                    return content
+                    return FetchedPageContent(content, structured_content)
 
                 logger.warning("[Firecrawl] content invalid len=%d attempt=%d url=%s", len(content), attempt, url)
 
@@ -799,8 +823,11 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
     for source, fetcher in levels:
         logger.info("[Scraper] trying source=%s url=%s", source.value, url)
         t0 = time.monotonic()
-        content = await fetcher(url)
+        fetched = await fetcher(url)
         elapsed = time.monotonic() - t0
+
+        content = fetched.content if isinstance(fetched, FetchedPageContent) else fetched
+        structured_content = fetched.structured_content if isinstance(fetched, FetchedPageContent) else ""
 
         if content:
             logger.info(
@@ -812,6 +839,10 @@ async def fetch_page_content(url: str) -> Optional[ScrapeResult]:
                 source=source,
                 elapsed=elapsed,
                 content_length=len(content),
+                structured_content=structured_content,
+                content_sha256=hashlib.sha256(
+                    (structured_content or content).encode("utf-8", errors="replace")
+                ).hexdigest(),
             )
         logger.warning(
             "[Scraper] source=%s failed elapsed=%.1fs url=%s",
@@ -1145,6 +1176,8 @@ def _is_usable_brand_candidate(value: str | None) -> bool:
     if len(normalized) < 3 or not any(character.isalpha() for character in normalized):
         return False
     words = normalized.split()
+    if any(word in _THIRD_PARTY_LOGO_WORDS for word in words):
+        return False
     meaningful = [word for word in words if word not in _GENERIC_BRAND_WORDS]
     return bool(meaningful and not all(len(word) <= 2 for word in meaningful))
 
@@ -1280,6 +1313,35 @@ def extract_business_identity_signals(
             field="name",
             value=_clean_logo_brand(value),
             source="logo_alt",
+            # Third-party/review descriptors are rejected by the brand
+            # validator; a remaining structural logo is usable evidence.
+            quality="supporting",
+            scope=scope,
+        )
+
+    visible_brand_patterns = (
+        r"\b([A-Z][A-Za-z0-9&.\-'\u2019]*(?:[ \t]+[A-Z][A-Za-z0-9&.\-'\u2019]*){0,5})[ \t]*,[ \t]+(?:the|a)[ \t]+(?:top|leading|trusted|local|professional)\b",
+        r"\b([A-Z][A-Za-z0-9&.\-'\u2019]*(?:[ \t]+[A-Z][A-Za-z0-9&.\-'\u2019]*){0,5})[ \t]+is[ \t]+(?:proud|prepared|ready)\b",
+        r"\bAll\s+Rights\s+Reserved\s*\|\s*([^|\n]{2,60})\s*\|",
+    )
+    for pattern in visible_brand_patterns:
+        flags = re.IGNORECASE if "All\\s+Rights" in pattern else 0
+        for match in re.finditer(pattern, content, flags):
+            _append_identity_signal(
+                signals,
+                field="name",
+                value=match.group(1),
+                source="visible_brand_statement",
+                quality="supporting",
+                scope=scope,
+            )
+
+    for match in re.finditer(r"\bContact[ \t]+\[([^\]\n]{2,60})\]\([^)]+\)", content):
+        _append_identity_signal(
+            signals,
+            field="name",
+            value=match.group(1),
+            source="visible_brand_statement",
             quality="supporting",
             scope=scope,
         )
@@ -3342,6 +3404,8 @@ async def scrape(
     base_url = f"{parsed.scheme}://{parsed.netloc}"
 
     target_content = ""
+    target_structured_content = ""
+    target_content_sha256 = ""
     combined_content = ""
     appended: list[str] = []
     scraper_source = "firecrawl_batch"
@@ -3360,6 +3424,8 @@ async def scrape(
         main_result = await fetch_page_content(url)
         if main_result:
             target_content = main_result.content
+            target_structured_content = main_result.structured_content
+            target_content_sha256 = main_result.content_sha256
             combined_content = target_content
             scraper_source = main_result.source.value
             logger.info(
@@ -3430,6 +3496,8 @@ async def scrape(
                 f"Page scraping failed (all scrapers failed) for url={url}"
             )
         target_content = main_result.content
+        target_structured_content = main_result.structured_content
+        target_content_sha256 = main_result.content_sha256
         # Discard any supporting-only batch result from a failed primary target
         # fetch.  The audit must always have a real target page as its base.
         combined_content = target_content
@@ -3618,6 +3686,8 @@ async def scrape(
                 cleaned,
                 target_business_info,
                 [signal.as_dict() for signal in target_identity_signals],
+                structured_content=target_structured_content,
+                source_url=url,
             )
             branch_page_facts = build_page_facts(
                 clean_content(branch_discovery_content or ""),
@@ -3719,6 +3789,8 @@ async def scrape(
     result: dict[str, Any] = {
         "url":                url,
         "content":            cleaned,           # cleaned for LLM rule engine
+        "target_structured_content": target_structured_content,
+        "content_sha256":     target_content_sha256,
         "raw_content_length": raw_content_length, # original length for debugging
         "business":           target_business_info,
         "gbp":                gbp_data,
