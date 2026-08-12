@@ -36,6 +36,10 @@ class Settings(BaseSettings):
 
     # ── SerpAPI ───────────────────────────────────────────────────────────────
     SERPAPI_KEY: str = Field(default="", description="SerpAPI key")
+    SERPAPI_KEY_SECONDARY: str = Field(
+        default="",
+        description="Secondary SerpAPI key used after the primary key is unavailable",
+    )
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
 
     # ── Concurrency ───────────────────────────────────────────────────────────

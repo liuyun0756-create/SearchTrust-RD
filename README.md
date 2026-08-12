@@ -101,6 +101,7 @@ docker-compose up --build -d
 | `DIFY_API_URL` | ✅ | Dify API 地址，默认 `https://api.dify.ai/v1` |
 | `DIFY_WORKFLOW_ID` | ✅ | Dify 工作流 ID |
 | `SERPAPI_KEY` | ✅ | [serpapi.com](https://serpapi.com/manage-api-key) 获取，用于 GBP 数据和评论 |
+| `SERPAPI_KEY_SECONDARY` | 可选 | SerpAPI 备用 Key；主 Key 额度耗尽、限流或失效时自动切换 |
 | `FIRECRAWL_API_KEY` | 推荐 | [firecrawl.dev](https://www.firecrawl.dev/app/api-keys)，JS 渲染抓取（降级用）|
 | `JINA_API_KEY` | 可选 | 留空使用免费版 Jina Reader（主抓取器）|
 | `MAX_CONCURRENT_REQUESTS` | 可选 | 最大同时运行任务数，默认 10，超出自动排队 |

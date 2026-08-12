@@ -2554,6 +2554,128 @@ def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
     return None
 
 
+class SerpApiKeysUnavailable(RuntimeError):
+    """Raised when every configured SerpAPI key is temporarily unavailable."""
+
+
+_SERPAPI_ACTIVE_KEY_FINGERPRINT = ""
+_SERPAPI_KEY_BLOCKED_UNTIL: dict[str, float] = {}
+
+
+def _configured_serpapi_keys() -> list[str]:
+    """Return configured keys in priority order without exposing them."""
+    keys = [
+        str(settings.SERPAPI_KEY or "").strip(),
+        str(settings.SERPAPI_KEY_SECONDARY or "").strip(),
+    ]
+    return list(dict.fromkeys(key for key in keys if key))
+
+
+def _serpapi_key_fingerprint(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+
+
+def _serpapi_key_failure_kind(status_code: int, message: str | None) -> str | None:
+    normalized = _normalise_match_text(message)
+    if status_code in {401, 403} or any(
+        marker in normalized
+        for marker in (
+            "invalid api key",
+            "no valid api key",
+            "account has been deleted",
+            "account is disabled",
+            "doesn t have permission",
+        )
+    ):
+        return "invalid_or_forbidden"
+    if "run out of searches" in normalized or "no searches remaining" in normalized:
+        return "monthly_quota_exhausted"
+    if status_code == 429:
+        return "rate_limited"
+    return None
+
+
+async def _serpapi_get(
+    client: httpx.AsyncClient,
+    params: dict[str, str],
+) -> dict[str, Any]:
+    """Execute one SerpAPI request with secret-safe automatic key failover.
+
+    A key is switched only for authentication, authorization, monthly quota,
+    or throughput failures. Search errors and transport failures remain normal
+    request errors, so a second account is never charged for malformed or
+    provider-side requests.
+    """
+    global _SERPAPI_ACTIVE_KEY_FINGERPRINT
+
+    keys = _configured_serpapi_keys()
+    if not keys:
+        raise SerpApiKeysUnavailable("No SerpAPI key is configured.")
+
+    now = time.monotonic()
+    ordered = sorted(
+        enumerate(keys),
+        key=lambda item: (
+            _serpapi_key_fingerprint(item[1]) != _SERPAPI_ACTIVE_KEY_FINGERPRINT,
+            item[0],
+        ),
+    )
+    available = [
+        item
+        for item in ordered
+        if _SERPAPI_KEY_BLOCKED_UNTIL.get(_serpapi_key_fingerprint(item[1]), 0) <= now
+    ]
+    if not available:
+        raise SerpApiKeysUnavailable(
+            "All configured SerpAPI keys are temporarily unavailable."
+        )
+
+    last_kind = "unavailable"
+    for slot, key in available:
+        request_params = {**params, "api_key": key}
+        try:
+            response = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("SerpAPI transport request failed.") from exc
+
+        try:
+            payload = response.json()
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("SerpAPI returned an invalid JSON response.") from exc
+        data = payload if isinstance(payload, dict) else {}
+        status_code = int(getattr(response, "status_code", 200) or 200)
+        failure_kind = _serpapi_key_failure_kind(
+            status_code,
+            _serpapi_payload_error(data),
+        )
+        if failure_kind:
+            last_kind = failure_kind
+            cooldown = 60.0 if failure_kind == "rate_limited" else 300.0
+            fingerprint = _serpapi_key_fingerprint(key)
+            _SERPAPI_KEY_BLOCKED_UNTIL[fingerprint] = time.monotonic() + cooldown
+            if _SERPAPI_ACTIVE_KEY_FINGERPRINT == fingerprint:
+                _SERPAPI_ACTIVE_KEY_FINGERPRINT = ""
+            logger.warning(
+                "[SerpAPI] key slot %d unavailable reason=%s; trying next configured key",
+                slot + 1,
+                failure_kind,
+            )
+            continue
+
+        if status_code >= 400:
+            raise RuntimeError(f"SerpAPI request failed with HTTP {status_code}.")
+
+        fingerprint = _serpapi_key_fingerprint(key)
+        if _SERPAPI_ACTIVE_KEY_FINGERPRINT != fingerprint:
+            logger.info("[SerpAPI] using configured key slot %d", slot + 1)
+        _SERPAPI_ACTIVE_KEY_FINGERPRINT = fingerprint
+        return data
+
+    raise SerpApiKeysUnavailable(
+        f"All configured SerpAPI keys are unavailable ({last_kind})."
+    )
+
+
 def _is_serpapi_no_results_error(message: str | None) -> bool:
     """Treat SerpAPI's no-result payload as a completed empty search."""
     normalized = _normalise_match_text(message)
@@ -2647,8 +2769,8 @@ async def fetch_gbp_data(
 
     Returns empty dict on missing key or any error.
     """
-    if not settings.SERPAPI_KEY:
-        logger.warning("[SerpAPI] SERPAPI_KEY not configured — skipping GBP lookup")
+    if not _configured_serpapi_keys():
+        logger.warning("[SerpAPI] no API key configured — skipping GBP lookup")
         _set_gbp_lookup_diagnostic(
             diagnostic,
             status="error",
@@ -2678,7 +2800,6 @@ async def fetch_gbp_data(
         params: dict[str, str] = {
             "engine":  "google_maps",
             "hl":      "en",
-            "api_key": settings.SERPAPI_KEY,
         }
         if place_id_from_url:
             params["place_id"] = place_id_from_url
@@ -2690,9 +2811,7 @@ async def fetch_gbp_data(
                 request_params["no_cache"] = "true"
             try:
                 async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=True) as client:
-                    resp = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
-                    resp.raise_for_status()
-                data: dict[str, Any] = resp.json()
+                    data = await _serpapi_get(client, request_params)
                 payload_error = _serpapi_payload_error(data)
                 if payload_error:
                     raise ValueError(payload_error)
@@ -2752,6 +2871,13 @@ async def fetch_gbp_data(
                     data_id_from_url,
                     search_id,
                 )
+            except SerpApiKeysUnavailable as exc:
+                exact_failure = str(exc)
+                logger.warning(
+                    "[SerpAPI] exact lookup stopped because all configured key slots "
+                    "are unavailable"
+                )
+                break
             except Exception as exc:  # noqa: BLE001
                 exact_failure = str(exc)
                 logger.warning(
@@ -2851,7 +2977,6 @@ async def fetch_gbp_data(
             "q": query,
             "type": "search",
             "hl": "en",
-            "api_key": settings.SERPAPI_KEY,
         }
         if attempt > 1 and query == request_queries[attempt - 2]:
             request_params["no_cache"] = "true"
@@ -2860,9 +2985,7 @@ async def fetch_gbp_data(
                 timeout=httpx.Timeout(30.0),
                 follow_redirects=True,
             ) as client:
-                resp = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
-                resp.raise_for_status()
-            data: dict[str, Any] = resp.json()
+                data = await _serpapi_get(client, request_params)
             payload_error = _serpapi_payload_error(data)
             if payload_error and not _is_serpapi_no_results_error(payload_error):
                 raise ValueError(payload_error)
@@ -2899,6 +3022,13 @@ async def fetch_gbp_data(
                 len(candidates),
                 exact_failure,
             )
+        except SerpApiKeysUnavailable as exc:
+            last_request_error = str(exc)
+            logger.warning(
+                "[SerpAPI] fallback lookup stopped because all configured key slots "
+                "are unavailable"
+            )
+            break
         except Exception as exc:  # noqa: BLE001
             last_request_error = str(exc)
             logger.warning(
@@ -3104,14 +3234,13 @@ async def fetch_gbp_review_audit(
     max_reviews: int = 30,
 ) -> dict[str, Any]:
     """Fetch at most the most recent 30 reviews with pagination metadata."""
-    if not settings.SERPAPI_KEY or not data_id:
+    if not _configured_serpapi_keys() or not data_id:
         return {"attempted": False, "items": [], "error": "SerpAPI key or GBP data_id was unavailable."}
 
     params: dict[str, str] = {
         "engine":   "google_maps_reviews",
         "data_id":  data_id,
         "hl":       "en",
-        "api_key":  settings.SERPAPI_KEY,
         "sort_by":  "newestFirst",
     }
 
@@ -3123,9 +3252,7 @@ async def fetch_gbp_review_audit(
                 page_params = dict(params)
                 if token:
                     page_params["next_page_token"] = token
-                resp = await client.get(settings.SERPAPI_BASE_URL, params=page_params)
-                resp.raise_for_status()
-                data = resp.json()
+                data = await _serpapi_get(client, page_params)
                 reviews_raw: list[dict[str, Any]] = data.get("reviews", [])
                 for rv in reviews_raw:
                     response = rv.get("response") or rv.get("owner_response") or {}
@@ -3181,14 +3308,13 @@ async def _fetch_gbp_activity_collection(
     collection_key: str,
     max_pages: int,
 ) -> dict[str, Any]:
-    if not settings.SERPAPI_KEY or not data_id:
+    if not _configured_serpapi_keys() or not data_id:
         return {"attempted": False, "count": None, "latest_date": None, "error": "SerpAPI key or GBP data_id was unavailable."}
 
     base_params: dict[str, str] = {
         "engine": engine,
         "data_id": data_id,
         "hl": "en",
-        "api_key": settings.SERPAPI_KEY,
     }
     count = 0
     latest_date: str | None = None
@@ -3199,9 +3325,7 @@ async def _fetch_gbp_activity_collection(
                 params = dict(base_params)
                 if token:
                     params["next_page_token"] = token
-                resp = await client.get(settings.SERPAPI_BASE_URL, params=params)
-                resp.raise_for_status()
-                data = resp.json()
+                data = await _serpapi_get(client, params)
                 items = data.get(collection_key) or []
                 if not isinstance(items, list):
                     items = []
