@@ -518,6 +518,19 @@ def _service_area_candidates(
         if not match:
             continue
         tail = re.split(r"[.!?;|]", match.group(1), maxsplit=1)[0]
+        # Narrative copy such as "serving homeowners and businesses in
+        # Manhattan ... and the following communities" is not a field value.
+        # Splitting that sentence would manufacture tokens like homeowners,
+        # businesses, following communities, or a bare state abbreviation.
+        # Fail closed unless the matched tail is an actual place list.
+        if re.search(
+            r"\b(?:homeowners?|business(?:es)?|customers?|clients?|residents?|"
+            r"following|including|(?:the\s+)?entire|communities?\s+in|"
+            r"in\s+and\s+around)\b",
+            tail,
+            flags=re.IGNORECASE,
+        ):
+            continue
         for candidate in re.split(r"\s*(?:,|\band\b|\bor\b|/)\s*", tail, flags=re.IGNORECASE):
             value = re.sub(
                 r"^(?:the\s+)?(?:greater\s+)?|\s+(?:area|metro|region|communities|neighborhoods)$",
@@ -697,7 +710,12 @@ def _format_postal_address(value: Any) -> str:
         value.get("postalCode"),
         value.get("addressCountry"),
     ]
-    return ", ".join(" ".join(str(part).split()) for part in parts if str(part or "").strip())
+    normalized_parts = [
+        " ".join(str(part).split()).strip(" ,")
+        for part in parts
+        if str(part or "").strip(" ,")
+    ]
+    return ", ".join(normalized_parts)
 
 
 def _area_served_values(value: Any) -> list[str]:

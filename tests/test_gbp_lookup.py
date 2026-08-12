@@ -488,6 +488,66 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(lookup["require_location_match"])
         self.assertEqual(result["location_context"], "Manhattan, NY")
         self.assertNotIn("450 7th Ave", result["content"])
+        self.assertEqual(result["page_fact_scope"], "verified_location_branch")
+        self.assertEqual(result["page_fact_source_url"], branch_url)
+        self.assertEqual(result["verified_branch_url"], branch_url)
+        self.assertIn("450 7th Ave", result["page_fact_content"])
+        self.assertEqual(result["page_fact_business"]["phone"], "+12126871662")
+        self.assertTrue(result["page_fact_content_sha256"])
+
+    async def test_unverified_location_branch_cannot_supply_l3_or_gbp_facts(self):
+        page_url = "https://example.com/plumbing/emergency-plumber/"
+        wrong_branch_url = "https://example.com/brooklyn/"
+        main_content = (
+            "# Emergency Plumbing\n"
+            "Enter ZIP, City or Postal Code\n"
+            f"[View Location details]({wrong_branch_url})"
+        )
+        wrong_branch_content = (
+            "# Example Brooklyn\n"
+            "102 Atlantic Ave, Brooklyn, NY 11201\n"
+            "Phone: (718) 555-0100"
+        )
+        fetch_page = AsyncMock(side_effect=[
+            scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            ),
+            *[
+                scraper.ScrapeResult(
+                    content=wrong_branch_content,
+                    source=scraper.ScraperSource.JINA,
+                    elapsed=0.1,
+                    content_length=len(wrong_branch_content),
+                )
+                for _ in range(5)
+            ],
+        ])
+        fetch_gbp = AsyncMock(return_value={"name": "Wrong branch"})
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content", fetch_page
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls", return_value=[]
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data", fetch_gbp
+        ):
+            result = await scraper.scrape(
+                page_url,
+                location_context="Manhattan, NY",
+            )
+
+        fetch_gbp.assert_not_awaited()
+        self.assertEqual(result["page_fact_scope"], "submitted_url")
+        self.assertEqual(result["page_fact_source_url"], page_url)
+        self.assertIsNone(result["verified_branch_url"])
+        self.assertNotIn("102 Atlantic Ave", result["page_fact_content"])
+        self.assertEqual(
+            result["gbp_lookup_diagnostic"]["code"],
+            "branch_location_context_missing",
+        )
 
     def test_location_branch_candidates_are_bounded_and_same_domain(self):
         self.assertEqual(
@@ -501,6 +561,20 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
                 "https://www.rotorooter.com/manhattan-ny/",
                 "https://www.rotorooter.com/locations/manhattan-ny/",
             ],
+        )
+
+    def test_location_scoped_submitted_url_is_not_replaced_by_branch_root(self):
+        self.assertTrue(
+            scraper._page_url_contains_location_context(
+                "https://www.1tomplumber.com/tri-cities-wa/services/plumbing/",
+                "Tri-Cities, WA",
+            )
+        )
+        self.assertFalse(
+            scraper._page_url_contains_location_context(
+                "https://www.rotorooter.com/plumbing/emergency-plumber/",
+                "Manhattan, NY",
+            )
         )
 
     def test_branch_content_requires_location_and_public_identity_anchor(self):

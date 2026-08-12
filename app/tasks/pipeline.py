@@ -195,12 +195,19 @@ async def _run_pipeline_inner(
     # Resolve English page_type to the Chinese value Dify expects
     dify_page_type = resolve_page_type(input_page_type)
     dify_gbp_data = _build_dify_gbp_payload(gbp_data)
+    page_fact_content = str(scrape_result.get("page_fact_content") or content)
+    page_fact_source_url = str(scrape_result.get("page_fact_source_url") or url)
     page_facts = build_page_facts(
-        content,
-        scrape_result.get("business"),
-        scrape_result.get("target_identity_signals"),
-        structured_content=str(scrape_result.get("target_structured_content") or ""),
-        source_url=url,
+        page_fact_content,
+        scrape_result.get("page_fact_business") or scrape_result.get("business"),
+        scrape_result.get("page_fact_identity_signals")
+        or scrape_result.get("target_identity_signals"),
+        structured_content=str(
+            scrape_result.get("page_fact_structured_content")
+            or scrape_result.get("target_structured_content")
+            or ""
+        ),
+        source_url=page_fact_source_url,
     )
     review_corpus = build_review_corpus(
         content,
@@ -229,6 +236,9 @@ async def _run_pipeline_inner(
         "sub_pages": scrape_result.get("sub_pages"),
         "raw_content_length": scrape_result.get("raw_content_length"),
         "content_sha256": scrape_result.get("content_sha256"),
+        "page_fact_source_url": page_fact_source_url,
+        "page_fact_scope": scrape_result.get("page_fact_scope") or "submitted_url",
+        "verified_branch_url": scrape_result.get("verified_branch_url"),
         "gbp_lookup_attempted": scrape_result.get("gbp_lookup_attempted"),
         "gbp_error": scrape_result.get("gbp_error"),
         "gbp_lookup_diagnostic": scrape_result.get("gbp_lookup_diagnostic"),
@@ -366,8 +376,14 @@ async def _run_pipeline_inner(
     # any accepted or rejected L3 value can be traced after the task finishes.
     final_report["page_fact_audit"] = {
         "parser_version": page_facts.get("version"),
-        "snapshot_sha256": scrape_result.get("content_sha256"),
-        "source_url": url,
+        "snapshot_sha256": (
+            scrape_result.get("page_fact_content_sha256")
+            or scrape_result.get("content_sha256")
+        ),
+        "source_url": page_fact_source_url,
+        "submitted_url": url,
+        "scope": scrape_result.get("page_fact_scope") or "submitted_url",
+        "verified_branch_url": scrape_result.get("verified_branch_url"),
         "scraper_source": scrape_result.get("scraper_source"),
         "observations": page_facts.get("observations") or {},
         "rejected_observations": page_facts.get("rejected_observations") or {},

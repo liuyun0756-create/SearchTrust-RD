@@ -172,6 +172,18 @@ class RuleContractTests(unittest.TestCase):
         self.assertNotIn("spotonplumbing", facts["service_areas"])
         self.assertNotIn("2026 Spot On Pl", facts["addresses"])
 
+    def test_page_facts_do_not_turn_service_narrative_into_area_values(self):
+        content = (
+            "Serving homeowners and businesses in Manhattan, NY and the "
+            "following communities in and around Manhattan and the entire "
+            "New York metro area.\n"
+            "Serving the entire New York metro area, Including:"
+        )
+
+        facts = build_page_facts(content)
+
+        self.assertEqual(facts["service_areas"], [])
+
     def test_page_facts_recover_plumbingbo_name_from_visible_raw_sources(self):
         samples = (
             ("PlumbingBO is a leading plumbing company.", "page.dom.self_identification"),
@@ -303,6 +315,31 @@ class RuleContractTests(unittest.TestCase):
                 and item["eligible_for_l3"] is True
                 for item in facts["observations"][field]
             ))
+
+    def test_jsonld_address_components_do_not_create_duplicate_commas(self):
+        structured = """
+        <script type="application/ld+json">
+        {
+          "@type": "Plumber",
+          "name": "Roto-Rooter",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "450 7th Ave Ste B, ",
+            "addressLocality": "New York",
+            "addressRegion": "NY",
+            "postalCode": "10123",
+            "addressCountry": "US"
+          }
+        }
+        </script>
+        """
+
+        facts = build_page_facts("", structured_content=structured)
+
+        self.assertEqual(
+            facts["addresses"],
+            ["450 7th Ave Ste B, New York, NY, 10123, US"],
+        )
 
     def test_secondary_phone_is_audited_but_not_compared_as_primary(self):
         facts = build_page_facts("""

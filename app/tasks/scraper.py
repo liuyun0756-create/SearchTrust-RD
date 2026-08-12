@@ -1805,6 +1805,26 @@ def _location_branch_url_candidates(page_url: str, location_context: str | None)
     return list(dict.fromkeys(candidates))[:4]
 
 
+def _page_url_contains_location_context(
+    page_url: str,
+    location_context: str | None,
+) -> bool:
+    """Return whether the submitted path is already scoped to the locality."""
+    locality = str(location_context or "").split(",", 1)[0].strip()
+    locality_slug = re.sub(
+        r"-+", "-", re.sub(r"[^a-z0-9]+", "-", locality.lower())
+    ).strip("-")
+    if not locality_slug:
+        return False
+    try:
+        path_slug = re.sub(
+            r"-+", "-", re.sub(r"[^a-z0-9]+", "-", urlparse(page_url).path.lower())
+        ).strip("-")
+    except ValueError:
+        return False
+    return locality_slug in path_slug
+
+
 def _branch_content_matches_location_context(
     content: str,
     location_context: str | None,
@@ -3536,10 +3556,11 @@ async def scrape(
     )
 
     # ── GBP URL auto-discovery ──────────────────────────────────────────────
-    # Multi-location service pages often expose only a generic GBP share link,
-    # while their branch root or location selector exposes a stable same-domain
-    # branch URL. Fetch that one branch page only for GBP discovery; do not
-    # append it to the audit content or change the target-page assessment.
+    # Multi-location service pages often expose only a generic national
+    # identity in the server response while the selected locality resolves to
+    # a stable same-domain branch page. Keep that branch out of the submitted
+    # page content, but allow a content-verified branch to become the effective
+    # page-fact scope for strict L3 comparisons.
     branch_root_url = _derive_branch_root_url(url, combined_content)
     dynamic_location_page_urls = _extract_dynamic_location_page_urls(url, target_content)
     dynamic_location_page_url = next(iter(dynamic_location_page_urls), None)
@@ -3552,9 +3573,10 @@ async def scrape(
         branch_root_url or has_location_selector or normalized_location_context
     )
     branch_discovery_content: str | None = None
+    branch_verified_for_l3 = False
 
     if (
-        not user_provided_gbp
+        (not user_provided_gbp or bool(normalized_location_context))
         and branch_discovery_url
         and branch_discovery_url.rstrip("/") != url.rstrip("/")
     ):
@@ -3571,19 +3593,38 @@ async def scrape(
                 exc,
             )
 
+    if branch_discovery_content and normalized_location_context:
+        branch_verified_for_l3 = _branch_content_matches_location_context(
+            branch_discovery_content,
+            normalized_location_context,
+            branch_discovery_url,
+        )
+        if not branch_verified_for_l3:
+            logger.warning(
+                "[Scraper] branch page did not verify requested location "
+                "url=%s context=%s",
+                branch_discovery_url,
+                normalized_location_context,
+            )
+
     # A browser-side selector often does not expose its selected branch as a
     # link in the server response. When the user provides a target locality,
     # probe a bounded set of same-domain branch routes and accept one only
     # after its content independently confirms that locality and exposes a
     # branch phone/address. No context means no guessed branch.
     if (
-        not user_provided_gbp
-        and not branch_discovery_url
+        (not user_provided_gbp or bool(normalized_location_context))
+        and not branch_verified_for_l3
         and normalized_location_context
     ):
         for candidate_url in _location_branch_url_candidates(
             url, normalized_location_context
         ):
+            if (
+                branch_discovery_url
+                and candidate_url.rstrip("/") == branch_discovery_url.rstrip("/")
+            ):
+                continue
             logger.info(
                 "[Scraper] verifying location-derived branch candidate url=%s context=%s",
                 candidate_url,
@@ -3605,16 +3646,29 @@ async def scrape(
             ):
                 branch_discovery_url = candidate_url
                 branch_discovery_content = candidate_content
+                branch_verified_for_l3 = True
                 logger.info(
                     "[Scraper] verified location-derived branch page url=%s",
                     candidate_url,
                 )
                 break
 
+    branch_allowed_for_lookup = bool(
+        branch_discovery_content
+        and (not normalized_location_context or branch_verified_for_l3)
+    )
+    unresolved_dynamic_branch = bool(
+        has_location_selector
+        and (
+            (not normalized_location_context and not branch_discovery_url)
+            or (normalized_location_context and not branch_verified_for_l3)
+        )
+    )
+
     if not gbp_url:
         discovered_gbp_url = extract_maps_url_from_content(combined_content)
         if not _has_exact_gbp_identifier(discovered_gbp_url):
-            if branch_discovery_content:
+            if branch_allowed_for_lookup:
                 branch_gbp_url = extract_maps_url_from_content(branch_discovery_content)
                 if _has_exact_gbp_identifier(branch_gbp_url):
                     discovered_gbp_url = branch_gbp_url
@@ -3634,7 +3688,11 @@ async def scrape(
     gbp_error: str | None = None
     gbp_lookup_diagnostic: dict[str, Any] = {}
     has_exact_gbp_identifier = _has_exact_gbp_identifier(gbp_url)
-    if has_exact_gbp_identifier and user_provided_gbp:
+    if (
+        has_exact_gbp_identifier
+        and user_provided_gbp
+        and not unresolved_dynamic_branch
+    ):
         logger.info("[Scraper] user-provided exact GBP identifier detected — fetching directly")
         gbp_lookup_attempted = True
         gbp_prefetch_result = await fetch_gbp_data(
@@ -3648,8 +3706,8 @@ async def scrape(
         gbp_prefetch = gbp_prefetch_result or None
 
     # ── Business info ─────────────────────────────────────────────────────────
-    # Keep target-page facts isolated for the audit, while the wider discovery
-    # snapshot can still improve GBP lookup without entering Dify page rules.
+    # Keep the submitted page isolated for the main audit. A branch identity is
+    # separately promoted only when its content verifies the requested place.
     target_business_info = extract_business_info(target_content)
     discovery_business_info = extract_business_info(combined_content)
     target_identity_signals = extract_business_identity_signals(target_content, scope="target_page")
@@ -3675,6 +3733,46 @@ async def scrape(
         url,
     )
 
+    page_fact_content = cleaned
+    page_fact_structured_content = target_structured_content
+    page_fact_source_url = url
+    page_fact_content_sha256 = target_content_sha256
+    page_fact_business_info = target_business_info
+    page_fact_identity_signals = [signal.as_dict() for signal in target_identity_signals]
+    page_fact_scope = "submitted_url"
+    if (
+        branch_verified_for_l3
+        and branch_discovery_content
+        and branch_discovery_url
+        and branch_discovery_url.rstrip("/") != url.rstrip("/")
+        and not _page_url_contains_location_context(url, normalized_location_context)
+    ):
+        page_fact_content = clean_content(branch_discovery_content)
+        # Sub-page fetches currently expose one response representation. Pass
+        # it through both channels so HTML/JSON-LD and readable text candidates
+        # remain available to the deterministic extractor.
+        page_fact_structured_content = branch_discovery_content
+        page_fact_source_url = branch_discovery_url
+        page_fact_content_sha256 = hashlib.sha256(
+            branch_discovery_content.encode("utf-8")
+        ).hexdigest()
+        page_fact_business_info = branch_business_info
+        page_fact_identity_signals = [
+            signal.as_dict()
+            for signal in extract_business_identity_signals(
+                branch_discovery_content,
+                scope="target_page",
+            )
+        ]
+        page_fact_scope = "verified_location_branch"
+        logger.info(
+            "[Scraper] using verified branch as L3 page-fact scope "
+            "submitted_url=%s branch_url=%s context=%s",
+            url,
+            branch_discovery_url,
+            normalized_location_context,
+        )
+
     if gbp_prefetch is not None:
         gbp_data = gbp_prefetch
         logger.info("[Scraper] using prefetched GBP data url=%s", url)
@@ -3683,11 +3781,11 @@ async def scrape(
             from app.report_v21.page_facts import build_page_facts
 
             page_facts = build_page_facts(
-                cleaned,
-                target_business_info,
-                [signal.as_dict() for signal in target_identity_signals],
-                structured_content=target_structured_content,
-                source_url=url,
+                page_fact_content,
+                page_fact_business_info,
+                page_fact_identity_signals,
+                structured_content=page_fact_structured_content,
+                source_url=page_fact_source_url,
             )
             branch_page_facts = build_page_facts(
                 clean_content(branch_discovery_content or ""),
@@ -3710,23 +3808,24 @@ async def scrape(
                 ),
                 None,
             )
+            branch_location_hints = (
+                [
+                    branch_business_info.get("city"),
+                    *branch_page_facts.get("service_areas", []),
+                ]
+                if branch_allowed_for_lookup
+                else []
+            )
             location_hints = [
                 value
                 for value in [
                     normalized_location_context,
-                    branch_business_info.get("city"),
-                    *branch_page_facts.get("service_areas", []),
+                    *branch_location_hints,
                     target_business_info.get("city"),
                     *page_facts.get("service_areas", []),
                 ]
                 if isinstance(value, str) and value.strip()
             ]
-            unresolved_dynamic_branch = bool(
-                has_location_selector
-                and not branch_discovery_url
-                and not normalized_location_context
-                and not gbp_url
-            )
             gbp_lookup_attempted = bool(
                 gbp_url
                 or url
@@ -3747,31 +3846,34 @@ async def scrape(
             else:
                 gbp_data = await fetch_gbp_data(
                     business_name=(
-                        branch_business_info.get("name")
-                        or target_business_info.get("name")
+                        branch_business_info.get("name") if branch_allowed_for_lookup else None
+                    ) or (
+                        target_business_info.get("name")
                         or discovery_business_info.get("name")
                     ),
                     city=(
-                        branch_business_info.get("city")
-                        or target_business_info.get("city")
+                        branch_business_info.get("city") if branch_allowed_for_lookup else None
+                    ) or (
+                        target_business_info.get("city")
                     ),
                     website_url=url,
                     gbp_url=gbp_url,
                     location_hints=location_hints,
-                    # A stable branch page is discovery-only evidence. Its phone
-                    # and address may identify the branch, while the strict L3
-                    # comparison still uses the untouched target-page facts.
+                    # A verified branch supplies both lookup anchors and the
+                    # strict L3 page-fact scope. An unverified branch never
+                    # contributes a place-specific lookup anchor.
                     phone=(
-                        branch_business_info.get("phone")
-                        or target_business_info.get("phone")
+                        branch_business_info.get("phone") if branch_allowed_for_lookup else None
+                    ) or (
+                        target_business_info.get("phone")
                     ),
-                    address=branch_address or target_address,
+                    address=(branch_address if branch_allowed_for_lookup else None) or target_address,
                     require_location_match=require_location_match,
                     user_provided_gbp=user_provided_gbp,
                     identity_signals=[
                         *target_identity_signals,
                         *discovery_identity_signals,
-                        *branch_identity_signals,
+                        *(branch_identity_signals if branch_allowed_for_lookup else []),
                     ],
                     diagnostic=gbp_lookup_diagnostic,
                 )
@@ -3791,6 +3893,14 @@ async def scrape(
         "content":            cleaned,           # cleaned for LLM rule engine
         "target_structured_content": target_structured_content,
         "content_sha256":     target_content_sha256,
+        "page_fact_content": page_fact_content,
+        "page_fact_structured_content": page_fact_structured_content,
+        "page_fact_source_url": page_fact_source_url,
+        "page_fact_content_sha256": page_fact_content_sha256,
+        "page_fact_business": page_fact_business_info,
+        "page_fact_identity_signals": page_fact_identity_signals,
+        "page_fact_scope": page_fact_scope,
+        "verified_branch_url": branch_discovery_url if branch_verified_for_l3 else None,
         "raw_content_length": raw_content_length, # original length for debugging
         "business":           target_business_info,
         "gbp":                gbp_data,
