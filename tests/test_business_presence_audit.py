@@ -5,6 +5,8 @@ from app.report_v21.business_presence import (
     build_business_presence_audit,
 )
 from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
+from app.report_v21.hours_facts import build_source_facts
+from app.report_v21.page_facts import build_page_facts
 from app.tasks.pipeline import _build_dify_gbp_payload
 from app.tasks.scraper import extract_business_info
 
@@ -237,7 +239,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
 
         self.assertEqual(rows["phone"]["page_value"], "+19185550100")
         self.assertIsNone(rows["opening_hours"]["page_value"])
-        self.assertEqual(rows["opening_hours"]["status"], "missing")
+        self.assertEqual(rows["opening_hours"]["status"], "not_checked")
         self.assertIsNone(rows["service_area"]["page_value"])
         self.assertEqual(rows["service_area"]["status"], "not_checked")
 
@@ -253,6 +255,43 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         hours = next(row for row in audit["gbp_page_alignment"] if row["key"] == "opening_hours")
 
         self.assertEqual(hours["status"], "match")
+
+    def test_hours_display_uses_all_page_sources_and_complete_gbp_week(self):
+        context = self.base_context()
+        context["page_content"] = (
+            "Mon-Sat: 24-Hours Emergency Service\n"
+            "Mon-Sat: 12:00 AM - 12:00 PM\nSun: Closed"
+        )
+        context["gbp_data"].update({
+            "hours": "Open 24 hours",
+            "hours_summary": "Open 24 hours",
+            "operating_hours_raw": {
+                "monday": "Open 24 hours",
+                "tuesday": "Open 24 hours",
+                "wednesday": "Open 24 hours",
+                "thursday": "Open 24 hours",
+                "friday": "Open 24 hours",
+                "saturday": "Open 24 hours",
+                "sunday": "Closed",
+            },
+        })
+        page_facts = build_page_facts(context["page_content"], source_url=context["url"])
+        context["page_facts"] = page_facts
+        context["source_facts"] = build_source_facts(
+            page_facts,
+            context["gbp_data"],
+            source_url=context["url"],
+        )
+
+        audit = build_business_presence_audit(context)
+        hours = next(row for row in audit["gbp_page_alignment"] if row["key"] == "opening_hours")
+
+        self.assertIn("Emergency Availability", hours["page_value"])
+        self.assertIn("Regular Business Hours", hours["page_value"])
+        self.assertIn("Monday: Open 24 hours", hours["gbp_value"])
+        self.assertIn("Sunday: Closed", hours["gbp_value"])
+        self.assertEqual(hours["status"], "match")
+        self.assertIn("exactly equal", hours["explanation"])
 
     def test_business_name_supports_curly_possessive_headings(self):
         info = extract_business_info("## WHY CHOOSE SPOT ON PLUMBING’S 24/7 PLUMBERS\n")
@@ -387,12 +426,13 @@ class BusinessPresenceAuditTests(unittest.TestCase):
             for item in bound["layers"][0]["evidence_items"]
         }
 
-        for evidence_id in ("bp-business_name", "bp-address", "bp-opening_hours"):
+        for evidence_id in ("bp-business_name", "bp-address"):
             self.assertIsNone(evidence[evidence_id]["extracted_text"])
             self.assertEqual(
                 evidence[evidence_id]["normalized_value"],
                 "Not found in the checked page scope",
             )
+        self.assertNotIn("bp-opening_hours", evidence)
 
     def test_dify_gbp_payload_excludes_review_and_backend_audit_details(self):
         payload = _build_dify_gbp_payload({

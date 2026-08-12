@@ -11,6 +11,7 @@ from typing import Any
 ACTIVE_RULE_IDS: tuple[int, ...] = tuple(rule_id for rule_id in range(1, 40) if rule_id != 5)
 ACTIVE_RULE_KEYS: tuple[str, ...] = tuple(f"rule_{rule_id}" for rule_id in ACTIVE_RULE_IDS)
 GBP_COMPARISON_RULE_IDS: frozenset[int] = frozenset({26, 27, 28, 29})
+ENTITY_PRESENCE_RULE_IDS: frozenset[int] = frozenset({21, 22, 23, 24, 25})
 
 V21_RULE_RESULTS_INVALID_CODE = "V21_RULE_RESULTS_INVALID"
 V21_LANGUAGE_INVALID_CODE = "V21_LANGUAGE_INVALID"
@@ -30,10 +31,12 @@ class RetryableDifyOutputError(RuntimeError):
 def parse_rule_results(
     outputs: Any,
     *,
+    backend_presence_results: dict[int, bool] | None = None,
+    backend_presence_applicability: dict[int, bool] | None = None,
     backend_gbp_results: dict[int, bool] | None = None,
     backend_gbp_applicability: dict[int, bool] | None = None,
 ) -> tuple[dict[int, bool], dict[int, bool]]:
-    """Parse the Dify vector and optionally override rules 26-29 from backend facts."""
+    """Parse Dify's vector and override backend-owned deterministic rules."""
     if not isinstance(outputs, dict):
         raise RetryableDifyOutputError(
             V21_RULE_RESULTS_INVALID_CODE,
@@ -52,10 +55,19 @@ def parse_rule_results(
         except json.JSONDecodeError:
             raw_errors = [raw_errors]
     backend_owns_gbp = backend_gbp_results is not None or backend_gbp_applicability is not None
+    backend_owns_presence = (
+        backend_presence_results is not None
+        or backend_presence_applicability is not None
+    )
+    backend_owned_rule_ids = set()
+    if backend_owns_presence:
+        backend_owned_rule_ids.update(ENTITY_PRESENCE_RULE_IDS)
+    if backend_owns_gbp:
+        backend_owned_rule_ids.update(GBP_COMPARISON_RULE_IDS)
     expected = {
         key
         for key in ACTIVE_RULE_KEYS
-        if not backend_owns_gbp or int(key.removeprefix("rule_")) not in GBP_COMPARISON_RULE_IDS
+        if int(key.removeprefix("rule_")) not in backend_owned_rule_ids
     }
     allowed = set(ACTIVE_RULE_KEYS)
     result_keys = set(raw_results)
@@ -67,7 +79,9 @@ def parse_rule_results(
             message = str(item).strip()
             if not message:
                 continue
-            if backend_owns_gbp and any(f"rule_{rule_id}" in message for rule_id in GBP_COMPARISON_RULE_IDS):
+            if backend_owned_rule_ids and any(
+                f"rule_{rule_id}" in message for rule_id in backend_owned_rule_ids
+            ):
                 continue
             errors.append(message)
     elif raw_errors not in (None, "", []):
@@ -85,16 +99,23 @@ def parse_rule_results(
         if type(raw_applicability[key]) is not bool:
             errors.append(f"{key} must be a boolean in rule_applicability.")
 
+    if backend_owns_presence:
+        _validate_backend_rule_vector(
+            "Entity Presence",
+            ENTITY_PRESENCE_RULE_IDS,
+            backend_presence_results,
+            backend_presence_applicability,
+            errors,
+        )
+
     if backend_owns_gbp:
-        if set(backend_gbp_results or {}) != set(GBP_COMPARISON_RULE_IDS):
-            errors.append("Backend GBP rule results must contain exactly rules 26-29.")
-        if set(backend_gbp_applicability or {}) != set(GBP_COMPARISON_RULE_IDS):
-            errors.append("Backend GBP rule applicability must contain exactly rules 26-29.")
-        for rule_id in GBP_COMPARISON_RULE_IDS:
-            if type((backend_gbp_results or {}).get(rule_id)) is not bool:
-                errors.append(f"Backend rule_{rule_id} result must be boolean.")
-            if type((backend_gbp_applicability or {}).get(rule_id)) is not bool:
-                errors.append(f"Backend rule_{rule_id} applicability must be boolean.")
+        _validate_backend_rule_vector(
+            "GBP",
+            GBP_COMPARISON_RULE_IDS,
+            backend_gbp_results,
+            backend_gbp_applicability,
+            errors,
+        )
     else:
         for rule_id in GBP_COMPARISON_RULE_IDS:
             key = f"rule_{rule_id}"
@@ -110,6 +131,9 @@ def parse_rule_results(
 
     results = {
         rule_id: (
+            (backend_presence_results or {})[rule_id]
+            if backend_owns_presence and rule_id in ENTITY_PRESENCE_RULE_IDS
+            else
             (backend_gbp_results or {})[rule_id]
             if backend_owns_gbp and rule_id in GBP_COMPARISON_RULE_IDS
             else raw_results[f"rule_{rule_id}"]
@@ -118,6 +142,9 @@ def parse_rule_results(
     }
     applicability = {
         rule_id: (
+            (backend_presence_applicability or {})[rule_id]
+            if backend_owns_presence and rule_id in ENTITY_PRESENCE_RULE_IDS
+            else
             (backend_gbp_applicability or {})[rule_id]
             if backend_owns_gbp and rule_id in GBP_COMPARISON_RULE_IDS
             else raw_applicability[f"rule_{rule_id}"]
@@ -125,6 +152,29 @@ def parse_rule_results(
         for rule_id in ACTIVE_RULE_IDS
     }
     return results, applicability
+
+
+def _validate_backend_rule_vector(
+    label: str,
+    expected_rule_ids: frozenset[int],
+    results: dict[int, bool] | None,
+    applicability: dict[int, bool] | None,
+    errors: list[str],
+) -> None:
+    expected_label = ", ".join(str(rule_id) for rule_id in sorted(expected_rule_ids))
+    if set(results or {}) != set(expected_rule_ids):
+        errors.append(
+            f"Backend {label} rule results must contain exactly rules {expected_label}."
+        )
+    if set(applicability or {}) != set(expected_rule_ids):
+        errors.append(
+            f"Backend {label} rule applicability must contain exactly rules {expected_label}."
+        )
+    for rule_id in expected_rule_ids:
+        if type((results or {}).get(rule_id)) is not bool:
+            errors.append(f"Backend rule_{rule_id} result must be boolean.")
+        if type((applicability or {}).get(rule_id)) is not bool:
+            errors.append(f"Backend rule_{rule_id} applicability must be boolean.")
 
 
 def validate_english_narrative(outputs: Any) -> None:

@@ -3149,6 +3149,8 @@ async def fetch_schema_summary(url: str) -> dict[str, Any] | None:
 
 def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
     """Normalise a SerpAPI result dict into a consistent GBP info structure."""
+    from app.report_v21.hours_facts import normalize_weekly_hours
+
     type_val = r.get("type", "")
     categories_raw = r.get("types") or r.get("categories") or type_val
     if isinstance(categories_raw, list):
@@ -3164,6 +3166,13 @@ def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
     service_area_business = r.get("service_area_business")
     if service_area_business is None:
         service_area_business = r.get("pure_service_area_business")
+    legacy_hours = r.get("hours") or r.get("open_state", "")
+    hours_summary = r.get("open_state")
+    if not hours_summary and isinstance(r.get("hours"), str):
+        hours_summary = r.get("hours")
+    operating_hours_raw = r.get("operating_hours")
+    if operating_hours_raw in (None, "", [], {}) and isinstance(r.get("hours"), (dict, list)):
+        operating_hours_raw = r.get("hours")
     return {
         "name":          r.get("title", ""),
         "address":       r.get("address", ""),
@@ -3172,7 +3181,13 @@ def _build_gbp_info(r: dict[str, Any]) -> dict[str, Any]:
         "reviews":       r.get("reviews", ""),   # 评论总数
         "type":          type_val,
         "categories":    categories,
-        "hours":         r.get("hours") or r.get("open_state", ""),
+        # ``hours`` stays legacy-compatible until the separate L3 rule change.
+        # The two new fields prevent a current-open summary from replacing the
+        # complete weekly provider observation in storage and presentation.
+        "hours":         legacy_hours,
+        "hours_summary": hours_summary or "",
+        "operating_hours_raw": operating_hours_raw,
+        "operating_hours": normalize_weekly_hours(operating_hours_raw),
         "website":       r.get("website", ""),
         "service_areas": r.get("service_areas", []),
         "service_areas_observed": service_areas_observed,

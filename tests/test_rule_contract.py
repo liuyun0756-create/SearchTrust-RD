@@ -92,6 +92,55 @@ class RuleContractTests(unittest.TestCase):
         self.assertFalse(parsed_results[29])
         self.assertTrue(all(parsed_applicability[rule_id] for rule_id in (26, 27, 28, 29)))
 
+    def test_backend_overrides_presence_rules_and_dify_may_omit_them(self):
+        results = _complete_vector(False)
+        applicability = _complete_vector(True)
+        for rule_id in (21, 22, 23, 24, 25):
+            results.pop(f"rule_{rule_id}")
+            applicability.pop(f"rule_{rule_id}")
+
+        parsed_results, parsed_applicability = parse_rule_results(
+            {
+                "rule_results": results,
+                "rule_applicability": applicability,
+            },
+            backend_presence_results={
+                21: False, 22: True, 23: False, 24: False, 25: False,
+            },
+            backend_presence_applicability={
+                21: True, 22: True, 23: True, 24: True, 25: True,
+            },
+        )
+
+        self.assertFalse(parsed_results[21])
+        self.assertTrue(parsed_results[22])
+        self.assertFalse(parsed_results[25])
+        self.assertTrue(all(parsed_applicability[rule_id] for rule_id in range(21, 26)))
+
+    def test_backend_can_own_presence_and_gbp_rules_together(self):
+        results = _complete_vector(False)
+        applicability = _complete_vector(True)
+        for rule_id in range(21, 30):
+            results.pop(f"rule_{rule_id}")
+            applicability.pop(f"rule_{rule_id}")
+
+        parsed_results, _ = parse_rule_results(
+            {
+                "rule_results": results,
+                "rule_applicability": applicability,
+                "rule_errors": [
+                    "rule_25 old LLM node returned invalid JSON",
+                    "rule_28 old LLM node returned invalid JSON",
+                ],
+            },
+            backend_presence_results={rule_id: False for rule_id in range(21, 26)},
+            backend_presence_applicability={rule_id: True for rule_id in range(21, 26)},
+            backend_gbp_results={rule_id: False for rule_id in range(26, 30)},
+            backend_gbp_applicability={rule_id: True for rule_id in range(26, 30)},
+        )
+
+        self.assertTrue(all(parsed_results[rule_id] is False for rule_id in range(21, 30)))
+
     def test_backend_ownership_ignores_only_dify_gbp_rule_errors(self):
         results = _complete_vector(False)
         applicability = _complete_vector(True)

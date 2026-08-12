@@ -135,6 +135,8 @@ async def _run_pipeline_inner(
     """
     input_page_type = page_type
     language = "English"
+    pipeline_started = time.perf_counter()
+    stage_durations: dict[str, float] = {}
 
     # ── Stage 1: Scraping (0 → 30 %) ─────────────────────────────────────────
     _update_state(
@@ -149,11 +151,13 @@ async def _run_pipeline_inner(
 
     try:
         logger.info("Pipeline stage=scraping task_id=%s url=%s gbp_url=%s", task_id, url, gbp_url)
+        scrape_started = time.perf_counter()
         scrape_result = await scrape(
             url,
             gbp_url=gbp_url,
             location_context=location_context,
         )
+        stage_durations["scraping"] = round(time.perf_counter() - scrape_started, 3)
     except RuntimeError as exc:
         logger.error("Scraping failed task_id=%s: %s", task_id, exc)
         _update_state(
@@ -177,7 +181,11 @@ async def _run_pipeline_inner(
     from app.models.request import resolve_page_type  # noqa: PLC0415
     from app.report_v21.evidence_ledger import build_evidence_ledger  # noqa: PLC0415
     from app.report_v21.action_requirements import serialize_action_requirements  # noqa: PLC0415
+    from app.report_v21.entity_presence_evaluator import (  # noqa: PLC0415
+        evaluate_entity_presence_rules,
+    )
     from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules  # noqa: PLC0415
+    from app.report_v21.hours_facts import build_source_facts  # noqa: PLC0415
     from app.report_v21.normalize import (  # noqa: PLC0415
         normalize_native_report_to_v21,
         normalize_report_copy_to_v21,
@@ -209,6 +217,17 @@ async def _run_pipeline_inner(
         ),
         source_url=page_fact_source_url,
     )
+    source_facts = build_source_facts(
+        page_facts,
+        gbp_data,
+        source_url=page_fact_source_url,
+        fetched_at=created_at,
+    )
+    (
+        backend_presence_results,
+        backend_presence_applicability,
+        backend_entity_presence,
+    ) = evaluate_entity_presence_rules(page_facts)
     review_corpus = build_review_corpus(
         content,
         gbp_data,
@@ -243,6 +262,8 @@ async def _run_pipeline_inner(
         "gbp_error": scrape_result.get("gbp_error"),
         "gbp_lookup_diagnostic": scrape_result.get("gbp_lookup_diagnostic"),
         "page_facts": page_facts,
+        "backend_entity_presence": backend_entity_presence,
+        "source_facts": source_facts,
         "review_corpus": review_corpus,
     }
     evidence_ledger = build_evidence_ledger(v21_context)
@@ -256,6 +277,8 @@ async def _run_pipeline_inner(
         if "rule_results" in outputs or "report_copy_v2_1" in outputs:
             rule_results, rule_applicability = parse_rule_results(
                 outputs,
+                backend_presence_results=backend_presence_results,
+                backend_presence_applicability=backend_presence_applicability,
                 backend_gbp_results=backend_gbp_results,
                 backend_gbp_applicability=backend_gbp_applicability,
             )
@@ -301,6 +324,7 @@ async def _run_pipeline_inner(
         )
 
     try:
+        dify_started = time.perf_counter()
         report = await call_dify_workflow(
             url=url,
             page_type=dify_page_type,
@@ -312,10 +336,12 @@ async def _run_pipeline_inner(
             gbp_url=final_gbp_url,
             output_validator=_validate_dify_output,
             page_facts=page_facts,
+            backend_entity_presence=backend_entity_presence,
             review_corpus=serialized_review_corpus,
             backend_gbp_findings=backend_gbp_findings,
             action_requirements=action_requirements,
         )
+        stage_durations["dify_workflow"] = round(time.perf_counter() - dify_started, 3)
     except RuntimeError as exc:
         logger.error("Dify workflow failed task_id=%s: %s", task_id, exc)
         error_code = str(getattr(exc, "error_code", "DIFY_WORKFLOW_FAILED"))
@@ -388,6 +414,12 @@ async def _run_pipeline_inner(
         "observations": page_facts.get("observations") or {},
         "rejected_observations": page_facts.get("rejected_observations") or {},
     }
+    # Safe, bounded Page/GBP facts are persisted independently from the public
+    # report contract so evidence can be audited without storing provider
+    # secrets or an unbounded SerpAPI response.
+    final_report["source_facts"] = source_facts
+    final_report["entity_presence_fact_audit"] = backend_entity_presence
+    stage_durations["pre_report_total"] = round(time.perf_counter() - pipeline_started, 3)
 
     try:
         from app.report_v21.normalize import (  # noqa: PLC0415
@@ -400,6 +432,12 @@ async def _run_pipeline_inner(
         final_report["gbp_connected"] = (
             final_report["report_v2_1"].get("gbp_status", {}).get("status") == "checked"
         )
+        stage_durations["total"] = round(time.perf_counter() - pipeline_started, 3)
+        final_report["pipeline_diagnostics"] = {
+            "schema_version": "1",
+            "stage_durations_seconds": stage_durations,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+        }
     except ReportV21OutputInvalid as exc:
         error_result = exc.to_result(task_id)
         logger.warning(

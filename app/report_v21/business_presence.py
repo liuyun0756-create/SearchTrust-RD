@@ -55,6 +55,25 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
 
     gbp_status = build_gbp_status(context)["status"]
     page = _extract_page_signals(content, page_business, _text(context.get("url")))
+    page_facts = context.get("page_facts")
+    if not isinstance(page_facts, dict):
+        from app.report_v21.page_facts import build_page_facts  # noqa: PLC0415
+
+        page_facts = build_page_facts(
+            content,
+            page_business,
+            context.get("target_identity_signals"),
+            source_url=_text(context.get("url")),
+        )
+    source_facts = context.get("source_facts")
+    if not isinstance(source_facts, dict):
+        from app.report_v21.hours_facts import build_source_facts  # noqa: PLC0415
+
+        source_facts = build_source_facts(
+            page_facts,
+            gbp,
+            source_url=_text(context.get("url")),
+        )
     backend_findings = context.get("backend_gbp_findings")
     if not isinstance(backend_findings, dict):
         # Historical reports and direct callers must still use the canonical
@@ -62,13 +81,6 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
         from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules  # noqa: PLC0415
         from app.report_v21.page_facts import build_page_facts  # noqa: PLC0415
 
-        page_facts = context.get("page_facts")
-        if not isinstance(page_facts, dict):
-            page_facts = build_page_facts(
-                content,
-                page_business,
-                context.get("target_identity_signals"),
-            )
         derived_context = dict(context)
         derived_context["page_facts"] = page_facts
         _, _, backend_findings = evaluate_gbp_rules(derived_context)
@@ -77,6 +89,7 @@ def build_business_presence_audit(context: dict[str, Any]) -> dict[str, Any]:
         gbp,
         gbp_status,
         backend_findings if isinstance(backend_findings, dict) else {},
+        source_facts,
     )
     profile = _build_profile_activity(gbp, gbp_status)
     reviews = _build_review_audit(gbp, gbp_status)
@@ -255,6 +268,7 @@ def _build_comparisons(
     gbp: dict[str, Any],
     gbp_status: str,
     backend_findings: dict[str, Any],
+    source_facts: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     specs = (
         ("business_name", "Business name", "name", "text"),
@@ -292,20 +306,83 @@ def _build_comparisons(
                 gbp_status=gbp_status,
                 mode=mode,
             )
+        display_page_value = page_value
+        display_gbp_value = gbp_value
+        display_page_source = _observation_source_label(page_observations, "Observed in target page") if page_value else None
+        display_gbp_source = _observation_source_label(gbp_observations, "Observed in public GBP result") if gbp_value not in (None, "", []) else None
+        if key == "opening_hours":
+            from app.report_v21.hours_facts import compare_page_gbp_hours  # noqa: PLC0415
+
+            hours_comparison = compare_page_gbp_hours(source_facts or {})
+            status = str(hours_comparison["status"])
+            explanation = str(hours_comparison["explanation"])
+            (
+                display_page_value,
+                display_gbp_value,
+                display_page_source,
+                display_gbp_source,
+            ) = _opening_hours_display(
+                source_facts or {},
+                fallback_page=page_value,
+                fallback_gbp=gbp_value,
+                fallback_page_source=display_page_source,
+                fallback_gbp_source=display_gbp_source,
+            )
         rows.append({
             "key": key,
             "evidence_id": f"bp-{key}",
             "label": label,
             "status": status,
-            "page_value": _display(page_value),
-            "gbp_value": _display(gbp_value),
-            "page_source": _observation_source_label(page_observations, "Observed in target page") if page_value else None,
-            "gbp_source": _observation_source_label(gbp_observations, "Observed in public GBP result") if gbp_value not in (None, "", []) else None,
+            "page_value": _display(display_page_value),
+            "gbp_value": _display(display_gbp_value),
+            "page_source": display_page_source,
+            "gbp_source": display_gbp_source,
             "explanation": explanation,
             "related_layer": "entity_consistency",
             "included_in_score": False,
         })
     return rows
+
+
+def _opening_hours_display(
+    source_facts: dict[str, Any],
+    *,
+    fallback_page: Any,
+    fallback_gbp: Any,
+    fallback_page_source: str | None,
+    fallback_gbp_source: str | None,
+) -> tuple[Any, Any, str | None, str | None]:
+    """Use the complete evidence snapshot for display without changing status."""
+    from app.report_v21.hours_facts import (  # noqa: PLC0415
+        format_page_hours_observations,
+        format_weekly_hours,
+    )
+
+    page = source_facts.get("page") if isinstance(source_facts.get("page"), dict) else {}
+    page_hours = page.get("opening_hours") if isinstance(page.get("opening_hours"), dict) else {}
+    observations = page_hours.get("observations") if isinstance(page_hours.get("observations"), list) else []
+    page_display = format_page_hours_observations(observations)
+    page_sources = list(dict.fromkeys(
+        str(item.get("source_label") or "").strip()
+        for item in observations
+        if isinstance(item, dict) and str(item.get("source_label") or "").strip()
+    ))
+
+    gbp = source_facts.get("gbp") if isinstance(source_facts.get("gbp"), dict) else {}
+    gbp_hours = gbp.get("opening_hours") if isinstance(gbp.get("opening_hours"), dict) else {}
+    weekly_display = str(gbp_hours.get("weekly_display") or "").strip()
+    if not weekly_display:
+        weekly_display = format_weekly_hours(gbp_hours.get("weekly_raw"))
+    summary = str(gbp_hours.get("summary_raw") or "").strip()
+    gbp_display = weekly_display or summary
+    gbp_source = "GBP · Complete weekly operating hours" if weekly_display else fallback_gbp_source
+
+    return (
+        page_display or fallback_page,
+        gbp_display or fallback_gbp,
+        "; ".join(page_sources) or fallback_page_source,
+        gbp_source,
+    )
 
 
 def _observation_source_label(observations: list[Any], fallback: str) -> str:

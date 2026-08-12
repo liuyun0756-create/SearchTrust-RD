@@ -279,6 +279,7 @@ async def call_dify_workflow(
     gbp_url: str = "",
     output_validator: Optional[OutputValidator] = None,
     page_facts: Optional[dict[str, Any]] = None,
+    backend_entity_presence: Optional[dict[str, Any]] = None,
     review_corpus: str = "[]",
     backend_gbp_findings: Optional[dict[str, Any]] = None,
     action_requirements: Optional[dict[str, Any]] = None,
@@ -308,6 +309,9 @@ async def call_dify_workflow(
         Google Business Profile URL, passed through to the final report.
     review_corpus:
         Backend-built JSON review snapshot shared with Rules 37-39.
+    backend_entity_presence:
+        Backend-owned Rule 21-25 results and source observations. Dify may use
+        this input for narrative, but must not recalculate the booleans.
 
     Returns
     -------
@@ -328,6 +332,9 @@ async def call_dify_workflow(
         "gbp_data": json.dumps(gbp_data, ensure_ascii=False),
         "gbp_url": gbp_url,
         "page_facts": json.dumps(page_facts or {}, ensure_ascii=False),
+        "backend_entity_presence": json.dumps(
+            backend_entity_presence or {}, ensure_ascii=False
+        ),
         "review_corpus": review_corpus,
         "backend_gbp_findings": json.dumps(backend_gbp_findings or {}, ensure_ascii=False),
         "action_requirements": json.dumps(action_requirements or {"requirements": []}, ensure_ascii=False),

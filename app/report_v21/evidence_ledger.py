@@ -175,6 +175,10 @@ def build_layer_evidence(
     for rule_id in layer_rule_ids:
         if rule_id in GBP_COMPARISON_FIELDS:
             evidence.extend(_gbp_comparison_evidence(rule_id, context))
+        elif rule_id in {21, 22, 23, 24, 25} and isinstance(
+            context.get("backend_entity_presence"), dict
+        ):
+            evidence.extend(_entity_presence_evidence(rule_id, context))
         elif rule_id in {37, 38, 39}:
             evidence.extend(_review_rule_evidence(rule_id, ledger, context))
         elif rule_id in MISSING_OBSERVATION_RULES:
@@ -183,6 +187,70 @@ def build_layer_evidence(
             evidence.append(_page_rule_evidence(rule_id, ledger, context))
 
     return _dedupe_evidence(evidence)
+
+
+def _entity_presence_evidence(
+    rule_id: int,
+    context: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Bind L2 evidence to the same Page Facts that own Rules 21-25."""
+    payload = context.get("backend_entity_presence")
+    findings = payload.get("findings") if isinstance(payload, dict) else None
+    finding = findings.get(f"rule_{rule_id}") if isinstance(findings, dict) else None
+    if not isinstance(finding, dict):
+        return []
+
+    page_values = _values(finding.get("page_values"))
+    page_observations = (
+        finding.get("page_observations")
+        if isinstance(finding.get("page_observations"), list)
+        else []
+    )
+    explanation = str(
+        finding.get("explanation")
+        or RULE_FINDING_LABELS.get(rule_id, f"Rule {rule_id} triggered.")
+    )
+    field_label = str(finding.get("field") or "page field").replace("_", " ").title()
+
+    if not page_values:
+        return [{
+            "id": f"ev-rule-{rule_id}-missing",
+            "source_type": "page",
+            "source_label": field_label,
+            "source_url": str(context.get("url") or "") or None,
+            "page_section": "Checked target page facts",
+            "extracted_text": None,
+            "normalized_value": SHORT_MISSING_LABELS.get(rule_id, explanation),
+            "expected_value": RULE_FINDING_LABELS.get(rule_id),
+            "comparison_result": "missing",
+            "confidence": "high",
+            "explanation": explanation,
+        }]
+
+    evidence: list[dict[str, Any]] = []
+    for index, value in enumerate(page_values[:4], start=1):
+        observation = next(
+            (
+                item for item in page_observations
+                if isinstance(item, dict)
+                and str(item.get("raw_value") or item.get("value") or "").strip() == value
+            ),
+            {},
+        )
+        evidence.append({
+            "id": f"ev-rule-{rule_id}-page-{index:02d}",
+            "source_type": "page",
+            "source_label": str(observation.get("source_label") or field_label),
+            "source_url": str(observation.get("source_url") or context.get("url") or "") or None,
+            "page_section": str(observation.get("locator") or "Checked target page facts"),
+            "extracted_text": value,
+            "normalized_value": observation.get("normalized_value"),
+            "expected_value": RULE_FINDING_LABELS.get(rule_id),
+            "comparison_result": "partial",
+            "confidence": "high",
+            "explanation": explanation,
+        })
+    return evidence
 
 
 def _page_segments(content: str) -> list[dict[str, str]]:

@@ -55,6 +55,10 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
                 gbp_data={"name": "Example"},
                 task_id="english-input-fixture",
                 page_facts={"business_names": ["Example"]},
+                backend_entity_presence={
+                    "schema_version": "1",
+                    "rule_results": {"rule_21": False},
+                },
                 review_corpus='[{"id":"gbp-review-01","text":"Great drain repair."}]',
                 action_requirements=serialize_action_requirements(),
             )
@@ -62,6 +66,8 @@ class DifyOutputRetryTests(unittest.IsolatedAsyncioTestCase):
         inputs = stream.await_args.args[0]
         self.assertEqual(inputs["language"], "English")
         self.assertIn("business_names", inputs["page_facts"])
+        presence = json.loads(inputs["backend_entity_presence"])
+        self.assertEqual(presence["rule_results"]["rule_21"], False)
         self.assertIn("gbp-review-01", inputs["review_corpus"])
         requirements = json.loads(inputs["action_requirements"])["requirements"]
         self.assertTrue(requirements)

@@ -14,6 +14,8 @@ import re
 import unicodedata
 from typing import Any, Iterable
 
+from app.report_v21.hours_facts import extract_page_hours_facts
+
 try:  # Kept optional for stored-worker compatibility during rolling deploys.
     import phonenumbers
 except ImportError:  # pragma: no cover - deployment installs requirements.txt
@@ -190,18 +192,33 @@ def build_page_facts(
         accepted[field] = selected
         rejected[field] = excluded
 
-    hours = _unique(
-        match.group(0)
-        for pattern in _HOURS_PATTERNS
-        for match in pattern.finditer(visible_text)
+    opening_hours = extract_page_hours_facts(
+        text,
+        structured,
+        source_url=source_url,
     )
+    hours = _unique(
+        item.get("raw_value") or item.get("value")
+        for item in opening_hours.get("observations", [])
+        if isinstance(item, dict)
+    )
+    # Keep the legacy bounded patterns as a compatibility fallback when a
+    # provider returns readable text that the richer parser cannot classify.
+    if not hours:
+        hours = _unique(
+            match.group(0)
+            for pattern in _HOURS_PATTERNS
+            for match in pattern.finditer(visible_text)
+        )
+    accepted["hours"] = list(opening_hours.get("observations") or [])
     return {
-        "version": "3",
+        "version": "4",
         "business_names": _observation_values(accepted["business_names"]),
         "addresses": _observation_values(accepted["addresses"]),
         "phones": _observation_values(accepted["phones"]),
         "service_areas": _observation_values(accepted["service_areas"]),
         "hours": hours,
+        "opening_hours": opening_hours,
         "observations": accepted,
         "candidate_observations": {
             field: _unique_observations(values) for field, values in candidates.items()

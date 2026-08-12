@@ -154,8 +154,8 @@ def _page_observations(
         for item in selected:
             item["value"] = str(item.get("value") or "").strip()
         return selected
-    if str(page_facts.get("version") or "") == "3":
-        # Version 3 is fail-closed: an absent observation list cannot be
+    if str(page_facts.get("version") or "") in {"3", "4"}:
+        # Version 3+ is fail-closed: an absent observation list cannot be
         # bypassed by injecting the compatibility value arrays.
         return []
     page_values = _values(page_facts.get(page_key))
