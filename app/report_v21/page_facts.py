@@ -30,6 +30,21 @@ _ADDRESS_PATTERN = re.compile(
     r"(?:\s*,\s*[A-Za-z .'-]{2,40}\s*,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)?",
     flags=re.IGNORECASE,
 )
+_STREET_ADDRESS_PATTERN = re.compile(
+    r"\b\d{1,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z0-9.'# -]{2,70}?\s+"
+    r"(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|"
+    r"Lane|Ln\.?|Court|Ct\.?|Highway|Hwy\.?|Way|Place|Pl\.?|Parkway|Pkwy\.?)\b"
+    r"(?:\s*(?:Suite|Ste\.?|Unit|#)\s*[A-Za-z0-9-]+)?",
+    flags=re.IGNORECASE,
+)
+_LOCALITY_REGION_POSTAL_PATTERN = re.compile(
+    r"\b[A-Za-z][A-Za-z .'-]{1,50},?\s+[A-Z]{2}\s+\d{5}(?:-\d{4})?\b"
+)
+_MAP_ANCHOR_PATTERN = re.compile(
+    r"<a\b[^>]*href=[\"'](?P<href>[^\"']*(?:google\.[^\"']*/maps|goo\.gl/maps|"
+    r"maps\.app\.goo\.gl)[^\"']*)[\"'][^>]*>(?P<body>.*?)</a\s*>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
 _HOURS_PATTERNS = (
     re.compile(r"\b24\s*/\s*7\b", flags=re.IGNORECASE),
     re.compile(r"\bopen\s+24\s+hours?\b", flags=re.IGNORECASE),
@@ -41,6 +56,11 @@ _HOURS_PATTERNS = (
 )
 _SERVICE_PREFIX = re.compile(
     r"\b(?:service\s+areas?|areas?\s+served|serving|we\s+serve|covering)\b\s*[:\-]?\s*(.+)",
+    flags=re.IGNORECASE,
+)
+_EXPLICIT_SERVICE_AREA_SENTENCE = re.compile(
+    r"\byour\s+(?P<areas>[A-Z][A-Za-z .'-]*(?:\s*,\s*[A-Z][A-Za-z .'-]*){1,}"
+    r"(?:\s*,?\s*(?:or|and)\s+[A-Z][A-Za-z .'-]*)?)\s+homes?\b",
     flags=re.IGNORECASE,
 )
 _SELF_IDENTIFICATION = re.compile(
@@ -105,6 +125,7 @@ _PHONE_SOURCE_PRIORITY = {
 }
 _ADDRESS_SOURCE_PRIORITY = {
     "page.jsonld.postal_address": 100,
+    "page.dom.map_address": 95,
     "page.dom.address_element": 90,
     "page.dom.visible_address_labeled": 80,
     "page.dom.visible_address": 60,
@@ -135,6 +156,7 @@ _SOURCE_LABELS = {
     "page.dom.address_element": "Target page · Address element",
     "page.dom.visible_address_labeled": "Target page · Labeled visible address",
     "page.dom.visible_address": "Target page · Visible address",
+    "page.dom.map_address": "Target page · Complete visible map address",
     "page.dom.service_area_section": "Target page · Service-area section",
     "page.dom.visible_brand": "Target page · Visible brand",
     "page.dom.logo_alt": "Target page · Logo text",
@@ -494,6 +516,36 @@ def _address_candidates(
                 normalized_value=_normalize_text(address), validation="valid",
             ))
 
+    # Some page builders render one postal address as two visible anchors that
+    # point to the same map destination (street on one line, locality/region/
+    # postal code on the next).  They are one page fact, not two unrelated
+    # guesses, so compose them before field validation and source selection.
+    map_groups: dict[str, list[str]] = {}
+    for match in _MAP_ANCHOR_PATTERN.finditer(structured):
+        href = html.unescape(match.group("href")).strip()
+        anchor_text = " ".join(_visible_text(match.group("body")).split())
+        if href and anchor_text:
+            map_groups.setdefault(href, []).append(anchor_text)
+    for href, parts in map_groups.items():
+        streets = _unique(
+            match.group(0).strip()
+            for part in parts
+            for match in _STREET_ADDRESS_PATTERN.finditer(part)
+        )
+        localities = _unique(
+            match.group(0).strip()
+            for part in parts
+            for match in _LOCALITY_REGION_POSTAL_PATTERN.finditer(part)
+        )
+        for street in streets:
+            for locality in localities:
+                raw = f"{street}, {locality}"
+                candidates.append(_observation(
+                    raw, "page.dom.map_address", source_url=source_url,
+                    locator=f"map link {href}", excerpt=" | ".join(parts),
+                    normalized_value=_normalize_text(raw), validation="valid",
+                ))
+
     for index, match in enumerate(re.finditer(r"<address\b[^>]*>(.*?)</address\s*>", structured, re.IGNORECASE | re.DOTALL)):
         raw = _visible_text(match.group(1)).strip()
         if _valid_address(raw):
@@ -559,7 +611,42 @@ def _service_area_candidates(
                     locator=f"visible line {index + 1}", excerpt=line,
                     normalized_value=_normalize_text(value), validation="valid",
                 ))
+
+    # Explicit natural-language coverage statements are also page facts.  A
+    # rendered paragraph may be wrapped across adjacent lines, so use bounded
+    # windows rather than joining the whole page and crossing section borders.
+    lines = [line.strip() for line in visible_text.splitlines() if line.strip()]
+    windows = (
+        (index, " ".join(lines[index:index + width]))
+        for index in range(len(lines))
+        for width in range(1, min(4, len(lines) - index) + 1)
+    )
+    for index, sentence in windows:
+        for match in _EXPLICIT_SERVICE_AREA_SENTENCE.finditer(sentence):
+            for value in _explicit_area_names(match.group("areas")):
+                candidates.append(_observation(
+                    value, "page.dom.service_area_section", source_url=source_url,
+                    locator=f"visible line {index + 1}", excerpt=match.group(0),
+                    normalized_value=_normalize_text(value), validation="valid",
+                ))
     return _unique_observations(candidates)
+
+
+def _explicit_area_names(value: str) -> list[str]:
+    separated = re.sub(
+        r"\s*,?\s*\b(?:or|and)\b\s+", ", ", value, flags=re.IGNORECASE,
+    )
+    names: list[str] = []
+    for item in separated.split(","):
+        name = re.sub(r"\s+", " ", item).strip(" .:-")
+        if (
+            _valid_area_name(name)
+            and re.fullmatch(
+                r"[A-Z][A-Za-z.'-]*(?:\s+[A-Z][A-Za-z.'-]*){0,3}", name,
+            )
+        ):
+            names.append(name)
+    return _unique(names)
 
 
 def _select_eligible(
