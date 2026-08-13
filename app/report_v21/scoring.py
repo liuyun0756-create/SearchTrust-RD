@@ -66,10 +66,10 @@ RULE_FINDING_LABELS: dict[int, str] = {
     23: "A contact phone number was not found",
     24: "The service area is not clearly declared",
     25: "Business hours were not found",
-    26: "The business name does not align with the checked GBP record",
-    27: "The address does not align with the checked GBP record",
-    28: "The phone number does not align with the checked GBP record",
-    29: "The service area does not align with the checked GBP record",
+    26: "The business name materially conflicts with the checked GBP record",
+    27: "The address materially conflicts with the checked GBP record",
+    28: "No valid page phone number matches the checked GBP record",
+    29: "The service area materially conflicts with the checked GBP record",
     30: "Community-level geographic detail was not found",
     31: "A concrete landmark reference was not found",
     32: "Local context language was not found",
@@ -120,7 +120,9 @@ GOOD_LAYER_NARRATIVES: dict[str, tuple[str, str]] = {
 LAYER_THRESHOLDS: dict[str, tuple[range, range, range]] = {
     "foundation": (range(0, 2), range(2, 3), range(3, 5)),
     "entity_presence": (range(0, 2), range(2, 4), range(4, 6)),
-    "entity_consistency": (range(0, 2), range(2, 3), range(3, 5)),
+    # L3 findings are now material semantic conflicts rather than formatting
+    # differences, so a single finding is meaningful and two are weak.
+    "entity_consistency": (range(0, 1), range(1, 2), range(2, 5)),
     "specificity": (range(0, 4), range(4, 8), range(8, 11)),
     "real_world_connection": (range(0, 2), range(2, 4), range(4, 6)),
     "accountability": (range(0, 2), range(2, 3), range(3, 4)),

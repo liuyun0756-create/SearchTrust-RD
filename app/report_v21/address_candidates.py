@@ -431,7 +431,9 @@ def _format_components(components: dict[str, str]) -> str:
 
 def _join_lines(lines: Iterable[str]) -> str:
     cleaned = [_clean(line) for line in lines if _clean(line)]
-    return ", ".join(line.rstrip(" ,") for line in cleaned)
+    # Preserve the page's own punctuation. A line break is evidence of a
+    # boundary, but not evidence that the publisher wrote a comma there.
+    return " ".join(cleaned)
 
 
 def _clean(value: Any) -> str:

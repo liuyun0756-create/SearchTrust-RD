@@ -397,10 +397,14 @@ def _observation_source_label(observations: list[Any], fallback: str) -> str:
 
 def _finding_status(condition: str) -> str:
     return {
-        "match": "match",
-        "mismatch": "missing",
-        "page_missing": "missing",
-        "gbp_field_missing": "missing",
+        "match": "match",  # Stored-report compatibility.
+        "exact_match": "match",
+        "semantic_match": "match",
+        "compatible_difference": "match",
+        "mismatch": "mismatch",  # Stored-report compatibility.
+        "material_conflict": "mismatch",
+        "page_missing": "not_checked",
+        "gbp_field_missing": "not_checked",
         "both_missing": "not_checked",
         "gbp_unavailable": "not_checked",
         "field_not_applicable": "not_applicable",
@@ -481,7 +485,10 @@ def _compare_signal(
         return "match", "The normalized page and GBP values match."
 
     if key in _GBP_RULE_TO_COMPARISON_KEY.values():
-        return "missing", "The normalized page and GBP values are not exactly equal."
+        return (
+            "not_checked",
+            "The canonical semantic L3 comparison was unavailable, so this fallback did not infer a conflict.",
+        )
 
     left_tokens = _tokens(left)
     right_tokens = _tokens(right)

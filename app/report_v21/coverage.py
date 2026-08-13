@@ -238,10 +238,14 @@ def _alignment_row_from_finding(
     gbp_values = _string_list(finding.get("gbp_values"))
     condition = str(finding.get("condition") or "gbp_unavailable")
     status = {
-        "match": "match",
-        "mismatch": "missing",
-        "page_missing": "missing",
-        "gbp_field_missing": "missing",
+        "match": "match",  # Stored-report compatibility.
+        "exact_match": "match",
+        "semantic_match": "match",
+        "compatible_difference": "match",
+        "mismatch": "mismatch",  # Stored-report compatibility.
+        "material_conflict": "mismatch",
+        "page_missing": "not_checked",
+        "gbp_field_missing": "not_checked",
         "both_missing": "not_checked",
         "gbp_unavailable": "not_checked",
         "field_not_applicable": "not_checked",

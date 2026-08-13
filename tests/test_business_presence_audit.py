@@ -64,8 +64,8 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(rows["business_name"]["status"], "match")
         self.assertEqual(rows["phone"]["status"], "match")
         self.assertEqual(rows["website"]["status"], "match")
-        self.assertEqual(rows["service_area"]["status"], "missing")
-        self.assertIn("did not return it", rows["service_area"]["explanation"])
+        self.assertEqual(rows["service_area"]["status"], "not_checked")
+        self.assertIn("comparable", rows["service_area"]["explanation"])
         alignment_scope = next(
             item for item in audit["audit_scope"] if item["key"] == "gbp_page_alignment"
         )
@@ -82,7 +82,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(audit["proposal_status"], "needs_attention")
         self.assertFalse(any(action["business_area"] == "profile_activity" for action in audit["proposal_actions"]))
 
-    def test_service_area_explicitly_empty_uses_missing_only_when_applicable(self):
+    def test_service_area_explicitly_empty_is_not_a_semantic_conflict(self):
         context = self.base_context()
         context["gbp_data"].update({
             "service_areas": [],
@@ -93,7 +93,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         audit = build_business_presence_audit(context)
         service_area = next(row for row in audit["gbp_page_alignment"] if row["key"] == "service_area")
 
-        self.assertEqual(service_area["status"], "missing")
+        self.assertEqual(service_area["status"], "not_checked")
 
     def test_storefront_service_area_is_not_applicable(self):
         context = self.base_context()
@@ -301,7 +301,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
     def test_alignment_evidence_reuses_ids_without_changing_rule_fields(self):
         context = self.base_context()
         context["page_content"] += "1911 West Reno Street, Broken Arrow, OK 74012\n"
-        context["gbp_data"]["address"] = "1911 W Reno St, Broken Arrow, OK 74012"
+        context["gbp_data"]["address"] = "999 W Reno St, Broken Arrow, OK 74012"
         audit = build_business_presence_audit(context)
         report = {
             "overall_status": {"label": "Medium", "level": "medium", "explanation": "Fixed score."},
@@ -361,12 +361,12 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         self.assertEqual(
             {key: rows[key]["status"] for key in ("business_name", "address", "phone", "service_area")},
             {
-                "business_name": "missing",
-                "address": "missing",
+                "business_name": "match",
+                "address": "not_checked",
                 # The malformed extra candidate is now rejected before L3;
                 # the validated primary page number equals the GBP number.
                 "phone": "match",
-                "service_area": "missing",
+                "service_area": "match",
             },
         )
         for rule_id, key in ((26, "business_name"), (27, "address"), (28, "phone"), (29, "service_area")):
@@ -376,33 +376,18 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         report = {
             "layers": [{
                 "layer_key": "entity_consistency",
-                "triggered_rule_ids": [26, 27, 28, 29],
+                "triggered_rule_ids": [],
                 "evidence_items": [{"id": "workflow-contradiction"}],
             }],
-            "key_issues": [{
-                "affected_layer": "entity_consistency",
-                "related_rule_ids": [26, 27, 28, 29],
-                "evidence_items": [],
-            }],
-            "primary_blocking_layer": {
-                "layer_key": "entity_consistency",
-                "evidence_items": [],
-            },
+            "key_issues": [],
+            "primary_blocking_layer": None,
         }
         bound = bind_business_presence_evidence(report, audit, context)
         evidence = bound["layers"][0]["evidence_items"]
-        evidence_by_id = {item["id"]: item for item in evidence}
+        self.assertEqual(evidence, [])
+        self.assertTrue(all(not finding["triggered"] for finding in findings.values()))
 
-        self.assertNotIn("workflow-contradiction", evidence_by_id)
-        self.assertEqual(evidence_by_id["ev-rule-26-page-01"]["extracted_text"], findings["rule_26"]["page_values"][0])
-        self.assertEqual(evidence_by_id["ev-rule-26-gbp-01"]["extracted_text"], findings["rule_26"]["gbp_values"][0])
-        self.assertEqual(evidence_by_id["ev-rule-27-page-missing"]["comparison_result"], rows["address"]["status"])
-        self.assertEqual(evidence_by_id["ev-rule-27-gbp-01"]["extracted_text"], findings["rule_27"]["gbp_values"][0])
-        self.assertEqual(evidence_by_id["ev-rule-28-page-02"]["comparison_result"], rows["phone"]["status"])
-        self.assertEqual(evidence_by_id["ev-rule-29-gbp-01"]["comparison_result"], rows["service_area"]["status"])
-        self.assertFalse(any(item["source_label"].startswith("Business Presence Audit") for item in evidence))
-
-    def test_missing_page_values_bind_traceable_absence_evidence(self):
+    def test_missing_page_values_remain_l2_coverage_not_l3_conflicts(self):
         context = self.base_context()
         context["page_content"] = "Call (918) 555-0100 for emergency plumbing service."
         context["page_business"] = {"phone": "(918) 555-0100"}
@@ -421,18 +406,16 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         }
 
         bound = bind_business_presence_evidence(report, audit, context)
-        evidence = {
-            item["id"]: item
+        rows = {row["key"]: row for row in audit["gbp_page_alignment"]}
+        self.assertEqual(rows["business_name"]["status"], "not_checked")
+        self.assertEqual(rows["address"]["status"], "not_checked")
+        evidence_ids = {
+            item["id"]
             for item in bound["layers"][0]["evidence_items"]
         }
-
-        for evidence_id in ("bp-business_name", "bp-address"):
-            self.assertIsNone(evidence[evidence_id]["extracted_text"])
-            self.assertEqual(
-                evidence[evidence_id]["normalized_value"],
-                "Not found in the checked page scope",
-            )
-        self.assertNotIn("bp-opening_hours", evidence)
+        self.assertNotIn("bp-business_name", evidence_ids)
+        self.assertNotIn("bp-address", evidence_ids)
+        self.assertNotIn("bp-opening_hours", evidence_ids)
 
     def test_dify_gbp_payload_excludes_review_and_backend_audit_details(self):
         payload = _build_dify_gbp_payload({

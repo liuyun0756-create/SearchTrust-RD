@@ -84,6 +84,7 @@ _GENERIC_NAMES = {
 _THIRD_PARTY_OR_DESCRIPTOR_NAMES = {
     "facebook", "google", "instagram", "linkedin", "pinterest", "tiktok",
     "twitter", "yelp", "youtube", "colorful", "monochrome", "review", "reviews",
+    "thumbnail", "image", "photo", "picture", "icon", "placeholder",
 }
 _NAME_SOURCE_PRIORITY = {
     "page.jsonld.local_business.name": 100,

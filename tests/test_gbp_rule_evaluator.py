@@ -15,7 +15,7 @@ def _context(page_facts, gbp_data, *, checked=True):
 
 
 class GbpRuleEvaluatorTests(unittest.TestCase):
-    def test_business_name_keeps_punctuation_and_case_strict(self):
+    def test_business_name_ignores_safe_punctuation_case_and_legal_suffix_formatting(self):
         page_name = "Express 24 Hr Plumbing & Drain LLC."
         for gbp_name in (
             "Express 24 Hr Plumbing & Drain, LLC",
@@ -26,15 +26,15 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
                 {"name": gbp_name, "phone": "(509) 940-7811"},
             ))
 
-            self.assertTrue(results[26])
-            self.assertEqual(findings["rule_26"]["condition"], "mismatch")
+            self.assertFalse(results[26])
+            self.assertEqual(findings["rule_26"]["condition"], "semantic_match")
 
         results, _, findings = evaluate_gbp_rules(_context(
             {"business_names": [page_name], "phones": ["(509) 940-7811"]},
             {"name": page_name, "phone": "(509) 940-7811"},
         ))
         self.assertFalse(results[26])
-        self.assertEqual(findings["rule_26"]["condition"], "match")
+        self.assertEqual(findings["rule_26"]["condition"], "exact_match")
 
     def test_exact_identity_comparison_is_deterministic(self):
         context = _context(
@@ -56,12 +56,12 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertEqual(runs[0], runs[1])
         self.assertEqual(runs[1], runs[2])
         results, applicability, findings = runs[0]
-        self.assertEqual(results, {26: True, 27: True, 28: False, 29: False})
+        self.assertEqual(results, {26: False, 27: False, 28: False, 29: False})
         self.assertTrue(all(applicability.values()))
-        self.assertEqual(findings["rule_26"]["condition"], "mismatch")
-        self.assertEqual(findings["rule_27"]["condition"], "mismatch")
+        self.assertEqual(findings["rule_26"]["condition"], "semantic_match")
+        self.assertEqual(findings["rule_27"]["condition"], "semantic_match")
 
-    def test_plumbingbo_uses_raw_page_name_and_remains_strict(self):
+    def test_plumbingbo_uses_raw_page_name_and_matches_extended_gbp_name(self):
         page_facts = {
             "business_names": ["PlumbingBO"],
             "addresses": [],
@@ -80,8 +80,8 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
             {"name": "Local Plumbing Company - PlumbingBO", "phone": "(315) 228-9299"},
         ))
 
-        self.assertTrue(results[26])
-        self.assertEqual(findings["rule_26"]["condition"], "mismatch")
+        self.assertFalse(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "semantic_match")
         self.assertEqual(findings["rule_26"]["page_values"], ["PlumbingBO"])
         self.assertEqual(
             findings["rule_26"]["page_observations"][0]["source"],
@@ -179,10 +179,12 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
             {"name": "WaterHouse Plumbing Company", "phone": "(212) 777-3003"},
         ))
 
-        self.assertTrue(results[26])
-        self.assertTrue(results[28])
+        self.assertFalse(results[26])
+        self.assertFalse(results[28])
         self.assertEqual(findings["rule_26"]["condition"], "page_missing")
         self.assertEqual(findings["rule_28"]["condition"], "page_missing")
+        self.assertFalse(findings["rule_26"]["applicable"])
+        self.assertFalse(findings["rule_28"]["applicable"])
         self.assertEqual(findings["rule_26"]["page_values"], [])
         self.assertEqual(findings["rule_28"]["page_values"], [])
 
@@ -199,6 +201,65 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertFalse(matching[28])
         self.assertEqual(finding["rule_28"]["normalized_page_values"], ["+12127773003"])
         self.assertTrue(different[28])
+
+    def test_phone_matches_when_any_valid_page_number_matches_gbp(self):
+        results, applicability, findings = evaluate_gbp_rules(_context(
+            {
+                "business_names": ["Example Plumbing"],
+                "phones": ["559-291-7230", "559-661-1060", "866-411-6200"],
+            },
+            {"name": "Example Plumbing", "phone": "(559) 291-7230"},
+        ))
+
+        self.assertFalse(results[28])
+        self.assertTrue(applicability[28])
+        self.assertEqual(findings["rule_28"]["condition"], "semantic_match")
+        self.assertEqual(
+            findings["rule_28"]["unmatched_page_values"],
+            ["559-661-1060", "866-411-6200"],
+        )
+
+    def test_business_name_still_rejects_a_different_distinctive_brand(self):
+        results, _, findings = evaluate_gbp_rules(_context(
+            {"business_names": ["Alpha Plumbing"]},
+            {"name": "Beta Plumbing", "phone": "(918) 555-0100"},
+        ))
+
+        self.assertTrue(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "material_conflict")
+
+    def test_service_area_subset_and_overlap_are_compatible_but_zero_overlap_conflicts(self):
+        subset, _, subset_findings = evaluate_gbp_rules(_context(
+            {"service_areas": ["Tulsa"]},
+            {
+                "name": "Example Plumbing",
+                "phone": "(918) 555-0100",
+                "service_areas": ["Tulsa", "Broken Arrow"],
+            },
+        ))
+        overlap, _, overlap_findings = evaluate_gbp_rules(_context(
+            {"service_areas": ["Tulsa", "Dallas"]},
+            {
+                "name": "Example Plumbing",
+                "phone": "(918) 555-0100",
+                "service_areas": ["Tulsa", "Broken Arrow"],
+            },
+        ))
+        conflict, _, conflict_findings = evaluate_gbp_rules(_context(
+            {"service_areas": ["Dallas"]},
+            {
+                "name": "Example Plumbing",
+                "phone": "(918) 555-0100",
+                "service_areas": ["Tulsa", "Broken Arrow"],
+            },
+        ))
+
+        self.assertFalse(subset[29])
+        self.assertEqual(subset_findings["rule_29"]["condition"], "semantic_match")
+        self.assertFalse(overlap[29])
+        self.assertEqual(overlap_findings["rule_29"]["condition"], "compatible_difference")
+        self.assertTrue(conflict[29])
+        self.assertEqual(conflict_findings["rule_29"]["condition"], "material_conflict")
 
 
 if __name__ == "__main__":

@@ -156,8 +156,8 @@ A US address is L2-complete when it contains:
 
 A ZIP Code improves completeness and is retained when present, but it is not
 required for L2 presence. A page without a ZIP may still expose a clear
-physical address, while L3 will strictly detect its difference from a GBP value
-that includes the ZIP.
+physical address. L3 compares the available address components semantically,
+so an omitted ZIP is compatible when the shared location components agree.
 
 Additional rules:
 
@@ -273,10 +273,11 @@ Unit and integration fixtures cover:
 10. Non-US structured addresses and rejected non-US free text.
 11. Parser ambiguity and parser-unavailable behavior.
 12. L2 presence using accepted components.
-13. L3 exact match and one-character mismatch using the same facts.
+13. L3 exact, punctuation/abbreviation-compatible, and materially conflicting
+    addresses using the same facts.
 
-The entire existing report suite must pass. A regression assertion protects the
-L3 evaluator file and its strict matching behavior from incidental changes.
+The entire existing report suite must pass. Regression assertions protect the
+L3 evaluator's component-aware semantic matching from incidental changes.
 
 ## Rollout
 

@@ -34,7 +34,7 @@ class AddressFactPipelineTests(unittest.TestCase):
 
         facts = build_page_facts(visible, structured_content=structured)
 
-        self.assertEqual(facts["addresses"], ["5855 E Clinton Ave., Fresno, CA 93727"])
+        self.assertEqual(facts["addresses"], ["5855 E Clinton Ave. Fresno, CA 93727"])
         accepted = facts["observations"]["addresses"][0]
         self.assertEqual(accepted["source_type"], "page.dom.labeled_address_block")
         self.assertEqual(accepted["components"]["city"], "Fresno")
@@ -54,7 +54,7 @@ class AddressFactPipelineTests(unittest.TestCase):
             "unexpected_trailing_content",
         )
 
-    def test_labeled_markdown_block_stops_before_phone_and_keeps_l3_strict(self):
+    def test_labeled_markdown_block_stops_before_phone_and_matches_semantically(self):
         visible = """
         Address:
         5855 E Clinton Ave.
@@ -71,16 +71,14 @@ class AddressFactPipelineTests(unittest.TestCase):
 
         self.assertEqual(
             facts["addresses"],
-            ["5855 E Clinton Ave., Fresno, CA 93727"],
+            ["5855 E Clinton Ave. Fresno, CA 93727"],
         )
         self.assertNotIn(
             "559-291-7230",
             " ".join(facts["addresses"]),
         )
-        # Extraction is clean, but punctuation remains significant under the
-        # existing absolute L3 comparison contract.
-        self.assertTrue(results[27])
-        self.assertEqual(findings["rule_27"]["condition"], "mismatch")
+        self.assertFalse(results[27])
+        self.assertEqual(findings["rule_27"]["condition"], "semantic_match")
 
     def test_parser_rejects_unlabelled_trailing_unit_but_accepts_real_suite(self):
         contaminated = build_page_facts(
@@ -110,7 +108,7 @@ class AddressFactPipelineTests(unittest.TestCase):
 
         self.assertEqual(
             facts["addresses"],
-            ["1911 West Reno Street, Broken Arrow, OK 74012"],
+            ["1911 West Reno Street Broken Arrow, OK 74012"],
         )
         self.assertEqual(
             facts["observations"]["addresses"][0]["source_type"],
@@ -151,7 +149,7 @@ class AddressFactPipelineTests(unittest.TestCase):
             ["10 Main St, Austin, TX 78701", "20 Oak Ave., Dallas, TX 75201"],
         )
 
-    def test_raw_variants_are_preserved_and_l3_remains_strict(self):
+    def test_raw_variants_are_preserved_and_l3_compares_address_semantics(self):
         facts = build_page_facts("""
         5855 E Clinton Ave., Fresno, CA 93727
         5855 E Clinton Ave, Fresno, CA 93727
@@ -159,8 +157,8 @@ class AddressFactPipelineTests(unittest.TestCase):
         results, _, findings = _l3(facts, "5855 E Clinton Ave, Fresno, CA 93727")
 
         self.assertEqual(len(facts["addresses"]), 2)
-        self.assertTrue(results[27])
-        self.assertEqual(findings["rule_27"]["condition"], "mismatch")
+        self.assertFalse(results[27])
+        self.assertEqual(findings["rule_27"]["condition"], "semantic_match")
 
     def test_jsonld_components_are_accepted_without_visible_text(self):
         structured = """

@@ -279,10 +279,10 @@ class RuleContractTests(unittest.TestCase):
             },
             "page_facts": facts,
         })
-        # The extraction bug is gone. The final period still differs and must
-        # remain a mismatch under the unchanged strict L3 name contract.
-        self.assertTrue(results[26])
-        self.assertEqual(findings["rule_26"]["condition"], "mismatch")
+        # Logo extraction is clean and harmless terminal punctuation is a
+        # semantic match, not an entity-consistency conflict.
+        self.assertFalse(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "semantic_match")
 
     def test_page_facts_preserve_raw_values_and_sources_for_all_l3_fields(self):
         facts = build_page_facts(

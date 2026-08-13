@@ -570,10 +570,14 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
         else []
     )
     comparison_result = {
-        "match": "match",
-        "mismatch": "missing",
-        "page_missing": "missing",
-        "gbp_field_missing": "missing",
+        "match": "match",  # Stored-report compatibility.
+        "exact_match": "match",
+        "semantic_match": "match",
+        "compatible_difference": "match",
+        "mismatch": "mismatch",  # Stored-report compatibility.
+        "material_conflict": "mismatch",
+        "page_missing": "not_checked",
+        "gbp_field_missing": "not_checked",
         "both_missing": "not_checked",
         "gbp_unavailable": "not_checked",
         "field_not_applicable": "not_applicable",

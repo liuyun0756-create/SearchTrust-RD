@@ -21,6 +21,7 @@ from app.report_v21.scoring import (
     GOOD_LAYER_NARRATIVES,
     REQUIRED_LAYER_KEYS,
     build_client_decision_context,
+    calculate_layer_status,
     calculate_overall_status,
     calculate_ranking_potential,
     calculate_risk_level,
@@ -645,6 +646,11 @@ class ReportCopyContractTests(unittest.TestCase):
         )
         self.assertEqual(calculate_risk_level(layers)["label"], "Low")
 
+    def test_l3_status_counts_only_material_semantic_conflicts(self):
+        self.assertEqual(calculate_layer_status("entity_consistency", []), "good")
+        self.assertEqual(calculate_layer_status("entity_consistency", [28]), "medium")
+        self.assertEqual(calculate_layer_status("entity_consistency", [27, 28]), "weak")
+
     def test_overall_status_boundaries_are_monotonic(self):
         cases = (
             ([], "Medium"),
@@ -760,7 +766,7 @@ class ReportCopyContractTests(unittest.TestCase):
             '{"monday": "Open 24 hours"}',
         )
 
-    def test_gbp_key_issues_bind_one_rule_action_and_evidence_each(self):
+    def test_gbp_key_issues_only_include_material_conflicts(self):
         context = _context()
         context["content"] += "\n1911 West Reno Street, Broken Arrow, OK 74012"
         context["page_content"] = context["content"]
@@ -788,7 +794,7 @@ class ReportCopyContractTests(unittest.TestCase):
         results.update(backend_results)
         applicability.update(backend_applicability)
         context["backend_gbp_findings"] = findings
-        payload = copy.deepcopy(_report_copy({27, 28}))
+        payload = copy.deepcopy(_report_copy({28}))
 
         report = normalize_report_copy_to_v21(
             {"report_copy_v2_1": payload},
@@ -799,11 +805,11 @@ class ReportCopyContractTests(unittest.TestCase):
         )["report_v2_1"]
 
         issues = [item for item in report["key_issues"] if item["affected_layer"] == "entity_consistency"]
-        self.assertEqual([item["related_rule_ids"] for item in issues], [[27], [28]])
-        self.assertEqual([item["recommended_actions"][0]["related_rule_ids"] for item in issues], [[27], [28]])
+        self.assertEqual([item["related_rule_ids"] for item in issues], [[28]])
+        self.assertEqual([item["recommended_actions"][0]["related_rule_ids"] for item in issues], [[28]])
         self.assertTrue(all(all(f"rule-{rule_id}" in evidence["id"] or evidence["id"] == f"bp-{key}"
                                 for evidence in issue["evidence_items"])
-                            for issue, rule_id, key in zip(issues, (27, 28), ("address", "phone"))))
+                            for issue, rule_id, key in zip(issues, (28,), ("phone",))))
 
     def test_missing_page_identity_values_do_not_reject_an_otherwise_valid_report(self):
         context = _context()
@@ -849,15 +855,11 @@ class ReportCopyContractTests(unittest.TestCase):
         )["report_v2_1"]
 
         layer = next(item for item in report["layers"] if item["layer_key"] == "entity_consistency")
-        self.assertTrue(any(
-            item.get("normalized_value") == "Not found in the checked page scope"
-            for item in layer["evidence_items"]
-        ))
-        self.assertTrue(all(
-            item.get("extracted_text") or item.get("normalized_value")
-            for item in layer["evidence_items"]
-            if item.get("source_type") in {"page", "gbp"}
-        ))
+        self.assertFalse(results[26])
+        self.assertFalse(results[27])
+        self.assertFalse(applicability[26])
+        self.assertFalse(applicability[27])
+        self.assertEqual(layer["evidence_items"], [])
 
     def test_missing_key_issue_is_rebuilt_from_validated_action_and_findings(self):
         context = _context()

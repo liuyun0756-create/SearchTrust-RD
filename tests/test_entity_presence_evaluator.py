@@ -102,7 +102,7 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
         self.assertFalse(results[24])
         address = payload["findings"]["rule_22"]["page_observations"][0]
         service_areas = payload["findings"]["rule_24"]["page_observations"]
-        self.assertEqual(address["raw_value"], "1911 West Reno Street, Broken Arrow, OK 74012")
+        self.assertEqual(address["raw_value"], "1911 West Reno Street Broken Arrow, OK 74012")
         self.assertEqual(
             page_facts["service_areas"],
             [
@@ -140,8 +140,8 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
         self.assertFalse(l2_results[24])
         self.assertFalse(l3_results[27])
         self.assertFalse(l3_results[29])
-        self.assertEqual(l3_findings["rule_27"]["condition"], "match")
-        self.assertEqual(l3_findings["rule_29"]["condition"], "match")
+        self.assertEqual(l3_findings["rule_27"]["condition"], "semantic_match")
+        self.assertEqual(l3_findings["rule_29"]["condition"], "exact_match")
         self.assertEqual(l3_findings["rule_27"]["page_values"], page_facts["addresses"])
         self.assertEqual(l3_findings["rule_29"]["page_values"], page_facts["service_areas"])
 
@@ -161,10 +161,10 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
             },
             "page_facts": page_facts,
         })
-        self.assertTrue(strict_results[27])
-        self.assertTrue(strict_results[29])
-        self.assertEqual(strict_findings["rule_27"]["condition"], "mismatch")
-        self.assertEqual(strict_findings["rule_29"]["condition"], "mismatch")
+        self.assertFalse(strict_results[27])
+        self.assertFalse(strict_results[29])
+        self.assertEqual(strict_findings["rule_27"]["condition"], "semantic_match")
+        self.assertEqual(strict_findings["rule_29"]["condition"], "compatible_difference")
 
     def test_art_douglas_rejects_prose_way_and_composes_labeled_address_block(self):
         page_facts = build_page_facts("""
@@ -198,7 +198,7 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
 
         self.assertEqual(
             page_facts["addresses"],
-            ["5855 E Clinton Ave., Fresno, CA 93727"],
+            ["5855 E Clinton Ave. Fresno, CA 93727"],
         )
         prose_candidate = next(
             item
@@ -211,6 +211,6 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
         self.assertFalse(l2_results[22])
         self.assertEqual(l2_findings["findings"]["rule_22"]["condition"], "present")
         self.assertFalse(exact_results[27])
-        self.assertEqual(exact_findings["rule_27"]["condition"], "match")
-        self.assertTrue(strict_results[27])
-        self.assertEqual(strict_findings["rule_27"]["condition"], "mismatch")
+        self.assertEqual(exact_findings["rule_27"]["condition"], "semantic_match")
+        self.assertFalse(strict_results[27])
+        self.assertEqual(strict_findings["rule_27"]["condition"], "semantic_match")

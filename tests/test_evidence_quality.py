@@ -5,7 +5,7 @@ from app.report_v21.quality import prune_unsupported_evidence
 
 
 class EvidenceQualityTests(unittest.TestCase):
-    def test_structured_page_name_and_verified_missing_gbp_field_survive_pruning(self):
+    def test_semantic_name_evidence_survives_while_unassessed_missing_fields_do_not(self):
         context = {
             "url": "https://example.com/service/",
             "gbp_url": "https://maps.example/profile",
@@ -20,7 +20,7 @@ class EvidenceQualityTests(unittest.TestCase):
             "gbp_data": {"name": "Example Plumbing, LLC"},
             "backend_gbp_findings": {
                 "rule_26": {
-                    "condition": "mismatch",
+                    "condition": "semantic_match",
                     "page_values": ["Example Plumbing LLC."],
                     "gbp_values": ["Example Plumbing, LLC"],
                     "explanation": "Names differ.",
@@ -37,7 +37,7 @@ class EvidenceQualityTests(unittest.TestCase):
             "gbp_status": {"status": "checked"},
             "layers": [{
                 "layer_key": "entity_consistency",
-                "evidence_items": build_layer_evidence([26, 28], {}, context),
+                "evidence_items": build_layer_evidence([26], {}, context),
             }],
             "key_issues": [],
         }
@@ -47,8 +47,8 @@ class EvidenceQualityTests(unittest.TestCase):
 
         self.assertIn("ev-rule-26-page-01", ids)
         self.assertIn("ev-rule-26-gbp-01", ids)
-        self.assertIn("ev-rule-28-page-01", ids)
-        self.assertIn("ev-rule-28-gbp-missing", ids)
+        self.assertNotIn("ev-rule-28-page-01", ids)
+        self.assertNotIn("ev-rule-28-gbp-missing", ids)
         self.assertFalse(warnings)
 
 

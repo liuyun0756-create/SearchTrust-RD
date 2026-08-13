@@ -3699,7 +3699,7 @@ async def scrape(
     # identity in the server response while the selected locality resolves to
     # a stable same-domain branch page. Keep that branch out of the submitted
     # page content, but allow a content-verified branch to become the effective
-    # page-fact scope for strict L3 comparisons.
+    # page-fact scope for deterministic semantic L3 comparisons.
     branch_root_url = _derive_branch_root_url(url, combined_content)
     dynamic_location_page_urls = _extract_dynamic_location_page_urls(url, target_content)
     dynamic_location_page_url = next(iter(dynamic_location_page_urls), None)
@@ -3999,7 +3999,7 @@ async def scrape(
                     gbp_url=gbp_url,
                     location_hints=location_hints,
                     # A verified branch supplies both lookup anchors and the
-                    # strict L3 page-fact scope. An unverified branch never
+                    # semantic L3 page-fact scope. An unverified branch never
                     # contributes a place-specific lookup anchor.
                     phone=(
                         branch_business_info.get("phone") if branch_allowed_for_lookup else None
