@@ -1,5 +1,6 @@
 import unittest
 
+from app.report_v21.gbp_rule_evaluator import evaluate_gbp_rules
 from app.report_v21.page_facts import build_page_facts
 from app.report_v21.rule_contract import (
     ACTIVE_RULE_IDS,
@@ -249,6 +250,39 @@ class RuleContractTests(unittest.TestCase):
                 self.assertEqual(observation["source_scope"], "target_page")
                 self.assertEqual(observation["validation"], "valid")
                 self.assertTrue(observation["eligible_for_l3"])
+
+    def test_link_wrapped_logo_does_not_leak_markdown_into_business_name(self):
+        facts = build_page_facts(
+            "[![Art Douglas Plumbing Inc.](https://example.com/logo.png)](/)",
+            identity_signals=[{
+                "field": "name",
+                "value": "Art Douglas Plumbing Inc.",
+                "source": "logo_alt",
+                "quality": "supporting",
+                "scope": "target_page",
+            }],
+        )
+
+        self.assertEqual(facts["business_names"], ["Art Douglas Plumbing Inc."])
+        self.assertFalse(any(
+            str(item.get("value") or "").startswith("![")
+            for item in facts["candidate_observations"]["business_names"]
+        ))
+
+        results, _, findings = evaluate_gbp_rules({
+            "url": "https://www.artdouglasplumbing.com/drain-cleaning",
+            "content_checked": True,
+            "gbp_lookup_attempted": True,
+            "gbp_data": {
+                "name": "Art Douglas Plumbing Inc",
+                "website": "https://www.artdouglasplumbing.com/",
+            },
+            "page_facts": facts,
+        })
+        # The extraction bug is gone. The final period still differs and must
+        # remain a mismatch under the unchanged strict L3 name contract.
+        self.assertTrue(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "mismatch")
 
     def test_page_facts_preserve_raw_values_and_sources_for_all_l3_fields(self):
         facts = build_page_facts(

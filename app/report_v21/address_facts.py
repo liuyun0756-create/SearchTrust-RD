@@ -42,6 +42,11 @@ _STREET_FALLBACK_RE = re.compile(
     re.IGNORECASE,
 )
 _US_COUNTRY_NAMES = frozenset({"", "us", "usa", "united states", "united states of america"})
+_EXPLICIT_UNIT_RE = re.compile(
+    r"^(?:(?:apt|apartment|bldg|building|dept|department|fl|floor|lot|rm|room|"
+    r"ste|suite|unit)\b|#)",
+    re.IGNORECASE,
+)
 
 
 def build_address_facts(candidates: list[AddressCandidate]) -> dict[str, Any]:
@@ -81,6 +86,19 @@ def _evaluate_candidate(candidate: AddressCandidate) -> dict[str, Any]:
         )
     if country and country != "US":
         return _evaluate_non_us(candidate, base, parsed, country)
+
+    unit = str(components.get("unit") or "").strip()
+    if unit and not _EXPLICIT_UNIT_RE.match(unit):
+        # usaddress can classify arbitrary text after an otherwise complete
+        # address as OccupancyIdentifier.  Only an explicitly labelled unit is
+        # a real address component; footer labels, phone numbers and adjacent
+        # navigation must remain outside the address fact.
+        return _reject(
+            base,
+            "unexpected_trailing_content",
+            components=components,
+            parser_status=parsed.status,
+        )
 
     reason = _us_rejection_reason(parsed)
     if reason:

@@ -320,8 +320,17 @@ def _visible_text_candidates(
     result: list[AddressCandidate] = []
     for index, line in enumerate(lines):
         if _ADDRESS_LABEL_RE.fullmatch(line):
-            for width in range(1, min(3, len(lines) - index - 1) + 1):
-                raw = _join_lines(lines[index + 1:index + 1 + width])
+            # A labelled address may span street/city/state lines, but the
+            # following footer column often immediately switches to phone or
+            # email details.  Stop at that semantic boundary instead of
+            # blindly treating the next three lines as address components.
+            following: list[str] = []
+            for candidate_line in lines[index + 1:index + 5]:
+                if _PHONE_OR_EMAIL_RE.search(candidate_line):
+                    break
+                following.append(candidate_line)
+            for width in range(1, min(3, len(following)) + 1):
+                raw = _join_lines(following[:width])
                 result.append(AddressCandidate(
                     raw,
                     "page.dom.labeled_address_block",

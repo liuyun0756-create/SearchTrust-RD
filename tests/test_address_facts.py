@@ -54,6 +54,50 @@ class AddressFactPipelineTests(unittest.TestCase):
             "unexpected_trailing_content",
         )
 
+    def test_labeled_markdown_block_stops_before_phone_and_keeps_l3_strict(self):
+        visible = """
+        Address:
+        5855 E Clinton Ave.
+        Fresno, CA 93727
+        Fresno/Clovis:**559-291-7230**
+        Madera:**559-661-1060**
+        """
+
+        facts = build_page_facts(visible)
+        results, _, findings = _l3(
+            facts,
+            "5855 E Clinton Ave, Fresno, CA 93727",
+        )
+
+        self.assertEqual(
+            facts["addresses"],
+            ["5855 E Clinton Ave., Fresno, CA 93727"],
+        )
+        self.assertNotIn(
+            "559-291-7230",
+            " ".join(facts["addresses"]),
+        )
+        # Extraction is clean, but punctuation remains significant under the
+        # existing absolute L3 comparison contract.
+        self.assertTrue(results[27])
+        self.assertEqual(findings["rule_27"]["condition"], "mismatch")
+
+    def test_parser_rejects_unlabelled_trailing_unit_but_accepts_real_suite(self):
+        contaminated = build_page_facts(
+            "5855 E Clinton Ave., Fresno, CA 93727, Fresno/Clovis:**559-291-7230**"
+        )
+        suite = build_page_facts("10 Main St Suite 200, Austin, TX 78701")
+
+        self.assertEqual(contaminated["addresses"], [])
+        self.assertTrue(any(
+            item.get("rejection_reason") == "unexpected_trailing_content"
+            for item in contaminated["rejected_observations"]["addresses"]
+        ))
+        self.assertEqual(
+            suite["addresses"],
+            ["10 Main St Suite 200, Austin, TX 78701"],
+        )
+
     def test_shared_map_target_associates_visible_address_nodes(self):
         structured = """
         <footer>

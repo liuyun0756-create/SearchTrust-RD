@@ -66,6 +66,7 @@ _SCRIPT_STYLE_RE = re.compile(
 )
 _HTML_TAG_RE = re.compile(r"<[^>]+>", flags=re.DOTALL)
 _MARKDOWN_LINK_RE = re.compile(r"!?\[([^\]]*)\]\(([^)]+)\)")
+_MARKDOWN_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 _RAW_URL_RE = re.compile(r"(?:https?|ftp)://[^\s<>'\"]+", flags=re.IGNORECASE)
 
 _BUSINESS_TYPES = {
@@ -338,7 +339,11 @@ def _business_name_candidates(
                     "page title segment", first_line,
                 )
 
-    for alt, src in _MARKDOWN_LINK_RE.findall(content):
+    # Match the image token itself, including when it is wrapped in a link:
+    # ``[![Brand](logo.png)](/)``.  The generic optional-``!`` link pattern
+    # starts at the outer ``[`` and would otherwise expose ``![Brand`` as the
+    # alt text, leaking Markdown transport syntax into the business name.
+    for alt, src in _MARKDOWN_IMAGE_RE.findall(content):
         if "logo" in f"{alt} {src}".casefold():
             value = re.sub(r"\b(?:official|company|business)?\s*logo\b", " ", alt, flags=re.IGNORECASE)
             _append_name_candidate(
