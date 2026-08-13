@@ -14,6 +14,8 @@ import re
 import unicodedata
 from typing import Any, Iterable
 
+from app.report_v21.address_candidates import build_address_candidates
+from app.report_v21.address_facts import build_address_facts
 from app.report_v21.hours_facts import extract_page_hours_facts
 
 try:  # Kept optional for stored-worker compatibility during rolling deploys.
@@ -22,29 +24,6 @@ except ImportError:  # pragma: no cover - deployment installs requirements.txt
     phonenumbers = None  # type: ignore[assignment]
 
 
-_ADDRESS_PATTERN = re.compile(
-    r"\b\d{1,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z0-9.' -]{2,60}?\s+"
-    r"(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|"
-    r"Lane|Ln\.?|Court|Ct\.?|Highway|Hwy\.?|Way|Place|Pl\.?)(?![A-Za-z])"
-    r"(?:\s*,?\s*(?:Suite|Ste\.?|Unit|#)\s*[A-Za-z0-9-]+)?"
-    r"(?:\s*,\s*[A-Za-z .'-]{2,40}\s*,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)?",
-    flags=re.IGNORECASE,
-)
-_STREET_ADDRESS_PATTERN = re.compile(
-    r"\b\d{1,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z0-9.'# -]{2,70}?\s+"
-    r"(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|"
-    r"Lane|Ln\.?|Court|Ct\.?|Highway|Hwy\.?|Way|Place|Pl\.?|Parkway|Pkwy\.?)\b"
-    r"(?:\s*(?:Suite|Ste\.?|Unit|#)\s*[A-Za-z0-9-]+)?",
-    flags=re.IGNORECASE,
-)
-_LOCALITY_REGION_POSTAL_PATTERN = re.compile(
-    r"\b[A-Za-z][A-Za-z .'-]{1,50},?\s+[A-Z]{2}\s+\d{5}(?:-\d{4})?\b"
-)
-_MAP_ANCHOR_PATTERN = re.compile(
-    r"<a\b[^>]*href=[\"'](?P<href>[^\"']*(?:google\.[^\"']*/maps|goo\.gl/maps|"
-    r"maps\.app\.goo\.gl)[^\"']*)[\"'][^>]*>(?P<body>.*?)</a\s*>",
-    flags=re.IGNORECASE | re.DOTALL,
-)
 _HOURS_PATTERNS = (
     re.compile(r"\b24\s*/\s*7\b", flags=re.IGNORECASE),
     re.compile(r"\bopen\s+24\s+hours?\b", flags=re.IGNORECASE),
@@ -123,13 +102,6 @@ _PHONE_SOURCE_PRIORITY = {
     "page.dom.visible_phone": 60,
     "page.scraper.selected_phone": 40,
 }
-_ADDRESS_SOURCE_PRIORITY = {
-    "page.jsonld.postal_address": 100,
-    "page.dom.map_address": 95,
-    "page.dom.address_element": 90,
-    "page.dom.visible_address_labeled": 80,
-    "page.dom.visible_address": 60,
-}
 _SERVICE_SOURCE_PRIORITY = {
     "page.jsonld.area_served": 100,
     "page.dom.service_area_section": 80,
@@ -148,15 +120,10 @@ _SOURCE_LABELS = {
     "page.jsonld.local_business.name": "Target page · JSON-LD business name",
     "page.jsonld.telephone": "Target page · JSON-LD telephone",
     "page.jsonld.contact_point.telephone": "Target page · JSON-LD contact telephone",
-    "page.jsonld.postal_address": "Target page · JSON-LD postal address",
     "page.jsonld.area_served": "Target page · JSON-LD area served",
     "page.dom.tel_href": "Target page · Phone link (tel:)",
     "page.dom.visible_phone_labeled": "Target page · Labeled visible phone",
     "page.dom.visible_phone": "Target page · Visible phone",
-    "page.dom.address_element": "Target page · Address element",
-    "page.dom.visible_address_labeled": "Target page · Labeled visible address",
-    "page.dom.visible_address": "Target page · Visible address",
-    "page.dom.map_address": "Target page · Complete visible map address",
     "page.dom.service_area_section": "Target page · Service-area section",
     "page.dom.visible_brand": "Target page · Visible brand",
     "page.dom.logo_alt": "Target page · Logo text",
@@ -184,8 +151,21 @@ def build_page_facts(
     structured = str(structured_content or "")
     business_record = business if isinstance(business, dict) else {}
     visible_text = _visible_text(text)
+    content_is_html = bool(re.search(
+        r"<(?:html|body|address|article|div|footer|main|p|section)\b",
+        text,
+        re.IGNORECASE,
+    ))
+    address_visible_text = "" if content_is_html else visible_text
+    address_structured = structured or (text if content_is_html else "")
 
     jsonld_records = _jsonld_business_records(f"{structured}\n{text}")
+    address_facts = build_address_facts(build_address_candidates(
+        address_visible_text,
+        address_structured,
+        jsonld_records,
+        source_url=source_url,
+    ))
     candidates = {
         "business_names": _business_name_candidates(
             text, visible_text, structured, business_record, identity_signals,
@@ -194,20 +174,22 @@ def build_page_facts(
         "phones": _phone_candidates(
             text, visible_text, structured, business_record, jsonld_records, source_url,
         ),
-        "addresses": _address_candidates(visible_text, structured, jsonld_records, source_url),
+        "addresses": list(address_facts["candidate_observations"]),
         "service_areas": _service_area_candidates(visible_text, jsonld_records, source_url),
     }
 
     priorities = {
         "business_names": _NAME_SOURCE_PRIORITY,
         "phones": _PHONE_SOURCE_PRIORITY,
-        "addresses": _ADDRESS_SOURCE_PRIORITY,
         "service_areas": _SERVICE_SOURCE_PRIORITY,
     }
     accepted: dict[str, list[dict[str, Any]]] = {}
     rejected: dict[str, list[dict[str, Any]]] = {}
     for field, field_candidates in candidates.items():
-        if field == "business_names":
+        if field == "addresses":
+            selected = list(address_facts["observations"])
+            excluded = list(address_facts["rejected_observations"])
+        elif field == "business_names":
             selected, excluded = _select_name_eligible(field_candidates, priorities[field])
         else:
             selected, excluded = _select_eligible(field_candidates, priorities[field])
@@ -234,13 +216,18 @@ def build_page_facts(
         )
     accepted["hours"] = list(opening_hours.get("observations") or [])
     return {
-        "version": "4",
+        "version": "5",
         "business_names": _observation_values(accepted["business_names"]),
         "addresses": _observation_values(accepted["addresses"]),
         "phones": _observation_values(accepted["phones"]),
         "service_areas": _observation_values(accepted["service_areas"]),
         "hours": hours,
         "opening_hours": opening_hours,
+        "address_diagnostic": {
+            "schema_version": address_facts["schema_version"],
+            "parser": address_facts["parser"],
+            "parser_available": address_facts["parser_available"],
+        },
         "observations": accepted,
         "candidate_observations": {
             field: _unique_observations(values) for field, values in candidates.items()
@@ -500,73 +487,6 @@ def _append_phone_candidate(
     candidates.append(observation)
 
 
-def _address_candidates(
-    visible_text: str,
-    structured: str,
-    records: list[dict[str, Any]],
-    source_url: str,
-) -> list[dict[str, Any]]:
-    candidates: list[dict[str, Any]] = []
-    for record in records:
-        address = _format_postal_address(record.get("address"))
-        if address:
-            candidates.append(_observation(
-                address, "page.jsonld.postal_address", source_url=source_url,
-                locator="script[type='application/ld+json'] address", excerpt=address,
-                normalized_value=_normalize_text(address), validation="valid",
-            ))
-
-    # Some page builders render one postal address as two visible anchors that
-    # point to the same map destination (street on one line, locality/region/
-    # postal code on the next).  They are one page fact, not two unrelated
-    # guesses, so compose them before field validation and source selection.
-    map_groups: dict[str, list[str]] = {}
-    for match in _MAP_ANCHOR_PATTERN.finditer(structured):
-        href = html.unescape(match.group("href")).strip()
-        anchor_text = " ".join(_visible_text(match.group("body")).split())
-        if href and anchor_text:
-            map_groups.setdefault(href, []).append(anchor_text)
-    for href, parts in map_groups.items():
-        streets = _unique(
-            match.group(0).strip()
-            for part in parts
-            for match in _STREET_ADDRESS_PATTERN.finditer(part)
-        )
-        localities = _unique(
-            match.group(0).strip()
-            for part in parts
-            for match in _LOCALITY_REGION_POSTAL_PATTERN.finditer(part)
-        )
-        for street in streets:
-            for locality in localities:
-                raw = f"{street}, {locality}"
-                candidates.append(_observation(
-                    raw, "page.dom.map_address", source_url=source_url,
-                    locator=f"map link {href}", excerpt=" | ".join(parts),
-                    normalized_value=_normalize_text(raw), validation="valid",
-                ))
-
-    for index, match in enumerate(re.finditer(r"<address\b[^>]*>(.*?)</address\s*>", structured, re.IGNORECASE | re.DOTALL)):
-        raw = _visible_text(match.group(1)).strip()
-        if _valid_address(raw):
-            candidates.append(_observation(
-                raw, "page.dom.address_element", source_url=source_url,
-                locator=f"address:nth-of-type({index + 1})", excerpt=raw,
-                normalized_value=_normalize_text(raw), validation="valid",
-            ))
-
-    for index, line in enumerate(visible_text.splitlines()):
-        labeled = bool(re.search(r"\b(?:address|located at|location)\b", line, re.IGNORECASE))
-        for match in _ADDRESS_PATTERN.finditer(line):
-            source_type = "page.dom.visible_address_labeled" if labeled else "page.dom.visible_address"
-            candidates.append(_observation(
-                match.group(0), source_type, source_url=source_url,
-                locator=f"visible line {index + 1}", excerpt=line,
-                normalized_value=_normalize_text(match.group(0)), validation="valid",
-            ))
-    return _unique_observations(candidates)
-
-
 def _service_area_candidates(
     visible_text: str,
     records: list[dict[str, Any]],
@@ -802,26 +722,6 @@ def _schema_records(value: Any) -> Iterable[dict[str, Any]]:
             yield from _schema_records(item)
 
 
-def _format_postal_address(value: Any) -> str:
-    if isinstance(value, str):
-        return " ".join(value.split())
-    if not isinstance(value, dict):
-        return ""
-    parts = [
-        value.get("streetAddress"),
-        value.get("addressLocality"),
-        value.get("addressRegion"),
-        value.get("postalCode"),
-        value.get("addressCountry"),
-    ]
-    normalized_parts = [
-        " ".join(str(part).split()).strip(" ,")
-        for part in parts
-        if str(part or "").strip(" ,")
-    ]
-    return ", ".join(normalized_parts)
-
-
 def _area_served_values(value: Any) -> list[str]:
     values = value if isinstance(value, list) else [value]
     result: list[str] = []
@@ -883,10 +783,6 @@ def _validate_business_name(value: str, source_type: str = "") -> tuple[bool, st
     if re.fullmatch(r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}", normalized):
         return False, "domain_not_business_name"
     return True, None
-
-
-def _valid_address(value: str) -> bool:
-    return bool(_ADDRESS_PATTERN.search(" ".join(value.split())))
 
 
 def _valid_area_name(value: str) -> bool:

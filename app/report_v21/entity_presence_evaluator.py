@@ -100,7 +100,32 @@ def _has_value(payload: dict[str, Any]) -> bool:
 
 
 def _has_complete_address(payload: dict[str, Any]) -> bool:
-    """Match the Rule 22 contract: at least three address components."""
+    """Match Rule 22 from the accepted page-address facts.
+
+    New address observations carry parser-confirmed components.  Those are the
+    source of truth for presence.  The text counter remains only for legacy
+    reports created before address-fact schema v1.
+    """
+    for item in payload["observations"]:
+        if not isinstance(item, dict):
+            continue
+        components = item.get("components")
+        if not isinstance(components, dict):
+            continue
+        street = components.get("street") or (
+            " ".join(
+                str(value or "").strip()
+                for value in (
+                    components.get("house_number"),
+                    components.get("street_name"),
+                    components.get("street_suffix"),
+                )
+                if str(value or "").strip()
+            )
+        )
+        if street and components.get("city") and components.get("state"):
+            return True
+
     candidates = [
         str(item.get("raw_value") or item.get("value") or "").strip()
         for item in payload["observations"]

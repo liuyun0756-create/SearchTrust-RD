@@ -165,3 +165,52 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
         self.assertTrue(strict_results[29])
         self.assertEqual(strict_findings["rule_27"]["condition"], "mismatch")
         self.assertEqual(strict_findings["rule_29"]["condition"], "mismatch")
+
+    def test_art_douglas_rejects_prose_way_and_composes_labeled_address_block(self):
+        page_facts = build_page_facts("""
+        The tech arrived in 20 minutes and tried there best to fix it the cheapest way
+        Address:
+        5855 E Clinton Ave.
+        Fresno, CA 93727
+        """)
+
+        l2_results, _, l2_findings = evaluate_entity_presence_rules(page_facts)
+        exact_results, _, exact_findings = evaluate_gbp_rules({
+            "url": "https://www.artdouglasplumbing.com/drain-cleaning",
+            "content_checked": True,
+            "gbp_lookup_attempted": True,
+            "gbp_data": {
+                "name": "Art Douglas Plumbing",
+                "address": "5855 E Clinton Ave., Fresno, CA 93727",
+            },
+            "page_facts": page_facts,
+        })
+        strict_results, _, strict_findings = evaluate_gbp_rules({
+            "url": "https://www.artdouglasplumbing.com/drain-cleaning",
+            "content_checked": True,
+            "gbp_lookup_attempted": True,
+            "gbp_data": {
+                "name": "Art Douglas Plumbing",
+                "address": "5855 E Clinton Ave, Fresno, CA 93727",
+            },
+            "page_facts": page_facts,
+        })
+
+        self.assertEqual(
+            page_facts["addresses"],
+            ["5855 E Clinton Ave., Fresno, CA 93727"],
+        )
+        prose_candidate = next(
+            item
+            for item in page_facts["candidate_observations"]["addresses"]
+            if str(item.get("value") or "").startswith("20 minutes")
+        )
+        self.assertEqual(prose_candidate["validation"], "rejected")
+        self.assertEqual(prose_candidate["rejection_reason"], "not_street_address")
+        self.assertFalse(prose_candidate["eligible_for_l3"])
+        self.assertFalse(l2_results[22])
+        self.assertEqual(l2_findings["findings"]["rule_22"]["condition"], "present")
+        self.assertFalse(exact_results[27])
+        self.assertEqual(exact_findings["rule_27"]["condition"], "match")
+        self.assertTrue(strict_results[27])
+        self.assertEqual(strict_findings["rule_27"]["condition"], "mismatch")
