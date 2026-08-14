@@ -462,13 +462,9 @@ def _compare_signal(
         if not gbp_value and applicable is False:
             return "not_applicable", "The GBP source identifies a storefront where service-area data is not applicable."
         if not observed:
-            if page_value and not gbp_value:
-                return "missing", "The page identifies a service area, but the checked GBP response did not return one."
             return "not_checked", "The public GBP response did not expose verifiable service-area data."
-        if not gbp_value and applicable is True:
-            if page_value:
-                return "missing", "The page names a service area, while the authoritative GBP source explicitly returned none."
-            return "missing", "The authoritative GBP source explicitly returned no service area."
+        if not gbp_value:
+            return "not_checked", "The checked GBP response did not return a comparable service-area value."
 
     if not page_value and not gbp_value:
         return "not_checked", "Neither source exposed a usable value for this signal."

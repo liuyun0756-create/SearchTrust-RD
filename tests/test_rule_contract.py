@@ -264,7 +264,7 @@ class RuleContractTests(unittest.TestCase):
 
         facts = build_page_facts(content)
 
-        self.assertEqual(facts["version"], "7")
+        self.assertEqual(facts["version"], "8")
         self.assertEqual(facts["business_names"], ["Excellent Plumbing & Heating"])
         self.assertEqual(facts["addresses"], [])
         self.assertEqual(
@@ -471,7 +471,7 @@ class RuleContractTests(unittest.TestCase):
             source_url="https://apexplumbingky.com/home/plumbing-services/",
         )
 
-        self.assertEqual(facts["version"], "7")
+        self.assertEqual(facts["version"], "8")
         self.assertEqual(facts["phones"], ["+1-859-583-7294"])
         self.assertEqual(
             facts["observations"]["phones"][0]["source_type"],

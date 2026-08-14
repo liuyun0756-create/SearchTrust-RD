@@ -14,6 +14,7 @@ from typing import Any, Callable
 from app.report_v21.coverage import build_gbp_status
 from app.report_v21.page_facts import normalize_phone
 from app.report_v21.scoring import RULE_FINDING_LABELS
+from app.report_v21.service_area_facts import compare_service_area_sets, normalize_service_area
 from app.report_v21.us_address_parser import parse_us_address
 
 
@@ -66,7 +67,6 @@ _US_STATE_NAMES = {
     "west virginia": "wv", "wisconsin": "wi", "wyoming": "wy",
     "district of columbia": "dc",
 }
-_US_STATE_CODES = frozenset(_US_STATE_NAMES.values())
 
 
 def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[int, bool], dict[str, Any]]:
@@ -152,7 +152,7 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
             "applicable": field_applicable,
             "condition": condition,
             "match_type": match_type,
-            "comparator_version": "l3_semantic_v1",
+            "comparator_version": "l3_semantic_v2",
             "finding": RULE_FINDING_LABELS[rule_id],
             "explanation": explanation,
             "page_values": page_values,
@@ -259,46 +259,7 @@ def _compare_service_areas(
     page_values: list[str],
     gbp_values: list[str],
 ) -> tuple[str, str, str, list[dict[str, str]]]:
-    page_by_key = {_normalize_area(value): value for value in page_values if _normalize_area(value)}
-    gbp_by_key = {_normalize_area(value): value for value in gbp_values if _normalize_area(value)}
-    page_keys = set(page_by_key)
-    gbp_keys = set(gbp_by_key)
-    shared = page_keys.intersection(gbp_keys)
-    pairs = [
-        {"page_value": page_by_key[key], "gbp_value": gbp_by_key[key]}
-        for key in sorted(shared)
-    ]
-    if not shared:
-        return (
-            "material_conflict",
-            "conflict",
-            "The page and GBP expose service areas, but the normalized place sets do not overlap.",
-            [],
-        )
-    if page_keys == gbp_keys and all(
-        _exact_text(page_by_key[key]) == _exact_text(gbp_by_key[key]) for key in page_keys
-    ):
-        return "exact_match", "exact", "The checked page and GBP service-area sets are exactly equal.", pairs
-    if page_keys.issubset(gbp_keys):
-        return (
-            "semantic_match",
-            "semantic",
-            "The page service area is a compatible subset of the checked GBP service area.",
-            pairs,
-        )
-    if gbp_keys.issubset(page_keys):
-        return (
-            "compatible_difference",
-            "compatible",
-            "The checked GBP service area is contained within the broader page coverage statement.",
-            pairs,
-        )
-    return (
-        "compatible_difference",
-        "compatible",
-        "The page and GBP service areas overlap. Their additional place names are treated as compatible coverage differences.",
-        pairs,
-    )
+    return compare_service_area_sets(page_values, gbp_values)
 
 
 def _compare_addresses(
@@ -421,13 +382,7 @@ def _normalize_street(value: Any) -> str:
 
 
 def _normalize_area(value: Any) -> str:
-    normalized = _normalize_place(value)
-    normalized = re.sub(r"^(?:city of|greater)\s+", "", normalized)
-    normalized = re.sub(r"\s+(?:area|metro|region)$", "", normalized)
-    parts = normalized.split()
-    if len(parts) > 1 and parts[-1] in _US_STATE_CODES:
-        parts.pop()
-    return " ".join(parts)
+    return normalize_service_area(value)
 
 
 def _normalize_place(value: Any) -> str:
@@ -556,7 +511,7 @@ def _page_observations(
         for item in selected:
             item["value"] = str(item.get("value") or "").strip()
         return selected
-    if str(page_facts.get("version") or "") in {"3", "4", "5", "6", "7"}:
+    if str(page_facts.get("version") or "") in {"3", "4", "5", "6", "7", "8"}:
         return []
     page_values = _values(page_facts.get(page_key))
     return [

@@ -17,6 +17,7 @@ from typing import Any, Iterable
 from app.report_v21.address_candidates import build_address_candidates
 from app.report_v21.address_facts import build_address_facts
 from app.report_v21.hours_facts import extract_page_hours_facts
+from app.report_v21.service_area_facts import build_service_area_facts
 
 try:  # Kept optional for stored-worker compatibility during rolling deploys.
     import phonenumbers
@@ -32,32 +33,6 @@ _HOURS_PATTERNS = (
         r"sat(?:urday)?|sun(?:day)?)\b[^\n]{0,80}\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b",
         flags=re.IGNORECASE,
     ),
-)
-_SERVICE_PREFIX = re.compile(
-    r"\b(?:service\s+areas?|areas?\s+served|serving|we\s+serve|covering)\b\s*[:\-]?\s*(.+)",
-    flags=re.IGNORECASE,
-)
-_EXPLICIT_SERVICE_AREA_SENTENCE = re.compile(
-    r"\byour\s+(?P<areas>[A-Z][A-Za-z .'-]*(?:\s*,\s*[A-Z][A-Za-z .'-]*){1,}"
-    r"(?:\s*,?\s*(?:or|and)\s+[A-Z][A-Za-z .'-]*)?)\s+homes?\b",
-    flags=re.IGNORECASE,
-)
-_THROUGHOUT_SERVICE_AREA_SENTENCE = re.compile(
-    r"\b(?:we\s+)?serve\b[^\n.!?]{0,140}?\bthroughout\s+"
-    r"(?P<areas>[^\n.!?]{2,320})",
-    flags=re.IGNORECASE,
-)
-_SERVICE_AREA_SECTION_LABEL = re.compile(
-    r"^(?:our\s+)?(?:service\s+areas?|areas?\s+(?:served|we\s+serve))\s*:?$",
-    flags=re.IGNORECASE,
-)
-_SERVICE_AREA_SECTION_BOUNDARY = re.compile(
-    r"^(?:services?|contact(?:\s+info|\s+us)?|about(?:\s+us)?|company|"
-    r"business\s+hours?|opening\s+hours?|quick\s+links?|resources?|"
-    r"terms(?:\s*(?:&|and)\s*conditions)?|privacy(?:\s+policy)?|"
-    r"gallery|blog|news|careers?|financing|schedule|accessibility|"
-    r"copyright|all\s+rights\s+reserved)\s*:?$",
-    flags=re.IGNORECASE,
 )
 _SELF_IDENTIFICATION = re.compile(
     r"(?:^|\n|[.!?]\s+)\s*"
@@ -125,10 +100,6 @@ _PHONE_SOURCE_PRIORITY = {
     "page.dom.visible_phone": 60,
     "page.scraper.selected_phone": 40,
 }
-_SERVICE_SOURCE_PRIORITY = {
-    "page.jsonld.area_served": 100,
-    "page.dom.service_area_section": 80,
-}
 _SIGNAL_SOURCE_MAP = {
     "json_ld": "page.jsonld.local_business.name",
     "visible_brand_heading": "page.dom.visible_brand",
@@ -143,11 +114,9 @@ _SOURCE_LABELS = {
     "page.jsonld.local_business.name": "Target page · JSON-LD business name",
     "page.jsonld.telephone": "Target page · JSON-LD telephone",
     "page.jsonld.contact_point.telephone": "Target page · JSON-LD contact telephone",
-    "page.jsonld.area_served": "Target page · JSON-LD area served",
     "page.dom.tel_href": "Target page · Phone link (tel:)",
     "page.dom.visible_phone_labeled": "Target page · Labeled visible phone",
     "page.dom.visible_phone": "Target page · Visible phone",
-    "page.dom.service_area_section": "Target page · Service-area section",
     "page.dom.visible_brand": "Target page · Visible brand",
     "page.dom.logo_alt": "Target page · Logo text",
     "page.meta.og_site_name": "Target page · Site-name metadata",
@@ -189,6 +158,11 @@ def build_page_facts(
         jsonld_records,
         source_url=source_url,
     ))
+    service_area_facts = build_service_area_facts(
+        visible_text,
+        jsonld_records,
+        source_url=source_url,
+    )
     candidates = {
         "business_names": _business_name_candidates(
             text, visible_text, structured, business_record, identity_signals,
@@ -198,13 +172,12 @@ def build_page_facts(
             text, visible_text, structured, business_record, jsonld_records, source_url,
         ),
         "addresses": list(address_facts["candidate_observations"]),
-        "service_areas": _service_area_candidates(visible_text, jsonld_records, source_url),
+        "service_areas": list(service_area_facts["candidate_observations"]),
     }
 
     priorities = {
         "business_names": _NAME_SOURCE_PRIORITY,
         "phones": _PHONE_SOURCE_PRIORITY,
-        "service_areas": _SERVICE_SOURCE_PRIORITY,
     }
     accepted: dict[str, list[dict[str, Any]]] = {}
     rejected: dict[str, list[dict[str, Any]]] = {}
@@ -212,6 +185,9 @@ def build_page_facts(
         if field == "addresses":
             selected = list(address_facts["observations"])
             excluded = list(address_facts["rejected_observations"])
+        elif field == "service_areas":
+            selected = list(service_area_facts["observations"])
+            excluded = list(service_area_facts["rejected_observations"])
         elif field == "business_names":
             selected, excluded = _select_name_eligible(field_candidates, priorities[field])
         elif field == "phones":
@@ -241,7 +217,7 @@ def build_page_facts(
         )
     accepted["hours"] = list(opening_hours.get("observations") or [])
     return {
-        "version": "7",
+        "version": "8",
         "business_names": _observation_values(accepted["business_names"]),
         "addresses": _observation_values(accepted["addresses"]),
         "phones": _observation_values(accepted["phones"]),
@@ -252,6 +228,9 @@ def build_page_facts(
             "schema_version": address_facts["schema_version"],
             "parser": address_facts["parser"],
             "parser_available": address_facts["parser_available"],
+        },
+        "service_area_diagnostic": {
+            "schema_version": service_area_facts["schema_version"],
         },
         "observations": accepted,
         "candidate_observations": {
@@ -517,176 +496,6 @@ def _append_phone_candidate(
     candidates.append(observation)
 
 
-def _service_area_candidates(
-    visible_text: str,
-    records: list[dict[str, Any]],
-    source_url: str,
-) -> list[dict[str, Any]]:
-    candidates: list[dict[str, Any]] = []
-    for record in records:
-        for raw in _area_served_values(record.get("areaServed")):
-            if _valid_area_name(raw):
-                candidates.append(_observation(
-                    raw, "page.jsonld.area_served", source_url=source_url,
-                    locator="script[type='application/ld+json'] areaServed", excerpt=raw,
-                    normalized_value=_normalize_text(raw), validation="valid",
-                ))
-
-    lines = [line.strip() for line in visible_text.splitlines() if line.strip()]
-
-    # Footer and contact templates commonly render the heading on one line and
-    # each service-area value as a following list item. Keep the scan bounded
-    # and stop at the next known section so service names or legal links cannot
-    # leak into the geographic fact set.
-    for index, line in enumerate(lines):
-        if not _SERVICE_AREA_SECTION_LABEL.fullmatch(line):
-            continue
-        for value_index, value in _service_area_section_values(lines, index):
-            candidates.append(_observation(
-                value, "page.dom.service_area_section", source_url=source_url,
-                locator=f"visible line {value_index + 1} after service-area heading",
-                excerpt=f"{line}: {value}", normalized_value=_normalize_text(value),
-                validation="valid",
-            ))
-
-    # Explicit coverage prose such as "We serve ... throughout A and B,
-    # including C" is strong enough to parse because the list starts after a
-    # geographic boundary word. This stays separate from generic narrative
-    # handling, which intentionally fails closed on broad marketing prose.
-    coverage_windows = (
-        (index, " ".join(lines[index:index + width]))
-        for index in range(len(lines))
-        for width in range(1, min(4, len(lines) - index) + 1)
-    )
-    for index, sentence in coverage_windows:
-        for match in _THROUGHOUT_SERVICE_AREA_SENTENCE.finditer(sentence):
-            for value in _throughout_area_names(match.group("areas")):
-                candidates.append(_observation(
-                    value, "page.dom.service_area_section", source_url=source_url,
-                    locator=f"visible line {index + 1}", excerpt=match.group(0),
-                    normalized_value=_normalize_text(value), validation="valid",
-                ))
-
-    for index, line in enumerate(lines):
-        match = _SERVICE_PREFIX.search(line)
-        if not match:
-            continue
-        tail = re.split(r"[.!?;|]", match.group(1), maxsplit=1)[0]
-        # Narrative copy such as "serving homeowners and businesses in
-        # Manhattan ... and the following communities" is not a field value.
-        # Splitting that sentence would manufacture tokens like homeowners,
-        # businesses, following communities, or a bare state abbreviation.
-        # Fail closed unless the matched tail is an actual place list.
-        if re.search(
-            r"\b(?:homeowners?|business(?:es)?|customers?|clients?|residents?|"
-            r"residential|commercial|properties|throughout|"
-            r"following|including|(?:the\s+)?entire|communities?\s+in|"
-            r"in\s+and\s+around)\b",
-            tail,
-            flags=re.IGNORECASE,
-        ):
-            continue
-        for candidate in re.split(r"\s*(?:,|\band\b|\bor\b|/)\s*", tail, flags=re.IGNORECASE):
-            value = re.sub(
-                r"^(?:the\s+)?(?:greater\s+)?|\s+(?:area|metro|region|communities|neighborhoods)$",
-                "", candidate.strip(), flags=re.IGNORECASE,
-            ).strip(" :-")
-            if _valid_area_name(value):
-                candidates.append(_observation(
-                    value, "page.dom.service_area_section", source_url=source_url,
-                    locator=f"visible line {index + 1}", excerpt=line,
-                    normalized_value=_normalize_text(value), validation="valid",
-                ))
-
-    # Explicit natural-language coverage statements are also page facts.  A
-    # rendered paragraph may be wrapped across adjacent lines, so use bounded
-    # windows rather than joining the whole page and crossing section borders.
-    windows = (
-        (index, " ".join(lines[index:index + width]))
-        for index in range(len(lines))
-        for width in range(1, min(4, len(lines) - index) + 1)
-    )
-    for index, sentence in windows:
-        for match in _EXPLICIT_SERVICE_AREA_SENTENCE.finditer(sentence):
-            for value in _explicit_area_names(match.group("areas")):
-                candidates.append(_observation(
-                    value, "page.dom.service_area_section", source_url=source_url,
-                    locator=f"visible line {index + 1}", excerpt=match.group(0),
-                    normalized_value=_normalize_text(value), validation="valid",
-                ))
-    return _unique_observations(candidates)
-
-
-def _service_area_section_values(
-    lines: list[str],
-    heading_index: int,
-) -> list[tuple[int, str]]:
-    values: list[tuple[int, str]] = []
-    for index in range(heading_index + 1, min(len(lines), heading_index + 21)):
-        raw = re.sub(r"^(?:[-*+•]|#{1,6})\s*", "", lines[index]).strip(" .:-")
-        if not raw:
-            continue
-        if _SERVICE_AREA_SECTION_BOUNDARY.fullmatch(raw):
-            break
-        if re.search(
-            r"(?:@|\b(?:phone|tel|call|fax)\b|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b)",
-            raw,
-            flags=re.IGNORECASE,
-        ):
-            break
-        value = re.sub(
-            r"^(?:the\s+)?(?:greater\s+|surrounding\s+)?|"
-            r"\s+(?:area|region|communities|neighborhoods)$",
-            "",
-            raw,
-            flags=re.IGNORECASE,
-        ).strip(" .:-")
-        if not _valid_area_name(value):
-            if values:
-                break
-            continue
-        values.append((index, value))
-    return values
-
-
-def _throughout_area_names(value: str) -> list[str]:
-    separated = re.sub(
-        r"\s*,?\s*\b(?:including|and|or)\b\s+",
-        ", ",
-        value,
-        flags=re.IGNORECASE,
-    )
-    names: list[str] = []
-    for item in separated.split(","):
-        name = re.sub(
-            r"^(?:the\s+)?(?:greater\s+|surrounding\s+)?|"
-            r"\s+(?:area|region|communities|neighborhoods)$",
-            "",
-            item.strip(),
-            flags=re.IGNORECASE,
-        ).strip(" .:-")
-        if _valid_area_name(name):
-            names.append(name)
-    return _unique(names)
-
-
-def _explicit_area_names(value: str) -> list[str]:
-    separated = re.sub(
-        r"\s*,?\s*\b(?:or|and)\b\s+", ", ", value, flags=re.IGNORECASE,
-    )
-    names: list[str] = []
-    for item in separated.split(","):
-        name = re.sub(r"\s+", " ", item).strip(" .:-")
-        if (
-            _valid_area_name(name)
-            and re.fullmatch(
-                r"[A-Z][A-Za-z.'-]*(?:\s+[A-Z][A-Za-z.'-]*){0,3}", name,
-            )
-        ):
-            names.append(name)
-    return _unique(names)
-
-
 def _select_eligible(
     candidates: list[dict[str, Any]],
     priorities: dict[str, int],
@@ -894,19 +703,6 @@ def _schema_records(value: Any) -> Iterable[dict[str, Any]]:
             yield from _schema_records(item)
 
 
-def _area_served_values(value: Any) -> list[str]:
-    values = value if isinstance(value, list) else [value]
-    result: list[str] = []
-    for item in values:
-        if isinstance(item, str):
-            result.append(item.strip())
-        elif isinstance(item, dict):
-            name = str(item.get("name") or item.get("addressLocality") or "").strip()
-            if name:
-                result.append(name)
-    return result
-
-
 def _find_phone_strings(value: str) -> list[str]:
     if phonenumbers is not None:
         return [match.raw_string for match in phonenumbers.PhoneNumberMatcher(value, "US")]
@@ -955,15 +751,6 @@ def _validate_business_name(value: str, source_type: str = "") -> tuple[bool, st
     if re.fullmatch(r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}", normalized):
         return False, "domain_not_business_name"
     return True, None
-
-
-def _valid_area_name(value: str) -> bool:
-    words = value.split()
-    return bool(
-        1 <= len(words) <= 5
-        and re.fullmatch(r"[A-Za-z][A-Za-z .'-]*", value)
-        and _normalize_text(value) not in {"service area", "our service area", "areas served"}
-    )
 
 
 def _normalize_text(value: str) -> str:

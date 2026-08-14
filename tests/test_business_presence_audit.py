@@ -95,6 +95,19 @@ class BusinessPresenceAuditTests(unittest.TestCase):
 
         self.assertEqual(service_area["status"], "not_checked")
 
+    def test_service_area_missing_business_type_is_still_not_checked(self):
+        context = self.base_context()
+        context["gbp_data"].update({
+            "service_areas": [],
+            "service_areas_observed": True,
+            "service_area_business": None,
+        })
+
+        audit = build_business_presence_audit(context)
+        service_area = next(row for row in audit["gbp_page_alignment"] if row["key"] == "service_area")
+
+        self.assertEqual(service_area["status"], "not_checked")
+
     def test_page_service_areas_are_displayed_when_gbp_does_not_return_them(self):
         content = """
         Excellent Plumbing & Heating provides professional plumbing services.
@@ -404,7 +417,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
                 # The malformed extra candidate is now rejected before L3;
                 # the validated primary page number equals the GBP number.
                 "phone": "match",
-                "service_area": "partial",
+                "service_area": "match",
             },
         )
         for rule_id, key in ((26, "business_name"), (27, "address"), (28, "phone"), (29, "service_area")):
