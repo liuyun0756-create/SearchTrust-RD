@@ -186,6 +186,35 @@ class AddressFactPipelineTests(unittest.TestCase):
             "page.jsonld.postal_address",
         )
 
+    def test_jsonld_full_state_name_is_normalized_before_validation(self):
+        structured = """
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Sinks To Sewers",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "1583 S Maple Rd",
+            "addressLocality": "Ann Arbor",
+            "addressRegion": "Michigan",
+            "postalCode": "48103"
+          }
+        }
+        </script>
+        """
+
+        facts = build_page_facts("", structured_content=structured)
+
+        self.assertEqual(
+            facts["addresses"],
+            ["1583 S Maple Rd, Ann Arbor, Michigan, 48103"],
+        )
+        self.assertEqual(
+            facts["observations"]["addresses"][0]["components"]["state"],
+            "MI",
+        )
+
     def test_postal_microdata_is_parsed_as_structured_address(self):
         structured = """
         <div itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">

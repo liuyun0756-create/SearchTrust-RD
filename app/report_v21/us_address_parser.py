@@ -19,6 +19,22 @@ US_STATE_CODES: frozenset[str] = frozenset({
     "VT", "VA", "WA", "WV", "WI", "WY", "DC", "AS", "GU", "MP", "PR",
     "VI",
 })
+US_STATE_CODES_BY_NAME: dict[str, str] = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI",
+    "south carolina": "SC", "south dakota": "SD", "tennessee": "TN", "texas": "TX",
+    "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
+    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY",
+    "district of columbia": "DC",
+}
 
 _STREET_LABELS = (
     "StreetNamePreModifier",
@@ -43,6 +59,17 @@ class ParsedAddress:
 
 def parser_available() -> bool:
     return usaddress is not None
+
+
+def normalize_us_state(value: str | None) -> str:
+    """Return a canonical two-letter code for US state names or codes."""
+    cleaned = " ".join(str(value or "").replace(".", " ").split())
+    if not cleaned:
+        return ""
+    upper = cleaned.upper()
+    if upper in US_STATE_CODES:
+        return upper
+    return US_STATE_CODES_BY_NAME.get(cleaned.casefold(), upper)
 
 
 def parse_us_address(raw_value: str) -> ParsedAddress:
@@ -75,7 +102,7 @@ def parse_us_address(raw_value: str) -> ParsedAddress:
             if value
         ),
         "city": values.get("PlaceName", ""),
-        "state": values.get("StateName", "").upper(),
+        "state": normalize_us_state(values.get("StateName", "")),
         "postal_code": values.get("ZipCode", ""),
         "country": values.get("CountryName", ""),
     }

@@ -10,6 +10,7 @@ from app.report_v21.address_candidates import AddressCandidate
 from app.report_v21.us_address_parser import (
     ParsedAddress,
     US_STATE_CODES,
+    normalize_us_state,
     parse_us_address,
     parser_available,
 )
@@ -136,7 +137,7 @@ def _parse_structured_components(candidate: AddressCandidate) -> ParsedAddress:
     parsed_street = _STREET_FALLBACK_RE.fullmatch(street_address)
     components = {
         "city": _clean(source.get("city")),
-        "state": _clean(source.get("state")).upper(),
+        "state": normalize_us_state(_clean(source.get("state"))),
         "postal_code": _clean(source.get("postal_code")),
         "country": _clean(source.get("country")),
     }
