@@ -42,6 +42,23 @@ _EXPLICIT_SERVICE_AREA_SENTENCE = re.compile(
     r"(?:\s*,?\s*(?:or|and)\s+[A-Z][A-Za-z .'-]*)?)\s+homes?\b",
     flags=re.IGNORECASE,
 )
+_THROUGHOUT_SERVICE_AREA_SENTENCE = re.compile(
+    r"\b(?:we\s+)?serve\b[^\n.!?]{0,140}?\bthroughout\s+"
+    r"(?P<areas>[^\n.!?]{2,320})",
+    flags=re.IGNORECASE,
+)
+_SERVICE_AREA_SECTION_LABEL = re.compile(
+    r"^(?:our\s+)?(?:service\s+areas?|areas?\s+(?:served|we\s+serve))\s*:?$",
+    flags=re.IGNORECASE,
+)
+_SERVICE_AREA_SECTION_BOUNDARY = re.compile(
+    r"^(?:services?|contact(?:\s+info|\s+us)?|about(?:\s+us)?|company|"
+    r"business\s+hours?|opening\s+hours?|quick\s+links?|resources?|"
+    r"terms(?:\s*(?:&|and)\s*conditions)?|privacy(?:\s+policy)?|"
+    r"gallery|blog|news|careers?|financing|schedule|accessibility|"
+    r"copyright|all\s+rights\s+reserved)\s*:?$",
+    flags=re.IGNORECASE,
+)
 _SELF_IDENTIFICATION = re.compile(
     r"(?:^|\n|[.!?]\s+)\s*"
     r"([A-Z][A-Za-z0-9&.\-'\u2019]*(?:\s+[A-Z][A-Za-z0-9&.\-'\u2019]*){0,5})\s+"
@@ -224,7 +241,7 @@ def build_page_facts(
         )
     accepted["hours"] = list(opening_hours.get("observations") or [])
     return {
-        "version": "6",
+        "version": "7",
         "business_names": _observation_values(accepted["business_names"]),
         "addresses": _observation_values(accepted["addresses"]),
         "phones": _observation_values(accepted["phones"]),
@@ -316,6 +333,7 @@ def _business_name_candidates(
     visible_brand_patterns = (
         r"\b([A-Z][A-Za-z0-9&.\-'\u2019]*(?:[ \t]+[A-Z][A-Za-z0-9&.\-'\u2019]*){0,5})[ \t]*,[ \t]+(?:the|a)[ \t]+(?:top|leading|trusted|local|professional)\b",
         r"\b([A-Z][A-Za-z0-9&.\-'\u2019]*(?:[ \t]+[A-Z][A-Za-z0-9&.\-'\u2019]*){0,5})[ \t]+is[ \t]+(?:proud|prepared|ready)\b",
+        r"\b([A-Z][A-Za-z0-9&.\-'\u2019]*(?:[ \t]+(?:[A-Z][A-Za-z0-9&.\-'\u2019]*|&)){1,5})[ \t]+(?:provides?|delivers?|offers?|focuses|specializes?)\b",
         r"\bAll\s+Rights\s+Reserved\s*\|\s*([^|\n]{2,60})\s*\|",
     )
     for pattern in visible_brand_patterns:
@@ -514,7 +532,42 @@ def _service_area_candidates(
                     normalized_value=_normalize_text(raw), validation="valid",
                 ))
 
-    for index, line in enumerate(visible_text.splitlines()):
+    lines = [line.strip() for line in visible_text.splitlines() if line.strip()]
+
+    # Footer and contact templates commonly render the heading on one line and
+    # each service-area value as a following list item. Keep the scan bounded
+    # and stop at the next known section so service names or legal links cannot
+    # leak into the geographic fact set.
+    for index, line in enumerate(lines):
+        if not _SERVICE_AREA_SECTION_LABEL.fullmatch(line):
+            continue
+        for value_index, value in _service_area_section_values(lines, index):
+            candidates.append(_observation(
+                value, "page.dom.service_area_section", source_url=source_url,
+                locator=f"visible line {value_index + 1} after service-area heading",
+                excerpt=f"{line}: {value}", normalized_value=_normalize_text(value),
+                validation="valid",
+            ))
+
+    # Explicit coverage prose such as "We serve ... throughout A and B,
+    # including C" is strong enough to parse because the list starts after a
+    # geographic boundary word. This stays separate from generic narrative
+    # handling, which intentionally fails closed on broad marketing prose.
+    coverage_windows = (
+        (index, " ".join(lines[index:index + width]))
+        for index in range(len(lines))
+        for width in range(1, min(4, len(lines) - index) + 1)
+    )
+    for index, sentence in coverage_windows:
+        for match in _THROUGHOUT_SERVICE_AREA_SENTENCE.finditer(sentence):
+            for value in _throughout_area_names(match.group("areas")):
+                candidates.append(_observation(
+                    value, "page.dom.service_area_section", source_url=source_url,
+                    locator=f"visible line {index + 1}", excerpt=match.group(0),
+                    normalized_value=_normalize_text(value), validation="valid",
+                ))
+
+    for index, line in enumerate(lines):
         match = _SERVICE_PREFIX.search(line)
         if not match:
             continue
@@ -526,6 +579,7 @@ def _service_area_candidates(
         # Fail closed unless the matched tail is an actual place list.
         if re.search(
             r"\b(?:homeowners?|business(?:es)?|customers?|clients?|residents?|"
+            r"residential|commercial|properties|throughout|"
             r"following|including|(?:the\s+)?entire|communities?\s+in|"
             r"in\s+and\s+around)\b",
             tail,
@@ -547,7 +601,6 @@ def _service_area_candidates(
     # Explicit natural-language coverage statements are also page facts.  A
     # rendered paragraph may be wrapped across adjacent lines, so use bounded
     # windows rather than joining the whole page and crossing section borders.
-    lines = [line.strip() for line in visible_text.splitlines() if line.strip()]
     windows = (
         (index, " ".join(lines[index:index + width]))
         for index in range(len(lines))
@@ -562,6 +615,59 @@ def _service_area_candidates(
                     normalized_value=_normalize_text(value), validation="valid",
                 ))
     return _unique_observations(candidates)
+
+
+def _service_area_section_values(
+    lines: list[str],
+    heading_index: int,
+) -> list[tuple[int, str]]:
+    values: list[tuple[int, str]] = []
+    for index in range(heading_index + 1, min(len(lines), heading_index + 21)):
+        raw = re.sub(r"^(?:[-*+•]|#{1,6})\s*", "", lines[index]).strip(" .:-")
+        if not raw:
+            continue
+        if _SERVICE_AREA_SECTION_BOUNDARY.fullmatch(raw):
+            break
+        if re.search(
+            r"(?:@|\b(?:phone|tel|call|fax)\b|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b)",
+            raw,
+            flags=re.IGNORECASE,
+        ):
+            break
+        value = re.sub(
+            r"^(?:the\s+)?(?:greater\s+|surrounding\s+)?|"
+            r"\s+(?:area|region|communities|neighborhoods)$",
+            "",
+            raw,
+            flags=re.IGNORECASE,
+        ).strip(" .:-")
+        if not _valid_area_name(value):
+            if values:
+                break
+            continue
+        values.append((index, value))
+    return values
+
+
+def _throughout_area_names(value: str) -> list[str]:
+    separated = re.sub(
+        r"\s*,?\s*\b(?:including|and|or)\b\s+",
+        ", ",
+        value,
+        flags=re.IGNORECASE,
+    )
+    names: list[str] = []
+    for item in separated.split(","):
+        name = re.sub(
+            r"^(?:the\s+)?(?:greater\s+|surrounding\s+)?|"
+            r"\s+(?:area|region|communities|neighborhoods)$",
+            "",
+            item.strip(),
+            flags=re.IGNORECASE,
+        ).strip(" .:-")
+        if _valid_area_name(name):
+            names.append(name)
+    return _unique(names)
 
 
 def _explicit_area_names(value: str) -> list[str]:

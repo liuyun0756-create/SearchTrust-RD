@@ -234,6 +234,59 @@ class RuleContractTests(unittest.TestCase):
 
         self.assertEqual(facts["service_areas"], [])
 
+    def test_direct_fallback_recovers_brand_and_explicit_service_area_lists(self):
+        content = """
+        Drain Sewer Services from Excellent Plumbing & Heating NY
+
+        Excellent Plumbing & Heating provides professional drain and sewer services.
+
+        We serve residential and light commercial properties throughout Nassau County
+        and Suffolk County, including Hempstead, Levittown, Massapequa, Valley Stream,
+        Babylon, Huntington, Smithtown, Bay Shore, and surrounding Long Island communities.
+
+        Contact Info
+        Long Island NY
+        Services
+        Drain Cleaning
+        Sewer Repair
+        Service Area
+        Long Island
+        Nassau County
+        Suffolk County
+        Hempstead
+        Babylon
+        Huntington
+        Brentwood
+        Gallery
+        Terms & Conditions
+        Privacy Policy
+        """
+
+        facts = build_page_facts(content)
+
+        self.assertEqual(facts["version"], "7")
+        self.assertEqual(facts["business_names"], ["Excellent Plumbing & Heating"])
+        self.assertEqual(facts["addresses"], [])
+        self.assertEqual(
+            facts["service_areas"],
+            [
+                "Long Island",
+                "Nassau County",
+                "Suffolk County",
+                "Hempstead",
+                "Babylon",
+                "Huntington",
+                "Brentwood",
+                "Levittown",
+                "Massapequa",
+                "Valley Stream",
+                "Smithtown",
+                "Bay Shore",
+            ],
+        )
+        self.assertNotIn("Drain Cleaning", facts["service_areas"])
+        self.assertNotIn("Terms & Conditions", facts["service_areas"])
+
     def test_page_facts_recover_plumbingbo_name_from_visible_raw_sources(self):
         samples = (
             ("PlumbingBO is a leading plumbing company.", "page.dom.self_identification"),
@@ -418,7 +471,7 @@ class RuleContractTests(unittest.TestCase):
             source_url="https://apexplumbingky.com/home/plumbing-services/",
         )
 
-        self.assertEqual(facts["version"], "6")
+        self.assertEqual(facts["version"], "7")
         self.assertEqual(facts["phones"], ["+1-859-583-7294"])
         self.assertEqual(
             facts["observations"]["phones"][0]["source_type"],

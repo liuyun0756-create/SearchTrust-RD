@@ -95,6 +95,44 @@ class BusinessPresenceAuditTests(unittest.TestCase):
 
         self.assertEqual(service_area["status"], "not_checked")
 
+    def test_page_service_areas_are_displayed_when_gbp_does_not_return_them(self):
+        content = """
+        Excellent Plumbing & Heating provides professional plumbing services.
+        Service Area
+        Long Island
+        Nassau County
+        Suffolk County
+        Hempstead
+        Terms & Conditions
+        """
+        page_facts = build_page_facts(content)
+        context = {
+            "url": "https://excellentny.com/service/drain-sewer-service/",
+            "page_content": content,
+            "page_facts": page_facts,
+            "input_gbp_url": "https://maps.example/excellent",
+            "gbp_url": "https://maps.example/excellent",
+            "gbp_lookup_attempted": True,
+            "gbp_data": {
+                "name": "Excellent Plumbing & Heating",
+                "phone": "(516) 519-4595",
+            },
+        }
+
+        audit = build_business_presence_audit(context)
+        service_area = next(
+            row for row in audit["gbp_page_alignment"]
+            if row["key"] == "service_area"
+        )
+
+        self.assertEqual(service_area["status"], "not_checked")
+        self.assertEqual(
+            service_area["page_value"],
+            "Long Island, Nassau County, Suffolk County, Hempstead",
+        )
+        self.assertIsNone(service_area["gbp_value"])
+        self.assertIn("did not return a comparable value", service_area["explanation"])
+
     def test_storefront_service_area_is_not_applicable(self):
         context = self.base_context()
         context["gbp_data"].update({
