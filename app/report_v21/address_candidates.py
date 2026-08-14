@@ -51,6 +51,7 @@ _SOURCE_LABELS = {
     "page.dom.map_address": "Target page · Map-associated visible address",
     "page.dom.map_url_only": "Target page · Map link without visible address",
     "page.dom.visible_address": "Target page · Visible address candidate",
+    "page.ai.confirmed_address": "Target page · AI-confirmed visible address",
 }
 
 

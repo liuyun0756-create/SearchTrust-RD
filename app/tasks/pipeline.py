@@ -205,18 +205,44 @@ async def _run_pipeline_inner(
     dify_gbp_data = _build_dify_gbp_payload(gbp_data)
     page_fact_content = str(scrape_result.get("page_fact_content") or content)
     page_fact_source_url = str(scrape_result.get("page_fact_source_url") or url)
+    page_fact_business = scrape_result.get("page_fact_business") or scrape_result.get("business")
+    page_fact_identity_signals = (
+        scrape_result.get("page_fact_identity_signals")
+        or scrape_result.get("target_identity_signals")
+    )
+    page_fact_structured_content = str(
+        scrape_result.get("page_fact_structured_content")
+        or scrape_result.get("target_structured_content")
+        or ""
+    )
+    additional_address_candidates = list(
+        scrape_result.get("page_fact_additional_address_candidates") or []
+    )
     page_facts = build_page_facts(
         page_fact_content,
-        scrape_result.get("page_fact_business") or scrape_result.get("business"),
-        scrape_result.get("page_fact_identity_signals")
-        or scrape_result.get("target_identity_signals"),
-        structured_content=str(
-            scrape_result.get("page_fact_structured_content")
-            or scrape_result.get("target_structured_content")
-            or ""
-        ),
+        page_fact_business,
+        page_fact_identity_signals,
+        structured_content=page_fact_structured_content,
         source_url=page_fact_source_url,
+        additional_address_candidates=additional_address_candidates,
     )
+    if not page_facts.get("addresses") and not additional_address_candidates:
+        from app.tasks.address_ai import confirm_incomplete_address_candidates  # noqa: PLC0415
+
+        additional_address_candidates = await confirm_incomplete_address_candidates(
+            page_fact_content,
+            page_facts,
+            source_url=page_fact_source_url,
+        )
+        if additional_address_candidates:
+            page_facts = build_page_facts(
+                page_fact_content,
+                page_fact_business,
+                page_fact_identity_signals,
+                structured_content=page_fact_structured_content,
+                source_url=page_fact_source_url,
+                additional_address_candidates=additional_address_candidates,
+            )
     source_facts = build_source_facts(
         page_facts,
         gbp_data,

@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     )
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
 
+    # ── Address AI fallback ─────────────────────────────────────────────────
+    ADDRESS_AI_ENABLED: bool = Field(
+        default=False,
+        description="Use an OpenAI-compatible model to confirm incomplete address candidates",
+    )
+    ADDRESS_AI_API_KEY: str = Field(default="", description="Address AI provider API key")
+    ADDRESS_AI_BASE_URL: str = Field(default="", description="OpenAI-compatible API base URL")
+    ADDRESS_AI_MODEL: str = Field(default="", description="Address AI model name")
+    ADDRESS_AI_TIMEOUT: Annotated[int, Field(ge=3, le=60)] = Field(default=20)
+
     # ── Concurrency ───────────────────────────────────────────────────────────
     MAX_CONCURRENT_REQUESTS: Annotated[int, Field(ge=1, le=100)] = Field(
         default=10,
@@ -83,7 +93,7 @@ class Settings(BaseSettings):
     )
 
     # ── Validators ────────────────────────────────────────────────────────────
-    @field_validator("DIFY_API_URL", mode="before")
+    @field_validator("DIFY_API_URL", "ADDRESS_AI_BASE_URL", mode="before")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
         return str(v).rstrip("/")

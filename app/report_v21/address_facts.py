@@ -21,6 +21,7 @@ _SOURCE_STRENGTH = {
     "page.dom.address_element": 95,
     "page.dom.labeled_address_block": 92,
     "page.dom.map_address": 90,
+    "page.ai.confirmed_address": 88,
     "page.dom.visible_address": 60,
     "page.dom.map_url_only": 0,
 }

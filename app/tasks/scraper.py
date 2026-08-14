@@ -3880,6 +3880,7 @@ async def scrape(
     page_fact_business_info = target_business_info
     page_fact_identity_signals = [signal.as_dict() for signal in target_identity_signals]
     page_fact_scope = "submitted_url"
+    page_fact_additional_address_candidates: list[Any] = []
     if (
         branch_verified_for_l3
         and branch_discovery_content
@@ -3927,6 +3928,27 @@ async def scrape(
                 structured_content=page_fact_structured_content,
                 source_url=page_fact_source_url,
             )
+            if not page_facts.get("addresses"):
+                from app.tasks.address_ai import confirm_incomplete_address_candidates
+
+                page_fact_additional_address_candidates = (
+                    await confirm_incomplete_address_candidates(
+                        page_fact_content,
+                        page_facts,
+                        source_url=page_fact_source_url,
+                    )
+                )
+                if page_fact_additional_address_candidates:
+                    page_facts = build_page_facts(
+                        page_fact_content,
+                        page_fact_business_info,
+                        page_fact_identity_signals,
+                        structured_content=page_fact_structured_content,
+                        source_url=page_fact_source_url,
+                        additional_address_candidates=(
+                            page_fact_additional_address_candidates
+                        ),
+                    )
             branch_page_facts = build_page_facts(
                 clean_content(branch_discovery_content or ""),
                 branch_business_info,
@@ -4039,6 +4061,9 @@ async def scrape(
         "page_fact_content_sha256": page_fact_content_sha256,
         "page_fact_business": page_fact_business_info,
         "page_fact_identity_signals": page_fact_identity_signals,
+        "page_fact_additional_address_candidates": (
+            page_fact_additional_address_candidates
+        ),
         "page_fact_scope": page_fact_scope,
         "verified_branch_url": branch_discovery_url if branch_verified_for_l3 else None,
         "raw_content_length": raw_content_length, # original length for debugging

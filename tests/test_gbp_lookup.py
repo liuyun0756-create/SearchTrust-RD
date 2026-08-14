@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import AsyncMock, patch
 
+from app.report_v21.address_candidates import AddressCandidate
 from app.tasks import scraper
 
 
@@ -60,6 +61,52 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         scraper._GBP_SHORT_URL_CACHE.clear()
         scraper._SERPAPI_KEY_BLOCKED_UNTIL.clear()
         scraper._SERPAPI_ACTIVE_KEY_FINGERPRINT = ""
+
+    async def test_scrape_uses_ai_confirmed_address_for_gbp_lookup(self):
+        page_url = "https://michiganplumbing.com/plumbing-repairs"
+        main_content = (
+            "# Michigan Plumbing\n"
+            "6204 Lansing Road\n"
+            "Lansing, MI 48917\n"
+            "Phone: 517-322-2994\n"
+        )
+        fetch_gbp = AsyncMock(return_value={})
+        confirmed = AddressCandidate(
+            "6204 Lansing Road, Lansing, MI 48917",
+            "page.ai.confirmed_address",
+            page_url,
+            "AI-confirmed candidate window 1",
+            "6204 Lansing Road | Lansing, MI 48917",
+        )
+
+        with patch.object(scraper.settings, "FIRECRAWL_API_KEY", ""), patch(
+            "app.tasks.scraper.fetch_page_content",
+            new=AsyncMock(return_value=scraper.ScrapeResult(
+                content=main_content,
+                source=scraper.ScraperSource.JINA,
+                elapsed=0.1,
+                content_length=len(main_content),
+            )),
+        ), patch(
+            "app.tasks.scraper.discover_sub_page_urls",
+            return_value=[],
+        ), patch(
+            "app.tasks.address_ai.confirm_incomplete_address_candidates",
+            new=AsyncMock(return_value=[confirmed]),
+        ), patch(
+            "app.tasks.scraper.fetch_gbp_data",
+            new=fetch_gbp,
+        ):
+            result = await scraper.scrape(page_url)
+
+        self.assertEqual(
+            fetch_gbp.await_args.kwargs["address"],
+            "6204 Lansing Road, Lansing, MI 48917",
+        )
+        self.assertEqual(
+            result["page_fact_additional_address_candidates"],
+            [confirmed],
+        )
 
     async def test_serpapi_quota_exhaustion_switches_to_secondary_key(self):
         primary = "primary-secret-value"

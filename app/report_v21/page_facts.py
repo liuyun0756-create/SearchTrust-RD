@@ -14,7 +14,7 @@ import re
 import unicodedata
 from typing import Any, Iterable
 
-from app.report_v21.address_candidates import build_address_candidates
+from app.report_v21.address_candidates import AddressCandidate, build_address_candidates
 from app.report_v21.address_facts import build_address_facts
 from app.report_v21.hours_facts import extract_page_hours_facts
 from app.report_v21.service_area_facts import build_service_area_facts
@@ -132,6 +132,7 @@ def build_page_facts(
     *,
     structured_content: str = "",
     source_url: str = "",
+    additional_address_candidates: Iterable[AddressCandidate] | None = None,
 ) -> dict[str, Any]:
     """Build target-page facts and an auditable candidate ledger.
 
@@ -152,12 +153,14 @@ def build_page_facts(
     address_structured = structured or (text if content_is_html else "")
 
     jsonld_records = _jsonld_business_records(f"{structured}\n{text}")
-    address_facts = build_address_facts(build_address_candidates(
+    address_candidates = build_address_candidates(
         address_visible_text,
         address_structured,
         jsonld_records,
         source_url=source_url,
-    ))
+    )
+    address_candidates.extend(list(additional_address_candidates or []))
+    address_facts = build_address_facts(address_candidates)
     service_area_facts = build_service_area_facts(
         visible_text,
         jsonld_records,
