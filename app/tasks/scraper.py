@@ -2567,6 +2567,7 @@ def _configured_serpapi_keys() -> list[str]:
     keys = [
         str(settings.SERPAPI_KEY or "").strip(),
         str(settings.SERPAPI_KEY_SECONDARY or "").strip(),
+        str(settings.SERPAPI_KEY_TERTIARY or "").strip(),
     ]
     return list(dict.fromkeys(key for key in keys if key))
 

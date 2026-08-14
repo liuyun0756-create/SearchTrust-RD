@@ -95,6 +95,82 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(primary, combined_logs)
         self.assertNotIn(secondary, combined_logs)
 
+    async def test_serpapi_mixed_key_failures_switch_to_tertiary_key(self):
+        primary = "primary-secret-value"
+        secondary = "secondary-secret-value"
+        tertiary = "tertiary-secret-value"
+        client = _FakeClient([
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "Invalid API key."},
+                status_code=403,
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "Too many requests."},
+                status_code=429,
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"search_metadata": {"status": "Success"}, "local_results": []},
+            ),
+        ])
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", primary), patch.object(
+            scraper.settings, "SERPAPI_KEY_SECONDARY", secondary
+        ), patch.object(
+            scraper.settings, "SERPAPI_KEY_TERTIARY", tertiary
+        ), self.assertLogs("app.tasks.scraper", level="WARNING") as logs:
+            result = await scraper._serpapi_get(
+                client,
+                {"engine": "google_maps", "q": "example"},
+            )
+
+        self.assertEqual(result["search_metadata"]["status"], "Success")
+        self.assertEqual(
+            [request[1]["params"]["api_key"] for request in client.requests],
+            [primary, secondary, tertiary],
+        )
+        self.assertEqual(
+            scraper._SERPAPI_ACTIVE_KEY_FINGERPRINT,
+            scraper._serpapi_key_fingerprint(tertiary),
+        )
+        combined_logs = " ".join(logs.output)
+        self.assertIn("key slot 1 unavailable reason=invalid_or_forbidden", combined_logs)
+        self.assertIn("key slot 2 unavailable reason=rate_limited", combined_logs)
+        self.assertNotIn(primary, combined_logs)
+        self.assertNotIn(secondary, combined_logs)
+        self.assertNotIn(tertiary, combined_logs)
+
+    async def test_serpapi_keeps_using_tertiary_after_failover(self):
+        primary = "primary-secret-value"
+        secondary = "secondary-secret-value"
+        tertiary = "tertiary-secret-value"
+        first_client = _FakeClient([
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "Your account has run out of searches."},
+                status_code=429,
+            ),
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "No searches remaining."},
+                status_code=429,
+            ),
+            _FakeResponse(url="https://serpapi.example/search", payload={"ok": True}),
+        ])
+        second_client = _FakeClient([
+            _FakeResponse(url="https://serpapi.example/search", payload={"ok": True}),
+        ])
+
+        with patch.object(scraper.settings, "SERPAPI_KEY", primary), patch.object(
+            scraper.settings, "SERPAPI_KEY_SECONDARY", secondary
+        ), patch.object(scraper.settings, "SERPAPI_KEY_TERTIARY", tertiary):
+            await scraper._serpapi_get(first_client, {"engine": "google_maps"})
+            await scraper._serpapi_get(second_client, {"engine": "google_maps_reviews"})
+
+        self.assertEqual(second_client.requests[0][1]["params"]["api_key"], tertiary)
+
     async def test_serpapi_keeps_using_secondary_after_failover(self):
         primary = "primary-secret-value"
         secondary = "secondary-secret-value"
@@ -138,7 +214,13 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
     async def test_serpapi_reports_all_keys_exhausted_without_secret_values(self):
         primary = "primary-secret-value"
         secondary = "secondary-secret-value"
+        tertiary = "tertiary-secret-value"
         client = _FakeClient([
+            _FakeResponse(
+                url="https://serpapi.example/search",
+                payload={"error": "Your account has run out of searches."},
+                status_code=429,
+            ),
             _FakeResponse(
                 url="https://serpapi.example/search",
                 payload={"error": "Your account has run out of searches."},
@@ -153,6 +235,8 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(scraper.settings, "SERPAPI_KEY", primary), patch.object(
             scraper.settings, "SERPAPI_KEY_SECONDARY", secondary
+        ), patch.object(
+            scraper.settings, "SERPAPI_KEY_TERTIARY", tertiary
         ):
             with self.assertRaises(scraper.SerpApiKeysUnavailable) as raised:
                 await scraper._serpapi_get(client, {"engine": "google_maps"})
@@ -160,7 +244,8 @@ class GbpLookupTests(unittest.IsolatedAsyncioTestCase):
         message = str(raised.exception)
         self.assertNotIn(primary, message)
         self.assertNotIn(secondary, message)
-        self.assertEqual(len(client.requests), 2)
+        self.assertNotIn(tertiary, message)
+        self.assertEqual(len(client.requests), 3)
 
     def test_extracts_google_maps_short_url_from_page_content(self):
         content = (

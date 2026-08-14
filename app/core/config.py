@@ -40,6 +40,10 @@ class Settings(BaseSettings):
         default="",
         description="Secondary SerpAPI key used after the primary key is unavailable",
     )
+    SERPAPI_KEY_TERTIARY: str = Field(
+        default="",
+        description="Tertiary SerpAPI key used after the primary and secondary keys are unavailable",
+    )
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
 
     # ── Concurrency ───────────────────────────────────────────────────────────
