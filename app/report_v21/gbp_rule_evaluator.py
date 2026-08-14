@@ -556,7 +556,7 @@ def _page_observations(
         for item in selected:
             item["value"] = str(item.get("value") or "").strip()
         return selected
-    if str(page_facts.get("version") or "") in {"3", "4", "5"}:
+    if str(page_facts.get("version") or "") in {"3", "4", "5", "6"}:
         return []
     page_values = _values(page_facts.get(page_key))
     return [

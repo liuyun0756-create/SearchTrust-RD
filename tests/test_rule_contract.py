@@ -399,6 +399,63 @@ class RuleContractTests(unittest.TestCase):
                 for item in facts["observations"][field]
             ))
 
+    def test_jsonld_business_phone_outranks_dynamic_tel_number(self):
+        structured = """
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Plumber",
+          "name": "Apex Solutions",
+          "telephone": "+1-859-583-7294"
+        }
+        </script>
+        <a href="tel:+18592035830">Call 859-203-5830</a>
+        """
+
+        facts = build_page_facts(
+            "Call 859-203-5830",
+            structured_content=structured,
+            source_url="https://apexplumbingky.com/home/plumbing-services/",
+        )
+
+        self.assertEqual(facts["version"], "6")
+        self.assertEqual(facts["phones"], ["+1-859-583-7294"])
+        self.assertEqual(
+            facts["observations"]["phones"][0]["source_type"],
+            "page.jsonld.telephone",
+        )
+        self.assertTrue(any(
+            item.get("normalized_value") == "+18592035830"
+            and item.get("source_type") == "page.dom.tel_href"
+            and item.get("rejection_reason") == "possible_dynamic_call_tracking_number"
+            and item.get("eligible_for_l3") is False
+            for item in facts["rejected_observations"]["phones"]
+        ))
+        results, applicability, findings = evaluate_gbp_rules({
+            "url": "https://apexplumbingky.com/home/plumbing-services/",
+            "input_gbp_url": "https://maps.google.com/example",
+            "gbp_url": "https://maps.google.com/example",
+            "gbp_lookup_attempted": True,
+            "page_facts": facts,
+            "gbp_data": {"name": "Apex Solutions", "phone": "(859) 583-7294"},
+        })
+        self.assertFalse(results[28])
+        self.assertTrue(applicability[28])
+        self.assertEqual(findings["rule_28"]["condition"], "semantic_match")
+        self.assertEqual(findings["rule_28"]["page_values"], ["+1-859-583-7294"])
+
+    def test_tel_phone_remains_primary_when_jsonld_phone_is_absent(self):
+        facts = build_page_facts(
+            "Call 859-719-2298",
+            structured_content='<a href="tel:+18597192298">Call 859-719-2298</a>',
+        )
+
+        self.assertEqual(facts["phones"], ["859-719-2298"])
+        self.assertEqual(
+            facts["observations"]["phones"][0]["source_type"],
+            "page.dom.tel_href",
+        )
+
     def test_jsonld_address_components_do_not_create_duplicate_commas(self):
         structured = """
         <script type="application/ld+json">

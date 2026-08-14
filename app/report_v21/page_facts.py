@@ -97,9 +97,13 @@ _NAME_SOURCE_PRIORITY = {
     "page.scraper.selected_name": 50,
 }
 _PHONE_SOURCE_PRIORITY = {
+    # A rendered tel: link may be replaced per visitor by dynamic number
+    # insertion (DNI).  Prefer the stable business identity declared in the
+    # page's LocalBusiness JSON-LD, while retaining tel: values in the audit
+    # ledger and using them as a fallback when structured data is absent.
+    "page.jsonld.telephone": 110,
+    "page.jsonld.contact_point.telephone": 105,
     "page.dom.tel_href": 100,
-    "page.jsonld.telephone": 95,
-    "page.jsonld.contact_point.telephone": 90,
     "page.dom.visible_phone_labeled": 80,
     "page.dom.visible_phone": 60,
     "page.scraper.selected_phone": 40,
@@ -193,6 +197,8 @@ def build_page_facts(
             excluded = list(address_facts["rejected_observations"])
         elif field == "business_names":
             selected, excluded = _select_name_eligible(field_candidates, priorities[field])
+        elif field == "phones":
+            selected, excluded = _select_phone_eligible(field_candidates, priorities[field])
         else:
             selected, excluded = _select_eligible(field_candidates, priorities[field])
         accepted[field] = selected
@@ -218,7 +224,7 @@ def build_page_facts(
         )
     accepted["hours"] = list(opening_hours.get("observations") or [])
     return {
-        "version": "5",
+        "version": "6",
         "business_names": _observation_values(accepted["business_names"]),
         "addresses": _observation_values(accepted["addresses"]),
         "phones": _observation_values(accepted["phones"]),
@@ -604,6 +610,60 @@ def _select_eligible(
             reason = reason or "lower_priority_source"
             rejected.append(_mark_rejected(item, reason))
     return _unique_observations(selected), _unique_observations(rejected)
+
+
+def _select_phone_eligible(
+    candidates: list[dict[str, Any]],
+    priorities: dict[str, int],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Select a stable identity phone without losing rendered phone evidence.
+
+    Call-tracking scripts commonly replace visible and tel: numbers per
+    visitor.  When a valid JSON-LD business/contact telephone is available,
+    it is the stable page identity signal. Differing rendered numbers remain
+    auditable but are not eligible to create an L3 entity mismatch.
+    """
+    selected, rejected = _select_eligible(candidates, priorities)
+    selected_sources = {
+        str(item.get("source_type") or "")
+        for item in selected
+    }
+    structured_selected = bool(selected_sources & {
+        "page.jsonld.telephone",
+        "page.jsonld.contact_point.telephone",
+    })
+    if not structured_selected:
+        return selected, rejected
+
+    selected_values = {
+        str(item.get("normalized_value") or "")
+        for item in selected
+        if item.get("normalized_value")
+    }
+    rendered_sources = {
+        "page.dom.tel_href",
+        "page.dom.visible_phone_labeled",
+        "page.dom.visible_phone",
+        "page.scraper.selected_phone",
+    }
+    classified: list[dict[str, Any]] = []
+    for item in rejected:
+        source_type = str(item.get("source_type") or "")
+        normalized = str(item.get("normalized_value") or "")
+        if (
+            source_type in rendered_sources
+            and item.get("validation") == "valid"
+            and item.get("comparison_role", "primary") == "primary"
+            and normalized
+            and normalized not in selected_values
+        ):
+            classified.append({
+                **item,
+                "rejection_reason": "possible_dynamic_call_tracking_number",
+            })
+        else:
+            classified.append(item)
+    return selected, _unique_observations(classified)
 
 
 def _select_name_eligible(
