@@ -90,6 +90,7 @@ _NON_PLACE_VALUES = {
     "home", "homes", "business", "businesses", "property", "properties",
     "residential", "commercial", "customers", "clients", "residents",
     "homeowners", "nearby", "local", "all", "anywhere", "everywhere",
+    "contact", "contact us", "contact info",
     "our services", "our service area", "the source", "the problem", "service area", "service areas",
 }
 _NON_PLACE_TOKENS = {
@@ -97,6 +98,7 @@ _NON_PLACE_TOKENS = {
     "including", "entire", "following", "around",
     "service", "services", "homeowners", "businesses", "customers", "clients",
     "residents", "residential", "commercial", "properties", "needs", "you", "your",
+    "contact",
 }
 _BROAD_SUFFIXES = {"area", "metro", "region", "communities", "neighborhoods"}
 _PLACE_SUFFIXES = {

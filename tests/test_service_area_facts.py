@@ -69,6 +69,19 @@ class ServiceAreaFactsTests(unittest.TestCase):
 
         self.assertEqual(facts["service_areas"], [])
 
+    def test_contact_navigation_after_service_areas_is_not_a_place(self):
+        facts = build_page_facts(
+            "Service Areas - Contact\nAcross America"
+        )
+
+        self.assertEqual(facts["service_areas"], ["America"])
+        self.assertTrue(any(
+            item.get("raw_value") == "Contact"
+            and item.get("rejection_reason") == "pronoun_or_generic_not_place"
+            and item.get("eligible_for_l3") is False
+            for item in facts["rejected_observations"]["service_areas"]
+        ))
+
     def test_two_state_list_is_not_misread_as_city_state_pair(self):
         facts = build_page_facts("Serving New York and New Jersey.")
 
