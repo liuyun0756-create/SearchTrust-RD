@@ -366,7 +366,7 @@ class BusinessPresenceAuditTests(unittest.TestCase):
                 # The malformed extra candidate is now rejected before L3;
                 # the validated primary page number equals the GBP number.
                 "phone": "match",
-                "service_area": "match",
+                "service_area": "partial",
             },
         )
         for rule_id, key in ((26, "business_name"), (27, "address"), (28, "phone"), (29, "service_area")):
@@ -386,6 +386,10 @@ class BusinessPresenceAuditTests(unittest.TestCase):
         evidence = bound["layers"][0]["evidence_items"]
         self.assertEqual(evidence, [])
         self.assertTrue(all(not finding["triggered"] for finding in findings.values()))
+        self.assertFalse(any(
+            action["business_area"] == "identity_alignment"
+            for action in audit["proposal_actions"]
+        ))
 
     def test_missing_page_values_remain_l2_coverage_not_l3_conflicts(self):
         context = self.base_context()

@@ -135,6 +135,8 @@ def evaluate_gbp_rules(context: dict[str, Any]) -> tuple[dict[int, bool], dict[i
                 page_values,
                 gbp_values,
                 page_observations,
+                page_facts,
+                gbp,
             )
             triggered = condition == "material_conflict"
 
@@ -188,12 +190,18 @@ def _compare_rule(
     page_values: list[str],
     gbp_values: list[str],
     page_observations: list[dict[str, Any]],
+    page_facts: dict[str, Any],
+    gbp: dict[str, Any],
 ) -> tuple[str, str, str, list[dict[str, str]]]:
     if rule_id == 26:
         return _compare_any_pair(
             page_values,
             gbp_values,
-            _business_names_equivalent,
+            lambda left, right: _business_names_equivalent(
+                left,
+                right,
+                _name_location_tokens(page_facts, gbp),
+            ),
             "The page and GBP business names identify the same core brand after safe formatting and legal-suffix normalization.",
             "The page and GBP business names do not share the same distinctive brand identity.",
         )
@@ -204,20 +212,14 @@ def _compare_rule(
             if isinstance(item, dict)
         }
 
-        def address_match(page_value: str, gbp_value: str) -> bool:
+        def address_match(page_value: str, gbp_value: str) -> str | None:
             return _addresses_equivalent(
                 page_value,
                 gbp_value,
                 observation_by_value.get(page_value, {}),
             )
 
-        return _compare_any_pair(
-            page_values,
-            gbp_values,
-            address_match,
-            "The page and GBP addresses resolve to the same location after component and abbreviation normalization.",
-            "The page and GBP addresses contain a material location conflict.",
-        )
+        return _compare_addresses(page_values, gbp_values, address_match)
     if rule_id == 28:
         return _compare_any_pair(
             page_values,
@@ -299,7 +301,50 @@ def _compare_service_areas(
     )
 
 
-def _business_names_equivalent(left: str, right: str) -> bool:
+def _compare_addresses(
+    page_values: list[str],
+    gbp_values: list[str],
+    relationship: Callable[[str, str], str | None],
+) -> tuple[str, str, str, list[dict[str, str]]]:
+    relationships = [
+        (page_value, gbp_value, relation)
+        for page_value in page_values
+        for gbp_value in gbp_values
+        if (relation := relationship(page_value, gbp_value))
+    ]
+    if not relationships:
+        return (
+            "material_conflict",
+            "conflict",
+            "The page and GBP addresses contain a material location conflict.",
+            [],
+        )
+    pairs = [
+        {"page_value": page_value, "gbp_value": gbp_value}
+        for page_value, gbp_value, _ in relationships
+    ]
+    if len(page_values) == len(gbp_values) == 1 and _exact_text(page_values[0]) == _exact_text(gbp_values[0]):
+        return "exact_match", "exact", "The checked page and GBP values are exactly equal.", pairs
+    if any(relation == "semantic" for _, _, relation in relationships):
+        return (
+            "semantic_match",
+            "semantic",
+            "The page and GBP addresses resolve to the same location after component and abbreviation normalization.",
+            pairs,
+        )
+    return (
+        "compatible_difference",
+        "compatible",
+        "The page and GBP addresses share the same core location, but one source omits an optional address component.",
+        pairs,
+    )
+
+
+def _business_names_equivalent(
+    left: str,
+    right: str,
+    allowed_qualifier_tokens: set[str] | None = None,
+) -> bool:
     left_tokens = _name_core_tokens(left)
     right_tokens = _name_core_tokens(right)
     if not left_tokens or not right_tokens:
@@ -307,11 +352,15 @@ def _business_names_equivalent(left: str, right: str) -> bool:
     if left_tokens == right_tokens:
         return True
     shorter, longer = sorted((left_tokens, right_tokens), key=len)
-    if not _is_subsequence(shorter, longer):
+    extras = _subsequence_extras(shorter, longer)
+    if extras is None:
         return False
-    # A one-token brand must be distinctive enough to avoid treating generic
-    # fragments as identity proof. Multi-token brand cores are already safer.
-    return len(shorter) >= 2 or len(shorter[0]) >= 5
+    # Extra distinctive brand words are material. Only verified location
+    # qualifiers may extend an otherwise identical core name.
+    return bool(extras) and all(
+        token in (allowed_qualifier_tokens or set())
+        for token in extras
+    )
 
 
 def _name_core_tokens(value: str) -> tuple[str, ...]:
@@ -326,9 +375,9 @@ def _addresses_equivalent(
     page_value: str,
     gbp_value: str,
     page_observation: dict[str, Any],
-) -> bool:
+) -> str | None:
     if _normalize_address_text(page_value) == _normalize_address_text(gbp_value):
-        return True
+        return "semantic"
     page_components = (
         page_observation.get("components")
         if isinstance(page_observation.get("components"), dict)
@@ -338,16 +387,16 @@ def _addresses_equivalent(
     if not page_components:
         page_components = parse_us_address(page_value).components
     if not page_components or not gbp_components:
-        return False
+        return None
 
     page_house = _component_key(page_components.get("house_number"))
     gbp_house = _component_key(gbp_components.get("house_number"))
     page_street = _normalize_street(page_components.get("street"))
     gbp_street = _normalize_street(gbp_components.get("street"))
     if not page_house or not gbp_house or not page_street or not gbp_street:
-        return False
+        return None
     if page_house != gbp_house or page_street != gbp_street:
-        return False
+        return None
 
     comparisons = (
         (_normalize_place(page_components.get("city")), _normalize_place(gbp_components.get("city"))),
@@ -356,7 +405,9 @@ def _addresses_equivalent(
         (_normalize_place(page_components.get("country")), _normalize_place(gbp_components.get("country"))),
         (_normalize_unit(page_components.get("unit")), _normalize_unit(gbp_components.get("unit"))),
     )
-    return all(not left or not right or left == right for left, right in comparisons)
+    if any(left and right and left != right for left, right in comparisons):
+        return None
+    return "compatible" if any(bool(left) != bool(right) for left, right in comparisons) else "semantic"
 
 
 def _normalize_address_text(value: Any) -> str:
@@ -407,9 +458,40 @@ def _component_key(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "", _normalize_place(value))
 
 
-def _is_subsequence(shorter: tuple[str, ...], longer: tuple[str, ...]) -> bool:
-    iterator = iter(longer)
-    return all(any(candidate == token for candidate in iterator) for token in shorter)
+def _subsequence_extras(
+    shorter: tuple[str, ...],
+    longer: tuple[str, ...],
+) -> tuple[str, ...] | None:
+    matched_indexes: list[int] = []
+    cursor = 0
+    for token in shorter:
+        try:
+            index = longer.index(token, cursor)
+        except ValueError:
+            return None
+        matched_indexes.append(index)
+        cursor = index + 1
+    matched = set(matched_indexes)
+    return tuple(token for index, token in enumerate(longer) if index not in matched)
+
+
+def _name_location_tokens(page_facts: dict[str, Any], gbp: dict[str, Any]) -> set[str]:
+    values = [
+        *_values(page_facts.get("service_areas")),
+        *_values(gbp.get("service_areas")),
+    ]
+    for raw_address in [*_values(page_facts.get("addresses")), *_values(gbp.get("address"))]:
+        components = parse_us_address(raw_address).components
+        values.extend([
+            str(components.get("city") or ""),
+            str(components.get("state") or ""),
+        ])
+    return {
+        token
+        for value in values
+        for token in re.findall(r"[a-z0-9]+", _normalize_place(value))
+        if token
+    }
 
 
 def _values(value: Any) -> list[str]:

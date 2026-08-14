@@ -342,14 +342,30 @@ def assemble_report_skeleton(
     for index, layer_key in enumerate(REQUIRED_LAYER_KEYS, start=1):
         narrative = layer_copy_by_key[layer_key]
         triggered_ids = [rule_id for rule_id in LAYER_RULES[layer_key] if rule_id in triggered]
-        status = calculate_layer_status(layer_key, triggered_ids)
+        checked_ids = (
+            [
+                rule_id
+                for rule_id in LAYER_RULES[layer_key]
+                if rule_applicability.get(rule_id, True)
+            ]
+            if layer_key == "entity_consistency"
+            else list(LAYER_RULES[layer_key])
+        )
+        status = (
+            calculate_layer_status(layer_key, triggered_ids)
+            if checked_ids
+            else "not_checked"
+        )
         layer_statuses[layer_key] = status
         layer_actions = [
             copy_module.deepcopy(action)
             for action in action_catalog.values()
             if action["affected_layer"] == layer_key
         ]
-        if status == "good" and not triggered_ids:
+        if status == "not_checked":
+            presentation_mode = "attention"
+            suggested_fixes = []
+        elif status == "good" and not triggered_ids:
             presentation_mode = "healthy"
             suggested_fixes: list[str] = []
         elif status == "good":
@@ -362,16 +378,22 @@ def assemble_report_skeleton(
         else:
             presentation_mode = "attention"
             suggested_fixes = narrative.suggested_fixes
-        fallback_summary = (
-            "The audit identified confirmed opportunities in this trust layer."
-            if triggered_ids
-            else "The assessed signals did not identify a material issue in this trust layer."
-        )
-        fallback_explanation = (
-            "The triggered assessment signals indicate that this layer should be strengthened."
-            if triggered_ids
-            else "The checked signals currently support this layer."
-        )
+        if status == "not_checked":
+            fallback_summary = "No page-to-GBP entity field could be compared in this audit."
+            fallback_explanation = (
+                "L3 requires at least one comparable field from both the checked page and GBP record."
+            )
+        elif triggered_ids:
+            fallback_summary = "The audit identified confirmed opportunities in this trust layer."
+            fallback_explanation = "The triggered assessment signals indicate that this layer should be strengthened."
+        else:
+            fallback_summary = "The assessed signals did not identify a material issue in this trust layer."
+            fallback_explanation = (
+                f"No material conflict was found among the {len(checked_ids)} assessed "
+                f"entity {'field' if len(checked_ids) == 1 else 'fields'}."
+                if layer_key == "entity_consistency"
+                else "The checked signals currently support this layer."
+            )
         if status != "good" and not suggested_fixes:
             suggested_fixes = _dedupe_strings([
                 required_change
@@ -385,11 +407,19 @@ def assemble_report_skeleton(
             "layer_label": LAYER_DISPLAY_LABELS[layer_key],
             "status": status,
             "presentation_mode": presentation_mode,
-            "checked_rule_ids": list(LAYER_RULES[layer_key]),
+            "checked_rule_ids": checked_ids,
             "triggered_rule_ids": triggered_ids,
             "triggered_findings": [],
-            "summary": narrative.summary.strip() or fallback_summary,
-            "explanation": narrative.explanation.strip() or fallback_explanation,
+            "summary": (
+                fallback_summary
+                if status == "not_checked"
+                else narrative.summary.strip() or fallback_summary
+            ),
+            "explanation": (
+                fallback_explanation
+                if status == "not_checked"
+                else narrative.explanation.strip() or fallback_explanation
+            ),
             "evidence_items": build_layer_evidence(
                 triggered_ids,
                 evidence_ledger,

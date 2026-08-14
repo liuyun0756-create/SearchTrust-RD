@@ -400,7 +400,7 @@ def _finding_status(condition: str) -> str:
         "match": "match",  # Stored-report compatibility.
         "exact_match": "match",
         "semantic_match": "match",
-        "compatible_difference": "match",
+        "compatible_difference": "partial",
         "mismatch": "mismatch",  # Stored-report compatibility.
         "material_conflict": "mismatch",
         "page_missing": "not_checked",
@@ -621,8 +621,10 @@ def _build_proposal(
     gbp_status: str,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
     actions: list[dict[str, Any]] = []
+    # Compatible differences stay visible as analyst advisories, but do not
+    # create a client task or affect the eight-layer score.
     identity_issues = [
-        item for item in comparisons if item.get("status") in {"mismatch", "missing", "partial"}
+        item for item in comparisons if item.get("status") in {"mismatch", "missing"}
     ]
     if identity_issues:
         labels = [str(item.get("label") or item.get("key")) for item in identity_issues]

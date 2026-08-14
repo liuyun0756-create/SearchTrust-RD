@@ -276,6 +276,11 @@ Unit and integration fixtures cover:
 13. L3 exact, punctuation/abbreviation-compatible, and materially conflicting
     addresses using the same facts.
 
+L3 reports only fields with comparable values in both sources as assessed.
+Zero comparable fields produce `not_checked`; compatible omissions such as a
+Suite/Unit appearing in only one source remain visible as a non-scoring
+`partial` advisory.
+
 The entire existing report suite must pass. Regression assertions protect the
 L3 evaluator's component-aware semantic matching from incidental changes.
 

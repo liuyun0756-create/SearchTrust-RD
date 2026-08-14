@@ -358,10 +358,17 @@ class ReportCopyContractTests(unittest.TestCase):
             self.assertEqual(layer["triggered_rule_ids"], [])
             self.assertEqual(layer["suggested_fixes"], [])
             self.assertEqual(layer["action_items"], [])
-            self.assertEqual(
-                (layer["summary"], layer["explanation"]),
-                GOOD_LAYER_NARRATIVES[layer["layer_key"]],
-            )
+            if layer["layer_key"] == "entity_consistency":
+                self.assertEqual(
+                    layer["summary"],
+                    "No material entity conflict was found in the assessed fields.",
+                )
+                self.assertIn("compared 4 of 4 entity fields", layer["explanation"])
+            else:
+                self.assertEqual(
+                    (layer["summary"], layer["explanation"]),
+                    GOOD_LAYER_NARRATIVES[layer["layer_key"]],
+                )
 
     def test_good_layer_with_findings_shows_only_confirmed_opportunities(self):
         triggered_ids = {1}
@@ -650,6 +657,43 @@ class ReportCopyContractTests(unittest.TestCase):
         self.assertEqual(calculate_layer_status("entity_consistency", []), "good")
         self.assertEqual(calculate_layer_status("entity_consistency", [28]), "medium")
         self.assertEqual(calculate_layer_status("entity_consistency", [27, 28]), "weak")
+
+    def test_l3_checked_ids_follow_actual_field_applicability(self):
+        context = _context()
+        results = {rule_id: False for rule_id in ACTIVE_RULE_IDS}
+        only_phone = {rule_id: True for rule_id in ACTIVE_RULE_IDS}
+        only_phone.update({26: False, 27: False, 28: True, 29: False})
+
+        partial = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(set())},
+            context,
+            results,
+            only_phone,
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+        partial_l3 = next(
+            item for item in partial["layers"]
+            if item["layer_key"] == "entity_consistency"
+        )
+        self.assertEqual(partial_l3["checked_rule_ids"], [28])
+        self.assertEqual(partial_l3["status"], "good")
+        self.assertIn("compared 1 of 4 entity fields", partial_l3["explanation"])
+
+        none_applicable = dict(only_phone)
+        none_applicable[28] = False
+        unchecked = normalize_report_copy_to_v21(
+            {"report_copy_v2_1": _report_copy(set())},
+            context,
+            results,
+            none_applicable,
+            build_evidence_ledger(context),
+        )["report_v2_1"]
+        unchecked_l3 = next(
+            item for item in unchecked["layers"]
+            if item["layer_key"] == "entity_consistency"
+        )
+        self.assertEqual(unchecked_l3["checked_rule_ids"], [])
+        self.assertEqual(unchecked_l3["status"], "not_checked")
 
     def test_overall_status_boundaries_are_monotonic(self):
         cases = (

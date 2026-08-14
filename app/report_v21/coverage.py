@@ -241,7 +241,7 @@ def _alignment_row_from_finding(
         "match": "match",  # Stored-report compatibility.
         "exact_match": "match",
         "semantic_match": "match",
-        "compatible_difference": "match",
+        "compatible_difference": "partial",
         "mismatch": "mismatch",  # Stored-report compatibility.
         "material_conflict": "mismatch",
         "page_missing": "not_checked",

@@ -178,9 +178,16 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
         layer["layer_id"] = REQUIRED_LAYER_KEYS.index(layer_key) + 1
         layer["layer_name"] = LAYER_LABELS[layer_key]
         layer["layer_label"] = LAYER_DISPLAY_LABELS[layer_key]
-        # Assessment coverage is fixed by the backend.  Dify's checked ids are
-        # not a reliable coverage counter and must not affect the UI or scoring.
-        layer["checked_rule_ids"] = list(LAYER_RULES[layer_key])
+        # L3 coverage is field-dependent: a comparison is checked only when
+        # both sources expose a comparable value. Other layers retain their
+        # fixed backend-owned assessment scope.
+        if layer_key == "entity_consistency":
+            incoming_checked = _int_list(layer.get("checked_rule_ids"))
+            layer["checked_rule_ids"] = [
+                rule_id for rule_id in incoming_checked if rule_id in allowed_rule_ids
+            ]
+        else:
+            layer["checked_rule_ids"] = list(LAYER_RULES[layer_key])
         layer["triggered_rule_ids"] = [rule_id for rule_id in incoming_triggered if rule_id in allowed_rule_ids]
         layer["triggered_findings"] = [
             RULE_FINDING_LABELS[rule_id]
@@ -189,11 +196,30 @@ def calculate_all_layer_statuses(report_v2_1: dict[str, Any]) -> tuple[dict[str,
         ]
         if len(layer["triggered_rule_ids"]) != len(incoming_triggered):
             warnings.append(f"Ignored triggered rule ids outside {layer_key}'s fixed assessment scope.")
-        layer["status"] = calculate_layer_status(layer_key, layer["triggered_rule_ids"])
-        if layer["status"] == "good" and not layer["triggered_rule_ids"]:
+        layer["status"] = (
+            "not_checked"
+            if layer_key == "entity_consistency" and not layer["checked_rule_ids"]
+            else calculate_layer_status(layer_key, layer["triggered_rule_ids"])
+        )
+        if layer["status"] == "not_checked":
+            layer["presentation_mode"] = "attention"
+            layer["summary"] = "No page-to-GBP entity field could be compared in this audit."
+            layer["explanation"] = (
+                "L3 requires at least one comparable field from both the checked page and GBP record."
+            )
+            layer["suggested_fixes"] = []
+        elif layer["status"] == "good" and not layer["triggered_rule_ids"]:
             layer["presentation_mode"] = "healthy"
             layer["suggested_fixes"] = []
-            layer["summary"], layer["explanation"] = GOOD_LAYER_NARRATIVES[layer_key]
+            if layer_key == "entity_consistency":
+                checked_count = len(layer["checked_rule_ids"])
+                layer["summary"] = "No material entity conflict was found in the assessed fields."
+                layer["explanation"] = (
+                    f"The audit compared {checked_count} of 4 entity fields and found no material "
+                    "conflict between the page and checked business record."
+                )
+            else:
+                layer["summary"], layer["explanation"] = GOOD_LAYER_NARRATIVES[layer_key]
         elif layer["status"] == "good":
             layer["presentation_mode"] = "healthy_with_opportunities"
             layer["summary"], positive_explanation = GOOD_LAYER_NARRATIVES[layer_key]

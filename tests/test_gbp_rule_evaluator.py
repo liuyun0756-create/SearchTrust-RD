@@ -228,6 +228,55 @@ class GbpRuleEvaluatorTests(unittest.TestCase):
         self.assertTrue(results[26])
         self.assertEqual(findings["rule_26"]["condition"], "material_conflict")
 
+    def test_business_name_does_not_ignore_unverified_distinctive_words(self):
+        for page_name, gbp_name in (
+            ("Douglas Plumbing", "Art Douglas Plumbing"),
+            ("Rapid Plumbing", "Rapid Rooter Plumbing"),
+        ):
+            with self.subTest(page_name=page_name, gbp_name=gbp_name):
+                results, _, findings = evaluate_gbp_rules(_context(
+                    {"business_names": [page_name]},
+                    {"name": gbp_name, "phone": "(918) 555-0100"},
+                ))
+                self.assertTrue(results[26])
+                self.assertEqual(findings["rule_26"]["condition"], "material_conflict")
+
+    def test_business_name_allows_a_verified_location_qualifier(self):
+        results, _, findings = evaluate_gbp_rules(_context(
+            {
+                "business_names": ["Spot On Plumbing"],
+                "service_areas": ["Tulsa"],
+            },
+            {
+                "name": "Spot On Plumbing of Tulsa Plumbers",
+                "phone": "(918) 555-0100",
+            },
+        ))
+
+        self.assertFalse(results[26])
+        self.assertEqual(findings["rule_26"]["condition"], "semantic_match")
+
+    def test_missing_address_unit_is_compatible_but_conflicting_units_fail(self):
+        compatible, _, compatible_findings = evaluate_gbp_rules(_context(
+            {"addresses": ["10 Main St Suite 200, Austin, TX 78701"]},
+            {
+                "name": "Example Plumbing",
+                "address": "10 Main St, Austin, TX 78701",
+            },
+        ))
+        conflict, _, conflict_findings = evaluate_gbp_rules(_context(
+            {"addresses": ["10 Main St Suite 200, Austin, TX 78701"]},
+            {
+                "name": "Example Plumbing",
+                "address": "10 Main St Suite 300, Austin, TX 78701",
+            },
+        ))
+
+        self.assertFalse(compatible[27])
+        self.assertEqual(compatible_findings["rule_27"]["condition"], "compatible_difference")
+        self.assertTrue(conflict[27])
+        self.assertEqual(conflict_findings["rule_27"]["condition"], "material_conflict")
+
     def test_service_area_subset_and_overlap_are_compatible_but_zero_overlap_conflicts(self):
         subset, _, subset_findings = evaluate_gbp_rules(_context(
             {"service_areas": ["Tulsa"]},

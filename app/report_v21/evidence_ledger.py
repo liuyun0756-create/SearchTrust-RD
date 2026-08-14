@@ -573,7 +573,7 @@ def _gbp_comparison_evidence(rule_id: int, context: dict[str, Any]) -> list[dict
         "match": "match",  # Stored-report compatibility.
         "exact_match": "match",
         "semantic_match": "match",
-        "compatible_difference": "match",
+        "compatible_difference": "partial",
         "mismatch": "mismatch",  # Stored-report compatibility.
         "material_conflict": "mismatch",
         "page_missing": "not_checked",
