@@ -132,6 +132,46 @@ class HoursFactsTests(unittest.TestCase):
             [["07:30", "10:30"], ["12:00", "22:30"]],
         )
 
+    def test_time_before_weekday_range_is_extracted_as_comparable_hours(self):
+        html = """
+        <footer>
+          <div>Office Hours:</div>
+          <div>7:30am - 5:00pm, Mon-Fri</div>
+          <div>Same Day Services Available</div>
+        </footer>
+        """
+        page_facts = build_page_facts(
+            html,
+            structured_content=html,
+            source_url="https://lakemihcp.com/plumbing/",
+        )
+        source_facts = build_source_facts(
+            page_facts,
+            {
+                "operating_hours_raw": {
+                    day: "Open 24 hours"
+                    for day in (
+                        "monday", "tuesday", "wednesday", "thursday",
+                        "friday", "saturday", "sunday",
+                    )
+                },
+            },
+            source_url="https://lakemihcp.com/plumbing/",
+        )
+
+        observation = page_facts["opening_hours"]["observations"][0]
+        comparison = compare_page_gbp_hours(source_facts)
+
+        self.assertTrue(page_facts["opening_hours"]["present"])
+        self.assertEqual(observation["raw_value"], "7:30am - 5:00pm, Mon-Fri")
+        self.assertEqual(
+            observation["normalized_schedule"]["monday"]["intervals"],
+            [["07:30", "17:00"]],
+        )
+        self.assertTrue(observation["eligible_for_l3"])
+        self.assertEqual(comparison["status"], "mismatch")
+        self.assertNotEqual(comparison["status"], "missing")
+
     def test_strict_comparison_uses_complete_week_and_all_page_sources(self):
         html = """
         <header>Mon-Sat: 24-Hours Emergency Service</header>

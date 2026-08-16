@@ -44,6 +44,20 @@ class EntityPresenceEvaluatorTests(unittest.TestCase):
             2,
         )
 
+    def test_time_before_weekday_range_satisfies_l2_opening_hours_presence(self):
+        facts = build_page_facts(
+            "Office Hours:\n7:30am - 5:00pm, Mon-Fri\nSame Day Services Available"
+        )
+
+        results, _, payload = evaluate_entity_presence_rules(facts)
+
+        self.assertFalse(results[25])
+        self.assertEqual(payload["findings"]["rule_25"]["condition"], "present")
+        self.assertEqual(
+            payload["findings"]["rule_25"]["page_values"],
+            ["7:30am - 5:00pm, Mon-Fri"],
+        )
+
     def test_rule_22_requires_three_address_components(self):
         incomplete = build_page_facts("Visit us at 171 Attorney St")
         complete = build_page_facts("171 Attorney St, New York, NY 10002")

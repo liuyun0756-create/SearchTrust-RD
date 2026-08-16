@@ -66,10 +66,15 @@ _TIME_24_RANGE_RE = re.compile(
     r"(?P<end>(?:[01]?\d|2[0-3]):[0-5]\d)",
     re.IGNORECASE,
 )
+_TIME_WITH_MERIDIEM_TOKEN = (
+    r"\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)"
+)
 _HOURS_SIGNAL_RE = re.compile(
     rf"(?:\b24\s*/\s*7\b|\b(?:open\s+)?24[ -]?hours?\b|"
     rf"\b(?:{_DAY_TOKEN})\b[^\n]{{0,120}}(?:closed|"
-    rf"\d{{1,2}}(?::\d{{2}})?\s*(?:a\.?m\.?|p\.?m\.?)))",
+    rf"{_TIME_WITH_MERIDIEM_TOKEN})|"
+    rf"{_TIME_WITH_MERIDIEM_TOKEN}\s*(?:-|–|—|to)\s*"
+    rf"{_TIME_WITH_MERIDIEM_TOKEN}[^\n]{{0,120}}\b(?:{_DAY_TOKEN})\b)",
     re.IGNORECASE,
 )
 _JSON_LD_RE = re.compile(
