@@ -1,0 +1,2304 @@
+{
+  "$defs": {
+    "ActionSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "content_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Content Requirements",
+          "type": "array"
+        },
+        "gbp_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Gbp Requirements",
+          "type": "array"
+        },
+        "technical_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technical Requirements",
+          "type": "array"
+        }
+      },
+      "title": "ActionSpecification",
+      "type": "object"
+    },
+    "BusinessIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "business_name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Business Name",
+          "type": "string"
+        },
+        "normalized_domain": {
+          "maxLength": 253,
+          "minLength": 1,
+          "title": "Normalized Domain",
+          "type": "string"
+        },
+        "operating_model": {
+          "enum": [
+            "storefront",
+            "service_area",
+            "hybrid"
+          ],
+          "title": "Operating Model",
+          "type": "string"
+        },
+        "primary_location": {
+          "$ref": "#/$defs/TargetMarket"
+        },
+        "public_gbp_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Public Gbp Url"
+        },
+        "site_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Site Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "business_name",
+        "site_url",
+        "normalized_domain",
+        "operating_model",
+        "primary_location"
+      ],
+      "title": "BusinessIdentity",
+      "type": "object"
+    },
+    "CaseContext": {
+      "additionalProperties": false,
+      "properties": {
+        "primary_service": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Primary Service",
+          "type": "string"
+        },
+        "queries": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 3,
+          "title": "Queries",
+          "type": "array"
+        },
+        "search_device": {
+          "default": "mobile",
+          "enum": [
+            "desktop",
+            "mobile"
+          ],
+          "title": "Search Device",
+          "type": "string"
+        },
+        "search_language": {
+          "default": "en",
+          "maxLength": 12,
+          "minLength": 2,
+          "title": "Search Language",
+          "type": "string"
+        },
+        "target_market": {
+          "$ref": "#/$defs/TargetMarket"
+        }
+      },
+      "required": [
+        "primary_service",
+        "target_market",
+        "queries"
+      ],
+      "title": "CaseContext",
+      "type": "object"
+    },
+    "ClientSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "action_ids": {
+          "items": {
+            "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Action Ids",
+          "type": "array"
+        },
+        "core_problem": {
+          "minLength": 1,
+          "title": "Core Problem",
+          "type": "string"
+        },
+        "headline": {
+          "minLength": 1,
+          "title": "Headline",
+          "type": "string"
+        },
+        "next_review_date": {
+          "format": "date",
+          "title": "Next Review Date",
+          "type": "string"
+        },
+        "opportunity": {
+          "minLength": 1,
+          "title": "Opportunity",
+          "type": "string"
+        },
+        "required_client_assets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Client Assets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "headline",
+        "core_problem",
+        "opportunity",
+        "action_ids",
+        "next_review_date"
+      ],
+      "title": "ClientSummary",
+      "type": "object"
+    },
+    "CompetitorAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison_summary": {
+          "minLength": 1,
+          "title": "Comparison Summary",
+          "type": "string"
+        },
+        "competitors": {
+          "items": {
+            "$ref": "#/$defs/CompetitorSummary"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Competitors",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "selection_method": {
+          "enum": [
+            "system_ranked_user_confirmed",
+            "system_ranked"
+          ],
+          "title": "Selection Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selection_method",
+        "competitors",
+        "comparison_summary"
+      ],
+      "title": "CompetitorAnalysis",
+      "type": "object"
+    },
+    "CompetitorSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "analyzed_page_count": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Analyzed Page Count",
+          "type": "integer"
+        },
+        "best_position": {
+          "minimum": 1,
+          "title": "Best Position",
+          "type": "integer"
+        },
+        "business_name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Business Name",
+          "type": "string"
+        },
+        "competitor_id": {
+          "pattern": "^cp_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Competitor Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "gaps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Gaps",
+          "type": "array"
+        },
+        "public_gbp_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Public Gbp Url"
+        },
+        "query_appearance_count": {
+          "minimum": 1,
+          "title": "Query Appearance Count",
+          "type": "integer"
+        },
+        "strengths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Strengths",
+          "type": "array"
+        },
+        "website_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Website Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "competitor_id",
+        "business_name",
+        "website_url",
+        "query_appearance_count",
+        "best_position",
+        "analyzed_page_count",
+        "evidence_ids"
+      ],
+      "title": "CompetitorSummary",
+      "type": "object"
+    },
+    "DataCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "full_evidence_coverage": {
+          "title": "Full Evidence Coverage",
+          "type": "boolean"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceCoverage"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "full_evidence_coverage",
+        "sources"
+      ],
+      "title": "DataCoverage",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "collected_at": {
+          "format": "date-time",
+          "title": "Collected At",
+          "type": "string"
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "coverage_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage End"
+        },
+        "coverage_start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Start"
+        },
+        "evidence_id": {
+          "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "health_status": {
+          "enum": [
+            "not_checked",
+            "healthy",
+            "unhealthy",
+            "unavailable",
+            "expired",
+            "error"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Limitations",
+          "type": "array"
+        },
+        "normalized_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Normalized Value"
+        },
+        "original_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Original Value"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_locator": {
+          "$ref": "#/$defs/SourceLocator"
+        },
+        "source_type": {
+          "enum": [
+            "site",
+            "serp",
+            "competitor",
+            "gsc",
+            "gbp",
+            "ga4",
+            "pagespeed",
+            "coverage"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "snapshot_id",
+        "source_type",
+        "source_locator",
+        "original_value",
+        "normalized_value",
+        "collected_at",
+        "confidence",
+        "health_status"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "ExecutiveDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "core_problem": {
+          "minLength": 1,
+          "title": "Core Problem",
+          "type": "string"
+        },
+        "decision_summary": {
+          "minLength": 1,
+          "title": "Decision Summary",
+          "type": "string"
+        },
+        "finding_ids": {
+          "items": {
+            "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Finding Ids",
+          "type": "array"
+        },
+        "why_now": {
+          "minLength": 1,
+          "title": "Why Now",
+          "type": "string"
+        }
+      },
+      "required": [
+        "core_problem",
+        "finding_ids",
+        "why_now",
+        "decision_summary"
+      ],
+      "title": "ExecutiveDecision",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_queries": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Affected Queries",
+          "type": "array"
+        },
+        "affected_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Affected Urls",
+          "type": "array"
+        },
+        "change_conditions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Change Conditions",
+          "type": "array"
+        },
+        "classification": {
+          "enum": [
+            "fact",
+            "inference",
+            "estimate"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "comparator_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "title": "Comparator Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "finding_id": {
+          "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "missing_data": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Data",
+          "type": "array"
+        },
+        "rule_id": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "scope": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "statement",
+        "evidence_ids",
+        "rule_id",
+        "rule_version",
+        "classification",
+        "severity",
+        "scope",
+        "confidence"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "FirstPartyPerformance": {
+      "additionalProperties": false,
+      "properties": {
+        "ga4": {
+          "$ref": "#/$defs/GA4Performance"
+        },
+        "gbp": {
+          "$ref": "#/$defs/GBPPerformance"
+        },
+        "gsc": {
+          "$ref": "#/$defs/GSCPerformance"
+        }
+      },
+      "required": [
+        "gsc",
+        "gbp",
+        "ga4"
+      ],
+      "title": "FirstPartyPerformance",
+      "type": "object"
+    },
+    "GA4Performance": {
+      "additionalProperties": false,
+      "properties": {
+        "connection_state": {
+          "enum": [
+            "not_connected",
+            "connected",
+            "available",
+            "healthy",
+            "verified",
+            "error"
+          ],
+          "title": "Connection State",
+          "type": "string"
+        },
+        "coverage_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage End"
+        },
+        "coverage_start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Start"
+        },
+        "health_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Health Reasons",
+          "type": "array"
+        },
+        "health_status": {
+          "enum": [
+            "not_checked",
+            "healthy",
+            "unhealthy",
+            "unavailable",
+            "expired",
+            "error"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "not_checked",
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricValue"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        },
+        "source_type": {
+          "const": "ga4",
+          "default": "ga4",
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "connection_state",
+        "identity_match_status",
+        "health_status"
+      ],
+      "title": "GA4Performance",
+      "type": "object"
+    },
+    "GBPPerformance": {
+      "additionalProperties": false,
+      "properties": {
+        "connection_state": {
+          "enum": [
+            "not_connected",
+            "connected",
+            "available",
+            "healthy",
+            "verified",
+            "error"
+          ],
+          "title": "Connection State",
+          "type": "string"
+        },
+        "coverage_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage End"
+        },
+        "coverage_start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Start"
+        },
+        "health_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Health Reasons",
+          "type": "array"
+        },
+        "health_status": {
+          "enum": [
+            "not_checked",
+            "healthy",
+            "unhealthy",
+            "unavailable",
+            "expired",
+            "error"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "not_checked",
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricValue"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        },
+        "source_type": {
+          "const": "gbp",
+          "default": "gbp",
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "connection_state",
+        "identity_match_status",
+        "health_status"
+      ],
+      "title": "GBPPerformance",
+      "type": "object"
+    },
+    "GSCPerformance": {
+      "additionalProperties": false,
+      "properties": {
+        "connection_state": {
+          "enum": [
+            "not_connected",
+            "connected",
+            "available",
+            "healthy",
+            "verified",
+            "error"
+          ],
+          "title": "Connection State",
+          "type": "string"
+        },
+        "coverage_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage End"
+        },
+        "coverage_start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Start"
+        },
+        "health_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Health Reasons",
+          "type": "array"
+        },
+        "health_status": {
+          "enum": [
+            "not_checked",
+            "healthy",
+            "unhealthy",
+            "unavailable",
+            "expired",
+            "error"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "not_checked",
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricValue"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        },
+        "source_type": {
+          "const": "gsc",
+          "default": "gsc",
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "connection_state",
+        "identity_match_status",
+        "health_status"
+      ],
+      "title": "GSCPerformance",
+      "type": "object"
+    },
+    "IdentitySection": {
+      "additionalProperties": false,
+      "properties": {
+        "business": {
+          "$ref": "#/$defs/BusinessIdentity"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "business"
+      ],
+      "title": "IdentitySection",
+      "type": "object"
+    },
+    "ImplementationStep": {
+      "additionalProperties": false,
+      "properties": {
+        "instruction": {
+          "minLength": 1,
+          "title": "Instruction",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "title",
+        "instruction"
+      ],
+      "title": "ImplementationStep",
+      "type": "object"
+    },
+    "LabelCount": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "label": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "count"
+      ],
+      "title": "LabelCount",
+      "type": "object"
+    },
+    "LayerAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "finding_ids": {
+          "items": {
+            "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "title": "Finding Ids",
+          "type": "array"
+        },
+        "layer_key": {
+          "enum": [
+            "foundation",
+            "entity_presence",
+            "entity_consistency",
+            "specificity",
+            "real_world_connection",
+            "accountability",
+            "page_unique_value",
+            "algorithm_fit"
+          ],
+          "title": "Layer Key",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "good",
+            "medium",
+            "weak",
+            "not_checked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "layer_key",
+        "status",
+        "summary"
+      ],
+      "title": "LayerAssessment",
+      "type": "object"
+    },
+    "Limitation": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_sections": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Affected Sections",
+          "type": "array"
+        },
+        "category": {
+          "enum": [
+            "coverage",
+            "provider",
+            "policy",
+            "confidence",
+            "identity",
+            "other"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "limitation_id": {
+          "pattern": "^lim_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Limitation Id",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "limitation_id",
+        "category",
+        "severity",
+        "description",
+        "affected_sections"
+      ],
+      "title": "Limitation",
+      "type": "object"
+    },
+    "MarketSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "queries": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 3,
+          "title": "Queries",
+          "type": "array"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/SearchResult"
+          },
+          "title": "Results",
+          "type": "array"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "target_market": {
+          "$ref": "#/$defs/TargetMarket"
+        }
+      },
+      "required": [
+        "observed_at",
+        "target_market",
+        "queries",
+        "summary"
+      ],
+      "title": "MarketSnapshot",
+      "type": "object"
+    },
+    "MetricValue": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comparison Value"
+        },
+        "label": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "metric_key": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Metric Key",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "metric_key",
+        "label",
+        "value",
+        "unit"
+      ],
+      "title": "MetricValue",
+      "type": "object"
+    },
+    "PreviousFindingReference": {
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "finding_id",
+        "statement",
+        "fingerprint"
+      ],
+      "title": "PreviousFindingReference",
+      "type": "object"
+    },
+    "ReportVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "copy_model_version": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Copy Model Version",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "parent_report_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Report Id"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "report_type": {
+          "enum": [
+            "prospect",
+            "verified_execution"
+          ],
+          "title": "Report Type",
+          "type": "string"
+        },
+        "ruleset_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Ruleset Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "report_id",
+        "report_type",
+        "version_number",
+        "generated_at",
+        "ruleset_version",
+        "copy_model_version"
+      ],
+      "title": "ReportVersion",
+      "type": "object"
+    },
+    "Roadmap": {
+      "additionalProperties": false,
+      "properties": {
+        "phases": {
+          "items": {
+            "$ref": "#/$defs/RoadmapPhase"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Phases",
+          "type": "array"
+        }
+      },
+      "required": [
+        "phases"
+      ],
+      "title": "Roadmap",
+      "type": "object"
+    },
+    "RoadmapPhase": {
+      "additionalProperties": false,
+      "properties": {
+        "action_ids": {
+          "items": {
+            "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Action Ids",
+          "type": "array"
+        },
+        "exit_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Exit Criteria",
+          "type": "array"
+        },
+        "objective": {
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "period": {
+          "enum": [
+            "days_1_30",
+            "days_31_60",
+            "days_61_90"
+          ],
+          "title": "Period",
+          "type": "string"
+        }
+      },
+      "required": [
+        "period",
+        "objective",
+        "action_ids",
+        "exit_criteria"
+      ],
+      "title": "RoadmapPhase",
+      "type": "object"
+    },
+    "SearchResult": {
+      "additionalProperties": false,
+      "properties": {
+        "business_name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Business Name",
+          "type": "string"
+        },
+        "evidence_id": {
+          "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "position": {
+          "minimum": 1,
+          "title": "Position",
+          "type": "integer"
+        },
+        "query": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        },
+        "result_type": {
+          "enum": [
+            "maps",
+            "local_pack",
+            "organic"
+          ],
+          "title": "Result Type",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "query",
+        "result_type",
+        "position",
+        "business_name",
+        "evidence_id"
+      ],
+      "title": "SearchResult",
+      "type": "object"
+    },
+    "SiteInventorySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "deep_analysis_limit": {
+          "default": 50,
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Deep Analysis Limit",
+          "type": "integer"
+        },
+        "deep_analyzed_count": {
+          "maximum": 50,
+          "minimum": 0,
+          "title": "Deep Analyzed Count",
+          "type": "integer"
+        },
+        "discovered_url_count": {
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Discovered Url Count",
+          "type": "integer"
+        },
+        "discovery_limit": {
+          "default": 500,
+          "maximum": 500,
+          "minimum": 1,
+          "title": "Discovery Limit",
+          "type": "integer"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "page_type_counts": {
+          "items": {
+            "$ref": "#/$defs/LabelCount"
+          },
+          "title": "Page Type Counts",
+          "type": "array"
+        },
+        "selected_pages": {
+          "items": {
+            "$ref": "#/$defs/SitePageSummary"
+          },
+          "maxItems": 50,
+          "title": "Selected Pages",
+          "type": "array"
+        },
+        "structurally_checked_count": {
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Structurally Checked Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "discovered_url_count",
+        "structurally_checked_count",
+        "deep_analyzed_count"
+      ],
+      "title": "SiteInventorySummary",
+      "type": "object"
+    },
+    "SitePageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "crawl_depth": {
+          "minimum": 0,
+          "title": "Crawl Depth",
+          "type": "integer"
+        },
+        "deep_analyzed": {
+          "title": "Deep Analyzed",
+          "type": "boolean"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "page_type": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Page Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "page_type",
+        "crawl_depth",
+        "deep_analyzed"
+      ],
+      "title": "SitePageSummary",
+      "type": "object"
+    },
+    "SourceCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "available_items": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Available Items",
+          "type": "integer"
+        },
+        "checked_items": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Checked Items",
+          "type": "integer"
+        },
+        "coverage_summary": {
+          "minLength": 1,
+          "title": "Coverage Summary",
+          "type": "string"
+        },
+        "health_status": {
+          "enum": [
+            "not_checked",
+            "healthy",
+            "unhealthy",
+            "unavailable",
+            "expired",
+            "error"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "not_checked",
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "snapshot_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Snapshot Ids",
+          "type": "array"
+        },
+        "source_type": {
+          "enum": [
+            "site",
+            "serp",
+            "competitor",
+            "gsc",
+            "gbp",
+            "ga4",
+            "pagespeed",
+            "coverage"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_type",
+        "health_status",
+        "identity_match_status",
+        "coverage_summary"
+      ],
+      "title": "SourceCoverage",
+      "type": "object"
+    },
+    "SourceLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "anyOf": [
+            {
+              "enum": [
+                "desktop",
+                "mobile"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "external_resource_id": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "External Resource Id"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field Path"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "maxLength": 12,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "maximum": 90.0,
+              "minimum": -90.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "maximum": 180.0,
+              "minimum": -180.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "page_path": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Path"
+        },
+        "query": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "title": "SourceLocator",
+      "type": "object"
+    },
+    "TargetMarket": {
+      "additionalProperties": false,
+      "properties": {
+        "city": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "country_code": {
+          "maxLength": 2,
+          "minLength": 2,
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country Code",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "maximum": 90.0,
+              "minimum": -90.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "maximum": 180.0,
+              "minimum": -180.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "postal_code": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Postal Code"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        }
+      },
+      "required": [
+        "display_name",
+        "country_code"
+      ],
+      "title": "TargetMarket",
+      "type": "object"
+    },
+    "TopAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "client_facing_explanation": {
+          "minLength": 1,
+          "title": "Client Facing Explanation",
+          "type": "string"
+        },
+        "data_sources": {
+          "items": {
+            "enum": [
+              "site",
+              "serp",
+              "competitor",
+              "gsc",
+              "gbp",
+              "ga4",
+              "pagespeed",
+              "coverage"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Data Sources",
+          "type": "array"
+        },
+        "definition_of_done": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Definition Of Done",
+          "type": "array"
+        },
+        "dependencies": {
+          "items": {
+            "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "effort_bucket": {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "title": "Effort Bucket",
+          "type": "string"
+        },
+        "exact_targets": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Exact Targets",
+          "type": "array"
+        },
+        "finding_ids": {
+          "items": {
+            "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Finding Ids",
+          "type": "array"
+        },
+        "implementation_steps": {
+          "items": {
+            "$ref": "#/$defs/ImplementationStep"
+          },
+          "minItems": 1,
+          "title": "Implementation Steps",
+          "type": "array"
+        },
+        "owner_suggestion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner Suggestion",
+          "type": "string"
+        },
+        "required_client_assets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Client Assets",
+          "type": "array"
+        },
+        "review_date": {
+          "format": "date",
+          "title": "Review Date",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "specification": {
+          "$ref": "#/$defs/ActionSpecification"
+        },
+        "validation_metrics": {
+          "items": {
+            "$ref": "#/$defs/ValidationMetric"
+          },
+          "minItems": 1,
+          "title": "Validation Metrics",
+          "type": "array"
+        },
+        "why_now": {
+          "minLength": 1,
+          "title": "Why Now",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "sequence",
+        "finding_ids",
+        "why_now",
+        "exact_targets",
+        "implementation_steps",
+        "specification",
+        "owner_suggestion",
+        "effort_bucket",
+        "definition_of_done",
+        "validation_metrics",
+        "data_sources",
+        "review_date",
+        "client_facing_explanation"
+      ],
+      "title": "TopAction",
+      "type": "object"
+    },
+    "ValidationMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Baseline",
+          "type": "string"
+        },
+        "metric_key": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Metric Key",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "site",
+            "serp",
+            "competitor",
+            "gsc",
+            "gbp",
+            "ga4",
+            "pagespeed",
+            "coverage"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "success_condition": {
+          "minLength": 1,
+          "title": "Success Condition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric_key",
+        "baseline",
+        "success_condition",
+        "source_type"
+      ],
+      "title": "ValidationMetric",
+      "type": "object"
+    },
+    "VersionDiff": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/VersionDiffEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "initial",
+            "upgrade"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "parent_report_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Report Id"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "VersionDiff",
+      "type": "object"
+    },
+    "VersionDiffEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "change_type": {
+          "enum": [
+            "confirmed",
+            "reprioritized",
+            "refined",
+            "replaced",
+            "new"
+          ],
+          "title": "Change Type",
+          "type": "string"
+        },
+        "current_finding_ids": {
+          "items": {
+            "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Current Finding Ids",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "previous_finding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreviousFindingReference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "change_type",
+        "current_finding_ids",
+        "evidence_ids",
+        "reason"
+      ],
+      "title": "VersionDiffEntry",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_context": {
+      "$ref": "#/$defs/CaseContext"
+    },
+    "client_summary": {
+      "$ref": "#/$defs/ClientSummary"
+    },
+    "competitor_analysis": {
+      "$ref": "#/$defs/CompetitorAnalysis"
+    },
+    "data_coverage": {
+      "$ref": "#/$defs/DataCoverage"
+    },
+    "eight_layers": {
+      "items": {
+        "$ref": "#/$defs/LayerAssessment"
+      },
+      "maxItems": 8,
+      "minItems": 8,
+      "title": "Eight Layers",
+      "type": "array"
+    },
+    "evidence_index": {
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "minItems": 1,
+      "title": "Evidence Index",
+      "type": "array"
+    },
+    "executive_decision": {
+      "$ref": "#/$defs/ExecutiveDecision"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "minItems": 1,
+      "title": "Findings",
+      "type": "array"
+    },
+    "first_party_performance": {
+      "$ref": "#/$defs/FirstPartyPerformance"
+    },
+    "identity": {
+      "$ref": "#/$defs/IdentitySection"
+    },
+    "limitations": {
+      "items": {
+        "$ref": "#/$defs/Limitation"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "market_snapshot": {
+      "$ref": "#/$defs/MarketSnapshot"
+    },
+    "report_version": {
+      "$ref": "#/$defs/ReportVersion"
+    },
+    "roadmap_30_60_90": {
+      "$ref": "#/$defs/Roadmap"
+    },
+    "site_inventory_summary": {
+      "$ref": "#/$defs/SiteInventorySummary"
+    },
+    "top_actions": {
+      "items": {
+        "$ref": "#/$defs/TopAction"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Top Actions",
+      "type": "array"
+    },
+    "version_diff": {
+      "$ref": "#/$defs/VersionDiff"
+    }
+  },
+  "required": [
+    "identity",
+    "case_context",
+    "report_version",
+    "data_coverage",
+    "market_snapshot",
+    "site_inventory_summary",
+    "competitor_analysis",
+    "first_party_performance",
+    "executive_decision",
+    "eight_layers",
+    "findings",
+    "top_actions",
+    "roadmap_30_60_90",
+    "client_summary",
+    "evidence_index",
+    "version_diff"
+  ],
+  "title": "SearchTrust report_v2_2",
+  "type": "object"
+}

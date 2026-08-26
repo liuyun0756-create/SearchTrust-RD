@@ -1,0 +1,990 @@
+{
+  "case_context": {
+    "primary_service": "Emergency plumbing",
+    "queries": [
+      "emergency plumber austin",
+      "24 hour plumber austin",
+      "emergency plumbing austin"
+    ],
+    "search_device": "mobile",
+    "search_language": "en",
+    "target_market": {
+      "city": "Austin",
+      "country_code": "US",
+      "display_name": "Austin, TX, US",
+      "latitude": 30.2672,
+      "longitude": -97.7431,
+      "postal_code": "78701",
+      "region": "TX"
+    }
+  },
+  "client_summary": {
+    "action_ids": [
+      "ac_publish_emergency_page",
+      "ac_align_public_gbp",
+      "ac_build_local_proof"
+    ],
+    "core_problem": "The current site and public profile do not present a complete emergency plumbing destination.",
+    "headline": "Create one clear emergency plumbing path before expanding the campaign.",
+    "next_review_date": "2026-11-24",
+    "opportunity": "A focused asset can address a visible gap against three confirmed competitors.",
+    "required_client_assets": [
+      "Service details",
+      "Approved GBP description",
+      "Local job proof"
+    ]
+  },
+  "competitor_analysis": {
+    "comparison_summary": "All three selected competitors present stronger emergency plumbing relevance in comparable contexts.",
+    "competitors": [
+      {
+        "analyzed_page_count": 3,
+        "best_position": 1,
+        "business_name": "Alpha Plumbing",
+        "competitor_id": "cp_alpha_plumbing",
+        "evidence_ids": [
+          "ev_serp_competitor_alpha"
+        ],
+        "gaps": [],
+        "public_gbp_url": null,
+        "query_appearance_count": 3,
+        "strengths": [
+          "Dedicated emergency service page"
+        ],
+        "website_url": "https://alpha-plumbing.test"
+      },
+      {
+        "analyzed_page_count": 2,
+        "best_position": 2,
+        "business_name": "Beta Plumbing",
+        "competitor_id": "cp_beta_plumbing",
+        "evidence_ids": [
+          "ev_serp_competitor_beta"
+        ],
+        "gaps": [],
+        "public_gbp_url": null,
+        "query_appearance_count": 2,
+        "strengths": [
+          "Clear local proof"
+        ],
+        "website_url": "https://beta-plumbing.test"
+      },
+      {
+        "analyzed_page_count": 2,
+        "best_position": 3,
+        "business_name": "Gamma Plumbing",
+        "competitor_id": "cp_gamma_plumbing",
+        "evidence_ids": [
+          "ev_serp_competitor_gamma"
+        ],
+        "gaps": [],
+        "public_gbp_url": null,
+        "query_appearance_count": 2,
+        "strengths": [
+          "Aligned service information"
+        ],
+        "website_url": "https://gamma-plumbing.test"
+      }
+    ],
+    "limitations": [
+      "Competitor analysis is limited to public data and ten pages per competitor."
+    ],
+    "selection_method": "system_ranked_user_confirmed"
+  },
+  "data_coverage": {
+    "full_evidence_coverage": true,
+    "limitations": [
+      "Search Console query data remains subject to provider privacy filtering."
+    ],
+    "sources": [
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "Twelve URLs checked; one deeply analyzed.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        ],
+        "source_type": "site"
+      },
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "Three queries checked at one confirmed target point.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ],
+        "source_type": "serp"
+      },
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "Three competitors selected in comparable contexts.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ],
+        "source_type": "competitor"
+      },
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "Current and previous 90-day Search Console periods are available.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+        ],
+        "source_type": "gsc"
+      },
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "The managed Location and Performance period are available.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+        ],
+        "source_type": "gbp"
+      },
+      {
+        "available_items": 1,
+        "checked_items": 1,
+        "coverage_summary": "Landing page and key-event data are available.",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [],
+        "snapshot_ids": [
+          "ffffffff-ffff-4fff-8fff-ffffffffffff"
+        ],
+        "source_type": "ga4"
+      }
+    ]
+  },
+  "eight_layers": [
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "foundation",
+      "status": "not_checked",
+      "summary": "No decisive issue was selected for this layer."
+    },
+    {
+      "evidence_ids": [
+        "ev_public_gbp_service_gap"
+      ],
+      "finding_ids": [
+        "fn_public_gbp_service_gap"
+      ],
+      "layer_key": "entity_presence",
+      "status": "weak",
+      "summary": "This layer contains a verified opportunity."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "entity_consistency",
+      "status": "not_checked",
+      "summary": "No decisive issue was selected for this layer."
+    },
+    {
+      "evidence_ids": [
+        "ev_site_service_page"
+      ],
+      "finding_ids": [
+        "fn_service_page_gap"
+      ],
+      "layer_key": "specificity",
+      "status": "weak",
+      "summary": "This layer contains a verified opportunity."
+    },
+    {
+      "evidence_ids": [
+        "ev_serp_competitor_alpha"
+      ],
+      "finding_ids": [
+        "fn_market_visibility_gap"
+      ],
+      "layer_key": "real_world_connection",
+      "status": "weak",
+      "summary": "This layer contains a verified opportunity."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "accountability",
+      "status": "not_checked",
+      "summary": "No decisive issue was selected for this layer."
+    },
+    {
+      "evidence_ids": [
+        "ev_site_service_page"
+      ],
+      "finding_ids": [
+        "fn_service_page_gap"
+      ],
+      "layer_key": "page_unique_value",
+      "status": "weak",
+      "summary": "This layer contains a verified opportunity."
+    },
+    {
+      "evidence_ids": [
+        "ev_serp_competitor_beta",
+        "ev_serp_competitor_gamma"
+      ],
+      "finding_ids": [
+        "fn_market_visibility_gap"
+      ],
+      "layer_key": "algorithm_fit",
+      "status": "weak",
+      "summary": "This layer contains a verified opportunity."
+    }
+  ],
+  "evidence_index": [
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_site_service_page",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": false,
+      "original_value": "No dedicated emergency plumbing page",
+      "snapshot_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": null,
+        "field_path": "page_inventory.emergency_plumbing",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://example-plumbing.test/services"
+      },
+      "source_type": "site"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_serp_competitor_alpha",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 1,
+      "original_value": 1,
+      "snapshot_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "source_locator": {
+        "device": "mobile",
+        "external_resource_id": null,
+        "field_path": null,
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_path": null,
+        "query": "emergency plumber austin",
+        "url": null
+      },
+      "source_type": "serp"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_serp_competitor_beta",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 2,
+      "original_value": 2,
+      "snapshot_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "source_locator": {
+        "device": "mobile",
+        "external_resource_id": null,
+        "field_path": null,
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_path": null,
+        "query": "24 hour plumber austin",
+        "url": null
+      },
+      "source_type": "serp"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_serp_competitor_gamma",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 3,
+      "original_value": 3,
+      "snapshot_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "source_locator": {
+        "device": "mobile",
+        "external_resource_id": null,
+        "field_path": null,
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_path": null,
+        "query": "emergency plumbing austin",
+        "url": null
+      },
+      "source_type": "serp"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_public_gbp_service_gap",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": "Emergency plumbing service not listed",
+      "original_value": "Plumber",
+      "snapshot_id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": null,
+        "field_path": "services",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=123456789"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "evidence_id": "ev_gsc_low_ctr",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 0.012,
+      "original_value": 0.012,
+      "snapshot_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "sc-domain:example-plumbing.test",
+        "field_path": "ctr",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": "emergency plumber austin",
+        "url": null
+      },
+      "source_type": "gsc"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "evidence_id": "ev_gbp_website_clicks",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 84,
+      "original_value": 84,
+      "snapshot_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "locations/123456",
+        "field_path": "performance.website_clicks",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": null
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-26T08:00:00Z",
+      "confidence": "high",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "evidence_id": "ev_ga4_low_engagement",
+      "health_status": "healthy",
+      "limitations": [],
+      "normalized_value": 0.31,
+      "original_value": 0.31,
+      "snapshot_id": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "properties/987654",
+        "field_path": "engagement_rate",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": "/services",
+        "query": null,
+        "url": null
+      },
+      "source_type": "ga4"
+    }
+  ],
+  "executive_decision": {
+    "core_problem": "The business lacks a dedicated, locally proven emergency plumbing asset while three competitors own the observed search positions.",
+    "decision_summary": "Build the missing asset first, align the public profile second, then strengthen local proof.",
+    "finding_ids": [
+      "fn_service_page_gap",
+      "fn_market_visibility_gap"
+    ],
+    "why_now": "The gap is visible in both site inventory and comparable local search results."
+  },
+  "findings": [
+    {
+      "affected_queries": [
+        "emergency plumber austin",
+        "24 hour plumber austin",
+        "emergency plumbing austin"
+      ],
+      "affected_urls": [
+        "https://example-plumbing.test"
+      ],
+      "change_conditions": [
+        "New comparable SERP observations show the business consistently outranking the selected competitors."
+      ],
+      "classification": "fact",
+      "comparator_ids": [],
+      "confidence": "high",
+      "evidence_ids": [
+        "ev_serp_competitor_alpha",
+        "ev_serp_competitor_beta",
+        "ev_serp_competitor_gamma",
+        "ev_gsc_low_ctr"
+      ],
+      "finding_id": "fn_market_visibility_gap",
+      "missing_data": [],
+      "rule_id": "V22.PUBLIC.MARKET_GAP",
+      "rule_version": "1.0.0",
+      "scope": "Confirmed Austin emergency plumbing queries",
+      "severity": "high",
+      "statement": "Search Console confirms meaningful emergency-query impressions while comparable competitors retain stronger observed positions."
+    },
+    {
+      "affected_queries": [
+        "emergency plumber austin"
+      ],
+      "affected_urls": [
+        "https://example-plumbing.test/services"
+      ],
+      "change_conditions": [
+        "A crawl discovers a dedicated, indexable emergency plumbing page."
+      ],
+      "classification": "fact",
+      "comparator_ids": [],
+      "confidence": "high",
+      "evidence_ids": [
+        "ev_site_service_page",
+        "ev_ga4_low_engagement"
+      ],
+      "finding_id": "fn_service_page_gap",
+      "missing_data": [],
+      "rule_id": "V22.PUBLIC.SERVICE_PAGE_GAP",
+      "rule_version": "1.0.0",
+      "scope": "Service page inventory",
+      "severity": "high",
+      "statement": "The missing dedicated page is confirmed as the first priority, and GA4 shows the existing service index has weak engagement."
+    },
+    {
+      "affected_queries": [
+        "emergency plumbing austin"
+      ],
+      "affected_urls": [
+        "https://example-plumbing.test"
+      ],
+      "change_conditions": [
+        "A fresh public GBP snapshot lists an aligned emergency plumbing service."
+      ],
+      "classification": "fact",
+      "comparator_ids": [],
+      "confidence": "high",
+      "evidence_ids": [
+        "ev_public_gbp_service_gap",
+        "ev_gbp_website_clicks"
+      ],
+      "finding_id": "fn_public_gbp_service_gap",
+      "missing_data": [
+        "Official GBP Performance is unavailable before client authorization."
+      ],
+      "rule_id": "V22.PUBLIC.GBP_SERVICE_GAP",
+      "rule_version": "1.0.0",
+      "scope": "Public GBP service information",
+      "severity": "medium",
+      "statement": "GBP Performance confirms customer activity, but the primary emergency service remains absent from the aligned service information."
+    }
+  ],
+  "first_party_performance": {
+    "ga4": {
+      "connection_state": "verified",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "health_reasons": [],
+      "health_status": "healthy",
+      "identity_match_status": "matched",
+      "limitations": [],
+      "metrics": [
+        {
+          "comparison_value": 0.37,
+          "label": "Service landing page engagement rate",
+          "metric_key": "engagement_rate",
+          "unit": "ratio",
+          "value": 0.31
+        }
+      ],
+      "snapshot_id": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      "source_type": "ga4"
+    },
+    "gbp": {
+      "connection_state": "verified",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "health_reasons": [],
+      "health_status": "healthy",
+      "identity_match_status": "matched",
+      "limitations": [],
+      "metrics": [
+        {
+          "comparison_value": 79.0,
+          "label": "GBP website clicks",
+          "metric_key": "website_clicks",
+          "unit": "count",
+          "value": 84.0
+        }
+      ],
+      "snapshot_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      "source_type": "gbp"
+    },
+    "gsc": {
+      "connection_state": "verified",
+      "coverage_end": "2026-08-25",
+      "coverage_start": "2026-05-28",
+      "health_reasons": [],
+      "health_status": "healthy",
+      "identity_match_status": "matched",
+      "limitations": [],
+      "metrics": [
+        {
+          "comparison_value": 3500.0,
+          "label": "Emergency query impressions",
+          "metric_key": "impressions",
+          "unit": "count",
+          "value": 4200.0
+        }
+      ],
+      "snapshot_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "source_type": "gsc"
+    }
+  },
+  "identity": {
+    "business": {
+      "business_name": "Example Plumbing",
+      "normalized_domain": "example-plumbing.test",
+      "operating_model": "service_area",
+      "primary_location": {
+        "city": "Austin",
+        "country_code": "US",
+        "display_name": "Austin, TX, US",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "postal_code": "78701",
+        "region": "TX"
+      },
+      "public_gbp_url": "https://maps.google.com/?cid=123456789",
+      "site_url": "https://example-plumbing.test"
+    },
+    "case_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "limitations": [
+    {
+      "affected_sections": [
+        "first_party_performance",
+        "findings"
+      ],
+      "category": "provider",
+      "description": "Search Console omits some privacy-filtered queries.",
+      "limitation_id": "lim_gsc_privacy",
+      "severity": "low"
+    }
+  ],
+  "market_snapshot": {
+    "limitations": [
+      "One primary target point and mobile context were used."
+    ],
+    "observed_at": "2026-08-26T08:00:00Z",
+    "queries": [
+      "emergency plumber austin",
+      "24 hour plumber austin",
+      "emergency plumbing austin"
+    ],
+    "results": [
+      {
+        "business_name": "Alpha Plumbing",
+        "evidence_id": "ev_serp_competitor_alpha",
+        "position": 1,
+        "query": "emergency plumber austin",
+        "result_type": "local_pack",
+        "url": "https://alpha-plumbing.test"
+      },
+      {
+        "business_name": "Beta Plumbing",
+        "evidence_id": "ev_serp_competitor_beta",
+        "position": 2,
+        "query": "24 hour plumber austin",
+        "result_type": "maps",
+        "url": "https://beta-plumbing.test"
+      },
+      {
+        "business_name": "Gamma Plumbing",
+        "evidence_id": "ev_serp_competitor_gamma",
+        "position": 3,
+        "query": "emergency plumbing austin",
+        "result_type": "organic",
+        "url": "https://gamma-plumbing.test"
+      }
+    ],
+    "summary": "Three relevant competitors own the strongest observed positions across the confirmed query set.",
+    "target_market": {
+      "city": "Austin",
+      "country_code": "US",
+      "display_name": "Austin, TX, US",
+      "latitude": 30.2672,
+      "longitude": -97.7431,
+      "postal_code": "78701",
+      "region": "TX"
+    }
+  },
+  "report_version": {
+    "copy_model_version": "dify-copy-v22-1",
+    "generated_at": "2026-08-26T09:30:00Z",
+    "parent_report_id": "22222222-2222-4222-8222-222222222222",
+    "report_id": "33333333-3333-4333-8333-333333333333",
+    "report_type": "verified_execution",
+    "ruleset_version": "v22-verified-1.0.0",
+    "schema_version": "2.2.0",
+    "version_number": 2
+  },
+  "roadmap_30_60_90": {
+    "phases": [
+      {
+        "action_ids": [
+          "ac_publish_emergency_page"
+        ],
+        "exit_criteria": [
+          "The page is live and indexable."
+        ],
+        "objective": "Create the missing search destination.",
+        "period": "days_1_30"
+      },
+      {
+        "action_ids": [
+          "ac_align_public_gbp"
+        ],
+        "exit_criteria": [
+          "Service information is consistent."
+        ],
+        "objective": "Align the public business profile.",
+        "period": "days_31_60"
+      },
+      {
+        "action_ids": [
+          "ac_build_local_proof"
+        ],
+        "exit_criteria": [
+          "Approved local proof is published."
+        ],
+        "objective": "Add locally specific proof.",
+        "period": "days_61_90"
+      }
+    ]
+  },
+  "site_inventory_summary": {
+    "deep_analysis_limit": 50,
+    "deep_analyzed_count": 1,
+    "discovered_url_count": 12,
+    "discovery_limit": 500,
+    "limitations": [],
+    "page_type_counts": [
+      {
+        "count": 4,
+        "label": "service"
+      },
+      {
+        "count": 8,
+        "label": "other"
+      }
+    ],
+    "selected_pages": [
+      {
+        "crawl_depth": 1,
+        "deep_analyzed": true,
+        "evidence_ids": [
+          "ev_site_service_page"
+        ],
+        "page_type": "service_index",
+        "url": "https://example-plumbing.test/services"
+      }
+    ],
+    "structurally_checked_count": 12
+  },
+  "top_actions": [
+    {
+      "action_id": "ac_publish_emergency_page",
+      "client_facing_explanation": "Create one focused page that gives searchers and Google a clear emergency plumbing destination.",
+      "data_sources": [
+        "site",
+        "serp",
+        "gsc",
+        "ga4"
+      ],
+      "definition_of_done": [
+        "The page is live, indexable, internally linked, and quality checked."
+      ],
+      "dependencies": [],
+      "effort_bucket": "medium",
+      "exact_targets": [
+        "https://example-plumbing.test/services/emergency-plumbing"
+      ],
+      "finding_ids": [
+        "fn_service_page_gap",
+        "fn_market_visibility_gap"
+      ],
+      "implementation_steps": [
+        {
+          "instruction": "Publish an indexable emergency plumbing page for Austin.",
+          "sequence": 1,
+          "title": "Create the service page"
+        },
+        {
+          "instruction": "Link the page from services and relevant location navigation.",
+          "sequence": 2,
+          "title": "Connect the page"
+        }
+      ],
+      "owner_suggestion": "SEO lead and client subject-matter expert",
+      "required_client_assets": [
+        "Emergency service availability",
+        "Service photos",
+        "Response-time policy"
+      ],
+      "review_date": "2026-09-25",
+      "sequence": 1,
+      "specification": {
+        "content_requirements": [
+          "Describe emergency response scope, proof, service area, and contact path."
+        ],
+        "gbp_requirements": [],
+        "technical_requirements": [
+          "Use a self-referencing canonical and include the page in the sitemap."
+        ]
+      },
+      "validation_metrics": [
+        {
+          "baseline": "No dedicated page",
+          "metric_key": "page_indexable",
+          "source_type": "site",
+          "success_condition": "Dedicated page is indexable"
+        },
+        {
+          "baseline": "1.2% CTR",
+          "metric_key": "gsc_emergency_ctr",
+          "source_type": "gsc",
+          "success_condition": "CTR improves without losing qualified impressions"
+        }
+      ],
+      "why_now": "The missing service asset blocks relevance for the confirmed opportunity."
+    },
+    {
+      "action_id": "ac_align_public_gbp",
+      "client_facing_explanation": "Align the public profile with the service customers are actively looking for.",
+      "data_sources": [
+        "gbp",
+        "site"
+      ],
+      "definition_of_done": [
+        "The approved service is represented consistently on the site and GBP."
+      ],
+      "dependencies": [
+        "ac_publish_emergency_page"
+      ],
+      "effort_bucket": "small",
+      "exact_targets": [
+        "Google Business Profile service information"
+      ],
+      "finding_ids": [
+        "fn_public_gbp_service_gap"
+      ],
+      "implementation_steps": [
+        {
+          "instruction": "Verify that emergency plumbing is an accurate offered service before proposing the profile update.",
+          "sequence": 1,
+          "title": "Confirm service eligibility"
+        }
+      ],
+      "owner_suggestion": "Client GBP manager",
+      "required_client_assets": [
+        "Approved service description"
+      ],
+      "review_date": "2026-10-25",
+      "sequence": 2,
+      "specification": {
+        "content_requirements": [],
+        "gbp_requirements": [
+          "Add an accurate emergency plumbing service description after client approval."
+        ],
+        "technical_requirements": []
+      },
+      "validation_metrics": [
+        {
+          "baseline": "Primary service missing",
+          "metric_key": "gbp_service_alignment",
+          "source_type": "gbp",
+          "success_condition": "Primary service is accurately represented"
+        },
+        {
+          "baseline": "84 clicks in 90 days",
+          "metric_key": "gbp_website_clicks",
+          "source_type": "gbp",
+          "success_condition": "Qualified website actions increase after alignment"
+        }
+      ],
+      "why_now": "The public profile should describe the same primary service as the website."
+    },
+    {
+      "action_id": "ac_build_local_proof",
+      "client_facing_explanation": "Support the new service page with real local proof that competitors already communicate more clearly.",
+      "data_sources": [
+        "site",
+        "competitor",
+        "ga4"
+      ],
+      "definition_of_done": [
+        "The service page contains approved, locally specific proof."
+      ],
+      "dependencies": [
+        "ac_publish_emergency_page",
+        "ac_align_public_gbp"
+      ],
+      "effort_bucket": "medium",
+      "exact_targets": [
+        "Emergency plumbing service page",
+        "Relevant Austin proof assets"
+      ],
+      "finding_ids": [
+        "fn_market_visibility_gap"
+      ],
+      "implementation_steps": [
+        {
+          "instruction": "Add verified Austin service examples and customer proof to the new page.",
+          "sequence": 1,
+          "title": "Add local proof"
+        }
+      ],
+      "owner_suggestion": "Content lead",
+      "required_client_assets": [
+        "Approved Austin job examples",
+        "Customer-approved proof"
+      ],
+      "review_date": "2026-11-24",
+      "sequence": 3,
+      "specification": {
+        "content_requirements": [
+          "Use only verifiable service examples and customer-approved proof."
+        ],
+        "gbp_requirements": [],
+        "technical_requirements": []
+      },
+      "validation_metrics": [
+        {
+          "baseline": "No dedicated proof set",
+          "metric_key": "local_proof_items",
+          "source_type": "site",
+          "success_condition": "At least three approved proof items are published"
+        },
+        {
+          "baseline": "31% engagement rate",
+          "metric_key": "ga4_engagement_rate",
+          "source_type": "ga4",
+          "success_condition": "Engagement rate improves on the target landing path"
+        }
+      ],
+      "why_now": "Competitor visibility creates a measurable need for stronger local proof after the core page exists."
+    }
+  ],
+  "version_diff": {
+    "entries": [
+      {
+        "change_type": "confirmed",
+        "current_finding_ids": [
+          "fn_market_visibility_gap"
+        ],
+        "evidence_ids": [
+          "ev_gsc_low_ctr"
+        ],
+        "previous_finding": {
+          "finding_id": "fn_market_visibility_gap",
+          "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report_id": "22222222-2222-4222-8222-222222222222",
+          "statement": "Three relevant competitors appear ahead of the business for the confirmed local queries."
+        },
+        "reason": "Search Console impressions confirm the market opportunity behind the public SERP observation."
+      },
+      {
+        "change_type": "reprioritized",
+        "current_finding_ids": [
+          "fn_service_page_gap"
+        ],
+        "evidence_ids": [
+          "ev_ga4_low_engagement"
+        ],
+        "previous_finding": {
+          "finding_id": "fn_service_page_gap",
+          "fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "report_id": "22222222-2222-4222-8222-222222222222",
+          "statement": "The site lacks a dedicated page for the primary emergency plumbing opportunity."
+        },
+        "reason": "GA4 engagement evidence increases the blocking power of the missing dedicated page."
+      },
+      {
+        "change_type": "refined",
+        "current_finding_ids": [
+          "fn_public_gbp_service_gap"
+        ],
+        "evidence_ids": [
+          "ev_gbp_website_clicks"
+        ],
+        "previous_finding": {
+          "finding_id": "fn_public_gbp_service_gap",
+          "fingerprint": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "report_id": "22222222-2222-4222-8222-222222222222",
+          "statement": "The public GBP service set does not explicitly describe the primary emergency plumbing service."
+        },
+        "reason": "Managed GBP Performance adds a measurable baseline to the previously public-only finding."
+      }
+    ],
+    "kind": "upgrade",
+    "parent_report_id": "22222222-2222-4222-8222-222222222222"
+  }
+}
