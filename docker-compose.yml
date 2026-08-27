@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: searchtrust_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # ─────────────────────────────────────────────
   # FastAPI Application
   # ─────────────────────────────────────────────
@@ -14,13 +27,39 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      V22_REDIS_URL: redis://redis:6379/0
     command: >
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
       --workers 1
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # v2.2 only. The legacy v1 in-process dispatcher remains inside `app`.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: searchtrust_v22_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      V22_REDIS_URL: redis://redis:6379/0
+    command: arq app.jobs_v22.worker.WorkerSettings
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "arq", "--check", "app.jobs_v22.worker.WorkerSettings"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -28,3 +67,6 @@ services:
 networks:
   default:
     name: seo_network
+
+volumes:
+  redis_data:

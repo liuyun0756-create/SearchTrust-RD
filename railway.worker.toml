@@ -2,10 +2,10 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
-# ── Web Service (FastAPI + asyncio 进程内任务) ────────────────────────────────
-# 当前架构使用单进程 asyncio 后台任务，无需独立 Worker Service。
-# 并发任务数通过 MAX_CONCURRENT_REQUESTS 环境变量控制。
+# ── SearchTrust v2.2 ARQ Worker ──────────────────────────────────────────────
+# Deploy this file as a separate Railway service that shares REDIS_URL with
+# the FastAPI Web service. The v1 in-process dispatcher remains unchanged.
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
+startCommand = "arq app.jobs_v22.worker.WorkerSettings"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
