@@ -6,7 +6,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Literal
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -19,9 +19,12 @@ from app.tasks.scraper import (
     _serpapi_get,
 )
 from app.preflight_v22.extractors import SiteSignals
+from app.preflight_v22.fetcher import _PinnedAsyncHTTPTransport
+from app.preflight_v22.urls import Resolver, SafeUrl, resolve_public_url, validate_gbp_url
 
 
 Provider = Callable[[dict[str, str]], Awaitable[dict[str, Any]]]
+UrlExpander = Callable[[str], Awaitable[str]]
 LookupStatus = Literal["found", "not_found", "unavailable"]
 
 
@@ -52,6 +55,65 @@ _US_STATES = {
     "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
     "WI", "WY", "DC",
 }
+_SHORT_GBP_HOSTS = {"maps.app.goo.gl", "goo.gl", "share.google"}
+
+
+class GoogleMapsUrlExpander:
+    """Expand approved Google short links without following an unsafe hop."""
+
+    def __init__(
+        self,
+        *,
+        connect_timeout: float = 5,
+        read_timeout: float = 10,
+        max_redirects: int = 3,
+        resolver: Resolver | None = None,
+        client_factory: Callable[[SafeUrl], httpx.AsyncClient] | None = None,
+    ) -> None:
+        self.connect_timeout = connect_timeout
+        self.read_timeout = read_timeout
+        self.max_redirects = max_redirects
+        self.resolver = resolver
+        self.client_factory = client_factory or self._default_client
+
+    def _default_client(self, target: SafeUrl) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
+            transport=_PinnedAsyncHTTPTransport(target),
+            timeout=httpx.Timeout(
+                connect=self.connect_timeout,
+                read=self.read_timeout,
+                write=self.read_timeout,
+                pool=self.connect_timeout,
+            ),
+            follow_redirects=False,
+            trust_env=False,
+        )
+
+    async def expand(self, value: str) -> str:
+        current = validate_gbp_url(value)
+        if (urlsplit(current).hostname or "").lower() not in _SHORT_GBP_HOSTS:
+            return current
+        for redirect_count in range(self.max_redirects + 1):
+            target = await resolve_public_url(current, resolver=self.resolver)
+            async with self.client_factory(target) as client:
+                async with client.stream(
+                    "GET",
+                    target.request_url,
+                    headers={
+                        "User-Agent": "SearchTrust-Preflight/2.2 (+https://trysearchtrust.com)",
+                        "Accept": "text/html",
+                    },
+                ) as response:
+                    location = response.headers.get("location", "").strip()
+            if response.status_code not in {301, 302, 303, 307, 308} or not location:
+                return current
+            if redirect_count >= self.max_redirects:
+                return current
+            next_url = validate_gbp_url(urljoin(target.request_url, location))
+            if (urlsplit(next_url).hostname or "").lower() not in _SHORT_GBP_HOSTS:
+                return next_url
+            current = next_url
+        return current
 
 
 def _market_from_result(result: dict[str, Any]) -> TargetMarket | None:
@@ -143,9 +205,11 @@ class LimitedGbpLookup:
         *,
         provider: Provider | None = None,
         configured: bool | None = None,
+        url_expander: UrlExpander | None = None,
     ) -> None:
         self.provider = provider or self._default_provider
         self.configured = bool(_configured_serpapi_keys()) if configured is None else configured
+        self.url_expander = url_expander or GoogleMapsUrlExpander().expand
 
     async def _default_provider(self, params: dict[str, str]) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=False) as client:
@@ -192,7 +256,17 @@ class LimitedGbpLookup:
                 "Public GBP lookup is not configured.",
                 (),
             )
-        params = self._request_params(site_url=site_url, signals=signals, gbp_url=gbp_url)
+        resolved_gbp_url = gbp_url
+        if gbp_url and (urlsplit(gbp_url).hostname or "").lower() in _SHORT_GBP_HOSTS:
+            try:
+                resolved_gbp_url = await self.url_expander(gbp_url)
+            except Exception:
+                resolved_gbp_url = gbp_url
+        params = self._request_params(
+            site_url=site_url,
+            signals=signals,
+            gbp_url=resolved_gbp_url,
+        )
         try:
             payload = await self.provider(params)
         except Exception:  # provider details are intentionally not exposed.
@@ -222,7 +296,7 @@ class LimitedGbpLookup:
         normalized_candidates: list[GbpCandidate] = []
         for item in raw_candidates[:5]:
             try:
-                candidate = _normalize_candidate(item, gbp_url)
+                candidate = _normalize_candidate(item, resolved_gbp_url)
             except (TypeError, ValueError):
                 candidate = None
             if candidate is not None:

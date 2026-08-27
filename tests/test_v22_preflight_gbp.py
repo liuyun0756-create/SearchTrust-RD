@@ -5,7 +5,10 @@ from typing import Any
 import pytest
 
 from app.preflight_v22.extractors import extract_site_signals
-from app.preflight_v22.gbp import LimitedGbpLookup
+import httpx
+
+from app.preflight_v22.gbp import GoogleMapsUrlExpander, LimitedGbpLookup
+from app.preflight_v22.urls import SafeUrl, UrlSafetyError
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "v22_preflight"
@@ -86,6 +89,67 @@ async def test_gbp_lookup_uses_exact_place_id_without_second_request() -> None:
 
     assert calls == [{"engine": "google_maps", "hl": "en", "place_id": "ChIJ123456789"}]
     assert result.status == "found"
+
+
+@pytest.mark.anyio
+async def test_gbp_lookup_expands_short_url_before_single_provider_request() -> None:
+    provider_calls: list[dict[str, str]] = []
+    expander_calls: list[str] = []
+
+    async def provider(params: dict[str, str]) -> dict[str, Any]:
+        provider_calls.append(params)
+        return {"place_results": {"title": "Acme Plumbing", "website": "https://example.com"}}
+
+    async def expander(value: str) -> str:
+        expander_calls.append(value)
+        return (
+            "https://www.google.com/maps/place/Acme/"
+            "data=!4m2!3m1!1s0x8644b5a123456789:0x1234567890abcdef"
+        )
+
+    result = await LimitedGbpLookup(
+        provider=provider,
+        configured=True,
+        url_expander=expander,
+    ).lookup(
+        site_url="https://example.com/",
+        signals=site_signals(),
+        gbp_url="https://maps.app.goo.gl/abc123",
+    )
+
+    assert expander_calls == ["https://maps.app.goo.gl/abc123"]
+    assert provider_calls == [{
+        "engine": "google_maps",
+        "hl": "en",
+        "data_cid": "1311768467294899695",
+    }]
+    assert result.status == "found"
+
+
+@pytest.mark.anyio
+async def test_short_url_expander_rejects_unsafe_redirect_before_request() -> None:
+    requested: list[str] = []
+
+    async def resolver(_: str) -> list[str]:
+        return ["8.8.8.8"]
+
+    def client_factory(target: SafeUrl) -> httpx.AsyncClient:
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested.append(str(request.url))
+            return httpx.Response(302, headers={"location": "http://127.0.0.1/admin"})
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    expander = GoogleMapsUrlExpander(
+        resolver=resolver,
+        client_factory=client_factory,
+    )
+
+    with pytest.raises(UrlSafetyError) as exc_info:
+        await expander.expand("https://maps.app.goo.gl/abc123")
+
+    assert exc_info.value.code == "URL_ADDRESS_FORBIDDEN"
+    assert requested == ["https://maps.app.goo.gl/abc123"]
 
 
 @pytest.mark.anyio

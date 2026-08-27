@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from pydantic import SecretStr
@@ -17,9 +20,12 @@ from app.preflight_v22.cache import PreflightCache
 from app.preflight_v22.candidates import CandidateSet, build_candidates
 from app.preflight_v22.extractors import SiteSignals, extract_site_signals
 from app.preflight_v22.fetcher import BoundedHomepageFetcher, HomepageFetchError, HomepageSnapshot
-from app.preflight_v22.gbp import GbpLookupResult, LimitedGbpLookup
+from app.preflight_v22.gbp import GbpLookupResult, GoogleMapsUrlExpander, LimitedGbpLookup
 from app.preflight_v22.urls import UrlUnreachableError, normalize_site_url, validate_gbp_url
 from app.core.config import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -58,19 +64,28 @@ class PreflightService:
         self.pagespeed_configured = pagespeed_configured
 
     async def run(self, request: PreflightRequest) -> PreflightResponse:
+        started = time.monotonic()
         normalized_input_url = normalize_site_url(str(request.site_url))
+        normalized_domain = (urlsplit(normalized_input_url).hostname or "").removeprefix("www.")
         user_gbp_url = validate_gbp_url(str(request.gbp_url)) if request.gbp_url else None
         cache_key = self.cache.key(request, normalized_input_url)
         cached = await self.cache.get(cache_key)
         if cached is not None:
+            logger.info(
+                "v2.2 preflight cache_hit domain=%s preflight_id=%s",
+                normalized_domain,
+                cached.preflight_id,
+            )
             return cached
 
         site_snapshot: HomepageSnapshot | None = None
         site_failure: _SiteFailure | None = None
+        fetch_started = time.monotonic()
         try:
             site_snapshot = await self.fetcher.fetch(normalized_input_url)
         except (HomepageFetchError, UrlUnreachableError) as exc:
             site_failure = _SiteFailure(exc.code, exc.user_message)
+        fetch_ms = round((time.monotonic() - fetch_started) * 1000)
 
         normalized_site_url = (
             site_snapshot.normalized_site_url if site_snapshot else normalized_input_url
@@ -79,11 +94,13 @@ class PreflightService:
         selected_gbp_url = user_gbp_url or signals.gbp_url
         if selected_gbp_url:
             selected_gbp_url = validate_gbp_url(selected_gbp_url)
+        gbp_started = time.monotonic()
         gbp_result = await self.gbp_lookup.lookup(
             site_url=normalized_site_url,
             signals=signals,
             gbp_url=selected_gbp_url,
         )
+        gbp_ms = round((time.monotonic() - gbp_started) * 1000)
         candidates = build_candidates(
             request=request,
             normalized_site_url=normalized_site_url,
@@ -114,6 +131,19 @@ class PreflightService:
         )
         if site_snapshot is not None:
             await self.cache.set(cache_key, response)
+        logger.info(
+            "v2.2 preflight completed domain=%s preflight_id=%s total_ms=%d "
+            "fetch_ms=%d gbp_ms=%d identities=%d services=%d markets=%d gaps=%s",
+            normalized_domain,
+            response.preflight_id,
+            round((time.monotonic() - started) * 1000),
+            fetch_ms,
+            gbp_ms,
+            len(response.identity_candidates),
+            len(response.service_candidates),
+            len(response.market_candidates),
+            ",".join(gap.gap_code for gap in response.data_gaps) or "none",
+        )
         return response
 
     def _modules(
@@ -305,7 +335,12 @@ def build_preflight_service(redis=None) -> PreflightService:
         max_redirects=settings.V22_PREFLIGHT_MAX_REDIRECTS,
         max_response_bytes=settings.V22_PREFLIGHT_MAX_RESPONSE_BYTES,
     )
-    gbp_lookup = LimitedGbpLookup()
+    gbp_url_expander = GoogleMapsUrlExpander(
+        connect_timeout=settings.V22_PREFLIGHT_CONNECT_TIMEOUT_SECONDS,
+        read_timeout=settings.V22_PREFLIGHT_READ_TIMEOUT_SECONDS,
+        max_redirects=settings.V22_PREFLIGHT_MAX_REDIRECTS,
+    )
+    gbp_lookup = LimitedGbpLookup(url_expander=gbp_url_expander.expand)
     cache = PreflightCache(
         redis,
         prefix=settings.V22_REDIS_PREFIX,
