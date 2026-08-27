@@ -30,6 +30,7 @@ def queued_state(**overrides: object) -> JobState:
         "run_generation": 1,
         "revision": 1,
         "request_digest": "sha256:" + "a" * 64,
+        "idempotency_key_digest": "sha256:" + "b" * 64,
         "heartbeat_at": None,
         "created_at": NOW,
         "updated_at": NOW,

@@ -82,6 +82,9 @@ async def test_job_id_cannot_be_rebound_to_another_case(store: DurableJobStore) 
             request_payload={**REQUEST, "case_id": str(OTHER_CASE_ID)},
         )
 
+    with pytest.raises(JobIdentityConflict):
+        await register(store, idempotency_key="another-intent")
+
 
 @pytest.mark.anyio
 async def test_new_store_instance_recovers_existing_state(

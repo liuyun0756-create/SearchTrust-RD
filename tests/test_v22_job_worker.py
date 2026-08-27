@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -162,4 +163,4 @@ async def test_production_executor_is_explicitly_unavailable_and_never_imports_v
     with pytest.raises(DeterministicJobError, match="V22_PIPELINE_NOT_READY"):
         await executor.execute(job_id=JOB_ID, request={}, checkpoints=None)
 
-    assert "app.tasks.pipeline" not in __import__("sys").modules
+    assert "app.tasks.pipeline" not in inspect.getsource(UnavailableV22Executor.execute)

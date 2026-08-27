@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Mapping
@@ -68,6 +69,7 @@ class DurableJobStore:
         now: datetime,
     ) -> RegistrationResult:
         digest = request_digest(request_payload)
+        idempotency_key_digest = f"sha256:{hashlib.sha256(idempotency_key.encode('utf-8')).hexdigest()}"
         idem_key = self.keys.idempotency(case_id, idempotency_key)
         state_key = self.keys.state(job_id)
         request_key = self.keys.request(job_id)
@@ -82,6 +84,7 @@ class DurableJobStore:
             run_generation=1,
             revision=1,
             request_digest=digest,
+            idempotency_key_digest=idempotency_key_digest,
             heartbeat_at=None,
             created_at=now,
             updated_at=now,
@@ -115,7 +118,11 @@ class DurableJobStore:
 
                     existing_state = await self.get_state(job_id, client=pipe)
                     if existing_state is not None:
-                        if existing_state.case_id != case_id or existing_state.request_digest != digest:
+                        if (
+                            existing_state.case_id != case_id
+                            or existing_state.request_digest != digest
+                            or existing_state.idempotency_key_digest != idempotency_key_digest
+                        ):
                             raise JobIdentityConflict()
                         return RegistrationResult(existing_state, replayed=True)
 

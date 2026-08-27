@@ -38,6 +38,7 @@ class JobState(StrictModel):
     run_generation: int = Field(ge=1)
     revision: int = Field(ge=1)
     request_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    idempotency_key_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     heartbeat_at: AwareDatetime | None = None
     created_at: AwareDatetime
     updated_at: AwareDatetime
