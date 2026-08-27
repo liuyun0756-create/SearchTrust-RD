@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, Field, field_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -79,6 +79,26 @@ class Settings(BaseSettings):
     TASK_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=3600)] = Field(default=1260)
     TASK_STREAM_HEARTBEAT_INTERVAL: Annotated[int, Field(ge=5, le=60)] = Field(default=20)
 
+    # ── v2.2 durable jobs ────────────────────────────────────────────────────
+    # The v2 runtime is deliberately disabled until the v2.2 generation
+    # pipeline is complete. Empty connection/auth values keep the legacy v1
+    # process bootable when Redis has not been provisioned.
+    V22_ANALYZE_ENABLED: bool = False
+    V22_REDIS_URL: SecretStr = Field(default="", repr=False)
+    V22_REDIS_PREFIX: str = Field(default="searchtrust:v22", min_length=1, max_length=100)
+    V22_QUEUE_NAME: str = Field(default="searchtrust:v22:queue", min_length=1, max_length=100)
+    V22_INTERNAL_API_TOKEN: SecretStr = Field(default="", repr=False)
+    V22_CALLBACK_URL: str = Field(default="")
+    V22_CALLBACK_SECRET: SecretStr = Field(default="", repr=False)
+    V22_CALLBACK_CLOCK_SKEW_SECONDS: Annotated[int, Field(ge=30, le=900)] = 300
+    V22_CALLBACK_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
+    V22_JOB_MAX_ATTEMPTS: Annotated[int, Field(ge=1, le=10)] = 3
+    V22_WORKER_CONCURRENCY: Annotated[int, Field(ge=1, le=100)] = 5
+    V22_JOB_TIMEOUT_SECONDS: Annotated[int, Field(ge=60, le=7200)] = 3600
+    V22_JOB_STATE_TTL_SECONDS: Annotated[int, Field(ge=3600, le=2592000)] = 604800
+    V22_JOB_HEARTBEAT_SECONDS: Annotated[int, Field(ge=5, le=300)] = 30
+    V22_JOB_STALE_SECONDS: Annotated[int, Field(ge=30, le=3600)] = 180
+
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
     DIFY_RPM_REFILL: Annotated[int, Field(ge=1)] = Field(default=60)
@@ -93,7 +113,7 @@ class Settings(BaseSettings):
     )
 
     # ── Validators ────────────────────────────────────────────────────────────
-    @field_validator("DIFY_API_URL", "ADDRESS_AI_BASE_URL", mode="before")
+    @field_validator("DIFY_API_URL", "ADDRESS_AI_BASE_URL", "V22_CALLBACK_URL", mode="before")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
         return str(v).rstrip("/")

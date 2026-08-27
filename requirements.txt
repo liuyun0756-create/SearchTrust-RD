@@ -18,3 +18,5 @@ usaddress==0.5.16
 
 # Async support
 anyio==4.7.0
+arq==0.28.0
+redis[hiredis]==5.3.1
