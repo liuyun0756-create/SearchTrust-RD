@@ -11,13 +11,18 @@ from uuid import UUID, uuid4
 
 from arq import Retry
 from arq.connections import RedisSettings
+from arq.cron import cron
 from arq.worker import func
+import httpx
+from pydantic import SecretStr
 
 from app.core.config import settings
+from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
 from app.jobs_v22.executor import UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
+from app.jobs_v22.reconciler import reconcile_v22_jobs
 from app.jobs_v22.store import DurableJobStore
 
 
@@ -64,6 +69,7 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
     )
     if not running.applied:
         return
+    await _notify_state(ctx, job_id)
 
     checkpoints = JobCheckpoints(
         ctx["redis"],
@@ -81,7 +87,7 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         return
 
 
-    await store.transition(
+    completed = await store.transition(
         job_id,
         status="succeeded",
         stage="completed",
@@ -90,6 +96,8 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         now=utc_now(),
         report=report,
     )
+    if completed.applied:
+        await _notify_state(ctx, job_id)
 
 
 async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> None:
@@ -99,7 +107,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
     attempt_count = max(state.attempt_count, 1)
 
     if failure.retryable and attempt_count < max_attempts:
-        await store.transition(
+        queued = await store.transition(
             state.job_id,
             status="queued",
             stage="queued",
@@ -108,6 +116,8 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
             now=utc_now(),
             attempt_count=attempt_count,
         )
+        if queued.applied:
+            await _notify_state(ctx, state.job_id)
         raise Retry(defer=retry_delay_seconds(state.job_id, attempt_count))
 
     error_code = "JOB_RETRY_EXHAUSTED" if failure.retryable else failure.error_code
@@ -123,7 +133,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
         stage="failed",
         diagnostic_id=uuid4(),
     )
-    await store.transition(
+    failed = await store.transition(
         state.job_id,
         status="failed",
         stage="failed",
@@ -133,6 +143,25 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
         attempt_count=attempt_count,
         error=error,
     )
+    if failed.applied:
+        await _notify_state(ctx, state.job_id)
+
+
+async def _notify_state(ctx: dict[str, Any], job_id: UUID) -> None:
+    synchronizer: CallbackSynchronizer | None = ctx.get("callback_synchronizer")
+    if synchronizer is not None:
+        try:
+            await synchronizer.sync(job_id)
+        except Exception as exc:  # Callback delivery must never change the analysis outcome.
+            logger.warning(
+                "v2.2 callback synchronization deferred job_id_suffix=%s error=%s",
+                str(job_id)[-8:],
+                type(exc).__name__,
+            )
+
+
+def _secret_value(value: SecretStr | str) -> str:
+    return value.get_secret_value() if isinstance(value, SecretStr) else value
 
 
 async def on_startup(ctx: dict[str, Any]) -> None:
@@ -145,6 +174,23 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     ctx["executor"] = UnavailableV22Executor()
     ctx["max_attempts"] = settings.V22_JOB_MAX_ATTEMPTS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
+    callback_url = settings.V22_CALLBACK_URL
+    callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
+    if callback_url and callback_secret:
+        http_client = httpx.AsyncClient(timeout=settings.V22_CALLBACK_TIMEOUT_SECONDS)
+        ctx["callback_http_client"] = http_client
+        sender = SignedCallbackClient(
+            url=callback_url,
+            secret=callback_secret,
+            http_client=http_client,
+        )
+        ctx["callback_synchronizer"] = CallbackSynchronizer(ctx["store"], sender)
+
+
+async def on_shutdown(ctx: dict[str, Any]) -> None:
+    http_client: httpx.AsyncClient | None = ctx.get("callback_http_client")
+    if http_client is not None:
+        await http_client.aclose()
 
 
 def _redis_settings() -> RedisSettings:
@@ -162,7 +208,17 @@ class WorkerSettings:
             keep_result=settings.V22_JOB_STATE_TTL_SECONDS,
         )
     ]
+    cron_jobs = [
+        cron(
+            reconcile_v22_jobs,
+            name="reconcile_v22_jobs",
+            second={0, 30},
+            unique=True,
+            max_tries=1,
+        )
+    ]
     on_startup = on_startup
+    on_shutdown = on_shutdown
     redis_settings = _redis_settings()
     queue_name = settings.V22_QUEUE_NAME
     max_jobs = settings.V22_WORKER_CONCURRENCY

@@ -1,0 +1,7 @@
+{
+  "version": "v1",
+  "timestamp": 1787817600,
+  "secret": "fixture-secret",
+  "body": "{\"attempt_count\":0,\"case_id\":\"11111111-1111-4111-8111-111111111111\",\"completed_at\":null,\"cost_counters\":{},\"error\":null,\"event_id\":\"55555555-5555-4555-8555-555555555555:1\",\"heartbeat_at\":null,\"job_id\":\"55555555-5555-4555-8555-555555555555\",\"message\":\"Queued. Analysis will begin shortly.\",\"occurred_at\":\"2026-08-27T08:00:00Z\",\"progress\":0,\"revision\":1,\"stage\":\"queued\",\"status\":\"queued\"}",
+  "signature": "sha256=66d909fd773e61a6441438189e6fb30bcf5800c45ec963239633c73e7eaef98d"
+}

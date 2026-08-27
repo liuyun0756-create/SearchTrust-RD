@@ -5,6 +5,5 @@ their request and response shapes.
 """
 
 from app.api.v2.models import ApiV2ContractBundle
-from app.api.v2.runtime import router
 
-__all__ = ["ApiV2ContractBundle", "router"]
+__all__ = ["ApiV2ContractBundle"]
