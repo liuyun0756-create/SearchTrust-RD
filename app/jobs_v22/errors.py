@@ -34,6 +34,32 @@ class TransientJobError(DurableJobError):
     retryable = True
 
 
+class IdempotencyConflict(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__(
+            "IDEMPOTENCY_CONFLICT",
+            "The idempotency key is already associated with a different request.",
+        )
+
+
+class JobIdentityConflict(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__(
+            "JOB_IDENTITY_CONFLICT",
+            "The job identifier is already associated with a different task.",
+        )
+
+
+class JobNotFound(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__("JOB_NOT_FOUND", "The requested task was not found.")
+
+
+class InvalidJobTransition(DeterministicJobError):
+    def __init__(self, message: str = "The task state transition is not allowed.") -> None:
+        super().__init__("INVALID_JOB_TRANSITION", message)
+
+
 def classify_job_exception(exc: BaseException) -> ClassifiedJobError:
     """Map arbitrary failures to stable, non-sensitive task errors."""
 

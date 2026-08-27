@@ -1,0 +1,20 @@
+{
+  "job_id": "55555555-5555-4555-8555-555555555555",
+  "case_id": "11111111-1111-4111-8111-111111111111",
+  "status": "queued",
+  "stage": "queued",
+  "progress": 0,
+  "message": "Queued",
+  "attempt_count": 0,
+  "run_generation": 1,
+  "revision": 1,
+  "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "heartbeat_at": null,
+  "created_at": "2026-08-27T08:00:00Z",
+  "updated_at": "2026-08-27T08:00:00Z",
+  "completed_at": null,
+  "report": null,
+  "error": null,
+  "cost_counters": {},
+  "callback_synced_revision": 0
+}
