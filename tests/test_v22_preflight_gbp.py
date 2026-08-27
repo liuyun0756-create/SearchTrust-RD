@@ -101,3 +101,23 @@ async def test_gbp_lookup_degrades_provider_error_without_leaking_detail() -> No
     assert result.status == "unavailable"
     assert result.code == "GBP_LOOKUP_UNAVAILABLE"
     assert "secret" not in result.message
+
+
+@pytest.mark.anyio
+async def test_gbp_lookup_ignores_malformed_provider_candidate() -> None:
+    async def provider(_: dict[str, str]) -> dict[str, Any]:
+        return {
+            "local_results": [{
+                "title": "x" * 241,
+                "website": "https://example.com/",
+                "gps_coordinates": {"latitude": 999, "longitude": 999},
+            }],
+        }
+
+    result = await LimitedGbpLookup(provider=provider, configured=True).lookup(
+        site_url="https://example.com/",
+        signals=site_signals(),
+    )
+
+    assert result.status == "not_found"
+    assert result.candidates == ()

@@ -229,7 +229,7 @@ feat(v2.2): expose authenticated preflight API
 
 ```bash
 python -m pytest tests/test_v22_preflight_*.py tests/test_api_v2_preflight.py -q
-python scripts/check_v22_contracts.py
+python scripts/export_v22_contracts.py --check
 python -m compileall -q app tests
 python -m pytest -q
 git diff --check

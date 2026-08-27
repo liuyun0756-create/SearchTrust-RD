@@ -146,7 +146,7 @@ def extract_site_signals(html: str) -> SiteSignals:
         if is_business:
             name = str(record.get("name") or "").strip()
             phone = str(record.get("telephone") or "").strip()
-            if name:
+            if 1 <= len(name) <= 240:
                 names.append(TextSignal(name, "json_ld", "high"))
             if phone:
                 phones.append(TextSignal(phone, "json_ld", "high"))
@@ -159,9 +159,15 @@ def extract_site_signals(html: str) -> SiteSignals:
             country = _country_code(address.get("addressCountry"))
             street = str(address.get("streetAddress") or "").strip()
             has_address = has_address or bool(street)
-            if country and (city or region or postal):
+            fields_fit = (
+                (city is None or len(city) <= 120)
+                and (region is None or len(region) <= 120)
+                and (postal is None or len(postal) <= 32)
+            )
+            if country and (city or region or postal) and fields_fit:
                 display = ", ".join(value for value in (city, region, country) if value)
-                markets.append(MarketSignal(display, country, region, city, postal, "json_ld", "high"))
+                if len(display) <= 200:
+                    markets.append(MarketSignal(display, country, region, city, postal, "json_ld", "high"))
 
         area_served = record.get("areaServed") or record.get("serviceArea")
         if area_served:
@@ -174,7 +180,7 @@ def extract_site_signals(html: str) -> SiteSignals:
     for signal in extract_business_identity_signals(html, scope="preflight_homepage"):
         confidence: Confidence = "high" if signal.quality == "strong" else "medium" if signal.quality == "supporting" else "low"
         candidate = TextSignal(signal.value, signal.source, confidence)
-        if signal.field == "name":
+        if signal.field == "name" and len(signal.value) <= 240:
             names.append(candidate)
         elif signal.field == "phone":
             phones.append(candidate)

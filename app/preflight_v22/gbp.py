@@ -66,14 +66,18 @@ def _market_from_result(result: dict[str, Any]) -> TargetMarket | None:
     coordinates = result.get("gps_coordinates")
     latitude = coordinates.get("latitude") if isinstance(coordinates, dict) else None
     longitude = coordinates.get("longitude") if isinstance(coordinates, dict) else None
+    latitude_value = float(latitude) if isinstance(latitude, (int, float)) and -90 <= latitude <= 90 else None
+    longitude_value = (
+        float(longitude) if isinstance(longitude, (int, float)) and -180 <= longitude <= 180 else None
+    )
     return TargetMarket(
         display_name=f"{city}, {region}, US",
         country_code="US",
         region=region,
         city=city,
         postal_code=postal_code,
-        latitude=float(latitude) if isinstance(latitude, (int, float)) else None,
-        longitude=float(longitude) if isinstance(longitude, (int, float)) else None,
+        latitude=latitude_value,
+        longitude=longitude_value,
     )
 
 
@@ -87,22 +91,28 @@ def _public_gbp_url(result: dict[str, Any], fallback: str | None) -> str | None:
 
 def _normalize_candidate(result: dict[str, Any], fallback_gbp_url: str | None) -> GbpCandidate | None:
     name = str(result.get("title") or result.get("name") or "").strip()
-    if not name:
+    if not name or len(name) > 240:
         return None
     website = str(result.get("website") or "").strip() or None
-    if website:
+    if website and len(website) <= 2083:
         try:
             parsed = urlsplit(website)
             if parsed.scheme not in {"http", "https"} or not parsed.hostname:
                 website = None
         except ValueError:
             website = None
+    elif website:
+        website = None
     address = str(result.get("address") or "").strip() or None
     phone = str(result.get("phone") or "").strip() or None
     category_value = result.get("types") or result.get("categories") or result.get("type")
     raw_categories = category_value if isinstance(category_value, list) else [category_value]
     categories = tuple(
-        dict.fromkeys(str(item).strip() for item in raw_categories if str(item or "").strip())
+        dict.fromkeys(
+            str(item).strip()
+            for item in raw_categories
+            if str(item or "").strip() and len(str(item).strip()) <= 240
+        )
     )
     service_area = result.get("service_area_business")
     if service_area is None:
@@ -209,11 +219,15 @@ class LimitedGbpLookup:
             raw_candidates.append(local)
         elif isinstance(local, list):
             raw_candidates.extend(item for item in local if isinstance(item, dict))
-        candidates = tuple(
-            candidate
-            for item in raw_candidates[:5]
-            if (candidate := _normalize_candidate(item, gbp_url)) is not None
-        )
+        normalized_candidates: list[GbpCandidate] = []
+        for item in raw_candidates[:5]:
+            try:
+                candidate = _normalize_candidate(item, gbp_url)
+            except (TypeError, ValueError):
+                candidate = None
+            if candidate is not None:
+                normalized_candidates.append(candidate)
+        candidates = tuple(normalized_candidates)
         if not candidates:
             return GbpLookupResult(
                 "not_found",

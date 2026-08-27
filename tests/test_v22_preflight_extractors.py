@@ -33,3 +33,19 @@ def test_extract_site_signals_deduplicates_same_name_from_multiple_sources() -> 
     signals = extract_site_signals((FIXTURES / "homepage_complete.html").read_text())
 
     assert [signal.value for signal in signals.names].count("Acme Plumbing") == 1
+
+
+def test_extract_site_signals_ignores_contract_oversized_structured_fields() -> None:
+    document = f'''<script type="application/ld+json">{{
+      "@type": "LocalBusiness",
+      "name": "{'x' * 241}",
+      "address": {{
+        "addressLocality": "{'y' * 121}",
+        "addressCountry": "US"
+      }}
+    }}</script>'''
+
+    signals = extract_site_signals(document)
+
+    assert signals.names == ()
+    assert signals.markets == ()
