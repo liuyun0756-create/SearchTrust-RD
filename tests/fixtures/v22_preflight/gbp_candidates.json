@@ -1,0 +1,24 @@
+{
+  "local_results": [
+    {
+      "title": "Acme Plumbing",
+      "address": "100 Congress Ave, Austin, TX 78701",
+      "phone": "+1 512-555-0100",
+      "website": "https://www.example.com/",
+      "type": "Plumber",
+      "data_id": "0x8644b5a123456789:0x1234567890abcdef",
+      "gps_coordinates": {"latitude": 30.2672, "longitude": -97.7431},
+      "service_area_business": false
+    },
+    {
+      "title": "Acme Plumbing",
+      "address": "500 Main St, Dallas, TX 75201",
+      "phone": "+1 214-555-0199",
+      "website": "https://acme-dallas.example/",
+      "type": "Plumber",
+      "data_id": "0x864e991234567890:0xfedcba0987654321",
+      "gps_coordinates": {"latitude": 32.7767, "longitude": -96.7970},
+      "service_area_business": false
+    }
+  ]
+}
