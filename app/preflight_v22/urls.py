@@ -41,6 +41,7 @@ class UrlUnreachableError(OSError):
 @dataclass(frozen=True)
 class SafeUrl:
     normalized_url: str
+    request_url: str
     scheme: str
     hostname: str
     port: int
@@ -186,6 +187,15 @@ async def resolve_public_url(value: str, *, resolver: Resolver | None = None) ->
 
     return SafeUrl(
         normalized_url=urlunsplit((parsed.scheme, _authority(parsed), "/", "", "")),
+        request_url=urlunsplit(
+            (
+                parsed.scheme,
+                _authority(parsed),
+                parsed.split.path or "/",
+                parsed.split.query,
+                "",
+            )
+        ),
         scheme=parsed.scheme,
         hostname=parsed.hostname,
         port=parsed.port,
