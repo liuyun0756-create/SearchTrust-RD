@@ -9,7 +9,7 @@ from fastapi import Header, HTTPException, Request, status
 from pydantic import SecretStr
 from pydantic import ValidationError
 
-from app.api.v2.models import AnalyzeRequest
+from app.api.v2.models import AnalyzeRequest, PreflightRequest
 from app.core.config import settings
 
 
@@ -42,6 +42,17 @@ async def require_v22_analyze_enabled() -> None:
         )
 
 
+async def require_v22_preflight_enabled() -> None:
+    if not settings.V22_PREFLIGHT_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "V22_PREFLIGHT_NOT_READY",
+                "message": "SearchTrust v2.2 preflight is not available yet.",
+            },
+        )
+
+
 async def get_v22_runtime(request: Request):
     runtime = getattr(request.app.state, "v22_runtime", None)
     if runtime is None:
@@ -61,4 +72,16 @@ async def parse_analyze_request(request: Request) -> AnalyzeRequest:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "VALIDATION_ERROR", "message": "The analysis request is invalid."},
+        ) from exc
+
+
+async def parse_preflight_request(request: Request) -> PreflightRequest:
+    """Validate preflight from raw JSON using the frozen strict contract."""
+
+    try:
+        return PreflightRequest.model_validate_json(await request.body())
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "VALIDATION_ERROR", "message": "The preflight request is invalid."},
         ) from exc

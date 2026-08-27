@@ -22,11 +22,12 @@ from typing import AsyncIterator
 
 os.environ.setdefault("PYTHONUTF8", "1")
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.analyze import router as analyze_router
+from app.api.v2.preflight import router as v2_preflight_router
 from app.api.v2.runtime import close_v22_runtime, create_v22_runtime, router as v2_runtime_router
 from app.core.config import settings
 
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
 
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(analyze_router)
+    app.include_router(v2_preflight_router)
     app.include_router(v2_runtime_router)
 
     # ── Global exception handlers ─────────────────────────────────────────────
@@ -141,9 +143,10 @@ def _register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(422)
     async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={"detail": str(exc), "code": "VALIDATION_ERROR"},
+            content={"detail": detail, "code": "VALIDATION_ERROR"},
         )
 
     @app.exception_handler(500)

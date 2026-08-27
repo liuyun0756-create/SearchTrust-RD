@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import uuid4
 
+from pydantic import SecretStr
+
 from app.api.v2.models import (
     DataGap,
     ModuleAvailability,
@@ -17,6 +19,7 @@ from app.preflight_v22.extractors import SiteSignals, extract_site_signals
 from app.preflight_v22.fetcher import BoundedHomepageFetcher, HomepageFetchError, HomepageSnapshot
 from app.preflight_v22.gbp import GbpLookupResult, LimitedGbpLookup
 from app.preflight_v22.urls import UrlUnreachableError, normalize_site_url, validate_gbp_url
+from app.core.config import settings
 
 
 @dataclass(frozen=True)
@@ -286,3 +289,32 @@ class PreflightService:
         if blocking_codes:
             summary += " Confirmation gaps remain: " + ", ".join(blocking_codes) + "."
         return summary
+
+
+def _secret_value(value: SecretStr | str) -> str:
+    return value.get_secret_value() if isinstance(value, SecretStr) else value
+
+
+def build_preflight_service(redis=None) -> PreflightService:
+    """Build the stateless service; Redis remains an optional optimization."""
+
+    fetcher = BoundedHomepageFetcher(
+        connect_timeout=settings.V22_PREFLIGHT_CONNECT_TIMEOUT_SECONDS,
+        read_timeout=settings.V22_PREFLIGHT_READ_TIMEOUT_SECONDS,
+        total_timeout=settings.V22_PREFLIGHT_TOTAL_TIMEOUT_SECONDS,
+        max_redirects=settings.V22_PREFLIGHT_MAX_REDIRECTS,
+        max_response_bytes=settings.V22_PREFLIGHT_MAX_RESPONSE_BYTES,
+    )
+    gbp_lookup = LimitedGbpLookup()
+    cache = PreflightCache(
+        redis,
+        prefix=settings.V22_REDIS_PREFIX,
+        ttl_seconds=settings.V22_PREFLIGHT_CACHE_TTL_SECONDS,
+    )
+    return PreflightService(
+        fetcher=fetcher,
+        gbp_lookup=gbp_lookup,
+        cache=cache,
+        serpapi_configured=gbp_lookup.configured,
+        pagespeed_configured=bool(_secret_value(settings.PAGESPEED_API_KEY)),
+    )
