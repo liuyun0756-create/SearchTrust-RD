@@ -17,6 +17,7 @@ from app.jobs_v22.errors import (
     InvalidJobTransition,
     JobIdentityConflict,
     JobNotFound,
+    JobNotRetryable,
 )
 from app.jobs_v22.keys import JobRedisKeys
 from app.jobs_v22.models import JobErrorState, JobState, JobStatus
@@ -249,6 +250,49 @@ class DurableJobStore:
                 except WatchError:
                     continue
         assert next_state is not None
+        return next_state
+
+    async def retry_failed(self, job_id: UUID, *, now: datetime) -> JobState:
+        """Atomically reopen a retryable failure with a new physical generation."""
+
+        state_key = self.keys.state(job_id)
+        next_state: JobState | None = None
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(state_key)
+                    current = await self.get_state(job_id, client=pipe)
+                    if current is None:
+                        raise JobNotFound()
+                    if current.status != "failed" or current.error is None or not current.error.retryable:
+                        raise JobNotRetryable()
+                    next_state = current.model_copy(
+                        update={
+                            "status": "queued",
+                            "stage": "queued",
+                            "progress": 0,
+                            "message": "Queued for a manual retry.",
+                            "run_generation": current.run_generation + 1,
+                            "revision": current.revision + 1,
+                            "heartbeat_at": None,
+                            "updated_at": now,
+                            "completed_at": None,
+                            "report": None,
+                            "error": None,
+                        }
+                    )
+                    next_state = JobState.model_validate(next_state.model_dump())
+                    pipe.multi()
+                    pipe.set(state_key, next_state.model_dump_json(), ex=self.state_ttl_seconds)
+                    pipe.expire(self.keys.request(job_id), self.state_ttl_seconds)
+                    pipe.zadd(self.keys.active, {str(job_id): now.timestamp()})
+                    pipe.zadd(self.keys.sync_pending, {str(job_id): next_state.revision})
+                    await pipe.execute()
+                    break
+                except WatchError:
+                    continue
+        assert next_state is not None
+        await self.redis.publish(self.keys.events(job_id), str(next_state.revision))
         return next_state
 
     async def active_count(self) -> int:

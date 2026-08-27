@@ -176,6 +176,44 @@ async def test_state_and_request_receive_configured_ttl(
     assert 604790 <= request_ttl <= 604800
 
 
+@pytest.mark.anyio
+async def test_manual_retry_reuses_logical_job_and_increases_generation(store: DurableJobStore) -> None:
+    await register(store)
+    await store.transition(
+        JOB_ID,
+        status="running",
+        stage="collecting_site",
+        progress=5,
+        message="Running",
+        now=NOW + timedelta(seconds=1),
+        attempt_count=1,
+    )
+    error = JobErrorState(
+        error_code="JOB_RETRY_EXHAUSTED",
+        user_message="Please retry later.",
+        retryable=True,
+        stage="failed",
+        diagnostic_id=UUID("77777777-7777-4777-8777-777777777777"),
+    )
+    await store.transition(
+        JOB_ID,
+        status="failed",
+        stage="failed",
+        progress=5,
+        message=error.user_message,
+        now=NOW + timedelta(seconds=2),
+        error=error,
+    )
+
+    retried = await store.retry_failed(JOB_ID, now=NOW + timedelta(seconds=3))
+
+    assert retried.job_id == JOB_ID
+    assert retried.status == "queued"
+    assert retried.run_generation == 2
+    assert retried.attempt_count == 1
+    assert retried.error is None
+
+
 def test_job_state_fixture_is_valid_json() -> None:
     fixture = Path(__file__).parent / "fixtures" / "v22_job_state.json"
     payload = json.loads(fixture.read_text(encoding="utf-8"))

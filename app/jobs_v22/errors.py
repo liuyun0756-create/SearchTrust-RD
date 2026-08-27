@@ -55,6 +55,11 @@ class JobNotFound(DeterministicJobError):
         super().__init__("JOB_NOT_FOUND", "The requested task was not found.")
 
 
+class JobNotRetryable(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__("JOB_NOT_RETRYABLE", "The task is not eligible for a manual retry.")
+
+
 class InvalidJobTransition(DeterministicJobError):
     def __init__(self, message: str = "The task state transition is not allowed.") -> None:
         super().__init__("INVALID_JOB_TRANSITION", message)
