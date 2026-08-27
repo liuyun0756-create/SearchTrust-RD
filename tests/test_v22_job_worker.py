@@ -131,6 +131,36 @@ async def test_worker_cancellation_never_writes_failed_terminal_state() -> None:
 
 
 @pytest.mark.anyio
+async def test_cancelled_worker_run_can_be_executed_again_to_completion() -> None:
+    executor = RecordingExecutor([asyncio.CancelledError(), prospect_report()])
+    ctx, store = await build_context(executor)
+
+    with pytest.raises(asyncio.CancelledError):
+        await execute_v22_job(ctx, str(JOB_ID), 1)
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    state = await store.require_state(JOB_ID)
+    assert state.status == "succeeded"
+    assert state.attempt_count == 2
+    assert executor.calls == 2
+
+
+@pytest.mark.anyio
+async def test_callback_outage_never_changes_successful_analysis_outcome() -> None:
+    executor = RecordingExecutor([prospect_report()])
+    ctx, store = await build_context(executor)
+
+    class UnavailableSynchronizer:
+        async def sync(self, job_id):
+            raise RuntimeError("callback unavailable")
+
+    ctx["callback_synchronizer"] = UnavailableSynchronizer()
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    assert (await store.require_state(JOB_ID)).status == "succeeded"
+
+
+@pytest.mark.anyio
 async def test_duplicate_worker_execution_does_not_create_second_terminal_result() -> None:
     executor = RecordingExecutor([prospect_report()])
     ctx, store = await build_context(executor)
