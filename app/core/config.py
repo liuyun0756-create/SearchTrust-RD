@@ -99,6 +99,16 @@ class Settings(BaseSettings):
     V22_JOB_HEARTBEAT_SECONDS: Annotated[int, Field(ge=5, le=300)] = 30
     V22_JOB_STALE_SECONDS: Annotated[int, Field(ge=30, le=3600)] = 180
 
+    # ── v2.2 preflight ──────────────────────────────────────────────────────
+    V22_PREFLIGHT_ENABLED: bool = False
+    V22_PREFLIGHT_CACHE_TTL_SECONDS: Annotated[int, Field(ge=60, le=3600)] = 900
+    V22_PREFLIGHT_CONNECT_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
+    V22_PREFLIGHT_READ_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=60)] = 10
+    V22_PREFLIGHT_TOTAL_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=120)] = 15
+    V22_PREFLIGHT_MAX_REDIRECTS: Annotated[int, Field(ge=0, le=10)] = 3
+    V22_PREFLIGHT_MAX_RESPONSE_BYTES: Annotated[int, Field(ge=65536, le=10_000_000)] = 2_000_000
+    PAGESPEED_API_KEY: SecretStr = Field(default="", repr=False)
+
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
     DIFY_RPM_REFILL: Annotated[int, Field(ge=1)] = Field(default=60)
