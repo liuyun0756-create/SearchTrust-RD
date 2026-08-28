@@ -35,6 +35,9 @@ def test_environment_template_is_disabled_and_contains_no_real_secrets() -> None
     assert "V22_PREFLIGHT_ENABLED=false" in template
     assert "V22_PREFLIGHT_CACHE_TTL_SECONDS=900" in template
     assert "V22_PREFLIGHT_MAX_RESPONSE_BYTES=2000000" in template
+    assert "V22_SITE_INVENTORY_CONCURRENCY=10" in template
+    assert "V22_SITE_INVENTORY_STRUCTURAL_BYTES=256000" in template
+    assert "V22_SITE_INVENTORY_DEEP_BYTES=2000000" in template
     assert "PAGESPEED_API_KEY=" in template
     assert "V22_REDIS_URL=redis://localhost:6379/0" in template
     assert "V22_INTERNAL_API_TOKEN=replace-with-a-long-random-value" in template

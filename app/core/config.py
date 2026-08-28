@@ -109,6 +109,24 @@ class Settings(BaseSettings):
     V22_PREFLIGHT_MAX_RESPONSE_BYTES: Annotated[int, Field(ge=65536, le=10_000_000)] = 2_000_000
     PAGESPEED_API_KEY: SecretStr = Field(default="", repr=False)
 
+    # ── v2.2 site inventory ─────────────────────────────────────────────────
+    V22_SITE_INVENTORY_CONCURRENCY: Annotated[int, Field(ge=1, le=20)] = 10
+    V22_SITE_INVENTORY_REQUESTS_PER_SECOND: Annotated[int, Field(ge=1, le=20)] = 5
+    V22_SITE_INVENTORY_CONNECT_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
+    V22_SITE_INVENTORY_READ_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=60)] = 15
+    V22_SITE_INVENTORY_TOTAL_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=120)] = 30
+    V22_SITE_INVENTORY_MAX_REDIRECTS: Annotated[int, Field(ge=0, le=10)] = 5
+    V22_SITE_INVENTORY_STRUCTURAL_BYTES: Annotated[int, Field(ge=65_536, le=1_000_000)] = 256_000
+    V22_SITE_INVENTORY_DEEP_BYTES: Annotated[int, Field(ge=262_144, le=5_000_000)] = 2_000_000
+    V22_SITE_INVENTORY_SITEMAP_BYTES: Annotated[int, Field(ge=65_536, le=5_000_000)] = 2_000_000
+    V22_SITE_INVENTORY_SITEMAP_DECOMPRESSED_BYTES: Annotated[
+        int, Field(ge=262_144, le=50_000_000)
+    ] = 10_000_000
+    V22_SITE_INVENTORY_SITEMAP_INDEX_DEPTH: Annotated[int, Field(ge=0, le=5)] = 2
+    V22_SITE_INVENTORY_SITEMAP_FILES: Annotated[int, Field(ge=1, le=100)] = 20
+    V22_SITE_INVENTORY_BATCH_SIZE: Annotated[int, Field(ge=1, le=100)] = 25
+    V22_SITE_INVENTORY_FIRECRAWL_ENABLED: bool = True
+
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
     DIFY_RPM_REFILL: Annotated[int, Field(ge=1)] = Field(default=60)
