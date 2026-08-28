@@ -1,0 +1,22 @@
+{
+  "search_metadata": {
+    "id": "malformed-search-001",
+    "status": "Success"
+  },
+  "local_results": [
+    {
+      "position": 1,
+      "title": "",
+      "website": "javascript:alert(1)"
+    },
+    {
+      "title": "Valid Fallback Rank",
+      "website": "https://valid.example/"
+    },
+    {
+      "position": -1,
+      "title": "Another Fallback Rank",
+      "website": "https://another.example/"
+    }
+  ]
+}

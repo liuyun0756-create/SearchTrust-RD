@@ -1,0 +1,34 @@
+{
+  "search_metadata": {
+    "id": "maps-search-001",
+    "status": "Success"
+  },
+  "search_parameters": {
+    "engine": "google_maps",
+    "q": "emergency plumber"
+  },
+  "local_results": [
+    {
+      "position": 1,
+      "title": "Acme Plumbing",
+      "website": "https://www.acme.example/services",
+      "place_id": "ChIJ-acme",
+      "data_id": "0x123:0x456",
+      "address": "100 Main St, Austin, TX 78701",
+      "phone": "+1 512-555-0100",
+      "type": "Plumber",
+      "rating": 4.8,
+      "reviews": 120
+    },
+    {
+      "position": 2,
+      "title": "Bravo Rooter",
+      "website": "https://bravo.example/",
+      "place_id": "ChIJ-bravo",
+      "address": "200 Congress Ave, Austin, TX 78701",
+      "types": ["Plumber", "Drainage service"],
+      "rating": 4.6,
+      "reviews": 80
+    }
+  ]
+}

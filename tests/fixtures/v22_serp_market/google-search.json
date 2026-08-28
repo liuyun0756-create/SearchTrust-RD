@@ -1,0 +1,42 @@
+{
+  "search_metadata": {
+    "id": "google-search-001",
+    "status": "Success"
+  },
+  "search_parameters": {
+    "engine": "google",
+    "q": "emergency plumber"
+  },
+  "local_results": [
+    {
+      "position": 1,
+      "title": "Acme Plumbing",
+      "website": "https://www.acme.example/services",
+      "place_id": "ChIJ-acme",
+      "rating": 4.8,
+      "reviews": 120
+    },
+    {
+      "position": 2,
+      "title": "Charlie Plumbing",
+      "website": "https://charlie.example/",
+      "place_id": "ChIJ-charlie",
+      "rating": 4.7,
+      "reviews": 95
+    }
+  ],
+  "organic_results": [
+    {
+      "position": 1,
+      "title": "Acme Plumbing | 24 Hour Service",
+      "link": "https://www.acme.example/emergency",
+      "snippet": "Emergency plumbing service in Austin."
+    },
+    {
+      "position": 2,
+      "title": "Best Emergency Plumbers in Austin",
+      "link": "https://directory.example/austin-plumbers",
+      "snippet": "A comparison of local providers."
+    }
+  ]
+}
