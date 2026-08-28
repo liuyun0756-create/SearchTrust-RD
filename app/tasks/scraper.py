@@ -43,6 +43,15 @@ from urllib.parse import parse_qs, unquote, urljoin, urlparse
 import httpx
 
 from app.core.config import settings
+from app.integrations.serpapi import (
+    SerpApiKeyState,
+    SerpApiKeysUnavailable,
+    configured_serpapi_keys,
+    execute_serpapi_get,
+    serpapi_key_failure_kind,
+    serpapi_key_fingerprint,
+    serpapi_payload_error,
+)
 from app.models.request import _is_ssrf_safe
 
 logger = logging.getLogger(__name__)
@@ -2542,20 +2551,7 @@ def _is_confident_exact_gbp_match(
     )["accepted"])
 
 
-def _serpapi_payload_error(data: dict[str, Any]) -> str | None:
-    error = data.get("error")
-    if error:
-        return str(error)
-    metadata = data.get("search_metadata")
-    if isinstance(metadata, dict):
-        status = str(metadata.get("status") or "").strip().lower()
-        if status and status not in {"success", "cached"}:
-            return f"SerpAPI search status was {metadata.get('status')}."
-    return None
-
-
-class SerpApiKeysUnavailable(RuntimeError):
-    """Raised when every configured SerpAPI key is temporarily unavailable."""
+_serpapi_payload_error = serpapi_payload_error
 
 
 _SERPAPI_ACTIVE_KEY_FINGERPRINT = ""
@@ -2564,36 +2560,19 @@ _SERPAPI_KEY_BLOCKED_UNTIL: dict[str, float] = {}
 
 def _configured_serpapi_keys() -> list[str]:
     """Return configured keys in priority order without exposing them."""
-    keys = [
-        str(settings.SERPAPI_KEY or "").strip(),
-        str(settings.SERPAPI_KEY_SECONDARY or "").strip(),
-        str(settings.SERPAPI_KEY_TERTIARY or "").strip(),
-    ]
-    return list(dict.fromkeys(key for key in keys if key))
+    return configured_serpapi_keys(
+        settings.SERPAPI_KEY,
+        settings.SERPAPI_KEY_SECONDARY,
+        settings.SERPAPI_KEY_TERTIARY,
+    )
 
 
 def _serpapi_key_fingerprint(key: str) -> str:
-    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+    return serpapi_key_fingerprint(key)
 
 
 def _serpapi_key_failure_kind(status_code: int, message: str | None) -> str | None:
-    normalized = _normalise_match_text(message)
-    if status_code in {401, 403} or any(
-        marker in normalized
-        for marker in (
-            "invalid api key",
-            "no valid api key",
-            "account has been deleted",
-            "account is disabled",
-            "doesn t have permission",
-        )
-    ):
-        return "invalid_or_forbidden"
-    if "run out of searches" in normalized or "no searches remaining" in normalized:
-        return "monthly_quota_exhausted"
-    if status_code == 429:
-        return "rate_limited"
-    return None
+    return serpapi_key_failure_kind(status_code, message)
 
 
 async def _serpapi_get(
@@ -2609,72 +2588,22 @@ async def _serpapi_get(
     """
     global _SERPAPI_ACTIVE_KEY_FINGERPRINT
 
-    keys = _configured_serpapi_keys()
-    if not keys:
-        raise SerpApiKeysUnavailable("No SerpAPI key is configured.")
-
-    now = time.monotonic()
-    ordered = sorted(
-        enumerate(keys),
-        key=lambda item: (
-            _serpapi_key_fingerprint(item[1]) != _SERPAPI_ACTIVE_KEY_FINGERPRINT,
-            item[0],
-        ),
+    state = SerpApiKeyState(
+        active_fingerprint=_SERPAPI_ACTIVE_KEY_FINGERPRINT,
+        blocked_until=_SERPAPI_KEY_BLOCKED_UNTIL,
     )
-    available = [
-        item
-        for item in ordered
-        if _SERPAPI_KEY_BLOCKED_UNTIL.get(_serpapi_key_fingerprint(item[1]), 0) <= now
-    ]
-    if not available:
-        raise SerpApiKeysUnavailable(
-            "All configured SerpAPI keys are temporarily unavailable."
+    try:
+        result = await execute_serpapi_get(
+            client,
+            params,
+            keys=_configured_serpapi_keys(),
+            base_url=settings.SERPAPI_BASE_URL,
+            state=state,
+            logger=logger,
         )
-
-    last_kind = "unavailable"
-    for slot, key in available:
-        request_params = {**params, "api_key": key}
-        try:
-            response = await client.get(settings.SERPAPI_BASE_URL, params=request_params)
-        except Exception as exc:  # noqa: BLE001
-            raise RuntimeError("SerpAPI transport request failed.") from exc
-
-        try:
-            payload = response.json()
-        except Exception as exc:  # noqa: BLE001
-            raise RuntimeError("SerpAPI returned an invalid JSON response.") from exc
-        data = payload if isinstance(payload, dict) else {}
-        status_code = int(getattr(response, "status_code", 200) or 200)
-        failure_kind = _serpapi_key_failure_kind(
-            status_code,
-            _serpapi_payload_error(data),
-        )
-        if failure_kind:
-            last_kind = failure_kind
-            cooldown = 60.0 if failure_kind == "rate_limited" else 300.0
-            fingerprint = _serpapi_key_fingerprint(key)
-            _SERPAPI_KEY_BLOCKED_UNTIL[fingerprint] = time.monotonic() + cooldown
-            if _SERPAPI_ACTIVE_KEY_FINGERPRINT == fingerprint:
-                _SERPAPI_ACTIVE_KEY_FINGERPRINT = ""
-            logger.warning(
-                "[SerpAPI] key slot %d unavailable reason=%s; trying next configured key",
-                slot + 1,
-                failure_kind,
-            )
-            continue
-
-        if status_code >= 400:
-            raise RuntimeError(f"SerpAPI request failed with HTTP {status_code}.")
-
-        fingerprint = _serpapi_key_fingerprint(key)
-        if _SERPAPI_ACTIVE_KEY_FINGERPRINT != fingerprint:
-            logger.info("[SerpAPI] using configured key slot %d", slot + 1)
-        _SERPAPI_ACTIVE_KEY_FINGERPRINT = fingerprint
-        return data
-
-    raise SerpApiKeysUnavailable(
-        f"All configured SerpAPI keys are unavailable ({last_kind})."
-    )
+        return result.payload
+    finally:
+        _SERPAPI_ACTIVE_KEY_FINGERPRINT = state.active_fingerprint
 
 
 def _is_serpapi_no_results_error(message: str | None) -> bool:
