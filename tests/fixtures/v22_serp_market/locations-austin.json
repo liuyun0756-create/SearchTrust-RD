@@ -1,0 +1,26 @@
+[
+  {
+    "id": "dma-austin",
+    "name": "Austin, TX",
+    "canonical_name": "Austin, TX,Texas,United States",
+    "country_code": "US",
+    "target_type": "DMA Region",
+    "gps": [-97.7430608, 30.267153]
+  },
+  {
+    "id": "city-austin",
+    "name": "Austin",
+    "canonical_name": "Austin,Texas,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [-97.7430608, 30.267153]
+  },
+  {
+    "id": "city-austin-ca",
+    "name": "Austin",
+    "canonical_name": "Austin,Ontario,Canada",
+    "country_code": "CA",
+    "target_type": "City",
+    "gps": [-80.0, 43.0]
+  }
+]

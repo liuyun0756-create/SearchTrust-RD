@@ -1,0 +1,18 @@
+[
+  {
+    "id": "springfield-one",
+    "name": "Springfield",
+    "canonical_name": "Springfield,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [-89.6501, 39.7817]
+  },
+  {
+    "id": "springfield-two",
+    "name": "Springfield",
+    "canonical_name": "Springfield,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [-93.2923, 37.2153]
+  }
+]
