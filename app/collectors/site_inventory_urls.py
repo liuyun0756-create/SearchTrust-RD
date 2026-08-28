@@ -221,6 +221,38 @@ def canonicalize_inventory_url(
     )
 
 
+def canonicalize_site_resource_url(
+    value: str,
+    *,
+    scope: SiteScope,
+    base_url: str | None = None,
+) -> str | None:
+    """Normalize an in-scope support resource such as robots or sitemap XML."""
+
+    raw = str(value).strip()
+    if not raw:
+        return None
+    try:
+        parsed = urlsplit(urljoin(base_url or scope.root_url, raw))
+    except ValueError:
+        return None
+    if parsed.scheme.casefold() not in {"http", "https"}:
+        return None
+    if parsed.username is not None or parsed.password is not None:
+        return None
+    hostname = (parsed.hostname or "").strip().rstrip(".")
+    if not scope.contains_host(hostname):
+        return None
+    try:
+        port = parsed.port
+    except ValueError:
+        return None
+    if port is not None and port not in {80, 443}:
+        return None
+    path = _normalized_path(parsed.path)
+    return urlunsplit((scope.scheme, scope.canonical_host, path, parsed.query, ""))
+
+
 def stable_url_digest(url: str) -> str:
     return f"sha256:{hashlib.sha256(url.encode('utf-8')).hexdigest()}"
 
