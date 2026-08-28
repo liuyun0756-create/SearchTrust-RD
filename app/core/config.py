@@ -45,6 +45,7 @@ class Settings(BaseSettings):
         description="Tertiary SerpAPI key used after the primary and secondary keys are unavailable",
     )
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
+    SERPAPI_LOCATIONS_URL: str = "https://serpapi.com/locations.json"
 
     # ── Address AI fallback ─────────────────────────────────────────────────
     ADDRESS_AI_ENABLED: bool = Field(
@@ -126,6 +127,14 @@ class Settings(BaseSettings):
     V22_SITE_INVENTORY_SITEMAP_FILES: Annotated[int, Field(ge=1, le=100)] = 20
     V22_SITE_INVENTORY_BATCH_SIZE: Annotated[int, Field(ge=1, le=100)] = 25
     V22_SITE_INVENTORY_FIRECRAWL_ENABLED: bool = True
+
+    # ── v2.2 SERP market ───────────────────────────────────────────────────
+    V22_SERP_MARKET_CONNECT_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
+    V22_SERP_MARKET_READ_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=60)] = 30
+    V22_SERP_MARKET_TOTAL_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=120)] = 45
+    V22_SERP_MARKET_MAX_RESPONSE_BYTES: Annotated[
+        int, Field(ge=65_536, le=5_000_000)
+    ] = 2_000_000
 
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
