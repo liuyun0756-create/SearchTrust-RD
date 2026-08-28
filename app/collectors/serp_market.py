@@ -6,6 +6,7 @@ from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import math
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -33,6 +34,8 @@ class SerpProviderResponse:
     provider_attempts: int = 1
     logical_call_used: bool = True
     checkpoint_hit: bool = False
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 class SerpSearchProvider(Protocol):
@@ -78,6 +81,72 @@ class SerpMarketCollectionError(RuntimeError):
 def _bounded_text(value: Any, limit: int) -> str | None:
     text = str(value or "").strip()
     return text if text and len(text) <= limit else None
+
+
+def sanitize_serp_payload(payload: dict[str, Any], engine: str) -> dict[str, Any]:
+    """Keep only bounded fields needed by deterministic market normalization."""
+    sanitized: dict[str, Any] = {}
+    metadata = payload.get("search_metadata")
+    if isinstance(metadata, dict):
+        sanitized["search_metadata"] = {
+            key: value
+            for key in ("id", "status")
+            if (value := _bounded_text(metadata.get(key), 200)) is not None
+        }
+    if payload.get("error"):
+        sanitized["error"] = _bounded_text(payload.get("error"), 500) or "provider_error"
+
+    sections = ["local_results"]
+    if engine == "google":
+        sections.append("organic_results")
+    string_limits = {
+        "title": 240,
+        "name": 240,
+        "website": 2083,
+        "link": 2083,
+        "place_id": 500,
+        "data_id": 500,
+        "cid": 200,
+        "address": 500,
+        "phone": 100,
+        "type": 240,
+        "snippet": 2_000,
+    }
+    for section in sections:
+        raw = payload.get(section)
+        if raw is None:
+            continue
+        if not isinstance(raw, list):
+            sanitized[section] = "invalid"
+            continue
+        items: list[Any] = []
+        for item in raw[:SERP_RESULT_LIMIT_PER_TYPE]:
+            if not isinstance(item, dict):
+                items.append(None)
+                continue
+            clean: dict[str, Any] = {}
+            for key, limit in string_limits.items():
+                if key in item and (value := _bounded_text(item.get(key), limit)) is not None:
+                    clean[key] = value
+            for key in ("position", "rating", "reviews", "reviews_count"):
+                value = item.get(key)
+                if isinstance(value, int) and not isinstance(value, bool) and abs(value) <= 10**12:
+                    clean[key] = value
+                elif isinstance(value, float) and math.isfinite(value) and abs(value) <= 10**12:
+                    clean[key] = value
+                elif isinstance(value, str) and len(value) <= 30:
+                    clean[key] = value
+            for key in ("types", "categories"):
+                values = item.get(key)
+                if isinstance(values, list):
+                    clean[key] = [
+                        text
+                        for raw_value in values[:20]
+                        if (text := _bounded_text(raw_value, 240)) is not None
+                    ]
+            items.append(clean)
+        sanitized[section] = items
+    return sanitized
 
 
 def _safe_url(value: Any) -> tuple[str | None, str | None]:
@@ -336,7 +405,8 @@ class SerpMarketCollector:
                         provider_attempts=0,
                         logical_call_used=False,
                     )
-                payload_error, is_empty = _payload_error(response.payload)
+                safe_payload = sanitize_serp_payload(response.payload, planned_call.engine)
+                payload_error, is_empty = _payload_error(safe_payload)
                 if payload_error and not is_empty:
                     raise SerpMarketProviderError(
                         "SERP_PROVIDER_RESPONSE_ERROR",
@@ -345,9 +415,10 @@ class SerpMarketCollector:
                         logical_call_used=response.logical_call_used,
                         checkpoint_hit=response.checkpoint_hit,
                     )
-                completed_at = self.clock()
-                response_checksum = request_digest(response.payload)
-                normalized_payload = {} if is_empty else response.payload
+                completed_at = response.completed_at or self.clock()
+                call_started_at = response.started_at or call_started_at
+                response_checksum = request_digest(safe_payload)
+                normalized_payload = {} if is_empty else safe_payload
                 normalized, limitations = _normalize_results(
                     call=planned_call,
                     payload=normalized_payload,
@@ -372,7 +443,7 @@ class SerpMarketCollector:
                     status="succeeded",
                     started_at=call_started_at,
                     completed_at=completed_at,
-                    provider_search_id=_provider_search_id(response.payload),
+                    provider_search_id=_provider_search_id(safe_payload),
                     response_checksum=response_checksum,
                     logical_call_used=response.logical_call_used,
                     provider_attempts=response.provider_attempts,

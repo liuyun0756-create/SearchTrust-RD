@@ -24,6 +24,22 @@ class SerpApiKeysUnavailable(RuntimeError):
     """Raised when no configured SerpAPI key can execute the request."""
 
 
+class SerpApiTransportError(RuntimeError):
+    """Raised for a secret-safe network failure."""
+
+
+class SerpApiInvalidResponse(RuntimeError):
+    """Raised when SerpAPI does not return JSON."""
+
+
+class SerpApiHttpError(RuntimeError):
+    """Raised for non-key-related HTTP failures."""
+
+    def __init__(self, status_code: int) -> None:
+        super().__init__(f"SerpAPI request failed with HTTP {status_code}.")
+        self.status_code = status_code
+
+
 @dataclass
 class SerpApiKeyState:
     active_fingerprint: str = ""
@@ -146,12 +162,12 @@ async def execute_serpapi_get(
         try:
             response = await client.get(base_url, params={**params, "api_key": key})
         except Exception as exc:  # noqa: BLE001
-            raise RuntimeError("SerpAPI transport request failed.") from exc
+            raise SerpApiTransportError("SerpAPI transport request failed.") from exc
 
         try:
             payload = response.json()
         except Exception as exc:  # noqa: BLE001
-            raise RuntimeError("SerpAPI returned an invalid JSON response.") from exc
+            raise SerpApiInvalidResponse("SerpAPI returned an invalid JSON response.") from exc
         data = payload if isinstance(payload, dict) else {}
         status_code = int(getattr(response, "status_code", 200) or 200)
         failure_kind = serpapi_key_failure_kind(
@@ -172,7 +188,7 @@ async def execute_serpapi_get(
             continue
 
         if status_code >= 400:
-            raise RuntimeError(f"SerpAPI request failed with HTTP {status_code}.")
+            raise SerpApiHttpError(status_code)
 
         if key_state.active_fingerprint != fingerprint:
             safe_logger.info("[SerpAPI] using configured key slot %d", slot + 1)
@@ -189,4 +205,3 @@ async def execute_serpapi_get(
     raise SerpApiKeysUnavailable(
         f"All configured SerpAPI keys are unavailable ({last_kind})."
     )
-
