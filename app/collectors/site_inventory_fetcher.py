@@ -208,7 +208,7 @@ class BoundedSiteFetcher:
                         )
 
                     body = bytearray()
-                    async for chunk in response.aiter_bytes():
+                    async for chunk in response.aiter_bytes(chunk_size=65_536):
                         body.extend(chunk)
                         if len(body) > max_bytes:
                             raise SiteFetchError(

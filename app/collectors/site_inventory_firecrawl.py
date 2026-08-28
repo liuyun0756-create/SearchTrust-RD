@@ -59,7 +59,7 @@ class FirecrawlMapAdapter:
                 if content_length.isdigit() and int(content_length) > self.max_response_bytes:
                     raise ValueError("Firecrawl response exceeded the size limit")
                 body = bytearray()
-                async for chunk in response.aiter_bytes():
+                async for chunk in response.aiter_bytes(chunk_size=65_536):
                     body.extend(chunk)
                     if len(body) > self.max_response_bytes:
                         raise ValueError("Firecrawl response exceeded the size limit")
