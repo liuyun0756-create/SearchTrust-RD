@@ -36,6 +36,32 @@ DiscoverySource = Literal[
     "internal_link",
     "firecrawl_map",
 ]
+SITE_PAGE_TYPE_ORDER: tuple[SitePageType, ...] = (
+    "home",
+    "service_index",
+    "service_detail",
+    "service_area",
+    "location",
+    "about",
+    "contact",
+    "team",
+    "review_testimonial",
+    "case_study_portfolio",
+    "faq",
+    "blog_index",
+    "blog_post",
+    "product_category",
+    "product_detail",
+    "legal",
+    "other",
+)
+DISCOVERY_SOURCE_ORDER: tuple[DiscoverySource, ...] = (
+    "seed",
+    "robots_sitemap",
+    "default_sitemap",
+    "internal_link",
+    "firecrawl_map",
+)
 PageCheckStatus = Literal["checked", "failed", "robots_disallowed"]
 InventoryErrorCode = Literal[
     "unsafe_target",
