@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from collections import Counter, deque
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -24,13 +25,17 @@ from app.collectors.site_inventory_html import HtmlStructure, extract_html_struc
 from app.collectors.site_inventory_models import (
     DISCOVERY_SOURCE_ORDER,
     SITE_PAGE_TYPE_ORDER,
+    DeepPageAttempt,
+    DeepPageSnapshot,
     DiscoverySource,
+    GscPagePriority,
     InventoryCount,
     InventoryErrorCode,
     InventoryPageRecord,
+    SelectedPageRecord,
     SiteInventorySnapshot,
 )
-from app.collectors.site_inventory_selection import classify_page
+from app.collectors.site_inventory_selection import RankedPage, classify_page, select_key_pages
 from app.collectors.site_inventory_urls import SiteScope, canonicalize_inventory_url
 from app.preflight_v22.urls import UrlSafetyError, UrlUnreachableError
 
@@ -63,6 +68,7 @@ class _CheckedCandidate:
     candidate: _Candidate
     record: InventoryPageRecord
     structure: HtmlStructure | None
+    response: SiteFetchResponse | None
 
 
 def _utc_now() -> datetime:
@@ -95,6 +101,7 @@ class SiteInventoryCollector:
         sitemap_max_files: int,
         sitemap_max_depth: int,
         batch_size: int,
+        deep_max_bytes: int = 2_000_000,
         clock: Clock = _utc_now,
     ) -> None:
         self.fetcher = fetcher
@@ -105,6 +112,7 @@ class SiteInventoryCollector:
         self.sitemap_max_files = sitemap_max_files
         self.sitemap_max_depth = sitemap_max_depth
         self.batch_size = batch_size
+        self.deep_max_bytes = deep_max_bytes
         self.clock = clock
 
     async def collect(
@@ -113,6 +121,9 @@ class SiteInventoryCollector:
         site_url: str,
         discovery_limit: int,
         deep_analysis_limit: int,
+        primary_service: str = "",
+        target_market: str = "",
+        gsc_priorities: list[GscPagePriority] | None = None,
     ) -> SiteInventorySnapshot:
         discovery_limit = min(max(discovery_limit, 1), 500)
         deep_analysis_limit = min(max(deep_analysis_limit, 1), 50)
@@ -152,6 +163,7 @@ class SiteInventoryCollector:
         candidates: dict[str, _Candidate] = {}
         queue: deque[str] = deque()
         records: dict[str, InventoryPageRecord] = {}
+        structural_responses: dict[str, SiteFetchResponse] = {}
         truncated = False
 
         def add_candidate(
@@ -239,6 +251,7 @@ class SiteInventoryCollector:
             candidates=candidates,
             queue=queue,
             records=records,
+            structural_responses=structural_responses,
             add_candidate=add_candidate,
         )
 
@@ -260,6 +273,7 @@ class SiteInventoryCollector:
                     candidates=candidates,
                     queue=queue,
                     records=records,
+                    structural_responses=structural_responses,
                     add_candidate=add_candidate,
                 )
 
@@ -275,6 +289,20 @@ class SiteInventoryCollector:
 
         pages = list(records.values())[:discovery_limit]
         checked_pages = [page for page in pages if page.check_status == "checked"]
+        ranked_pages = select_key_pages(
+            checked_pages,
+            limit=len(checked_pages),
+            primary_service=primary_service,
+            target_market=target_market,
+            gsc_priorities=gsc_priorities or [],
+        )
+        selected_pages, deep_attempts, deep_limitations = await self._collect_deep_pages(
+            ranked_pages,
+            scope=scope,
+            structural_responses=structural_responses,
+            limit=deep_analysis_limit,
+        )
+        limitations.extend(deep_limitations)
         page_types = Counter(page.page_type for page in checked_pages)
         sources: Counter[str] = Counter()
         for page in pages:
@@ -290,10 +318,10 @@ class SiteInventoryCollector:
             deep_analysis_limit=deep_analysis_limit,
             discovered_url_count=len(pages),
             structurally_checked_count=len(checked_pages),
-            deep_analyzed_count=0,
+            deep_analyzed_count=sum(page.deep_analyzed for page in selected_pages),
             pages=pages,
-            selected_pages=[],
-            deep_attempts=[],
+            selected_pages=selected_pages,
+            deep_attempts=deep_attempts,
             page_type_counts=[
                 InventoryCount(label=label, count=count)
                 for label in SITE_PAGE_TYPE_ORDER
@@ -315,6 +343,7 @@ class SiteInventoryCollector:
         candidates: dict[str, _Candidate],
         queue: deque[str],
         records: dict[str, InventoryPageRecord],
+        structural_responses: dict[str, SiteFetchResponse],
         add_candidate: Callable[..., bool],
     ) -> None:
         while queue:
@@ -368,6 +397,8 @@ class SiteInventoryCollector:
                         update={"discovery_sources": sources, "crawl_depth": depth}
                     )
                 records[chosen_url] = record
+                if checked.response is not None:
+                    structural_responses[chosen_url] = checked.response
 
                 if checked.structure is not None and "nofollow" not in checked.structure.meta_robots:
                     for link in checked.structure.internal_links:
@@ -420,7 +451,7 @@ class SiteInventoryCollector:
                 classification_reasons=list(classification.reasons),
                 error_code=None,
             )
-            return _CheckedCandidate(candidate, record, structure)
+            return _CheckedCandidate(candidate, record, structure, response)
         except (SiteFetchError, UrlSafetyError, UrlUnreachableError) as exc:
             record = InventoryPageRecord(
                 url=candidate.url,
@@ -435,4 +466,110 @@ class SiteInventoryCollector:
                 classification_reasons=["check_failed"],
                 error_code=_error_code(exc),
             )
-            return _CheckedCandidate(candidate, record, None)
+            return _CheckedCandidate(candidate, record, None, None)
+
+    async def _collect_deep_pages(
+        self,
+        ranked_pages: list[RankedPage],
+        *,
+        scope: SiteScope,
+        structural_responses: dict[str, SiteFetchResponse],
+        limit: int,
+    ) -> tuple[list[SelectedPageRecord], list[DeepPageAttempt], list[str]]:
+        outcomes: list[
+            tuple[int, RankedPage, DeepPageSnapshot | None, InventoryErrorCode | None]
+        ] = []
+        success_count = 0
+        for rank, ranked in enumerate(ranked_pages, start=1):
+            if success_count >= limit:
+                break
+            try:
+                snapshot = await self._deep_snapshot(
+                    ranked,
+                    scope=scope,
+                    cached=structural_responses.get(str(ranked.page.url)),
+                )
+            except (SiteFetchError, UrlSafetyError, UrlUnreachableError) as exc:
+                outcomes.append((rank, ranked, None, _error_code(exc)))
+            else:
+                outcomes.append((rank, ranked, snapshot, None))
+                success_count += 1
+
+        successful = [outcome for outcome in outcomes if outcome[2] is not None]
+        failed = [outcome for outcome in outcomes if outcome[2] is None]
+        failed_fill = failed[: max(0, limit - len(successful))]
+        final_outcomes = sorted([*successful, *failed_fill], key=lambda item: item[0])
+        final_urls = {str(outcome[1].page.url) for outcome in final_outcomes}
+
+        selected = [
+            SelectedPageRecord(
+                url=ranked.page.url,
+                page_type=ranked.page.page_type,
+                crawl_depth=ranked.page.crawl_depth,
+                selection_score=ranked.score,
+                selection_reasons=list(ranked.reasons),
+                deep_analyzed=snapshot is not None,
+                deep_snapshot=snapshot,
+            )
+            for _, ranked, snapshot, _ in final_outcomes
+        ]
+        attempts = [
+            DeepPageAttempt(
+                url=ranked.page.url,
+                rank=rank,
+                succeeded=snapshot is not None,
+                selected_final=str(ranked.page.url) in final_urls,
+                error_code=error_code,
+            )
+            for rank, ranked, snapshot, error_code in outcomes
+        ]
+        limitations: list[str] = []
+        if len(successful) < limit:
+            limitations.append("candidate_exhausted")
+        if failed:
+            limitations.append("deep_page_failures_present")
+        return selected, attempts, limitations
+
+    async def _deep_snapshot(
+        self,
+        ranked: RankedPage,
+        *,
+        scope: SiteScope,
+        cached: SiteFetchResponse | None,
+    ) -> DeepPageSnapshot:
+        response = cached
+        if (
+            response is None
+            or response.response_bytes >= self.structural_max_bytes
+            or response.status_code >= 400
+        ):
+            response = await self.fetcher.fetch(
+                str(ranked.page.url),
+                scope=scope,
+                max_bytes=self.deep_max_bytes,
+                accepted_media_types=_HTML_TYPES,
+            )
+        if response.status_code >= 400:
+            raise SiteFetchError("http_error", "The deep page returned an HTTP error.")
+        html = response.decode()
+        structure = extract_html_structure(
+            html,
+            page_url=response.final_url,
+            scope=scope,
+            max_text_chars=2_000_000,
+        )
+        return DeepPageSnapshot(
+            url=ranked.page.url,
+            final_url=response.final_url,
+            page_type=ranked.page.page_type,
+            crawl_depth=ranked.page.crawl_depth,
+            collected_at=self.clock(),
+            status_code=response.status_code,
+            content_type=response.content_type[:200] or "application/octet-stream",
+            response_bytes=response.response_bytes,
+            content_checksum=f"sha256:{hashlib.sha256(response.body).hexdigest()}",
+            html=html,
+            text=structure.visible_text,
+            title=structure.title,
+            h1=structure.h1,
+        )

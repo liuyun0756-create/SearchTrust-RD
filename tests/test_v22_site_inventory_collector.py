@@ -26,7 +26,10 @@ def html_response(url: str, html: str, *, status: int = 200) -> SiteFetchRespons
 
 
 class FakeFetcher:
-    def __init__(self, pages: dict[str, SiteFetchResponse | Exception]) -> None:
+    def __init__(
+        self,
+        pages: dict[str, SiteFetchResponse | Exception | list[SiteFetchResponse | Exception]],
+    ) -> None:
         self.pages = pages
         self.calls: list[str] = []
         self.crawl_delays: list[float] = []
@@ -42,6 +45,8 @@ class FakeFetcher:
                 content_type="text/plain",
                 body=b"missing",
             )
+        if isinstance(value, list):
+            value = value.pop(0)
         if isinstance(value, Exception):
             raise value
         return value
@@ -233,3 +238,53 @@ async def test_root_failure_is_deterministic() -> None:
         )
 
     assert exc_info.value.code == "root_unreachable"
+
+
+@pytest.mark.anyio
+async def test_deep_failure_uses_next_ranked_page_as_replacement() -> None:
+    root_html = '<h1>Home</h1><a href="/services/plumbing">Service</a><a href="/about">About</a>'
+    pages = {
+        "https://example.com/": [
+            html_response("https://example.com/", root_html),
+            html_response("https://example.com/", root_html),
+        ],
+        "https://example.com/services/plumbing": [
+            html_response("https://example.com/services/plumbing", "<h1>Plumbing</h1>"),
+            SiteFetchError("page_timeout", "deep timeout"),
+        ],
+        "https://example.com/about": [
+            html_response("https://example.com/about", "<h1>About</h1>"),
+            html_response("https://example.com/about", "<h1>About</h1>"),
+        ],
+    }
+    fetcher = FakeFetcher(pages)
+    deep_collector = SiteInventoryCollector(
+        fetcher=fetcher,
+        firecrawl=FakeFirecrawl(),
+        structural_max_bytes=1,
+        deep_max_bytes=2_000_000,
+        sitemap_max_bytes=100_000,
+        sitemap_decompressed_max_bytes=500_000,
+        sitemap_max_files=5,
+        sitemap_max_depth=2,
+        batch_size=2,
+        clock=lambda: NOW,
+    )
+
+    result = await deep_collector.collect(
+        site_url="https://example.com/",
+        discovery_limit=3,
+        deep_analysis_limit=2,
+        primary_service="plumbing",
+        target_market="Austin",
+    )
+
+    assert result.deep_analyzed_count == 2
+    assert [str(page.url) for page in result.selected_pages] == [
+        "https://example.com/",
+        "https://example.com/about",
+    ]
+    assert len(result.deep_attempts) == 3
+    assert result.deep_attempts[1].error_code == "page_timeout"
+    assert result.deep_attempts[1].selected_final is False
+    assert "deep_page_failures_present" in result.limitations

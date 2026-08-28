@@ -137,7 +137,7 @@ class DeepPageSnapshot(StrictModel):
     content_type: str = Field(min_length=1, max_length=200)
     response_bytes: int = Field(ge=0, le=5_000_000)
     content_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
-    html: str = Field(max_length=2_000_000)
+    html: str = Field(max_length=5_000_000)
     text: str = Field(max_length=2_000_000)
     title: str | None = Field(default=None, max_length=500)
     h1: str | None = Field(default=None, max_length=500)
