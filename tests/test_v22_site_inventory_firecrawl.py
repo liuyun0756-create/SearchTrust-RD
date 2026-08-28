@@ -75,3 +75,24 @@ async def test_firecrawl_returns_safe_limitation_on_bad_response() -> None:
 
     assert result.urls == ()
     assert result.limitation == "firecrawl_unavailable"
+
+
+@pytest.mark.anyio
+async def test_firecrawl_rejects_oversized_provider_response() -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(200, content=b"x" * 101)
+        )
+    ) as client:
+        adapter = FirecrawlMapAdapter(
+            api_key="secret",
+            api_url="https://api.firecrawl.dev/v1",
+            enabled=True,
+            timeout_seconds=5,
+            http_client=client,
+            max_response_bytes=100,
+        )
+        result = await adapter.map("https://example.com/", limit=20)
+
+    assert result.urls == ()
+    assert result.limitation == "firecrawl_unavailable"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -23,12 +24,14 @@ class FirecrawlMapAdapter:
         enabled: bool,
         timeout_seconds: float,
         http_client: httpx.AsyncClient | None = None,
+        max_response_bytes: int = 1_000_000,
     ) -> None:
         self.api_key = api_key
         self.api_url = api_url.rstrip("/")
         self.enabled = enabled
         self.timeout_seconds = timeout_seconds
         self.http_client = http_client
+        self.max_response_bytes = max_response_bytes
 
     async def map(self, root_url: str, *, limit: int) -> FirecrawlMapResult:
         if not self.enabled or not self.api_key or limit <= 0:
@@ -41,7 +44,8 @@ class FirecrawlMapAdapter:
             trust_env=False,
         )
         try:
-            response = await client.post(
+            async with client.stream(
+                "POST",
                 f"{self.api_url}/map",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
@@ -49,9 +53,17 @@ class FirecrawlMapAdapter:
                 },
                 json={"url": root_url, "limit": min(limit, 500)},
                 timeout=self.timeout_seconds,
-            )
-            response.raise_for_status()
-            payload: Any = response.json()
+            ) as response:
+                response.raise_for_status()
+                content_length = response.headers.get("content-length", "")
+                if content_length.isdigit() and int(content_length) > self.max_response_bytes:
+                    raise ValueError("Firecrawl response exceeded the size limit")
+                body = bytearray()
+                async for chunk in response.aiter_bytes():
+                    body.extend(chunk)
+                    if len(body) > self.max_response_bytes:
+                        raise ValueError("Firecrawl response exceeded the size limit")
+            payload: Any = json.loads(body)
             if not isinstance(payload, dict) or payload.get("success") is not True:
                 raise ValueError("Firecrawl returned an invalid result")
             raw_links = payload.get("links")
@@ -65,7 +77,7 @@ class FirecrawlMapAdapter:
                 if len(urls) >= min(limit, 500):
                     break
             return FirecrawlMapResult(tuple(urls), None)
-        except (httpx.HTTPError, TypeError, ValueError):
+        except (httpx.HTTPError, json.JSONDecodeError, TypeError, ValueError):
             return FirecrawlMapResult((), "firecrawl_unavailable")
         finally:
             if owns_client:
