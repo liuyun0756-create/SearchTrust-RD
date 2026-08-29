@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
-from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor
+from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.report_v22.models import StrictModel
 
@@ -92,6 +92,32 @@ class CandidateAuditRecord(StrictModel):
                 raise ValueError("eligible audit records require a score and candidate")
         elif self.candidate is not None:
             raise ValueError("ineligible audit records cannot expose a candidate")
+        return self
+
+
+class CandidateRankingResult(StrictModel):
+    candidates: list[CompetitorCandidate] = Field(
+        default_factory=list,
+        max_length=COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
+    )
+    audit_records: list[CandidateAuditRecord] = Field(default_factory=list, max_length=300)
+    ready_for_confirmation: bool
+    data_gaps: list[DataGap] = Field(default_factory=list, max_length=50)
+    limitations: list[BoundedLimitation] = Field(default_factory=list, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_ranking(self) -> "CandidateRankingResult":
+        ids = [candidate.competitor_id for candidate in self.candidates]
+        domains = [
+            (urlsplit(str(candidate.website_url)).hostname or "").casefold().removeprefix("www.")
+            for candidate in self.candidates
+        ]
+        if len(set(ids)) != len(ids) or len(set(domains)) != len(domains):
+            raise ValueError("ranked candidates must have unique IDs and websites")
+        if self.ready_for_confirmation and len(self.candidates) < COMPETITOR_COUNT:
+            raise ValueError("ready rankings require at least three candidates")
+        if not self.ready_for_confirmation and not any(gap.blocking for gap in self.data_gaps):
+            raise ValueError("unready rankings require a blocking gap")
         return self
 
 
