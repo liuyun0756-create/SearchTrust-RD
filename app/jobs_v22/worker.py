@@ -17,6 +17,11 @@ import httpx
 from pydantic import SecretStr
 
 from app.core.config import settings
+from app.competitors_v22.discovery_service import CompetitorDiscoveryService
+from app.competitors_v22.market_store import SharedMarketSnapshotStore
+from app.competitors_v22.reconciler import reconcile_v22_competitor_discoveries
+from app.competitors_v22.store import CompetitorDiscoveryStore
+from app.competitors_v22.worker import execute_v22_competitor_discovery
 from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
@@ -24,6 +29,7 @@ from app.jobs_v22.executor import UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
 from app.jobs_v22.store import DurableJobStore
+from app.jobs_v22.serp_market_stage import build_serp_market_stage
 
 
 logger = logging.getLogger(__name__)
@@ -174,6 +180,20 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     ctx["executor"] = UnavailableV22Executor()
     ctx["max_attempts"] = settings.V22_JOB_MAX_ATTEMPTS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
+    ctx["competitor_state_ttl_seconds"] = settings.V22_COMPETITOR_STATE_TTL_SECONDS
+    ctx["competitor_discovery_store"] = CompetitorDiscoveryStore(
+        pool,
+        prefix=settings.V22_REDIS_PREFIX,
+        state_ttl_seconds=settings.V22_COMPETITOR_STATE_TTL_SECONDS,
+    )
+    ctx["competitor_discovery_service"] = CompetitorDiscoveryService(
+        market_stage=build_serp_market_stage(settings),
+        market_store=SharedMarketSnapshotStore(
+            pool,
+            prefix=settings.V22_REDIS_PREFIX,
+            ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
+        ),
+    )
     callback_url = settings.V22_CALLBACK_URL
     callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
     if callback_url and callback_secret:
@@ -206,7 +226,14 @@ class WorkerSettings:
             max_tries=settings.V22_JOB_MAX_ATTEMPTS,
             timeout=settings.V22_JOB_TIMEOUT_SECONDS,
             keep_result=settings.V22_JOB_STATE_TTL_SECONDS,
-        )
+        ),
+        func(
+            execute_v22_competitor_discovery,
+            name="execute_v22_competitor_discovery",
+            max_tries=settings.V22_JOB_MAX_ATTEMPTS,
+            timeout=settings.V22_JOB_TIMEOUT_SECONDS,
+            keep_result=settings.V22_COMPETITOR_STATE_TTL_SECONDS,
+        ),
     ]
     cron_jobs = [
         cron(
@@ -215,7 +242,14 @@ class WorkerSettings:
             second={0, 30},
             unique=True,
             max_tries=1,
-        )
+        ),
+        cron(
+            reconcile_v22_competitor_discoveries,
+            name="reconcile_v22_competitor_discoveries",
+            second={10, 40},
+            unique=True,
+            max_tries=1,
+        ),
     ]
     on_startup = on_startup
     on_shutdown = on_shutdown

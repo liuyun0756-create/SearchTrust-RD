@@ -27,8 +27,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.analyze import router as analyze_router
+from app.api.v2.competitors import router as v2_competitors_router
 from app.api.v2.preflight import router as v2_preflight_router
 from app.api.v2.runtime import close_v22_runtime, create_v22_runtime, router as v2_runtime_router
+from app.competitors_v22.runtime import create_competitor_discovery_runtime
 from app.core.config import settings
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,11 +77,15 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
     runtime = None
+    competitor_runtime = None
     try:
         runtime = await create_v22_runtime()
+        if runtime is not None:
+            competitor_runtime = create_competitor_discovery_runtime(runtime.redis)
     except Exception as exc:  # v1 must remain live when the optional v2 queue is down.
         logger.warning("v2.2 durable queue unavailable during startup: %s", type(exc).__name__)
     app.state.v22_runtime = runtime
+    app.state.v22_competitor_runtime = competitor_runtime
     try:
         yield
     finally:
@@ -118,6 +124,7 @@ def create_app() -> FastAPI:
     app.include_router(analyze_router)
     app.include_router(v2_preflight_router)
     app.include_router(v2_runtime_router)
+    app.include_router(v2_competitors_router)
 
     # ── Global exception handlers ─────────────────────────────────────────────
     _register_exception_handlers(app)

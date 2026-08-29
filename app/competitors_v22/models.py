@@ -9,6 +9,12 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
+from app.api.v2.competitor_models import (
+    CompetitorDiscoveryError,
+    CompetitorDiscoveryResult,
+    CompetitorDiscoveryStage,
+    CompetitorDiscoveryStatus,
+)
 from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.collectors.site_inventory_models import SiteInventorySnapshot
@@ -30,6 +36,59 @@ CompetitorSourceStatus = Literal["available", "partial", "unavailable"]
 BoundedIdentitySignal = Annotated[str, Field(min_length=1, max_length=500)]
 BoundedLimitation = Annotated[str, Field(min_length=1, max_length=300)]
 BoundedCategory = Annotated[str, Field(min_length=1, max_length=240)]
+
+
+class CompetitorDiscoveryJobState(StrictModel):
+    discovery_job_id: UUID
+    case_id: UUID
+    status: CompetitorDiscoveryStatus
+    stage: CompetitorDiscoveryStage
+    progress: int = Field(ge=0, le=100)
+    message: str = Field(min_length=1, max_length=500)
+    attempt_count: int = Field(ge=0)
+    run_generation: int = Field(ge=1)
+    revision: int = Field(ge=1)
+    request_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    idempotency_key_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    heartbeat_at: AwareDatetime | None = None
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+    completed_at: AwareDatetime | None = None
+    result: CompetitorDiscoveryResult | None = None
+    error: CompetitorDiscoveryError | None = None
+
+    @model_validator(mode="after")
+    def validate_lifecycle(self) -> "CompetitorDiscoveryJobState":
+        if self.updated_at < self.created_at:
+            raise ValueError("updated_at must not precede created_at")
+        if self.completed_at is not None and self.completed_at < self.created_at:
+            raise ValueError("completed_at must not precede created_at")
+        if self.status == "succeeded":
+            if (
+                self.result is None
+                or self.error is not None
+                or self.stage != "completed"
+                or self.progress != 100
+                or self.completed_at is None
+            ):
+                raise ValueError("succeeded discovery jobs require a completed result")
+            if self.result.discovery_id != self.discovery_job_id or self.result.case_id != self.case_id:
+                raise ValueError("discovery result identity must match the job")
+        elif self.status == "failed":
+            if (
+                self.error is None
+                or self.result is not None
+                or self.stage != "failed"
+                or self.completed_at is None
+            ):
+                raise ValueError("failed discovery jobs require an error")
+        elif self.result is not None or self.error is not None or self.completed_at is not None:
+            raise ValueError("non-terminal discovery jobs cannot contain terminal payloads")
+        return self
+
+    @property
+    def terminal(self) -> bool:
+        return self.status in {"succeeded", "failed"}
 
 
 class CandidateScore(StrictModel):

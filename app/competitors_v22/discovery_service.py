@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import Protocol
 from uuid import UUID
@@ -64,6 +64,7 @@ class CompetitorDiscoveryService:
         discovery_job_id: UUID,
         request: CompetitorDiscoveryRequest,
         checkpoints: JobCheckpoints,
+        progress: Callable[[str, int, str], Awaitable[None]] | None = None,
     ) -> CompetitorDiscoveryResult:
         now = self.clock()
         input_digest = competitor_discovery_input_digest(request)
@@ -79,6 +80,14 @@ class CompetitorDiscoveryService:
                 snapshot=snapshot,
                 now=now,
             )
+        if progress is not None:
+            await progress("ranking_candidates", 70, "Ranking competitor candidates.")
+            if request.supplemental_website_urls:
+                await progress(
+                    "validating_supplements",
+                    80,
+                    "Validating supplemental competitor websites.",
+                )
         ranking = rank_competitor_candidates(
             shared.snapshot,
             business=request.business_identity,

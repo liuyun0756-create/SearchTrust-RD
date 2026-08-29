@@ -9,6 +9,7 @@ from fastapi import Header, HTTPException, Request, status
 from pydantic import SecretStr
 from pydantic import ValidationError
 
+from app.api.v2.competitor_models import CompetitorDiscoveryRequest
 from app.api.v2.models import AnalyzeRequest, PreflightRequest
 from app.core.config import settings
 
@@ -53,8 +54,29 @@ async def require_v22_preflight_enabled() -> None:
         )
 
 
+async def require_v22_competitor_discovery_enabled() -> None:
+    if not settings.V22_COMPETITOR_DISCOVERY_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "V22_COMPETITOR_DISCOVERY_NOT_READY",
+                "message": "SearchTrust v2.2 competitor discovery is not available yet.",
+            },
+        )
+
+
 async def get_v22_runtime(request: Request):
     runtime = getattr(request.app.state, "v22_runtime", None)
+    if runtime is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "QUEUE_UNAVAILABLE", "message": "The durable task queue is unavailable."},
+        )
+    return runtime
+
+
+async def get_v22_competitor_runtime(request: Request):
+    runtime = getattr(request.app.state, "v22_competitor_runtime", None)
     if runtime is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -84,4 +106,14 @@ async def parse_preflight_request(request: Request) -> PreflightRequest:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "VALIDATION_ERROR", "message": "The preflight request is invalid."},
+        ) from exc
+
+
+async def parse_competitor_discovery_request(request: Request) -> CompetitorDiscoveryRequest:
+    try:
+        return CompetitorDiscoveryRequest.model_validate_json(await request.body())
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "VALIDATION_ERROR", "message": "The competitor discovery request is invalid."},
         ) from exc
