@@ -40,6 +40,11 @@ def test_environment_template_is_disabled_and_contains_no_real_secrets() -> None
     assert "V22_SITE_INVENTORY_DEEP_BYTES=2000000" in template
     assert "V22_SERP_MARKET_TOTAL_TIMEOUT_SECONDS=45" in template
     assert "V22_SERP_MARKET_MAX_RESPONSE_BYTES=2000000" in template
+    assert "V22_COMPETITOR_DISCOVERY_ENABLED=false" in template
+    assert "V22_COMPETITOR_MARKET_TTL_SECONDS=86400" in template
+    assert "V22_COMPETITOR_STATE_TTL_SECONDS=604800" in template
+    assert "V22_COMPETITOR_TOTAL_TIMEOUT_SECONDS=45" in template
+    assert "V22_COMPETITOR_MAX_RESPONSE_BYTES=2000000" in template
     assert "SERPAPI_LOCATIONS_URL=https://serpapi.com/locations.json" in template
     assert "PAGESPEED_API_KEY=" in template
     assert "V22_REDIS_URL=redis://localhost:6379/0" in template

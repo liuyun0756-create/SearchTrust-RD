@@ -136,6 +136,17 @@ class Settings(BaseSettings):
         int, Field(ge=65_536, le=5_000_000)
     ] = 2_000_000
 
+    # ── v2.2 competitor discovery and public collection ────────────────────
+    V22_COMPETITOR_DISCOVERY_ENABLED: bool = False
+    V22_COMPETITOR_MARKET_TTL_SECONDS: Annotated[int, Field(ge=60, le=86_400)] = 86_400
+    V22_COMPETITOR_STATE_TTL_SECONDS: Annotated[int, Field(ge=3600, le=604_800)] = 604_800
+    V22_COMPETITOR_CONNECT_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
+    V22_COMPETITOR_READ_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=60)] = 30
+    V22_COMPETITOR_TOTAL_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=120)] = 45
+    V22_COMPETITOR_MAX_RESPONSE_BYTES: Annotated[
+        int, Field(ge=65_536, le=5_000_000)
+    ] = 2_000_000
+
     # ── Dify RPM token bucket (in-process) ───────────────────────────────────
     DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
     DIFY_RPM_REFILL: Annotated[int, Field(ge=1)] = Field(default=60)
