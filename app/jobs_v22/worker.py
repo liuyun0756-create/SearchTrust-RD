@@ -22,14 +22,18 @@ from app.competitors_v22.market_store import SharedMarketSnapshotStore
 from app.competitors_v22.reconciler import reconcile_v22_competitor_discoveries
 from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.competitors_v22.worker import execute_v22_competitor_discovery
+from app.competitors_v22.selection import AnalysisRequestEnvelope
+from app.competitors_v22.supplements import SupplementalHomepageValidator
 from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
 from app.jobs_v22.executor import UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.serp_market_stage import build_serp_market_stage
+from app.preflight_v22.fetcher import BoundedHomepageFetcher
 
 
 logger = logging.getLogger(__name__)
@@ -84,7 +88,11 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
     )
     executor = ctx["executor"]
     try:
-        report = await executor.execute(job_id=job_id, request=request, checkpoints=checkpoints)
+        executor_request = request
+        if request.get("schema_version") == "v22_analysis_request_envelope_v1":
+            envelope = AnalysisRequestEnvelope.model_validate_json(canonical_json_bytes(request))
+            executor_request = envelope.analyze_request.model_dump(mode="json")
+        report = await executor.execute(job_id=job_id, request=executor_request, checkpoints=checkpoints)
     except asyncio.CancelledError:
         logger.info("v2.2 worker execution cancelled job_id=%s", job_id)
         raise
@@ -192,6 +200,15 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             pool,
             prefix=settings.V22_REDIS_PREFIX,
             ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
+        ),
+        supplemental_validator=SupplementalHomepageValidator(
+            BoundedHomepageFetcher(
+                connect_timeout=settings.V22_COMPETITOR_CONNECT_TIMEOUT_SECONDS,
+                read_timeout=settings.V22_COMPETITOR_READ_TIMEOUT_SECONDS,
+                total_timeout=settings.V22_COMPETITOR_TOTAL_TIMEOUT_SECONDS,
+                max_redirects=settings.V22_PREFLIGHT_MAX_REDIRECTS,
+                max_response_bytes=settings.V22_COMPETITOR_MAX_RESPONSE_BYTES,
+            )
         ),
     )
     callback_url = settings.V22_CALLBACK_URL

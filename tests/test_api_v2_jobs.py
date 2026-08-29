@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from app.api.v2.runtime import V22JobRuntime
+from app.competitors_v22.selection import AnalysisDiscoveryLink, DiscoverySelectionError
 from app.core.config import settings
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.store import DurableJobStore
@@ -16,10 +17,14 @@ from app.main import create_app
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
 CASE_ID = UUID("11111111-1111-4111-8111-111111111111")
+DISCOVERY_ID = UUID("22222222-2222-4222-8222-222222222222")
+MARKET_ID = UUID("44444444-4444-4444-8444-444444444444")
+DIGEST = "sha256:" + "a" * 64
 CONTRACT_DIR = Path(__file__).resolve().parents[1] / "contracts" / "v2.2"
 AUTH_HEADERS = {
     "Authorization": "Bearer test-internal-token",
     "X-SearchTrust-Job-ID": str(JOB_ID),
+    "X-SearchTrust-Discovery-ID": str(DISCOVERY_ID),
     "Idempotency-Key": "generation-intent-1",
 }
 
@@ -34,6 +39,21 @@ class RecordingQueue:
             return False
         self.calls.append(call)
         return True
+
+
+class RecordingDiscoveryVerifier:
+    async def verify(self, *, discovery_id, request, now):
+        if discovery_id is None:
+            raise DiscoverySelectionError(
+                "COMPETITOR_DISCOVERY_REQUIRED",
+                "A completed competitor discovery is required before analysis.",
+            )
+        return AnalysisDiscoveryLink(
+            discovery_id=discovery_id,
+            candidate_digest=DIGEST,
+            market_snapshot_id=MARKET_ID,
+            market_snapshot_checksum=DIGEST,
+        )
 
 
 @pytest.fixture
@@ -80,7 +100,12 @@ def build_app(monkeypatch: pytest.MonkeyPatch, *, enabled: bool = True):
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     store = DurableJobStore(redis, prefix="test:v22", state_ttl_seconds=604800)
     queue = RecordingQueue()
-    runtime = V22JobRuntime(store=store, queue=queue, redis=redis)
+    runtime = V22JobRuntime(
+        store=store,
+        queue=queue,
+        redis=redis,
+        discovery_verifier=RecordingDiscoveryVerifier(),
+    )
     app = create_app()
     app.state.v22_runtime = runtime
     return app, runtime, store, queue
@@ -133,6 +158,41 @@ async def test_idempotency_conflict_returns_409(monkeypatch: pytest.MonkeyPatch)
 
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "IDEMPOTENCY_CONFLICT"
+
+
+@pytest.mark.anyio
+async def test_missing_discovery_link_is_rejected_before_queue(monkeypatch: pytest.MonkeyPatch) -> None:
+    app, _, store, queue = build_app(monkeypatch)
+    transport = httpx.ASGITransport(app=app)
+    headers = {key: value for key, value in AUTH_HEADERS.items() if key != "X-SearchTrust-Discovery-ID"}
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v2/analyze", headers=headers, json=prospect_analyze_payload())
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "COMPETITOR_DISCOVERY_REQUIRED"
+    assert await store.get_state(JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+async def test_replay_cannot_switch_discovery_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    app, _, _, queue = build_app(monkeypatch)
+    transport = httpx.ASGITransport(app=app)
+    switched = {
+        **AUTH_HEADERS,
+        "X-SearchTrust-Discovery-ID": "99999999-9999-4999-8999-999999999999",
+    }
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/v2/analyze", headers=AUTH_HEADERS, json=prospect_analyze_payload())
+        response = await client.post(
+            "/api/v2/analyze", headers=switched, json=prospect_analyze_payload()
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "IDEMPOTENCY_CONFLICT"
+    assert queue.calls == [(JOB_ID, 1)]
 
 
 @pytest.mark.anyio

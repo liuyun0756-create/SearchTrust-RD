@@ -14,7 +14,10 @@ from app.jobs_v22.executor import UnavailableV22Executor
 from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.worker import execute_v22_job
+from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
+from app.api.v2.models import AnalyzeRequest
 from app.report_v22.models import ReportV22
+from test_api_v2_jobs import prospect_analyze_payload
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -32,8 +35,10 @@ class RecordingExecutor:
     def __init__(self, outcomes: list[object]) -> None:
         self.outcomes = outcomes
         self.calls = 0
+        self.last_request = None
 
     async def execute(self, *, job_id, request, checkpoints):
+        self.last_request = request
         outcome = self.outcomes[min(self.calls, len(self.outcomes) - 1)]
         self.calls += 1
         if isinstance(outcome, BaseException):
@@ -184,6 +189,43 @@ async def test_stale_physical_generation_is_ignored() -> None:
     assert result is None
     assert (await store.require_state(JOB_ID)).status == "queued"
     assert executor.calls == 0
+
+
+@pytest.mark.anyio
+async def test_worker_unwraps_internal_discovery_envelope_for_executor() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    store = DurableJobStore(redis, prefix="test:v22", state_ttl_seconds=604800)
+    analyze = AnalyzeRequest.model_validate_json(json.dumps(prospect_analyze_payload()))
+    envelope = AnalysisRequestEnvelope(
+        schema_version="v22_analysis_request_envelope_v1",
+        analyze_request=analyze,
+        competitor_discovery=AnalysisDiscoveryLink(
+            discovery_id=UUID("22222222-2222-4222-8222-222222222222"),
+            candidate_digest="sha256:" + "a" * 64,
+            market_snapshot_id=UUID("44444444-4444-4444-8444-444444444444"),
+            market_snapshot_checksum="sha256:" + "b" * 64,
+        ),
+    )
+    await store.register_job(
+        job_id=JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="enveloped-intent",
+        request_payload=envelope.model_dump(mode="json"),
+        now=NOW,
+    )
+    executor = RecordingExecutor([prospect_report()])
+    ctx = {
+        "store": store,
+        "executor": executor,
+        "max_attempts": 3,
+        "state_ttl_seconds": 604800,
+        "redis": redis,
+    }
+
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    assert executor.calls == 1
+    assert executor.last_request == analyze.model_dump(mode="json")
 
 
 @pytest.mark.anyio

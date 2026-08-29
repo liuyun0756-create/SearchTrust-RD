@@ -11,6 +11,9 @@ from app.api.v2.competitor_models import CompetitorDiscoveryRequest, CompetitorD
 from app.collectors.serp_market_models import SerpMarketContext, SerpMarketSnapshot
 from app.competitors_v22.candidates import rank_competitor_candidates
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
+from app.competitors_v22.normalization import normalize_domain
+from app.competitors_v22.supplements import SupplementalHomepageValidator
+from app.api.v2.models import DataGap
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.digest import request_digest
 
@@ -52,10 +55,12 @@ class CompetitorDiscoveryService:
         *,
         market_stage: MarketStage,
         market_store: SharedMarketSnapshotStore,
+        supplemental_validator: SupplementalHomepageValidator | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.market_stage = market_stage
         self.market_store = market_store
+        self.supplemental_validator = supplemental_validator
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     async def discover(
@@ -88,18 +93,57 @@ class CompetitorDiscoveryService:
                     80,
                     "Validating supplemental competitor websites.",
                 )
+        supplemental_urls = [str(url) for url in request.supplemental_website_urls]
+        supplemental_gaps: list[DataGap] = []
+        if supplemental_urls and self.supplemental_validator is not None:
+            base_ranking = rank_competitor_candidates(
+                shared.snapshot,
+                business=request.business_identity,
+                primary_service=request.primary_service,
+                target_market=request.target_market,
+            )
+            eligible_by_domain = {
+                record.identity.normalized_domain: record
+                for record in base_ranking.audit_records
+                if record.disposition == "eligible" and record.candidate is not None
+            }
+            validated_urls: list[str] = []
+            for website_url in supplemental_urls:
+                record = eligible_by_domain.get(normalize_domain(website_url))
+                if record is None:
+                    validated_urls.append(website_url)
+                    continue
+                assert record.candidate is not None
+                valid = await self.supplemental_validator.validate(
+                    website_url=website_url,
+                    expected_name=record.candidate.business_name,
+                    primary_service=request.primary_service,
+                    target_market=request.target_market,
+                )
+                if valid:
+                    validated_urls.append(website_url)
+                else:
+                    supplemental_gaps.append(
+                        DataGap(
+                            gap_code="SUPPLEMENTAL_COMPETITOR_IDENTITY_UNVERIFIED",
+                            message="A supplemental competitor homepage did not confirm its market identity.",
+                            blocking=False,
+                            resolution="Choose another market-visible competitor or run discovery again.",
+                        )
+                    )
+            supplemental_urls = validated_urls
         ranking = rank_competitor_candidates(
             shared.snapshot,
             business=request.business_identity,
             primary_service=request.primary_service,
             target_market=request.target_market,
-            supplemental_website_urls=[str(url) for url in request.supplemental_website_urls],
+            supplemental_website_urls=supplemental_urls,
         )
         candidate_digest = request_digest(
             {
                 "schema_version": "competitor_candidate_set_v1",
                 "input_digest": input_digest,
-                "supplemental_website_urls": [str(url) for url in request.supplemental_website_urls],
+                "supplemental_website_urls": supplemental_urls,
                 "ranking": ranking.model_dump(mode="json"),
             }
         )
@@ -113,7 +157,7 @@ class CompetitorDiscoveryService:
             market_snapshot_checksum=shared.snapshot_checksum,
             candidates=ranking.candidates,
             ready_for_confirmation=ranking.ready_for_confirmation,
-            data_gaps=ranking.data_gaps,
+            data_gaps=[*ranking.data_gaps, *supplemental_gaps],
             limitations=limitations,
             created_at=now,
             expires_at=shared.expires_at,

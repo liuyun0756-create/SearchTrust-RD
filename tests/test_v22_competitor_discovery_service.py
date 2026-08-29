@@ -105,3 +105,41 @@ async def test_empty_eligible_pool_returns_successful_blocking_result() -> None:
     assert result.ready_for_confirmation is False
     assert result.candidates == []
     assert any(gap.gap_code == "INSUFFICIENT_COMPETITORS" for gap in result.data_gaps)
+
+
+class RejectingSupplementalValidator:
+    async def validate(self, **kwargs):
+        return False
+
+
+@pytest.mark.anyio
+async def test_supplemental_candidate_requires_bounded_homepage_validation() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    records = []
+    for index in range(1, 8):
+        records.extend(
+            business_records(
+                f"Rival {index} Plumbing",
+                f"rival-{index}.example",
+                900 + index * 10,
+                position=10 if index == 7 else 1,
+            )
+        )
+    service = CompetitorDiscoveryService(
+        market_stage=RecordingMarketStage(snapshot(records)),
+        market_store=SharedMarketSnapshotStore(redis, prefix="test:v22", ttl_seconds=86_400),
+        supplemental_validator=RejectingSupplementalValidator(),
+        clock=lambda: NOW,
+    )
+
+    result = await service.discover(
+        discovery_job_id=FIRST_JOB,
+        request=discovery_request(supplemental_website_urls=["https://rival-7.example"]),
+        checkpoints=JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800),
+    )
+
+    assert "rival-7.example" not in {candidate.website_url.host for candidate in result.candidates}
+    assert any(
+        gap.gap_code == "SUPPLEMENTAL_COMPETITOR_IDENTITY_UNVERIFIED"
+        for gap in result.data_gaps
+    )

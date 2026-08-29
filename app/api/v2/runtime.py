@@ -32,6 +32,14 @@ from app.api.v2.models import (
     TaskStatusResponse,
 )
 from app.core.config import settings
+from app.competitors_v22.market_store import SharedMarketSnapshotStore
+from app.competitors_v22.selection import (
+    AnalysisRequestEnvelope,
+    DiscoverySelectionError,
+    DiscoveryVerifier,
+    RedisDiscoveryVerifier,
+)
+from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.jobs_v22.errors import (
     DurableJobError,
     IdempotencyConflict,
@@ -54,10 +62,18 @@ def _secret_value(value: SecretStr | str) -> str:
 
 
 class V22JobRuntime:
-    def __init__(self, *, store: DurableJobStore, queue: JobQueue, redis: Any) -> None:
+    def __init__(
+        self,
+        *,
+        store: DurableJobStore,
+        queue: JobQueue,
+        redis: Any,
+        discovery_verifier: DiscoveryVerifier | None = None,
+    ) -> None:
         self.store = store
         self.queue = queue
         self.redis = redis
+        self.discovery_verifier = discovery_verifier
 
     async def submit(
         self,
@@ -65,13 +81,30 @@ class V22JobRuntime:
         job_id: UUID,
         idempotency_key: str,
         request: AnalyzeRequest,
+        discovery_id: UUID | None,
     ) -> TaskCreateResponse:
+        if self.discovery_verifier is None:
+            raise DiscoverySelectionError(
+                "COMPETITOR_DISCOVERY_UNAVAILABLE",
+                "Competitor discovery validation is unavailable.",
+            )
+        now = datetime.now(timezone.utc)
+        discovery_link = await self.discovery_verifier.verify(
+            discovery_id=discovery_id,
+            request=request,
+            now=now,
+        )
+        envelope = AnalysisRequestEnvelope(
+            schema_version="v22_analysis_request_envelope_v1",
+            analyze_request=request,
+            competitor_discovery=discovery_link,
+        )
         registered = await self.store.register_job(
             job_id=job_id,
             case_id=request.case_id,
             idempotency_key=idempotency_key,
-            request_payload=request.model_dump(mode="json"),
-            now=datetime.now(timezone.utc),
+            request_payload=envelope.model_dump(mode="json"),
+            now=now,
         )
         if not registered.replayed:
             await self.queue.enqueue(job_id, registered.state.run_generation)
@@ -175,9 +208,15 @@ async def submit_analysis(
     _: Annotated[None, Depends(require_internal_auth)],
     __: Annotated[None, Depends(require_v22_analyze_enabled)],
     runtime: Annotated[V22JobRuntime, Depends(get_v22_runtime)],
+    discovery_id: Annotated[UUID | None, Header(alias="X-SearchTrust-Discovery-ID")] = None,
 ) -> TaskCreateResponse:
     try:
-        return await runtime.submit(job_id=job_id, idempotency_key=idempotency_key, request=body)
+        return await runtime.submit(
+            job_id=job_id,
+            idempotency_key=idempotency_key,
+            request=body,
+            discovery_id=discovery_id,
+        )
     except DurableJobError as exc:
         raise _job_error(exc) from exc
     except (RedisError, OSError) as exc:
@@ -299,7 +338,25 @@ async def create_v22_runtime() -> V22JobRuntime | None:
         state_ttl_seconds=settings.V22_JOB_STATE_TTL_SECONDS,
     )
     queue = ArqJobQueue(pool, queue_name=settings.V22_QUEUE_NAME)
-    return V22JobRuntime(store=store, queue=queue, redis=pool)
+    competitor_store = CompetitorDiscoveryStore(
+        pool,
+        prefix=settings.V22_REDIS_PREFIX,
+        state_ttl_seconds=settings.V22_COMPETITOR_STATE_TTL_SECONDS,
+    )
+    verifier = RedisDiscoveryVerifier(
+        store=competitor_store,
+        market_store=SharedMarketSnapshotStore(
+            pool,
+            prefix=settings.V22_REDIS_PREFIX,
+            ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
+        ),
+    )
+    return V22JobRuntime(
+        store=store,
+        queue=queue,
+        redis=pool,
+        discovery_verifier=verifier,
+    )
 
 
 async def close_v22_runtime(runtime: V22JobRuntime | None) -> None:
