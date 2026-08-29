@@ -45,7 +45,7 @@ class DiscoveryVerifier(Protocol):
     ) -> AnalysisDiscoveryLink: ...
 
 
-def _request_discovery_digest(request: AnalyzeRequest) -> str:
+def analysis_discovery_input_digest(request: AnalyzeRequest) -> str:
     discovery_request = CompetitorDiscoveryRequest(
         case_id=request.case_id,
         business_identity=request.business_identity,
@@ -157,7 +157,7 @@ class RedisDiscoveryVerifier:
                 "COMPETITOR_DISCOVERY_CASE_MISMATCH",
                 "The competitor discovery belongs to a different case.",
             )
-        expected_digest = _request_discovery_digest(request)
+        expected_digest = analysis_discovery_input_digest(request)
         if result.input_digest != expected_digest:
             raise DiscoverySelectionError(
                 "COMPETITOR_DISCOVERY_CONTEXT_MISMATCH",
