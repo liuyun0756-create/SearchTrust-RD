@@ -27,7 +27,7 @@ from app.collectors.site_inventory_firecrawl import (
     FirecrawlMapAdapter,
     FirecrawlMapResult,
 )
-from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot
 from app.collectors.site_inventory_selection import gsc_priorities_from_snapshots
 from app.collectors.site_inventory_urls import (
     SiteScope,
@@ -361,6 +361,79 @@ class CheckpointedSiteInventoryStage:
             persisted_selection = _validate_model(_InventorySelectionCheckpoint, selection_raw)
             if persisted_manifest != manifest or persisted_selection != selection:
                 raise SiteInventoryCheckpointError()
+            return snapshot.model_dump(mode="json")
+
+        raw = await checkpoints.run_once(job_id, final_key, operation)
+        return _validate_model(SiteInventorySnapshot, raw)
+
+    async def collect_inventory_for_site(
+        self,
+        *,
+        job_id: UUID,
+        site_url: str,
+        primary_service: str,
+        target_market: str,
+        discovery_limit: int,
+        deep_analysis_limit: int,
+        gsc_priorities: list[GscPagePriority],
+        checkpoints: JobCheckpoints,
+        checkpoint_namespace: str,
+    ) -> SiteInventorySnapshot:
+        """Collect one bounded site with explicit limits and first-party priorities."""
+
+        identity = {
+            "site_url": site_url,
+            "primary_service": primary_service,
+            "target_market": target_market,
+            "discovery_limit": discovery_limit,
+            "deep_analysis_limit": deep_analysis_limit,
+            "gsc_priorities": [item.model_dump(mode="json") for item in gsc_priorities],
+            "checkpoint_namespace": checkpoint_namespace,
+        }
+        input_digest = request_digest(identity)
+        final_key = f"{_CHECKPOINT_VERSION}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
+
+        async def operation() -> dict[str, Any]:
+            checkpointed_fetcher = CheckpointedSiteFetcher(
+                delegate=self.fetcher,
+                checkpoints=checkpoints,
+                job_id=job_id,
+            )
+            checkpointed_firecrawl = (
+                _CheckpointedFirecrawl(
+                    delegate=self.firecrawl,
+                    checkpoints=checkpoints,
+                    job_id=job_id,
+                )
+                if self.firecrawl is not None
+                else None
+            )
+            collector = SiteInventoryCollector(
+                fetcher=checkpointed_fetcher,
+                firecrawl=checkpointed_firecrawl,
+                structural_max_bytes=self.config.structural_max_bytes,
+                deep_max_bytes=self.config.deep_max_bytes,
+                sitemap_max_bytes=self.config.sitemap_max_bytes,
+                sitemap_decompressed_max_bytes=self.config.sitemap_decompressed_max_bytes,
+                sitemap_max_files=self.config.sitemap_max_files,
+                sitemap_max_depth=self.config.sitemap_max_depth,
+                batch_size=self.config.batch_size,
+                clock=self.clock,
+            )
+            try:
+                snapshot = await collector.collect(
+                    site_url=site_url,
+                    discovery_limit=discovery_limit,
+                    deep_analysis_limit=deep_analysis_limit,
+                    primary_service=primary_service,
+                    target_market=target_market,
+                    gsc_priorities=gsc_priorities,
+                )
+            except SiteInventoryCollectionError as exc:
+                raise DeterministicJobError(
+                    f"V22_SITE_INVENTORY_{exc.code.upper()}",
+                    exc.user_message,
+                ) from exc
             return snapshot.model_dump(mode="json")
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
