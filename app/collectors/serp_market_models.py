@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
-from app.report_v22.models import StrictModel
+from app.report_v22.models import StrictModel, TargetMarket
 
 
 SERP_QUERY_MIN = 3
@@ -32,6 +32,20 @@ SerpTargetPointSource = Literal["explicit_coordinates", "serpapi_location"]
 SearchDevice = Literal["desktop", "mobile"]
 SerpLimitation = Annotated[str, Field(min_length=1, max_length=300)]
 SerpCategory = Annotated[str, Field(min_length=1, max_length=240)]
+
+
+class SerpMarketContext(StrictModel):
+    target_market: TargetMarket
+    queries: list[str] = Field(min_length=SERP_QUERY_MIN, max_length=SERP_QUERY_MAX)
+    device: SearchDevice = "mobile"
+    language: str = Field(default="en", min_length=2, max_length=12, pattern=r"^[A-Za-z0-9-]+$")
+
+    @model_validator(mode="after")
+    def validate_queries(self) -> "SerpMarketContext":
+        normalized = [query.casefold() for query in self.queries]
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("SERP market context queries must be unique")
+        return self
 
 
 class SerpTargetPoint(StrictModel):

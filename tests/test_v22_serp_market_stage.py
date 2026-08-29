@@ -17,6 +17,7 @@ from app.collectors.serp_market import (
 )
 from app.collectors.serp_market_location import LocationLookupResponse
 from app.collectors.serp_market_requests import SerpPlannedCall, build_serp_search_plan
+from app.collectors.serp_market_requests import serp_market_context_from_analyze
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.serp_market_stage import (
     CheckpointedSerpMarketStage,
@@ -209,6 +210,36 @@ async def test_location_lookup_is_checkpointed_once() -> None:
     assert search.network_calls == 6
 
 
+@pytest.mark.anyio
+async def test_context_entrypoint_matches_analyze_wrapper() -> None:
+    request = prospect_request()
+    context = serp_market_context_from_analyze(request)
+    first_checkpoints = checkpoints()
+    second_checkpoints = checkpoints()
+    first_search = SuccessfulSearchProvider()
+    second_search = SuccessfulSearchProvider()
+    wrapper = CheckpointedSerpMarketStage(
+        location_provider=UnusedLocationProvider(),
+        search_provider=first_search,
+        clock=lambda: NOW,
+    )
+    direct = CheckpointedSerpMarketStage(
+        location_provider=UnusedLocationProvider(),
+        search_provider=second_search,
+        clock=lambda: NOW,
+    )
+
+    wrapped = await wrapper.collect(job_id=JOB_ID, request=request, checkpoints=first_checkpoints)
+    contextual = await direct.collect_context(
+        job_id=JOB_ID,
+        context=context,
+        checkpoints=second_checkpoints,
+    )
+
+    assert contextual == wrapped
+    assert first_search.network_calls == second_search.network_calls == 6
+
+
 class AlwaysFailingProvider:
     def __init__(self) -> None:
         self.network_calls = 0
@@ -275,4 +306,3 @@ async def test_bad_search_checkpoint_fails_without_provider_access() -> None:
         await provider.search(call)
 
     assert delegate.network_calls == 0
-

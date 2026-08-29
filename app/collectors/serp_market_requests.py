@@ -15,6 +15,7 @@ from app.collectors.serp_market_models import (
     SERP_QUERY_MIN,
     SearchDevice,
     SerpEngine,
+    SerpMarketContext,
     SerpResultType,
     SerpTargetPoint,
 )
@@ -86,6 +87,16 @@ def request_search_context(request: AnalyzeRequest) -> tuple[SearchDevice, str]:
         context = request.parent_report.case_context
         return context.search_device, context.search_language
     return "mobile", "en"
+
+
+def serp_market_context_from_analyze(request: AnalyzeRequest) -> SerpMarketContext:
+    device, language = request_search_context(request)
+    return SerpMarketContext(
+        target_market=request.target_market,
+        queries=request.queries,
+        device=device,
+        language=language,
+    )
 
 
 def _planned_call(
@@ -172,4 +183,3 @@ def build_serp_search_plan(
         queries=normalized_queries,
         calls=calls,
     )
-

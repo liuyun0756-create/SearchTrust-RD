@@ -28,13 +28,14 @@ from app.collectors.serp_market_location import (
 )
 from app.collectors.serp_market_models import (
     SERP_PROVIDER_ATTEMPT_LIMIT_PER_CALL,
+    SerpMarketContext,
     SerpMarketSnapshot,
     SerpTargetPoint,
 )
 from app.collectors.serp_market_requests import (
     SerpPlannedCall,
     build_serp_search_plan,
-    request_search_context,
+    serp_market_context_from_analyze,
 )
 from app.core.config import Settings
 from app.integrations.serpapi import (
@@ -463,10 +464,10 @@ class CheckpointedSerpMarketStage:
         self,
         *,
         job_id: UUID,
-        request: AnalyzeRequest,
+        context: SerpMarketContext,
         checkpoints: JobCheckpoints,
     ) -> tuple[SerpTargetPoint, int]:
-        market = request.target_market
+        market = context.target_market
         if market.latitude is not None or market.longitude is not None:
             try:
                 return (
@@ -511,13 +512,25 @@ class CheckpointedSerpMarketStage:
         request: AnalyzeRequest,
         checkpoints: JobCheckpoints,
     ) -> SerpMarketSnapshot:
-        device, language = request_search_context(request)
+        return await self.collect_context(
+            job_id=job_id,
+            context=serp_market_context_from_analyze(request),
+            checkpoints=checkpoints,
+        )
+
+    async def collect_context(
+        self,
+        *,
+        job_id: UUID,
+        context: SerpMarketContext,
+        checkpoints: JobCheckpoints,
+    ) -> SerpMarketSnapshot:
         identity = request_digest(
             {
-                "queries": request.queries,
-                "target_market": request.target_market.model_dump(mode="json"),
-                "device": device,
-                "language": language,
+                "queries": context.queries,
+                "target_market": context.target_market.model_dump(mode="json"),
+                "device": context.device,
+                "language": context.language,
             }
         )
         final_key = f"{_CHECKPOINT_VERSION}:snapshot:{identity[7:]}"
@@ -527,21 +540,21 @@ class CheckpointedSerpMarketStage:
             if final_checkpoint.request_digest != identity:
                 raise SerpMarketCheckpointError()
             snapshot = final_checkpoint.snapshot
-            if snapshot.job_id != job_id or snapshot.queries != request.queries:
+            if snapshot.job_id != job_id or snapshot.queries != context.queries:
                 raise SerpMarketCheckpointError()
             return snapshot
 
         target_point, location_calls = await self._target_point(
             job_id=job_id,
-            request=request,
+            context=context,
             checkpoints=checkpoints,
         )
         try:
             plan = build_serp_search_plan(
-                queries=request.queries,
+                queries=context.queries,
                 target_point=target_point,
-                device=device,
-                language=language,
+                device=context.device,
+                language=context.language,
             )
         except (ValidationError, ValueError) as exc:
             raise DeterministicJobError(

@@ -10,6 +10,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
 from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor, DataGap
+from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.report_v22.models import StrictModel
 
@@ -118,6 +119,25 @@ class CandidateRankingResult(StrictModel):
             raise ValueError("ready rankings require at least three candidates")
         if not self.ready_for_confirmation and not any(gap.blocking for gap in self.data_gaps):
             raise ValueError("unready rankings require a blocking gap")
+        return self
+
+
+class SharedMarketSnapshot(StrictModel):
+    schema_version: Literal["competitor_shared_market_v1"]
+    snapshot_id: UUID
+    source_job_id: UUID
+    input_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    snapshot_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    created_at: AwareDatetime
+    expires_at: AwareDatetime
+    snapshot: SerpMarketSnapshot
+
+    @model_validator(mode="after")
+    def validate_shared_snapshot(self) -> "SharedMarketSnapshot":
+        if self.expires_at <= self.created_at:
+            raise ValueError("shared market expiry must follow creation")
+        if self.snapshot.job_id != self.source_job_id:
+            raise ValueError("shared market source job must match the snapshot")
         return self
 
 
