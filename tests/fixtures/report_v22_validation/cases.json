@@ -1,0 +1,3300 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "prospect_valid",
+      "fixture": "prospect",
+      "operations": [],
+      "accepted": true
+    },
+    {
+      "id": "verified_valid",
+      "fixture": "verified",
+      "operations": [],
+      "accepted": true
+    },
+    {
+      "id": "duplicate_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "local",
+            "local",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "local",
+            "local",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "ascii_case_duplicate",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "local",
+            "LOCAL",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "local",
+            "LOCAL",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "unicode_case_duplicate",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "Straße",
+            "STRASSE",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "Straße",
+            "STRASSE",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "sigma_duplicate",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "ΟΣ",
+            "οσ",
+            "ος"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "ΟΣ",
+            "οσ",
+            "ος"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "blank_query",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "   ",
+            "local",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "   ",
+            "local",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "unicode_blank_query",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "\u001c",
+            "local",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "\u001c",
+            "local",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "whitespace_duplicate",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            " local ",
+            "local",
+            "service"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            " local ",
+            "local",
+            "service"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "unique_unicode_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "I",
+            "ı",
+            "İ"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "I",
+            "ı",
+            "İ"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "unique_greek_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "α",
+            "β",
+            "γ"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "α",
+            "β",
+            "γ"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "five_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three",
+            "four",
+            "five"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three",
+            "four",
+            "five"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "three_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "two_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "six_queries",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/case_context/queries"
+      }
+    },
+    {
+      "id": "query_order_mismatch",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "two",
+            "one",
+            "three"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/market_snapshot/queries"
+      }
+    },
+    {
+      "id": "query_whitespace_equivalent",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            " one ",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "query_case_mismatch",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "queries"
+          ],
+          "value": [
+            "ONE",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "queries"
+          ],
+          "value": [
+            "one",
+            "two",
+            "three"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/market_snapshot/queries"
+      }
+    },
+    {
+      "id": "evidence_dates_reversed",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_end"
+          ],
+          "value": "2026-08-01"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index/0/coverage_start"
+      }
+    },
+    {
+      "id": "evidence_dates_equal",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "evidence_dates_start_missing",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_start"
+          ],
+          "value": null
+        },
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "evidence_dates_end_missing",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            0,
+            "coverage_end"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gsc_dates_reversed",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_end"
+          ],
+          "value": "2026-08-01"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance/gsc/coverage_start"
+      }
+    },
+    {
+      "id": "gsc_dates_equal",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gsc_dates_start_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_start"
+          ],
+          "value": null
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gsc_dates_end_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "coverage_end"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gbp_dates_reversed",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_end"
+          ],
+          "value": "2026-08-01"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance/gbp/coverage_start"
+      }
+    },
+    {
+      "id": "gbp_dates_equal",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gbp_dates_start_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_start"
+          ],
+          "value": null
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "gbp_dates_end_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "coverage_end"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "ga4_dates_reversed",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_end"
+          ],
+          "value": "2026-08-01"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance/ga4/coverage_start"
+      }
+    },
+    {
+      "id": "ga4_dates_equal",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "ga4_dates_start_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_start"
+          ],
+          "value": null
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_end"
+          ],
+          "value": "2026-08-30"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "ga4_dates_end_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_start"
+          ],
+          "value": "2026-08-30"
+        },
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "coverage_end"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "checked_exceeds_discovered",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "discovered_url_count"
+          ],
+          "value": 0
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/site_inventory_summary/structurally_checked_count"
+      }
+    },
+    {
+      "id": "deep_exceeds_checked",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "structurally_checked_count"
+          ],
+          "value": 0
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/site_inventory_summary/deep_analyzed_count"
+      }
+    },
+    {
+      "id": "deep_count_mismatch",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "deep_analyzed_count"
+          ],
+          "value": 0
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/site_inventory_summary/deep_analyzed_count"
+      }
+    },
+    {
+      "id": "zero_pages",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "discovered_url_count"
+          ],
+          "value": 0
+        },
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "structurally_checked_count"
+          ],
+          "value": 0
+        },
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "deep_analyzed_count"
+          ],
+          "value": 0
+        },
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "selected_pages"
+          ],
+          "value": []
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "missing_selected_pages",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "deep_analyzed_count"
+          ],
+          "value": 0
+        },
+        {
+          "op": "remove",
+          "path": [
+            "site_inventory_summary",
+            "selected_pages"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "missing_pages_nonzero_count",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "remove",
+          "path": [
+            "site_inventory_summary",
+            "selected_pages"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/site_inventory_summary/deep_analyzed_count"
+      }
+    },
+    {
+      "id": "equal_page_counts",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "discovered_url_count"
+          ],
+          "value": 1
+        },
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "structurally_checked_count"
+          ],
+          "value": 1
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "roadmap_reversed",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "roadmap_30_60_90",
+            "phases",
+            0,
+            "period"
+          ],
+          "value": "days_61_90"
+        },
+        {
+          "op": "set",
+          "path": [
+            "roadmap_30_60_90",
+            "phases",
+            2,
+            "period"
+          ],
+          "value": "days_1_30"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/roadmap_30_60_90/phases"
+      }
+    },
+    {
+      "id": "roadmap_repeated",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "roadmap_30_60_90",
+            "phases",
+            1,
+            "period"
+          ],
+          "value": "days_1_30"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/roadmap_30_60_90/phases"
+      }
+    },
+    {
+      "id": "target_keys_reordered",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "reorder_keys",
+          "path": [
+            "market_snapshot",
+            "target_market"
+          ],
+          "keys": [
+            "region",
+            "postal_code",
+            "longitude",
+            "latitude",
+            "display_name",
+            "country_code",
+            "city"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_region_omitted_null",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "target_market",
+            "region"
+          ],
+          "value": null
+        },
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "region"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_city_omitted_null",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "target_market",
+            "city"
+          ],
+          "value": null
+        },
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "city"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_postal_code_omitted_null",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "target_market",
+            "postal_code"
+          ],
+          "value": null
+        },
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "postal_code"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_latitude_omitted_null",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "target_market",
+            "latitude"
+          ],
+          "value": null
+        },
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "latitude"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_longitude_omitted_null",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "target_market",
+            "longitude"
+          ],
+          "value": null
+        },
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "longitude"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_whitespace_equivalent",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "city"
+          ],
+          "value": " Austin "
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "target_different",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "city"
+          ],
+          "value": "Dallas"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/market_snapshot/target_market"
+      }
+    },
+    {
+      "id": "target_missing_required",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "remove",
+          "path": [
+            "market_snapshot",
+            "target_market",
+            "country_code"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/market_snapshot/target_market"
+      }
+    },
+    {
+      "id": "url_root_slash",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_host_case",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://SAME.test/"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_default_port",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test:443/"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_http_default_port",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "http://same.test:80/"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "http://same.test/"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_dot_segments",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test/a/../b"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/b"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_different_path",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test/a"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/b"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "url_different_query",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test/?q=a"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/?q=b"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "url_path_case_duplicate",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test/A"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/a"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "url_different_port",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "https://same.test:444/"
+        },
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "website_url"
+          ],
+          "value": "https://same.test/"
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "duplicate_competitor_id",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            1,
+            "competitor_id"
+          ],
+          "value": "cp_alpha_plumbing"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "duplicate_evidence_id",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "evidence_index",
+            1,
+            "evidence_id"
+          ],
+          "value": "ev_site_service_page"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "duplicate_finding_id",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "findings",
+            1,
+            "finding_id"
+          ],
+          "value": "fn_market_visibility_gap"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/findings"
+      }
+    },
+    {
+      "id": "duplicate_action_id",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            1,
+            "action_id"
+          ],
+          "value": "ac_publish_emergency_page"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/top_actions"
+      }
+    },
+    {
+      "id": "unknown_finding_evidence",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "findings",
+            0,
+            "evidence_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_comparator",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "findings",
+            0,
+            "comparator_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_market_evidence",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "market_snapshot",
+            "results",
+            0,
+            "evidence_id"
+          ],
+          "value": "ev_missing"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_page_evidence",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "selected_pages",
+            0,
+            "evidence_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_competitor_evidence",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "evidence_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_layer_evidence",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "eight_layers",
+            0,
+            "evidence_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_action_finding",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            0,
+            "finding_ids"
+          ],
+          "value": [
+            "fn_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/findings"
+      }
+    },
+    {
+      "id": "unknown_executive_finding",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "executive_decision",
+            "finding_ids"
+          ],
+          "value": [
+            "fn_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/findings"
+      }
+    },
+    {
+      "id": "unknown_layer_finding",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "eight_layers",
+            0,
+            "finding_ids"
+          ],
+          "value": [
+            "fn_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/findings"
+      }
+    },
+    {
+      "id": "action_order",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            1,
+            "sequence"
+          ],
+          "value": 3
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/top_actions"
+      }
+    },
+    {
+      "id": "step_order",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            0,
+            "implementation_steps",
+            0,
+            "sequence"
+          ],
+          "value": 2
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/top_actions/0/implementation_steps"
+      }
+    },
+    {
+      "id": "summary_order",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "client_summary",
+            "action_ids"
+          ],
+          "value": [
+            "ac_align_public_gbp",
+            "ac_publish_emergency_page",
+            "ac_build_local_proof"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/client_summary/action_ids"
+      }
+    },
+    {
+      "id": "unknown_dependency",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            0,
+            "dependencies"
+          ],
+          "value": [
+            "ac_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/top_actions/0/dependencies"
+      }
+    },
+    {
+      "id": "self_dependency",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions",
+            0,
+            "dependencies"
+          ],
+          "value": [
+            "ac_publish_emergency_page"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/top_actions/0/dependencies"
+      }
+    },
+    {
+      "id": "roadmap_unknown_action",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "roadmap_30_60_90",
+            "phases",
+            0,
+            "action_ids"
+          ],
+          "value": [
+            "ac_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/roadmap_30_60_90"
+      }
+    },
+    {
+      "id": "roadmap_missing_action",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "roadmap_30_60_90",
+            "phases",
+            0,
+            "action_ids"
+          ],
+          "value": [
+            "ac_align_public_gbp"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/roadmap_30_60_90"
+      }
+    },
+    {
+      "id": "layer_order",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "eight_layers",
+            0,
+            "layer_key"
+          ],
+          "value": "entity_presence"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/eight_layers"
+      }
+    },
+    {
+      "id": "prospect_parent",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "report_version",
+            "parent_report_id"
+          ],
+          "value": "22222222-2222-4222-8222-222222222222"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff"
+      }
+    },
+    {
+      "id": "prospect_connected",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "connection_state"
+          ],
+          "value": "connected"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "prospect_snapshot",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "snapshot_id"
+          ],
+          "value": "22222222-2222-4222-8222-222222222222"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "prospect_full_coverage",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "data_coverage",
+            "full_evidence_coverage"
+          ],
+          "value": true
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "verified_parent_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "report_version",
+            "parent_report_id"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff"
+      }
+    },
+    {
+      "id": "verified_diff_parent_mismatch",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "parent_report_id"
+          ],
+          "value": "44444444-4444-4444-8444-444444444444"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff"
+      }
+    },
+    {
+      "id": "verified_diff_empty",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries"
+          ],
+          "value": []
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff/entries"
+      }
+    },
+    {
+      "id": "verified_previous_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "previous_finding"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff/entries/0/previous_finding"
+      }
+    },
+    {
+      "id": "verified_new_with_previous",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "change_type"
+          ],
+          "value": "new"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff/entries/0/previous_finding"
+      }
+    },
+    {
+      "id": "verified_previous_parent",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "previous_finding",
+            "report_id"
+          ],
+          "value": "44444444-4444-4444-8444-444444444444"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff/entries/0/previous_finding/report_id"
+      }
+    },
+    {
+      "id": "unknown_diff_evidence",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "evidence_ids"
+          ],
+          "value": [
+            "ev_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/evidence_index"
+      }
+    },
+    {
+      "id": "unknown_diff_finding",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "current_finding_ids"
+          ],
+          "value": [
+            "fn_missing"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/findings"
+      }
+    },
+    {
+      "id": "verified_gsc_snapshot_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "snapshot_id"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "verified_gsc_not_connected",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "connection_state"
+          ],
+          "value": "not_connected"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "full_coverage_gsc_unhealthy",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "health_status"
+          ],
+          "value": "unhealthy"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "full_coverage_gsc_mismatch",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "identity_match_status"
+          ],
+          "value": "mismatch"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "verified_gbp_snapshot_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "snapshot_id"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "verified_gbp_not_connected",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "connection_state"
+          ],
+          "value": "not_connected"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "full_coverage_gbp_unhealthy",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "health_status"
+          ],
+          "value": "unhealthy"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "full_coverage_gbp_mismatch",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gbp",
+            "identity_match_status"
+          ],
+          "value": "mismatch"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "verified_ga4_snapshot_missing",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "snapshot_id"
+          ],
+          "value": null
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "verified_ga4_not_connected",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "connection_state"
+          ],
+          "value": "not_connected"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/first_party_performance"
+      }
+    },
+    {
+      "id": "full_coverage_ga4_unhealthy",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "health_status"
+          ],
+          "value": "unhealthy"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "full_coverage_ga4_mismatch",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "ga4",
+            "identity_match_status"
+          ],
+          "value": "mismatch"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/full_evidence_coverage"
+      }
+    },
+    {
+      "id": "verified_new_without_previous",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "change_type"
+          ],
+          "value": "new"
+        },
+        {
+          "op": "remove",
+          "path": [
+            "version_diff",
+            "entries",
+            0,
+            "previous_finding"
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "verified_unhealthy_without_full_claim",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "first_party_performance",
+            "gsc",
+            "health_status"
+          ],
+          "value": "unhealthy"
+        },
+        {
+          "op": "set",
+          "path": [
+            "data_coverage",
+            "full_evidence_coverage"
+          ],
+          "value": false
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "unknown_field",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "unexpected"
+          ],
+          "value": true
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/"
+      }
+    },
+    {
+      "id": "missing_root",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "remove",
+          "path": [
+            "executive_decision"
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/"
+      }
+    },
+    {
+      "id": "unknown_nested_field",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "case_context",
+            "unexpected"
+          ],
+          "value": true
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/case_context"
+      }
+    },
+    {
+      "id": "wrong_report_type",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "report_version",
+            "report_type"
+          ],
+          "value": "preview"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/report_version/report_type"
+      }
+    },
+    {
+      "id": "strict_number",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "site_inventory_summary",
+            "discovered_url_count"
+          ],
+          "value": "12"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/site_inventory_summary/discovered_url_count"
+      }
+    },
+    {
+      "id": "duplicate_coverage_sources",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "data_coverage",
+            "sources"
+          ],
+          "value": [
+            {
+              "available_items": 1,
+              "checked_items": 1,
+              "coverage_summary": "Twelve URLs checked; one deeply analyzed.",
+              "health_status": "healthy",
+              "identity_match_status": "matched",
+              "limitations": [],
+              "snapshot_ids": [
+                "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+              ],
+              "source_type": "site"
+            },
+            {
+              "available_items": 1,
+              "checked_items": 1,
+              "coverage_summary": "Twelve URLs checked; one deeply analyzed.",
+              "health_status": "healthy",
+              "identity_match_status": "matched",
+              "limitations": [],
+              "snapshot_ids": [
+                "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+              ],
+              "source_type": "site"
+            }
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/data_coverage/sources"
+      }
+    },
+    {
+      "id": "two_actions",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions"
+          ],
+          "value": [
+            {
+              "action_id": "ac_publish_emergency_page",
+              "client_facing_explanation": "Create one focused page that gives searchers and Google a clear emergency plumbing destination.",
+              "data_sources": [
+                "site",
+                "serp"
+              ],
+              "definition_of_done": [
+                "The page is live, indexable, internally linked, and quality checked."
+              ],
+              "dependencies": [],
+              "effort_bucket": "medium",
+              "exact_targets": [
+                "https://example-plumbing.test/services/emergency-plumbing"
+              ],
+              "finding_ids": [
+                "fn_service_page_gap",
+                "fn_market_visibility_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Publish an indexable emergency plumbing page for Austin.",
+                  "sequence": 1,
+                  "title": "Create the service page"
+                },
+                {
+                  "instruction": "Link the page from services and relevant location navigation.",
+                  "sequence": 2,
+                  "title": "Connect the page"
+                }
+              ],
+              "owner_suggestion": "SEO lead and client subject-matter expert",
+              "required_client_assets": [
+                "Emergency service availability",
+                "Service photos",
+                "Response-time policy"
+              ],
+              "review_date": "2026-09-25",
+              "sequence": 1,
+              "specification": {
+                "content_requirements": [
+                  "Describe emergency response scope, proof, service area, and contact path."
+                ],
+                "gbp_requirements": [],
+                "technical_requirements": [
+                  "Use a self-referencing canonical and include the page in the sitemap."
+                ]
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "No dedicated page",
+                  "metric_key": "page_indexable",
+                  "source_type": "site",
+                  "success_condition": "Dedicated page is indexable"
+                }
+              ],
+              "why_now": "The missing service asset blocks relevance for the confirmed opportunity."
+            },
+            {
+              "action_id": "ac_align_public_gbp",
+              "client_facing_explanation": "Align the public profile with the service customers are actively looking for.",
+              "data_sources": [
+                "gbp",
+                "site"
+              ],
+              "definition_of_done": [
+                "The approved service is represented consistently on the site and GBP."
+              ],
+              "dependencies": [
+                "ac_publish_emergency_page"
+              ],
+              "effort_bucket": "small",
+              "exact_targets": [
+                "Google Business Profile service information"
+              ],
+              "finding_ids": [
+                "fn_public_gbp_service_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Verify that emergency plumbing is an accurate offered service before proposing the profile update.",
+                  "sequence": 1,
+                  "title": "Confirm service eligibility"
+                }
+              ],
+              "owner_suggestion": "Client GBP manager",
+              "required_client_assets": [
+                "Approved service description"
+              ],
+              "review_date": "2026-10-25",
+              "sequence": 2,
+              "specification": {
+                "content_requirements": [],
+                "gbp_requirements": [
+                  "Add an accurate emergency plumbing service description after client approval."
+                ],
+                "technical_requirements": []
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "Primary service missing",
+                  "metric_key": "gbp_service_alignment",
+                  "source_type": "gbp",
+                  "success_condition": "Primary service is accurately represented"
+                }
+              ],
+              "why_now": "The public profile should describe the same primary service as the website."
+            }
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/top_actions"
+      }
+    },
+    {
+      "id": "four_actions",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "top_actions"
+          ],
+          "value": [
+            {
+              "action_id": "ac_publish_emergency_page",
+              "client_facing_explanation": "Create one focused page that gives searchers and Google a clear emergency plumbing destination.",
+              "data_sources": [
+                "site",
+                "serp"
+              ],
+              "definition_of_done": [
+                "The page is live, indexable, internally linked, and quality checked."
+              ],
+              "dependencies": [],
+              "effort_bucket": "medium",
+              "exact_targets": [
+                "https://example-plumbing.test/services/emergency-plumbing"
+              ],
+              "finding_ids": [
+                "fn_service_page_gap",
+                "fn_market_visibility_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Publish an indexable emergency plumbing page for Austin.",
+                  "sequence": 1,
+                  "title": "Create the service page"
+                },
+                {
+                  "instruction": "Link the page from services and relevant location navigation.",
+                  "sequence": 2,
+                  "title": "Connect the page"
+                }
+              ],
+              "owner_suggestion": "SEO lead and client subject-matter expert",
+              "required_client_assets": [
+                "Emergency service availability",
+                "Service photos",
+                "Response-time policy"
+              ],
+              "review_date": "2026-09-25",
+              "sequence": 1,
+              "specification": {
+                "content_requirements": [
+                  "Describe emergency response scope, proof, service area, and contact path."
+                ],
+                "gbp_requirements": [],
+                "technical_requirements": [
+                  "Use a self-referencing canonical and include the page in the sitemap."
+                ]
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "No dedicated page",
+                  "metric_key": "page_indexable",
+                  "source_type": "site",
+                  "success_condition": "Dedicated page is indexable"
+                }
+              ],
+              "why_now": "The missing service asset blocks relevance for the confirmed opportunity."
+            },
+            {
+              "action_id": "ac_align_public_gbp",
+              "client_facing_explanation": "Align the public profile with the service customers are actively looking for.",
+              "data_sources": [
+                "gbp",
+                "site"
+              ],
+              "definition_of_done": [
+                "The approved service is represented consistently on the site and GBP."
+              ],
+              "dependencies": [
+                "ac_publish_emergency_page"
+              ],
+              "effort_bucket": "small",
+              "exact_targets": [
+                "Google Business Profile service information"
+              ],
+              "finding_ids": [
+                "fn_public_gbp_service_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Verify that emergency plumbing is an accurate offered service before proposing the profile update.",
+                  "sequence": 1,
+                  "title": "Confirm service eligibility"
+                }
+              ],
+              "owner_suggestion": "Client GBP manager",
+              "required_client_assets": [
+                "Approved service description"
+              ],
+              "review_date": "2026-10-25",
+              "sequence": 2,
+              "specification": {
+                "content_requirements": [],
+                "gbp_requirements": [
+                  "Add an accurate emergency plumbing service description after client approval."
+                ],
+                "technical_requirements": []
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "Primary service missing",
+                  "metric_key": "gbp_service_alignment",
+                  "source_type": "gbp",
+                  "success_condition": "Primary service is accurately represented"
+                }
+              ],
+              "why_now": "The public profile should describe the same primary service as the website."
+            },
+            {
+              "action_id": "ac_build_local_proof",
+              "client_facing_explanation": "Support the new service page with real local proof that competitors already communicate more clearly.",
+              "data_sources": [
+                "site",
+                "competitor"
+              ],
+              "definition_of_done": [
+                "The service page contains approved, locally specific proof."
+              ],
+              "dependencies": [
+                "ac_publish_emergency_page",
+                "ac_align_public_gbp"
+              ],
+              "effort_bucket": "medium",
+              "exact_targets": [
+                "Emergency plumbing service page",
+                "Relevant Austin proof assets"
+              ],
+              "finding_ids": [
+                "fn_market_visibility_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Add verified Austin service examples and customer proof to the new page.",
+                  "sequence": 1,
+                  "title": "Add local proof"
+                }
+              ],
+              "owner_suggestion": "Content lead",
+              "required_client_assets": [
+                "Approved Austin job examples",
+                "Customer-approved proof"
+              ],
+              "review_date": "2026-11-24",
+              "sequence": 3,
+              "specification": {
+                "content_requirements": [
+                  "Use only verifiable service examples and customer-approved proof."
+                ],
+                "gbp_requirements": [],
+                "technical_requirements": []
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "No dedicated proof set",
+                  "metric_key": "local_proof_items",
+                  "source_type": "site",
+                  "success_condition": "At least three approved proof items are published"
+                }
+              ],
+              "why_now": "Competitor visibility creates a measurable need for stronger local proof after the core page exists."
+            },
+            {
+              "action_id": "ac_publish_emergency_page",
+              "client_facing_explanation": "Create one focused page that gives searchers and Google a clear emergency plumbing destination.",
+              "data_sources": [
+                "site",
+                "serp"
+              ],
+              "definition_of_done": [
+                "The page is live, indexable, internally linked, and quality checked."
+              ],
+              "dependencies": [],
+              "effort_bucket": "medium",
+              "exact_targets": [
+                "https://example-plumbing.test/services/emergency-plumbing"
+              ],
+              "finding_ids": [
+                "fn_service_page_gap",
+                "fn_market_visibility_gap"
+              ],
+              "implementation_steps": [
+                {
+                  "instruction": "Publish an indexable emergency plumbing page for Austin.",
+                  "sequence": 1,
+                  "title": "Create the service page"
+                },
+                {
+                  "instruction": "Link the page from services and relevant location navigation.",
+                  "sequence": 2,
+                  "title": "Connect the page"
+                }
+              ],
+              "owner_suggestion": "SEO lead and client subject-matter expert",
+              "required_client_assets": [
+                "Emergency service availability",
+                "Service photos",
+                "Response-time policy"
+              ],
+              "review_date": "2026-09-25",
+              "sequence": 1,
+              "specification": {
+                "content_requirements": [
+                  "Describe emergency response scope, proof, service area, and contact path."
+                ],
+                "gbp_requirements": [],
+                "technical_requirements": [
+                  "Use a self-referencing canonical and include the page in the sitemap."
+                ]
+              },
+              "validation_metrics": [
+                {
+                  "baseline": "No dedicated page",
+                  "metric_key": "page_indexable",
+                  "source_type": "site",
+                  "success_condition": "Dedicated page is indexable"
+                }
+              ],
+              "why_now": "The missing service asset blocks relevance for the confirmed opportunity."
+            }
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/top_actions"
+      }
+    },
+    {
+      "id": "two_competitors",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors"
+          ],
+          "value": [
+            {
+              "analyzed_page_count": 3,
+              "best_position": 1,
+              "business_name": "Alpha Plumbing",
+              "competitor_id": "cp_alpha_plumbing",
+              "evidence_ids": [
+                "ev_serp_competitor_alpha"
+              ],
+              "gaps": [],
+              "public_gbp_url": null,
+              "query_appearance_count": 3,
+              "strengths": [
+                "Dedicated emergency service page"
+              ],
+              "website_url": "https://alpha-plumbing.test"
+            },
+            {
+              "analyzed_page_count": 2,
+              "best_position": 2,
+              "business_name": "Beta Plumbing",
+              "competitor_id": "cp_beta_plumbing",
+              "evidence_ids": [
+                "ev_serp_competitor_beta"
+              ],
+              "gaps": [],
+              "public_gbp_url": null,
+              "query_appearance_count": 2,
+              "strengths": [
+                "Clear local proof"
+              ],
+              "website_url": "https://beta-plumbing.test"
+            }
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_CONTRACT_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    },
+    {
+      "id": "prospect_with_version_changes",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "entries"
+          ],
+          "value": [
+            {
+              "change_type": "new",
+              "current_finding_ids": [
+                "fn_market_visibility_gap"
+              ],
+              "evidence_ids": [
+                "ev_site_service_page"
+              ],
+              "reason": "Unexpected initial version change."
+            }
+          ]
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff/entries"
+      }
+    },
+    {
+      "id": "prospect_upgrade_kind",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "kind"
+          ],
+          "value": "upgrade"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff"
+      }
+    },
+    {
+      "id": "verified_initial_kind",
+      "fixture": "verified",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "version_diff",
+            "kind"
+          ],
+          "value": "initial"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/version_diff"
+      }
+    },
+    {
+      "id": "non_http_competitor",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors",
+            0,
+            "website_url"
+          ],
+          "value": "ftp://example.test/"
+        }
+      ],
+      "accepted": false,
+      "error": {
+        "code": "REPORT_REFERENCE_INVALID",
+        "path": "/competitor_analysis/competitors"
+      }
+    }
+  ]
+}
