@@ -1,0 +1,306 @@
+{
+  "evidence_index": [
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "low",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_23eb7b3060904303f46cea5442b2e3593d80b57c80fa316cfa66d9748face585",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "partial",
+      "original_value": "not_returned",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:f323c703fd0790226afafbea0c84fd8cbbfc5b4e3e752b0bf926751e3d4a7269",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "coverage"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_751b5a42d89a58cc5890336e8d86e8bc5d2a67089657b42fb8dc2a0ec115ff38",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "https://maps.google.com/?cid=12345",
+      "original_value": "https://maps.google.com/?cid=12345",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:a08c6d382fe992e63e6645bf73e968cf34ba646c4541041da50593c0cd8c922c",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_8094009601a4f04a84f258a0c714449600da8399f89bbce1ba24130e5ba9d146",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "https://example.test/",
+      "original_value": "https://example.test/",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:bf2a22bef02919c49bc4a1bac351ff31d45465714b6e6174d5343fce43caa0d3",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "low",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_836a84a0cc49f6d010117972d04c4e94248495a54bdc24489eeab0237fea3932",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "partial",
+      "original_value": "unsupported",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:347a8a3922d30693c729077df20010a6e4768a53e153724f43063f9ce945f4da",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "coverage"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_a9ebdf8c8d558c8ee394a406b383122ffc97605df5a72df14660562dc84512f3",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "Example Plumbing",
+      "original_value": "Example Plumbing",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:7e995c2c52dbb5b2aed50aa1f70dc23b81bd4b06dbb44cc33ad0869fa91ad791",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_aaedc967089d286324b34dcda517c3da5d6214ad2daf40112a353d5bf2963f17",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "12345",
+      "original_value": "12345",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:3078bf0e286e21b97c01b6314a7d976400d2ff0e565be7c78c175e7cff367532",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_ab5b6bf51cfa57b361e834700e81edc1f3e509bc05fc54101fb3e922aa6b51ff",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": false,
+      "original_value": false,
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:1a28e22500c5fb98c2316d048e12b5b951caa9b10d26b8119c2cf3ca99f5cb6b",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "low",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_c16f2bd8595b18430afd830d3c63cc424314d2865ae52db061c41b53c41101cd",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "empty",
+      "original_value": "returned_empty",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:aba79a370e591e58b0dd4bfcaae1079ad92875f001d9f13f32c058bc5e398a91",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "coverage"
+    },
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "medium",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_eb0dd768f8b8f941975196b83963a18ceef9b4240f9ab548ae2ed52a281f7a26",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "fixture-customer-place",
+      "original_value": "fixture-customer-place",
+      "snapshot_id": "00000000-0000-0000-0000-000000000048",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": "place_id:fixture-customer-place",
+        "field_path": "selector:c13b6fa1b6f7e534d2c9095b85290f254fe4e6182231b394a3dc7dff6dc2eb57",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": "https://maps.google.com/?cid=12345"
+      },
+      "source_type": "gbp"
+    }
+  ],
+  "findings": [],
+  "layers": [
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "foundation",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "entity_presence",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "entity_consistency",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "specificity",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "real_world_connection",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "accountability",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "page_unique_value",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "algorithm_fit",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    }
+  ]
+}

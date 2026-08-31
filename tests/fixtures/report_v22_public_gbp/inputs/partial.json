@@ -1,0 +1,149 @@
+{
+  "context": {
+    "primary_service": "Plumber",
+    "target_market": {
+      "display_name": "Austin, TX",
+      "country_code": "US",
+      "region": null,
+      "city": null,
+      "postal_code": null,
+      "latitude": 30.2672,
+      "longitude": -97.7431
+    },
+    "queries": [
+      "plumber",
+      "emergency plumber",
+      "water heater repair"
+    ],
+    "search_language": "en",
+    "search_device": "mobile",
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "report_type": "prospect",
+    "site_url": "https://example.test/",
+    "competitors": [
+      {
+        "competitor_id": "cp_competitor_1",
+        "business_name": "Competitor 1",
+        "website_url": "https://competitor-1.test/",
+        "public_gbp_url": "https://maps.google.com/?cid=1",
+        "confirmation_source": "user"
+      },
+      {
+        "competitor_id": "cp_competitor_2",
+        "business_name": "Competitor 2",
+        "website_url": "https://competitor-2.test/",
+        "public_gbp_url": "https://maps.google.com/?cid=2",
+        "confirmation_source": "user"
+      },
+      {
+        "competitor_id": "cp_competitor_3",
+        "business_name": "Competitor 3",
+        "website_url": "https://competitor-3.test/",
+        "public_gbp_url": "https://maps.google.com/?cid=3",
+        "confirmation_source": "user"
+      }
+    ],
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "customer_public_gbp": {
+      "public_gbp_url": "https://maps.google.com/?cid=12345",
+      "entity_keys": [
+        {
+          "kind": "place_id",
+          "value": "fixture-customer-place"
+        },
+        {
+          "kind": "cid",
+          "value": "12345"
+        }
+      ],
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "site_url": "https://example.test/",
+      "confirmation_source": "user",
+      "confirmed_at": "2026-08-29T22:00:00Z"
+    }
+  },
+  "snapshot_input": {
+    "request_target": {
+      "public_gbp_url": "https://maps.google.com/?cid=12345",
+      "entity_keys": [
+        {
+          "kind": "place_id",
+          "value": "fixture-customer-place"
+        },
+        {
+          "kind": "cid",
+          "value": "12345"
+        }
+      ]
+    },
+    "started_at": "2026-08-29T23:00:00Z",
+    "completed_at": "2026-08-29T23:30:00Z",
+    "expires_at": "2026-08-31T00:00:00Z",
+    "provider": "serpapi_public",
+    "request_record_id": "req_aaaaaaaaaaaaaaaaaaaaaaaa",
+    "response_checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "collection_status": "succeeded",
+    "failure_code": null,
+    "record": {
+      "observed_entity_keys": [
+        {
+          "kind": "place_id",
+          "value": "fixture-customer-place"
+        },
+        {
+          "kind": "cid",
+          "value": "12345"
+        }
+      ],
+      "observed_public_gbp_url": "https://maps.google.com/?cid=12345",
+      "fields": {
+        "business_name": {
+          "state": "observed",
+          "value": "Example Plumbing"
+        },
+        "website_url": {
+          "state": "observed",
+          "value": "https://example.test/"
+        },
+        "address": {
+          "state": "not_returned",
+          "value": null
+        },
+        "phone": {
+          "state": "unsupported",
+          "value": null
+        },
+        "service_areas": {
+          "state": "returned_empty",
+          "value": []
+        },
+        "service_area_business": {
+          "state": "observed",
+          "value": false
+        }
+      }
+    },
+    "limitations": [],
+    "reference": {
+      "public_gbp_url": "https://maps.google.com/?cid=12345",
+      "entity_keys": [
+        {
+          "kind": "place_id",
+          "value": "fixture-customer-place"
+        },
+        {
+          "kind": "cid",
+          "value": "12345"
+        }
+      ],
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "site_url": "https://example.test/",
+      "confirmation_source": "user",
+      "confirmed_at": "2026-08-29T22:00:00Z"
+    },
+    "limits": {
+      "max_bytes": 1000000
+    }
+  },
+  "snapshot_id": "00000000-0000-0000-0000-000000000048"
+}

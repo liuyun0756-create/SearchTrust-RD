@@ -13,7 +13,7 @@ EvaluationReason = Literal[
     "condition_met", "condition_not_met", "source_missing", "source_ineligible",
     "field_not_observed", "insufficient_sample", "identity_unresolved",
     "rank_basis_mismatch", "comparison_time_gap", "ambiguous_page_observations",
-    "customer_public_gbp_missing", "semantic_rules_not_implemented",
+    "customer_public_gbp_missing", "semantic_rules_not_implemented", "gbp_alignment_not_implemented",
 ]
 
 

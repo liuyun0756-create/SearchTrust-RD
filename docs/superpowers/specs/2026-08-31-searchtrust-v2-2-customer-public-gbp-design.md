@@ -4,7 +4,7 @@
 
 范围：V22-032 后续的客户公开 GBP 数据基础，不是四项对齐规则或完整八层评级。
 
-状态：用户已确认本轮范围及“独立客户公开 GBP 快照、复用证据索引”的总体方案；本书面细则待用户审阅。尚未实施业务代码。
+状态：用户已确认范围、总体方案及本书面细则；批准范围已实施并通过本地回归，见同日 customer-public-gbp-implementation-plan 与 customer-public-gbp-completion。
 
 主要仓库：SearchTrust-RD。search-trust 仅参与共享样例和冻结合同兼容性验证，不新增 UI。
 
@@ -258,7 +258,7 @@ build_public_findings 接受新增 public_gbp 来源，但仍拒绝 first_party 
 - 无快照不造 Evidence/UUID，身份失败和过期不输出业务值，安全错误不泄露输入。
 - 旧 V22-031 / V22-032 输入、Evidence/Finding 内容与编号、冻结模型/API/Schema/类型、v2.1 回归不变。
 
-实施后应运行新增定向测试、后端完整 pytest、前端合同/完整测试及非增量类型检查、所有旧导出器与新导出器的双端只读漂移检查、差异审查。当前只是设计阶段，未宣称新增测试已通过。
+实施后应运行新增定向测试、后端完整 pytest、前端合同/完整测试及非增量类型检查、所有旧导出器与新导出器的双端只读漂移检查、差异审查。本节为设计阶段制定的验收要求；实际结果见同日 customer-public-gbp-completion。
 
 ## 14. 交付后仍需完成
 

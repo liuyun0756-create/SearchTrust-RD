@@ -4,14 +4,13 @@ from itertools import chain
 from pydantic import ValidationError
 
 from app.jobs_v22.digest import canonical_json_bytes
-from app.report_v22 import site_findings, market_findings, competitor_findings
+from app.report_v22 import site_findings, market_findings, competitor_findings, public_gbp_findings
 from app.report_v22.evidence import build_evidence_index
 from app.report_v22.evidence_bindings import host
 from app.report_v22.evidence_adapters.site_counts import COUNT_VERSION
 from app.report_v22.evidence_models import reject_nonfinite
-from app.report_v22.findings_common import decision
 from app.report_v22.findings_errors import FindingsError
-from app.report_v22.findings_models import PublicFindingsInput, PublicFindingsResult, RuleOutcome, RuleTarget
+from app.report_v22.findings_models import PublicFindingsInput, PublicFindingsResult, RuleOutcome
 from app.report_v22.findings_rollup import build_rollups
 from app.report_v22.findings_view import EvidenceView
 from app.report_v22.models import REQUIRED_LAYER_KEYS
@@ -42,8 +41,8 @@ def _validate_outcome(view, outcome):
     evaluation, finding = outcome.evaluation, outcome.finding
     if evaluation.rule_id not in {*RULES, *GBP_RULES} or evaluation.rule_version != RULE_VERSION:
         raise FindingsError("REFERENCE_INVALID")
-    if evaluation.rule_id in GBP_RULES and evaluation.state != "not_checked":
-        raise FindingsError("REFERENCE_INVALID")
+    if evaluation.rule_id in GBP_RULES:
+        public_gbp_findings.validate_evaluation(view, evaluation)
     if (evaluation.state == "triggered") != (finding is not None):
         raise FindingsError("REFERENCE_INVALID")
     if finding is None:
@@ -136,7 +135,7 @@ def _validate_rollups(view, outcomes, site, clusters):
 def build_public_findings(value: PublicFindingsInput | dict) -> PublicFindingsResult:
     try:
         reject_nonfinite(value)
-        raw = value.model_dump(mode="python") if isinstance(value, PublicFindingsInput) else value
+        raw = value.model_dump(mode="python", warnings=False) if isinstance(value, PublicFindingsInput) else value
         request = PublicFindingsInput.model_validate(raw)
         inputs = request.evidence_input
         if inputs.context.report_type != "prospect" or any(s.kind == "first_party" for s in inputs.sources):
@@ -151,7 +150,7 @@ def build_public_findings(value: PublicFindingsInput | dict) -> PublicFindingsRe
             raise FindingsError("INPUT_INVALID")
         evidence = build_evidence_index(inputs)
         view = EvidenceView(inputs, evidence)
-        gbp = (decision(view, rule, RuleTarget(kind="customer_gbp"), "not_checked", "customer_public_gbp_missing") for rule in GBP_RULES)
+        gbp = public_gbp_findings.evaluate(view)
         outcomes, findings, encoded_findings = {}, {}, {}
         retained_bytes = len(canonical_json_bytes(evidence))
         if retained_bytes > request.limits.max_bytes:

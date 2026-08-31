@@ -20,6 +20,7 @@ from app.report_v22.models import (
     IdentityMatchStatus, ReportType, ScalarValue, SourceLocator, SourceType, StrictModel,
 )
 from pydantic import HttpUrl
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
 ActualSourceType = Literal["site", "serp", "competitor", "gsc", "gbp", "ga4"]
 GapReason = Literal["no_snapshot", "not_connected", "unavailable", "empty", "partial", "unhealthy", "identity_mismatch", "identity_unconfirmed", "expired"]
@@ -28,7 +29,9 @@ GapReason = Literal["no_snapshot", "not_connected", "unavailable", "empty", "par
 def reject_nonfinite(value: object) -> None:
     """Check before JSON encoding: orjson would silently encode NaN as null."""
     if isinstance(value, BaseModel):
-        reject_nonfinite(value.model_dump(mode="python"))
+        # Invalid copied models are revalidated by the entry point; serializer
+        # warnings must not echo their payloads before the safe error is raised.
+        reject_nonfinite(value.model_dump(mode="python", warnings=False))
     elif isinstance(value, float) and not math.isfinite(value):
         raise ValueError("nonfinite evidence input")
     elif isinstance(value, dict):
@@ -45,6 +48,7 @@ class EvidenceBuildContext(CaseContext):
     site_url: HttpUrl
     competitors: list[ConfirmedCompetitor] = Field(min_length=3, max_length=3)
     evaluated_at: AwareDatetime
+    customer_public_gbp: CustomerPublicGbpReference | None = None
 
     @model_validator(mode="after")
     def unique_competitors(self):
@@ -96,13 +100,35 @@ class FirstPartyEvidenceSource(StrictModel):
     payload: FirstPartySnapshotEnvelope
 
 
-EvidenceSource = Annotated[SiteEvidenceSource | SerpEvidenceSource | CompetitorEvidenceSource | FirstPartyEvidenceSource, Field(discriminator="kind")]
+class PublicGbpEvidenceSource(StrictModel):
+    kind: Literal["public_gbp"] = "public_gbp"
+    binding: SnapshotBinding
+    payload: CustomerPublicGbpSnapshot
 
 
-class MissingEvidenceSource(StrictModel):
+EvidenceSource = Annotated[SiteEvidenceSource | SerpEvidenceSource | CompetitorEvidenceSource | FirstPartyEvidenceSource | PublicGbpEvidenceSource, Field(discriminator="kind")]
+
+
+class GbpOriginMetadata(StrictModel):
     source_type: ActualSourceType
+    gbp_origin: Literal["public_profile", "first_party"] | None = None
+
+    @model_validator(mode="after")
+    def origin_requires_gbp(self):
+        if self.gbp_origin is not None and self.source_type != "gbp":
+            raise ValueError("GBP origin requires GBP source")
+        return self
+
+
+class MissingEvidenceSource(GbpOriginMetadata):
     reason: Literal["no_snapshot", "not_connected", "unavailable"] = "no_snapshot"
     competitor_id: CompetitorId | None = None
+
+    @model_validator(mode="after")
+    def public_is_not_authorized_connection(self):
+        if self.gbp_origin == "public_profile" and self.reason == "not_connected":
+            raise ValueError("public profile has no authorized connection")
+        return self
 
 
 class EvidenceBuildLimits(StrictModel):
@@ -123,7 +149,7 @@ class EvidenceBuildInput(StrictModel):
 
 
 class EvidenceSelector(StrictModel):
-    category: Literal["site_field", "page_fragment", "serp_field", "competitor_field", "metric", "coverage"]
+    category: Literal["site_field", "page_fragment", "serp_field", "competitor_field", "public_gbp_field", "metric", "coverage"]
     record_key: str = Field(min_length=1, max_length=500)
     record_context: list[str | None] = Field(default_factory=list)
     field: str = Field(min_length=1, max_length=120)
@@ -170,9 +196,8 @@ class EvidenceSourceTrace(StrictModel):
     origin_paths: list[str] = Field(min_length=1)
 
 
-class EvidenceSourceSummary(StrictModel):
+class EvidenceSourceSummary(GbpOriginMetadata):
     snapshot_id: UUID
-    source_type: ActualSourceType
     health_status: HealthStatus
     identity_match_status: IdentityMatchStatus
     business_eligible: bool
@@ -180,8 +205,7 @@ class EvidenceSourceSummary(StrictModel):
     limitations: list[str]
 
 
-class EvidenceCoverageGap(StrictModel):
-    source_type: ActualSourceType
+class EvidenceCoverageGap(GbpOriginMetadata):
     reason: GapReason
     snapshot_id: UUID | None = None
     competitor_id: CompetitorId | None = None

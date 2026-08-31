@@ -1,0 +1,91 @@
+{
+  "evidence_index": [
+    {
+      "collected_at": "2026-08-29T23:30:00Z",
+      "confidence": "low",
+      "coverage_end": null,
+      "coverage_start": null,
+      "evidence_id": "ev_8ad7e2b9533905cc76f9a363e46a322261f4084e62b08806771432d71a08d247",
+      "health_status": "healthy",
+      "limitations": [
+        "Customer public GBP identity: strong_id_conflict.",
+        "Customer public GBP source is ineligible: identity_mismatch.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "normalized_value": "identity_mismatch",
+      "original_value": "mismatch",
+      "snapshot_id": "00000000-0000-0000-0000-000000000049",
+      "source_locator": {
+        "device": null,
+        "external_resource_id": null,
+        "field_path": "selector:229898b29d58c7a89672f3333cd66e46e0c070e988c8afa990827cc9c693a206",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_path": null,
+        "query": null,
+        "url": null
+      },
+      "source_type": "coverage"
+    }
+  ],
+  "findings": [],
+  "layers": [
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "foundation",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "entity_presence",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "entity_consistency",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "specificity",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "real_world_connection",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "accountability",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "page_unique_value",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    },
+    {
+      "evidence_ids": [],
+      "finding_ids": [],
+      "layer_key": "algorithm_fit",
+      "status": "not_checked",
+      "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+    }
+  ]
+}

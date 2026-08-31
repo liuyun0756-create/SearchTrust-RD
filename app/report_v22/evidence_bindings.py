@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.report_v22.evidence_errors import EvidenceError
 from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceSource, reject_nonfinite
+from app.report_v22.public_gbp_bindings import conflicts_with_missing, validate_public_binding, validate_reference
 
 
 def host(url) -> str:
@@ -25,7 +26,14 @@ def eligibility(source: EvidenceSource, evaluated_at: datetime):
         return "expired"
     if binding.health_status == "expired":
         return "expired"
-    if source.kind == "first_party":
+    if source.kind == "public_gbp":
+        if binding.health_status == "unavailable":
+            return "unavailable"
+        if binding.identity_match_status == "mismatch":
+            return "identity_mismatch"
+        if binding.identity_match_status != "matched":
+            return "identity_unconfirmed"
+    elif source.kind == "first_party":
         if binding.identity_match_status == "mismatch":
             return "identity_mismatch"
         if binding.identity_match_status != "matched":
@@ -54,14 +62,17 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
     """Validate *all* sources before any adapter runs; deduplicate exact inputs."""
     try:
         reject_nonfinite(value)
-        value = EvidenceBuildInput.model_validate(value.model_dump(mode="python"))
+        value = EvidenceBuildInput.model_validate(value.model_dump(mode="python", warnings=False))
         context = value.context
+        validate_reference(context)
         registry = {}
         sources = {}
         for source in value.sources:
             b, p = source.binding, source.payload
             require(b.case_id == context.case_id and b.fetched_at <= context.evaluated_at)
             kind = p.source_type if source.kind == "first_party" else source.kind
+            if kind == "public_gbp":
+                kind = "gbp"
             require(b.source_type == kind and b.schema_version == p.schema_version)
             _validate_times(p.model_dump(mode="python"), b.fetched_at)
             if source.kind == "first_party":
@@ -78,7 +89,9 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
                 checksum = request_digest(p)
             if checksum != b.payload_checksum:
                 raise EvidenceError("CHECKSUM_MISMATCH")
-            if source.kind == "site":
+            if source.kind == "public_gbp":
+                validate_public_binding(source, context)
+            elif source.kind == "site":
                 require(host(context.site_url) == p.canonical_host == host(p.root_url))
                 require(str(context.site_url) == str(p.root_url))
             elif source.kind == "serp":
@@ -112,6 +125,7 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
                 require(registry[b.snapshot_id] == encoded)
             registry[b.snapshot_id] = encoded
             sources[b.snapshot_id] = source
+        require(sum(s.kind == "public_gbp" for s in sources.values()) <= 1)
         for source in sources.values():
             if source.kind == "competitor":
                 market = sources.get(source.payload.market_snapshot_id)
@@ -119,7 +133,8 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
                 require(market.binding.payload_checksum == source.payload.market_snapshot_checksum)
         for missing in value.missing_sources:
             require(missing.competitor_id is None or (missing.source_type == "competitor" and missing.competitor_id in {c.competitor_id for c in context.competitors}))
-            require(not any(s.binding.source_type == missing.source_type for s in sources.values()))
+            require(missing.gbp_origin != "public_profile" or context.report_type == "prospect")
+            require(not any(conflicts_with_missing(s, missing) for s in sources.values()))
         return [sources[key] for key in sorted(sources, key=str)]
     except (ValueError, TypeError, ValidationError):
         raise EvidenceError("SOURCE_INVALID") from None

@@ -9,6 +9,8 @@ from pydantic import ValidationError
 
 from app.jobs_v22.digest import canonical_json_bytes
 from app.report_v22.evidence_adapters import site, serp, competitor, first_party
+from app.report_v22.evidence_adapters import public_gbp
+from app.report_v22.public_gbp_bindings import source_origin
 from app.report_v22.evidence_adapters.common import coverage, full_limitations, limited
 from app.report_v22.evidence_bindings import eligibility, validate_sources
 from app.report_v22.evidence_errors import EvidenceError
@@ -45,7 +47,8 @@ def _ineligible(source, reason, notes, competitor_id=None):
     if source.kind=="first_party":
         request_context=source.payload.provider_request_context
         locator=SourceLocator(external_resource_id=request_context.external_resource_id)
-    return coverage(source,source.binding.source_type,field,reason,value,f"/binding/{field}",
+    record_key = public_gbp.record_context(source, field) if source.kind == "public_gbp" else source.binding.source_type
+    return coverage(source,record_key,field,reason,value,f"/binding/{field}",
         locator=locator,request_context=request_context,limitations=notes,competitor_id=competitor_id,
         health_status="expired" if reason=="expired" else b.health_status)
 
@@ -54,20 +57,27 @@ def build_evidence_index(value: EvidenceBuildInput | dict) -> EvidenceBuildResul
     try:
         # Revalidate nested models too: model_copy/update intentionally skips validators.
         reject_nonfinite(value)
-        data=value.model_dump(mode="python") if isinstance(value,EvidenceBuildInput) else value
+        data=value.model_dump(mode="python", warnings=False) if isinstance(value,EvidenceBuildInput) else value
         request=EvidenceBuildInput.model_validate(data)
         sources=validate_sources(request)
         items, traces, fingerprints = {}, {}, {}
         summaries=[]
         retained_bytes=0
-        gaps=[EvidenceCoverageGap(source_type=m.source_type,reason=m.reason,competitor_id=m.competitor_id) for m in request.missing_sources]
+        gaps=[EvidenceCoverageGap(source_type=m.source_type,reason=m.reason,competitor_id=m.competitor_id,
+                                  gbp_origin=m.gbp_origin) for m in request.missing_sources]
         adapters={"site":site,"serp":serp,"competitor":competitor,"first_party":first_party}
         for source in sources:
             notes=set(full_limitations(source))
+            if source.kind == "public_gbp":
+                notes.update(public_gbp.source_notes(source))
             reason=eligibility(source,request.context.evaluated_at)
+            if source.kind == "public_gbp" and reason is not None:
+                notes.add(f"Customer public GBP source is ineligible: {reason}.")
             if reason:
                 identities = [item.competitor.competitor_id for item in source.payload.competitors] if source.kind=="competitor" else [None]
                 observations=[_ineligible(source,reason,notes,identity) for identity in identities]
+            elif source.kind == "public_gbp":
+                observations=public_gbp.observations(source,request.context.customer_public_gbp)
             else:
                 observations=adapters[source.kind].observations(source)
             source_json=source.model_dump(mode="json")
@@ -91,6 +101,9 @@ def build_evidence_index(value: EvidenceBuildInput | dict) -> EvidenceBuildResul
                     source_locator=locator,original_value=observation.original_value,normalized_value=observation.normalized_value,
                     collected_at=observation.collected_at,coverage_start=observation.coverage_start,coverage_end=observation.coverage_end,
                     confidence=observation.confidence,health_status=observation.health_status,limitations=limited(observation.limitations))
+                if source.kind == "public_gbp":
+                    item = item.model_copy(update={"original_value": observation.original_value,
+                        "normalized_value": observation.normalized_value, "limitations": public_gbp.limited_notes(observation.limitations)})
                 # Canonical bytes distinguish True/1, float/int, and every frozen field.
                 fingerprint=canonical_json_bytes({"item":item.model_dump(mode="json"),"selector":observation.selector.model_dump(mode="json")})
                 if identifier in items:
@@ -115,8 +128,10 @@ def build_evidence_index(value: EvidenceBuildInput | dict) -> EvidenceBuildResul
                 notes.update(observation.limitations)
                 if observation.gap_reason:
                     gaps.append(EvidenceCoverageGap(source_type=source.binding.source_type,reason=observation.gap_reason,
+                        gbp_origin=source_origin(source),
                         snapshot_id=source.binding.snapshot_id,competitor_id=observation.selector.competitor_id,evidence_id=identifier))
             summaries.append(EvidenceSourceSummary(snapshot_id=source.binding.snapshot_id,source_type=source.binding.source_type,
+                gbp_origin=source_origin(source),
                 health_status=source.binding.health_status,identity_match_status=source.binding.identity_match_status,
                 business_eligible=reason is None,evidence_count=len(source_ids),limitations=sorted(notes)))
         gap_map={canonical_json_bytes(g):g for g in gaps}

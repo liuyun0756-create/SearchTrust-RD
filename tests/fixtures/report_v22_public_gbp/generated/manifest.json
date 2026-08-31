@@ -1,0 +1,39 @@
+{
+  "counts": {
+    "expired.json": {
+      "evidence_index": 1,
+      "findings": 0,
+      "layers": 8
+    },
+    "identity_conflict.json": {
+      "evidence_index": 1,
+      "findings": 0,
+      "layers": 8
+    },
+    "matched.json": {
+      "evidence_index": 10,
+      "findings": 0,
+      "layers": 8
+    },
+    "partial.json": {
+      "evidence_index": 9,
+      "findings": 0,
+      "layers": 8
+    }
+  },
+  "files": {
+    "expired.json": "sha256:e2620199ee27b76b1ce8e356d2da14b33dda3e132d3fdc935f264f79d751eafd",
+    "identity_conflict.json": "sha256:df0b4e216db7360d5f456ce5544eb90e03ad944c80e54e55647c45e731286c66",
+    "matched.json": "sha256:4d1e949b708491d68d2a4228d4f9b16886d6c9d72570c2e281fa477f5d7e103a",
+    "partial.json": "sha256:225454f730cca8d20c4e00b2021a57377ec5e72f476b51d0d36912c71fb5ea34"
+  },
+  "identity_version": "customer_public_gbp_identity_v1",
+  "inputs": {
+    "expired.json": "sha256:773683dfda37370ca208af6fa729aa38afcb5ab283b38eb4823dc982b17ca6d2",
+    "identity_conflict.json": "sha256:8d735f274301a37040bae2e0a3bf35d886a9b779c8d736d4832eba42ff787229",
+    "matched.json": "sha256:b47df4c99445ab96848d89313e21eb803514cff16ac9b3d79703abbc7260fb0a",
+    "partial.json": "sha256:5bcae8260f4ef5afbfa8fc9c5c56e672deb8a911e729b0639d8f8256cc642c2a"
+  },
+  "synthetic_snapshots": true,
+  "version": 1
+}
