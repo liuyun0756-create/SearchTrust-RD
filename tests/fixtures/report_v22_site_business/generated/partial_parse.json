@@ -1,0 +1,56 @@
+[
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_5236b863605758a6d503217d9dc09efee409d1fec0ecafb22adc14f78a78858b",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "555-0100",
+    "original_value": "555-0100",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:ff8231ca034a596341d7f71746ae8ace58c1be4e32c586ad1afb586406b52b0d",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_a91a933ce68ae283bb25845ea34ead2fc8579ecfefc093fcd95fbe2efb579465",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": " Saved address ",
+    "original_value": " Saved address ",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:509e7c064ab9aa4d4ea23eacaaa02b4cad187e9fb980302836d20436db662efe",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  }
+]

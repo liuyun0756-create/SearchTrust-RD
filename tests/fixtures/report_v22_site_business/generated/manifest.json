@@ -1,0 +1,27 @@
+{
+  "evidence_counts": {
+    "expired.json": 0,
+    "multiple_candidates.json": 30,
+    "no_content.json": 0,
+    "partial_parse.json": 2,
+    "structured_single.json": 7
+  },
+  "extraction_version": "site_business_extraction_v1",
+  "files": {
+    "expired.json": "sha256:37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "multiple_candidates.json": "sha256:9ee3553b643e65a27d335d953a192ae06962c084d04abd51c6dccac47080aa17",
+    "no_content.json": "sha256:37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "partial_parse.json": "sha256:f5ec391dc72465fd02b9d991bb2fc8e0375502f67fb268db4a7ef70c0ac69c9c",
+    "structured_single.json": "sha256:179f60479b858f23f1d1b4f5ab3ffcb0f537d8465f07b905d7cb66de7ed9646d"
+  },
+  "identity_version": "v22_evidence_identity_v1",
+  "inputs": {
+    "expired.json": "sha256:87e5e50de2c96f06a3922d7d4ebcef0947a036cc25042babb75cbce292ffedaa",
+    "multiple_candidates.json": "sha256:4414585a180f66803a6ffd2e8f32380deaf88fc82a6010a914af8a5585d64e3a",
+    "no_content.json": "sha256:7e27ced46a53cedcae9b60b5641e461118fa9bda5d478f1e818ac0a802a9bc86",
+    "partial_parse.json": "sha256:b7e803c956c619c15701f9c80146c65847017ff19baaeea90336146fdcb0857b",
+    "structured_single.json": "sha256:21c586b7594d609139381d12e740f9521b0edc649f218e0cd11c6aa5b18a23f2"
+  },
+  "synthetic_snapshots": true,
+  "version": 1
+}

@@ -1,0 +1,191 @@
+[
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_17679aa1499c54d0f3b4440218459d77bea3b6158fe9748e5d50d0c7f0e5bb50",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "123 Fixture St",
+    "original_value": "123 Fixture St",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:533210dbd64bffbb5a6b58d167f3909ca150a4e368301c1577f78683dda3dc38",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_3b0aaecf2cf33a4e7ad85675e4b3dd000740dede084dc19fe624a8102d3c3f74",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "Round Rock",
+    "original_value": "Round Rock",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:51910735bcdc139b722cf853301d3bccf167111283ff0602f843a6ff1029c899",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_5e4ea2ec7121b9846c6b2fbfb0cd57e7a5ee9464e135a0bb32aac5a523e05230",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "+1 512 555 0100",
+    "original_value": "+1 512 555 0100",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:f699694488ebf9fe4b8b528367737c67f0caea951642f07768f195ea992f927d",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_6ad53973120ce6003ec7a8313d5baeda21b388142d63c898e3d89af59b9f4fe8",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "Austin",
+    "original_value": "Austin",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:f40eafdbc05ef042a537a275de02d2af2fd91b791206314daabd025c54626283",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_89f30e136da17fcd773bba1e0d284a002c7eee27a5e41a1e32f775926a57f9b8",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": " Fixture Plumbing ",
+    "original_value": " Fixture Plumbing ",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:6cf3b288d28b951456e18acf14ebcc8073064282d063b59a5591c98acee16212",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_966dd4523f7bdd55b03ae4238640dd0dfbfd3e2c0fded8b1d72ee09eff104af1",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "Austin",
+    "original_value": "Austin",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:1e356345c39cc4fdef53ec5ca1dec2e6544e97a76fc3c54c7c9dce1f5599beee",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_f6f383ec3499958af9b3bfd7dafcee98bd289b252e28aab19edc86e9b0cd2aa2",
+    "health_status": "healthy",
+    "limitations": [
+      "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+      "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+    ],
+    "normalized_value": "+1 512 555 0101",
+    "original_value": "+1 512 555 0101",
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:872c8a9ef67829cfbc605804041fc8ef585849481e4328548bdaccb42d5a7aa5",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  }
+]

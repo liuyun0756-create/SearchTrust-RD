@@ -149,7 +149,7 @@ class EvidenceBuildInput(StrictModel):
 
 
 class EvidenceSelector(StrictModel):
-    category: Literal["site_field", "page_fragment", "serp_field", "competitor_field", "public_gbp_field", "metric", "coverage"]
+    category: Literal["site_field", "page_fragment", "serp_field", "competitor_field", "public_gbp_field", "site_business_field", "metric", "coverage"]
     record_key: str = Field(min_length=1, max_length=500)
     record_context: list[str | None] = Field(default_factory=list)
     field: str = Field(min_length=1, max_length=120)
