@@ -1,0 +1,152 @@
+[
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_152a0f9f5a9e78328093805bbd97f0fab74b2c3bdb95fff2d39e38ac79346fb9",
+    "health_status": "healthy",
+    "limitations": [
+      "The supplied device (including tablet) is retained in the internal trace; the frozen locator supports only desktop/mobile."
+    ],
+    "normalized_value": 5.0,
+    "original_value": 5.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000016",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:efe9ff37c4baa819293a6a3c7aa1e46b35315a9d11cdb05d4fbb07333ba15100",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": "emergency plumber",
+      "url": null
+    },
+    "source_type": "gbp"
+  },
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_28dd929919e19ac7ff3b3ca09ebf7f10d50101c5d144ff971d06d60a67e46165",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0.0,
+    "original_value": 0.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000015",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:1514b9c143afc9ced40e5cf8f04a8f469d0f4e93efcd0a58a9a91875f8127d59",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": null
+    },
+    "source_type": "gsc"
+  },
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_339b41c27700fe571b44e5010980abf7d876ba24c225bcebacf92e096192cfe3",
+    "health_status": "healthy",
+    "limitations": [
+      "The supplied device (including tablet) is retained in the internal trace; the frozen locator supports only desktop/mobile."
+    ],
+    "normalized_value": 5.0,
+    "original_value": 5.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000017",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:efe9ff37c4baa819293a6a3c7aa1e46b35315a9d11cdb05d4fbb07333ba15100",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": "emergency plumber",
+      "url": null
+    },
+    "source_type": "ga4"
+  },
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_793479ae2d6785548fb0dd280771e9b483e03aa04cad3f4d4595dd0a6e6349bf",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0.0,
+    "original_value": 0.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000017",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:1514b9c143afc9ced40e5cf8f04a8f469d0f4e93efcd0a58a9a91875f8127d59",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": null
+    },
+    "source_type": "ga4"
+  },
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_953a8ab8f0bb2f64c77d7638ef88470ea7eeaef8334fc74330041fdd5141df4b",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0.0,
+    "original_value": 0.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000016",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:1514b9c143afc9ced40e5cf8f04a8f469d0f4e93efcd0a58a9a91875f8127d59",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": null
+    },
+    "source_type": "gbp"
+  },
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "high",
+    "coverage_end": "2026-08-29",
+    "coverage_start": "2026-08-01",
+    "evidence_id": "ev_ea0dea56904cf3dd5f89e11a4af64b848943a18ad23a8dd1fd9f7f28ba3c94bd",
+    "health_status": "healthy",
+    "limitations": [
+      "The supplied device (including tablet) is retained in the internal trace; the frozen locator supports only desktop/mobile."
+    ],
+    "normalized_value": 5.0,
+    "original_value": 5.0,
+    "snapshot_id": "00000000-0000-0000-0000-000000000015",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:efe9ff37c4baa819293a6a3c7aa1e46b35315a9d11cdb05d4fbb07333ba15100",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": "emergency plumber",
+      "url": null
+    },
+    "source_type": "gsc"
+  }
+]

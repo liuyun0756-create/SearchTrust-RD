@@ -1,0 +1,26 @@
+[
+  {
+    "collected_at": "2026-08-29T23:00:00Z",
+    "confidence": "low",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_ee11e3983e2a55a68c5ebc604c65b17a579dcb13dfb33b8753f500833b2e57e5",
+    "health_status": "unhealthy",
+    "limitations": [],
+    "normalized_value": "unhealthy",
+    "original_value": "unhealthy",
+    "snapshot_id": "00000000-0000-0000-0000-000000000015",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": "fixture-resource",
+      "field_path": "selector:d148c3715ef30bf660e3e71ec8c5b27f1474e1cbc74c19d66606134ebac9ed3e",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": null
+    },
+    "source_type": "coverage"
+  }
+]

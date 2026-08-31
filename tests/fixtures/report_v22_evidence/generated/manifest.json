@@ -1,0 +1,20 @@
+{
+  "evidence_counts": {
+    "gaps.json": 1,
+    "public.json": 88,
+    "verified.json": 6
+  },
+  "files": {
+    "gaps.json": "sha256:bdc4aefd45ac492f55bc4c315b22be6f697607fb89461eb23c9dacda84864bf4",
+    "public.json": "sha256:1e2df739dea4eab7b564feea9074d90149fd5ddcf61e32a065d53968a52675f0",
+    "verified.json": "sha256:3d845f09d9f045e74b62ddd502cb7d938f9ecfd8b13d5d304e660572b13620ae"
+  },
+  "identity_version": "v22_evidence_identity_v1",
+  "inputs": {
+    "gaps.json": "sha256:f3955e7f0ce298e34311a2ed357ec20d4289e3ba2fd1e1c0773db11730bea716",
+    "public.json": "sha256:98735cdde3cda6e710ebbd2dce740d65af9f5bbfe163e24f611735aedbaea7ee",
+    "verified.json": "sha256:a11848430447a7fa768f3aa7fe1a1b446a1c51a3ab307fe4de0c426a139e9efd"
+  },
+  "synthetic_snapshots": true,
+  "version": 1
+}

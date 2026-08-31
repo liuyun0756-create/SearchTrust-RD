@@ -1,0 +1,247 @@
+{
+  "context": {
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "competitors": [
+      {
+        "business_name": "Competitor 1",
+        "competitor_id": "cp_competitor_1",
+        "confirmation_source": "user",
+        "public_gbp_url": "https://maps.google.com/?cid=1",
+        "website_url": "https://competitor-1.test/"
+      },
+      {
+        "business_name": "Competitor 2",
+        "competitor_id": "cp_competitor_2",
+        "confirmation_source": "user",
+        "public_gbp_url": "https://maps.google.com/?cid=2",
+        "website_url": "https://competitor-2.test/"
+      },
+      {
+        "business_name": "Competitor 3",
+        "competitor_id": "cp_competitor_3",
+        "confirmation_source": "user",
+        "public_gbp_url": "https://maps.google.com/?cid=3",
+        "website_url": "https://competitor-3.test/"
+      }
+    ],
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "primary_service": "Plumber",
+    "queries": [
+      "plumber",
+      "emergency plumber",
+      "water heater repair"
+    ],
+    "report_type": "verified_execution",
+    "search_device": "mobile",
+    "search_language": "en",
+    "site_url": "https://example.test/",
+    "target_market": {
+      "city": null,
+      "country_code": "US",
+      "display_name": "Austin, TX",
+      "latitude": 30.2672,
+      "longitude": -97.7431,
+      "postal_code": null,
+      "region": null
+    }
+  },
+  "limits": {
+    "max_bytes": 20000000,
+    "max_items": 50000
+  },
+  "missing_sources": [],
+  "sources": [
+    {
+      "binding": {
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000015",
+        "source_type": "gsc"
+      },
+      "kind": "first_party",
+      "payload": {
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_reasons": [],
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "normalized_payload": {
+          "aggregates": [
+            {
+              "key": "clicks",
+              "unit": "count",
+              "value": 0.0
+            }
+          ],
+          "limitations": [],
+          "rows": [
+            {
+              "dimensions": [
+                {
+                  "key": "query",
+                  "value": "emergency plumber"
+                },
+                {
+                  "key": "device",
+                  "value": "tablet"
+                }
+              ],
+              "metrics": [
+                {
+                  "key": "clicks",
+                  "unit": "count",
+                  "value": 5.0
+                }
+              ]
+            }
+          ]
+        },
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "provider_request_context": {
+          "country_code": null,
+          "device": null,
+          "end_date": "2026-08-29",
+          "external_resource_id": "fixture-resource",
+          "row_limit": null,
+          "start_date": "2026-08-01"
+        },
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000015",
+        "source_type": "gsc"
+      }
+    },
+    {
+      "binding": {
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000016",
+        "source_type": "gbp"
+      },
+      "kind": "first_party",
+      "payload": {
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_reasons": [],
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "normalized_payload": {
+          "aggregates": [
+            {
+              "key": "clicks",
+              "unit": "count",
+              "value": 0.0
+            }
+          ],
+          "limitations": [],
+          "rows": [
+            {
+              "dimensions": [
+                {
+                  "key": "query",
+                  "value": "emergency plumber"
+                },
+                {
+                  "key": "device",
+                  "value": "tablet"
+                }
+              ],
+              "metrics": [
+                {
+                  "key": "clicks",
+                  "unit": "count",
+                  "value": 5.0
+                }
+              ]
+            }
+          ]
+        },
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "provider_request_context": {
+          "country_code": null,
+          "device": null,
+          "end_date": "2026-08-29",
+          "external_resource_id": "fixture-resource",
+          "row_limit": null,
+          "start_date": "2026-08-01"
+        },
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000016",
+        "source_type": "gbp"
+      }
+    },
+    {
+      "binding": {
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000017",
+        "source_type": "ga4"
+      },
+      "kind": "first_party",
+      "payload": {
+        "expires_at": "2026-08-30T01:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health_reasons": [],
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "normalized_payload": {
+          "aggregates": [
+            {
+              "key": "clicks",
+              "unit": "count",
+              "value": 0.0
+            }
+          ],
+          "limitations": [],
+          "rows": [
+            {
+              "dimensions": [
+                {
+                  "key": "query",
+                  "value": "emergency plumber"
+                },
+                {
+                  "key": "device",
+                  "value": "tablet"
+                }
+              ],
+              "metrics": [
+                {
+                  "key": "clicks",
+                  "unit": "count",
+                  "value": 5.0
+                }
+              ]
+            }
+          ]
+        },
+        "payload_checksum": "sha256:127b3c8e9f3eb260db700d74c505820cb1c42beb41eed6f6c8fd90b4ade36596",
+        "provider_request_context": {
+          "country_code": null,
+          "device": null,
+          "end_date": "2026-08-29",
+          "external_resource_id": "fixture-resource",
+          "row_limit": null,
+          "start_date": "2026-08-01"
+        },
+        "schema_version": "first_party_snapshot_v1",
+        "snapshot_id": "00000000-0000-0000-0000-000000000017",
+        "source_type": "ga4"
+      }
+    }
+  ]
+}
