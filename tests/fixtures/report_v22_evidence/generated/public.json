@@ -78,6 +78,30 @@
     "source_type": "competitor"
   },
   {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "medium",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0,
+    "original_value": 0,
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:bef164dbedc35e19aa4f809eac5ed2dc9269d5ed1d448e8e3fefc26d80259b27",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
     "collected_at": "2026-08-30T00:00:00Z",
     "confidence": "medium",
     "coverage_end": null,
@@ -178,6 +202,30 @@
       "url": null
     },
     "source_type": "serp"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "medium",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0,
+    "original_value": 0,
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:c59d16f47db424cccd8e78be21b792e4060828421f19589f700c00bd9f3c9d49",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
   },
   {
     "collected_at": "2026-08-30T00:00:00Z",
@@ -698,6 +746,30 @@
       "url": "https://competitor-3.test/"
     },
     "source_type": "competitor"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "medium",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_5c86c7b232f778e8fc4f71aedb4e70049514973b344dbd36091e61b9a55be11d",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 0,
+    "original_value": 0,
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:24758dd5cf5bc8e7ac7c9a916bd62436e39373237b3c784342692c32c2a2b598",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
   },
   {
     "collected_at": "2026-08-28T08:00:00Z",
@@ -1387,6 +1459,30 @@
       "device": null,
       "external_resource_id": null,
       "field_path": "selector:e0e25b98e922cb4c07ef048c46a9650b5c05d42ce85d5e84faf9be8bd232e04a",
+      "language": null,
+      "latitude": null,
+      "longitude": null,
+      "page_path": null,
+      "query": null,
+      "url": "https://example.test/"
+    },
+    "source_type": "site"
+  },
+  {
+    "collected_at": "2026-08-28T08:00:00Z",
+    "confidence": "medium",
+    "coverage_end": null,
+    "coverage_start": null,
+    "evidence_id": "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1",
+    "health_status": "healthy",
+    "limitations": [],
+    "normalized_value": 1,
+    "original_value": 1,
+    "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+    "source_locator": {
+      "device": null,
+      "external_resource_id": null,
+      "field_path": "selector:9043cb708c44008d204e698271c0aa5cf58258d044d1358712bd03944aeb8009",
       "language": null,
       "latitude": null,
       "longitude": null,

@@ -1,0 +1,33 @@
+{
+  "counts": {
+    "clear.json": {
+      "evidence_index": 248,
+      "findings": 0,
+      "layers": 40
+    },
+    "gaps.json": {
+      "evidence_index": 1,
+      "findings": 0,
+      "layers": 8
+    },
+    "triggered.json": {
+      "evidence_index": 228,
+      "findings": 7,
+      "layers": 16
+    }
+  },
+  "files": {
+    "clear.json": "sha256:ff9506e8876a08862a244656177220c0bca6d25e968a5b22fcffbdba98ddf8e5",
+    "gaps.json": "sha256:8f5368e15f7d71b178f918a966a764bea06e12a8897ab76651e2e83a7fdd96fe",
+    "triggered.json": "sha256:ca8b848b883077734edf260e0736988b8104dd200cdcd454d8c720bff5fa1797"
+  },
+  "identity_version": "v22_public_finding_identity_v1",
+  "inputs": {
+    "clear.json": "sha256:5aa62bad3cb3304fc43bebd970007e4f322bda3b8ae3ecefa63a9caaf3d9f992",
+    "gaps.json": "sha256:20b03fcc04789123e928988ec6834cf8efa88c7c937c9153024b3690310f6c8e",
+    "triggered.json": "sha256:8484aabbe08ebcfe16f734d94f209756d1aa87891940d24b83d12c95091f6ded"
+  },
+  "ruleset_version": "v22_public_findings_v1",
+  "synthetic_snapshots": true,
+  "version": 1
+}

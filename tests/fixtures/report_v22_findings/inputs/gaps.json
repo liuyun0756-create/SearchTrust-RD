@@ -1,0 +1,130 @@
+{
+  "evidence_input": {
+    "context": {
+      "primary_service": "Plumber",
+      "target_market": {
+        "display_name": "Austin, TX",
+        "country_code": "US",
+        "region": null,
+        "city": null,
+        "postal_code": null,
+        "latitude": 30.2672,
+        "longitude": -97.7431
+      },
+      "queries": [
+        "plumber",
+        "emergency plumber",
+        "water heater repair"
+      ],
+      "search_language": "en",
+      "search_device": "mobile",
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "report_type": "prospect",
+      "site_url": "https://example.test/",
+      "competitors": [
+        {
+          "competitor_id": "cp_competitor_1",
+          "business_name": "Competitor 1",
+          "website_url": "https://competitor-1.test/",
+          "public_gbp_url": "https://maps.google.com/?cid=1",
+          "confirmation_source": "user"
+        },
+        {
+          "competitor_id": "cp_competitor_2",
+          "business_name": "Competitor 2",
+          "website_url": "https://competitor-2.test/",
+          "public_gbp_url": "https://maps.google.com/?cid=2",
+          "confirmation_source": "user"
+        },
+        {
+          "competitor_id": "cp_competitor_3",
+          "business_name": "Competitor 3",
+          "website_url": "https://competitor-3.test/",
+          "public_gbp_url": "https://maps.google.com/?cid=3",
+          "confirmation_source": "user"
+        }
+      ],
+      "evaluated_at": "2026-08-30T00:00:00Z"
+    },
+    "sources": [
+      {
+        "kind": "site",
+        "binding": {
+          "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+          "case_id": "11111111-1111-4111-8111-111111111111",
+          "source_type": "site",
+          "schema_version": "site_inventory_snapshot_v1",
+          "payload_checksum": "sha256:c56059cca6e2c7a274346a232b29f9f67cbc54ea4aac090fa731517c9b509452",
+          "fetched_at": "2026-08-28T08:00:00Z",
+          "expires_at": "2026-08-28T09:00:00Z",
+          "health_status": "not_checked",
+          "identity_match_status": "not_checked"
+        },
+        "payload": {
+          "schema_version": "site_inventory_snapshot_v1",
+          "root_url": "https://example.test/",
+          "canonical_host": "example.test",
+          "started_at": "2026-08-28T08:00:00Z",
+          "completed_at": "2026-08-28T08:00:00Z",
+          "discovery_limit": 500,
+          "deep_analysis_limit": 50,
+          "discovered_url_count": 1,
+          "structurally_checked_count": 1,
+          "deep_analyzed_count": 0,
+          "pages": [
+            {
+              "url": "https://example.test/",
+              "discovery_sources": [
+                "seed"
+              ],
+              "crawl_depth": 0,
+              "check_status": "checked",
+              "status_code": 503,
+              "final_url": "https://example.test/",
+              "content_type": "text/html",
+              "response_bytes": 120,
+              "title": "Example",
+              "h1": "Example",
+              "canonical_url": "https://example.test/",
+              "meta_robots": [],
+              "schema_types": [
+                "Organization"
+              ],
+              "internal_links": [],
+              "page_type": "home",
+              "classification_reasons": [
+                "root_url"
+              ],
+              "error_code": null
+            }
+          ],
+          "selected_pages": [],
+          "deep_attempts": [],
+          "page_type_counts": [
+            {
+              "label": "home",
+              "count": 1
+            }
+          ],
+          "source_counts": [
+            {
+              "label": "seed",
+              "count": 1
+            }
+          ],
+          "limitations": []
+        }
+      }
+    ],
+    "missing_sources": [],
+    "limits": {
+      "max_items": 50000,
+      "max_bytes": 20000000
+    }
+  },
+  "limits": {
+    "max_findings": 10000,
+    "max_evaluations": 20000,
+    "max_bytes": 20000000
+  }
+}

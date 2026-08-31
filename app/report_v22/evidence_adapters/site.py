@@ -3,6 +3,7 @@
 from app.report_v21.evidence_ledger import build_evidence_ledger
 from app.report_v22.evidence_adapters.common import coverage, fields, observe
 from app.report_v22.models import SourceLocator
+from app.report_v22.evidence_adapters.site_counts import observations as count_observations
 
 TEXT_LIMITATION = "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page."
 
@@ -50,3 +51,4 @@ def observations(source, *, inventory=None, prefix="/payload", competitor_id=Non
             key = [url,fragment["page_section"],fragment["evidence_kind"],fragment["extracted_text"]]
             yield observe(source,"page_fragment",key,"text",fragment["extracted_text"],f"{deep_path}/text",
                 locator=locator,competitor_id=competitor_id,collected_at=deep.collected_at,limitations=[*notes,TEXT_LIMITATION])
+    yield from count_observations(source, inventory, prefix, competitor_id, notes)

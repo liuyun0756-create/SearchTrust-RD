@@ -1,12 +1,12 @@
 {
   "evidence_counts": {
     "gaps.json": 1,
-    "public.json": 88,
+    "public.json": 92,
     "verified.json": 6
   },
   "files": {
     "gaps.json": "sha256:bdc4aefd45ac492f55bc4c315b22be6f697607fb89461eb23c9dacda84864bf4",
-    "public.json": "sha256:1e2df739dea4eab7b564feea9074d90149fd5ddcf61e32a065d53968a52675f0",
+    "public.json": "sha256:798137e153f1994a0d7c954197e482a14a1e3030924c4276f826ea9b3c0f5b2a",
     "verified.json": "sha256:3d845f09d9f045e74b62ddd502cb7d938f9ecfd8b13d5d304e660572b13620ae"
   },
   "identity_version": "v22_evidence_identity_v1",
