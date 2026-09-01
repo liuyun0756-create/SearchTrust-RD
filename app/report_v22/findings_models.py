@@ -6,7 +6,9 @@ from pydantic import Field, HttpUrl, model_validator
 
 from app.collectors.site_inventory_models import SitePageType
 from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceBuildResult
-from app.report_v22.models import CompetitorId, EvidenceId, Finding, FindingId, LayerAssessment, StrictModel
+from app.report_v22.models import BusinessIdentity, CompetitorId, EvidenceId, Finding, FindingId, LayerAssessment, StrictModel
+from app.report_v22.site_business_models import SiteBusinessLimits
+from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits
 
 EvaluationState = Literal["triggered", "not_triggered", "not_checked"]
 EvaluationReason = Literal[
@@ -14,6 +16,9 @@ EvaluationReason = Literal[
     "field_not_observed", "insufficient_sample", "identity_unresolved",
     "rank_basis_mismatch", "comparison_time_gap", "ambiguous_page_observations",
     "customer_public_gbp_missing", "semantic_rules_not_implemented", "gbp_alignment_not_implemented",
+    "exact_match", "semantic_match", "partial_match", "value_mismatch",
+    "site_field_missing", "gbp_field_missing", "both_fields_missing", "field_not_applicable",
+    "site_content_not_checked", "comparator_unsupported",
 ]
 
 
@@ -25,6 +30,9 @@ class PublicFindingsLimits(StrictModel):
 
 class PublicFindingsInput(StrictModel):
     evidence_input: EvidenceBuildInput
+    business_identity: BusinessIdentity | None = None
+    site_business_limits: SiteBusinessLimits = Field(default_factory=SiteBusinessLimits)
+    site_gbp_alignment_limits: SiteGbpAlignmentLimits = Field(default_factory=SiteGbpAlignmentLimits)
     limits: PublicFindingsLimits = Field(default_factory=PublicFindingsLimits)
 
 

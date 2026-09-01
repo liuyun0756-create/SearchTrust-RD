@@ -77,3 +77,8 @@ def test_existing_rules_and_ids_unchanged_when_public_profile_added():
     assert len(without.findings) >= 2
     assert canonical_json_bytes([f.model_dump(mode="json") for f in with_gbp.findings]) == canonical_json_bytes([f.model_dump(mode="json") for f in without.findings])
     assert [e for e in with_gbp.rule_evaluations if e.rule_id not in GBP_RULES] == [e for e in without.rule_evaluations if e.rule_id not in GBP_RULES]
+
+
+def test_legacy_gbp_coverage_branch_keeps_original_rule_version():
+    result = build_public_findings(PublicFindingsInput(evidence_input=evidence_input(sample_input(), site_source())))
+    assert {item.rule_version for item in result.rule_evaluations if item.rule_id in GBP_RULES} == {"1.0.0"}

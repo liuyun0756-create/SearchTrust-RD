@@ -1,0 +1,265 @@
+{
+  "files": {
+    "both_missing.json": "sha256:abd5d8b35f670eeb12a42a68da5cde20676620dfa81a17f71a6267a5ddcddc48",
+    "comparison_time_gap.json": "sha256:8ced430e353cf7287a2050d37f584dae79087bc9f8ef5f8a3575f661fd6dd74b",
+    "exact_match.json": "sha256:920a22a3b2d65bd65a15f3d83a77ccd41b7da952e48d79e14a232883c83d2f76",
+    "gbp_missing.json": "sha256:e9addaf781587d10338839375e1338a390a74fcd5585d3691809093528a6f7e9",
+    "identity_unresolved.json": "sha256:7d3edab55f8ca100b492be5ea62e235716d17bf7dd0d7bd3ed374faf2998db4a",
+    "multiple_candidates_one_match.json": "sha256:b6d0ee838234954739c36a5f3c186377f3742760855c95380bbe9d4e16bd7299",
+    "operating_model_not_applicable.json": "sha256:ca0eba798f1686d4b3b488028104af635eb391a4193e5e7e61894efaf51f8569",
+    "semantic_match.json": "sha256:83c1dd29a0f27f73b9455af3c4734cdf2edf47bc6c23b6abc454c0bc01e22375",
+    "service_area_mismatch.json": "sha256:e49496b292478e642d140fd5aba5cab6c5c3dd30d576ad37ce972ae7799098e3",
+    "service_area_partial.json": "sha256:b709a972b4aaacfff58770271d1bda0b19df6e551e7e809f194c93c77d372906",
+    "site_missing.json": "sha256:d714020daa00957321dc18ad7dd930b14f362feb64da35296cd48721383bfd92",
+    "source_unavailable.json": "sha256:4112f06da2ed544bf8f4915daf0986e40d80c8dacf6707f7440fd74e84bd1a13"
+  },
+  "finding_counts": {
+    "both_missing.json": 1,
+    "comparison_time_gap.json": 0,
+    "exact_match.json": 0,
+    "gbp_missing.json": 1,
+    "identity_unresolved.json": 0,
+    "multiple_candidates_one_match.json": 0,
+    "operating_model_not_applicable.json": 0,
+    "semantic_match.json": 0,
+    "service_area_mismatch.json": 1,
+    "service_area_partial.json": 1,
+    "site_missing.json": 1,
+    "source_unavailable.json": 0
+  },
+  "inputs": {
+    "both_missing.json": "sha256:354cd96b09717558d861eabd20562c3e9cde244f4788ff985f15c1a0857b768b",
+    "comparison_time_gap.json": "sha256:fcae2906e541091c6f3a74f1a7edaf8f03045f586e686a2ac3a3edafed9fdd11",
+    "exact_match.json": "sha256:e6b5fb952f1dae7b2cf3d2d827f590edff6b9079afd41c441e012d2815f7a6e0",
+    "gbp_missing.json": "sha256:d8725016bf55464346a5d626806a13032701e7c59ae14f2cbd3882118fd9ff68",
+    "identity_unresolved.json": "sha256:ec88f82780d088b2b8c56a38d550f0950381bcc1c3f30837d6a44030b876e815",
+    "multiple_candidates_one_match.json": "sha256:6acb9c65a3bd842209c770319c10c2fd732ef0fb40115f7fc730faa5b15d4a2c",
+    "operating_model_not_applicable.json": "sha256:b774442f0021b6cf8865551362e9fcd570762a9714b54a16261b0eb6a935c9dc",
+    "semantic_match.json": "sha256:fc407d99e2be5aeae4de9d983b35f87e3dd90520d788fa2b641ceaac3561f828",
+    "service_area_mismatch.json": "sha256:4241fbb33131ae235acb1963c37929f97cb5e7084c1f0d43ccaca7343ca821d3",
+    "service_area_partial.json": "sha256:7475fbd1803c49ec24aeb5f4c4d0f6cb46aa1457a4ee26b0ba8a471fe0e5aa1a",
+    "site_missing.json": "sha256:8a016118c1735c20b804cfd6400c817524ef4e6e7bdf7f6c540eb4eb82eea596",
+    "source_unavailable.json": "sha256:9589e08fcb4a7cb241f8ff1ef62b4a1cc9c03950d5cbbaaf7a8cc49047aa458a"
+  },
+  "rule_version": "1.1.0",
+  "states": {
+    "both_missing.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "both_fields_missing",
+        "state": "triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "comparison_time_gap.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "comparison_time_gap",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "comparison_time_gap",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "comparison_time_gap",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "comparison_time_gap",
+        "state": "not_checked"
+      }
+    },
+    "exact_match.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "gbp_missing.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "gbp_field_missing",
+        "state": "triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "identity_unresolved.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "identity_unresolved",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "multiple_candidates_one_match.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "operating_model_not_applicable.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "field_not_applicable",
+        "state": "not_triggered"
+      }
+    },
+    "semantic_match.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "semantic_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "semantic_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "semantic_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "service_area_mismatch.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "value_mismatch",
+        "state": "triggered"
+      }
+    },
+    "service_area_partial.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "partial_match",
+        "state": "triggered"
+      }
+    },
+    "site_missing.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "site_field_missing",
+        "state": "triggered"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "exact_match",
+        "state": "not_triggered"
+      }
+    },
+    "source_unavailable.json": {
+      "v22_public.gbp_address_alignment": {
+        "reason": "source_ineligible",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_name_alignment": {
+        "reason": "source_ineligible",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_phone_alignment": {
+        "reason": "source_ineligible",
+        "state": "not_checked"
+      },
+      "v22_public.gbp_service_area_alignment": {
+        "reason": "source_ineligible",
+        "state": "not_checked"
+      }
+    }
+  },
+  "synthetic_snapshots": true,
+  "version": 1
+}

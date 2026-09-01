@@ -1,0 +1,2845 @@
+{
+  "cluster_rollups": [
+    {
+      "counts": {
+        "checked": 1,
+        "deep_analyzed": 1,
+        "discovered": null,
+        "eligible_html": 1
+      },
+      "evidence_ids": [
+        "ev_5cc2b54d359b219ce41e926c60adc5771a4261653109bc9be72031e0fc4294dc",
+        "ev_6ee7322e6c8cd330ce36bb3d799f496fa306611a700f29f8a3e67a3f23dc8e71",
+        "ev_843909f68e1464d9cf10698faf6fe7f2b1865e1f6f004dce2517a4153eef201a"
+      ],
+      "finding_ids": [],
+      "layers": [
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "foundation",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "entity_presence",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "entity_consistency",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "specificity",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "real_world_connection",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "accountability",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "page_unique_value",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        },
+        {
+          "evidence_ids": [],
+          "finding_ids": [],
+          "layer_key": "algorithm_fit",
+          "status": "not_checked",
+          "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+        }
+      ],
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "The site scope is this saved sample, not proof of complete website coverage."
+      ],
+      "page_type": "home",
+      "scope": "sampled_page_type",
+      "site_url": "https://example.test/",
+      "urls": [
+        "https://example.test/"
+      ]
+    }
+  ],
+  "evidence_result": {
+    "coverage_gaps": [
+      {
+        "competitor_id": null,
+        "evidence_id": "ev_8af6037bb3d2547c571b2295faa9fb882ee231300b59765fef3106581f405083",
+        "gbp_origin": "public_profile",
+        "reason": "partial",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_type": "gbp"
+      },
+      {
+        "competitor_id": null,
+        "evidence_id": "ev_a10500bffc96edf8e28a1a5520d7112bccae55e57cf29dcaa6d207f4ea913fff",
+        "gbp_origin": "public_profile",
+        "reason": "empty",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_type": "gbp"
+      }
+    ],
+    "evidence_index": [
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_02bfde5bd0ec1bcf661824a981f232d90484868fe70f977c4b214c5d5627cc81",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "12345",
+        "original_value": "12345",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:3078bf0e286e21b97c01b6314a7d976400d2ff0e565be7c78c175e7cff367532",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 0,
+        "original_value": 0,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:bef164dbedc35e19aa4f809eac5ed2dc9269d5ed1d448e8e3fefc26d80259b27",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_09cc3836be63fcc683c5a73ce65aa4dde66e5cc9d9e272a08ede791e2251f4e9",
+        "health_status": "healthy",
+        "limitations": [
+          "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+          "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+        ],
+        "normalized_value": "Austin",
+        "original_value": "Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:14519de9f180e7a086745e6a58f4f3e74d58c1ab099ea2b0cd0c991808973328",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 0,
+        "original_value": 0,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:c59d16f47db424cccd8e78be21b792e4060828421f19589f700c00bd9f3c9d49",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_256f115c711baef62820b9850ef711630d4011a05ccac513d2db510540a113c6",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "https://example.test/",
+        "original_value": "https://example.test/",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:bf2a22bef02919c49bc4a1bac351ff31d45465714b6e6174d5343fce43caa0d3",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_2578b2b24b6a6652d81605f63de7d9a76b51c6bbe92cb3bb7d2154f90f1a4832",
+        "health_status": "healthy",
+        "limitations": [
+          "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page."
+        ],
+        "normalized_value": "Saved text is not an extraction fallback.",
+        "original_value": "Saved text is not an extraction fallback.",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:9ea4acfcbfb0421dd0c2403a7f4104e33eba71aa4d090f1b94781dfb7f7d3e2c",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_295821a86dbaa4c9c9029a80e790f6a984774861a2e970dc741a957c9522a4b8",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:b607936d1ff761683f4ed29f1d31b4ba2b79ef4817472029daa17bce30a6d475",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_2ca216b11f44051effbf1582390b89c8e545023470f5272d94f0fbfa1dd1a5e7",
+        "health_status": "healthy",
+        "limitations": [
+          "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+          "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+        ],
+        "normalized_value": "Fixture Plumbing",
+        "original_value": "Fixture Plumbing",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:a0699132652ec125709e739351996a4a28fc8842ea19ba62f3cabff10ac6097d",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_39c9ebbefa5ea1e0ad0fc685d487a1ee80001ffce7321688495dec7a46992ab7",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 120,
+        "original_value": 120,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:600a168e3b592cd0eb07458254a6028a9083a6cf09e8759603d9a88743334f64",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_4084943f77867838bb23eb048867051bacd92bdd54dc82d085bf9f2dcb775ea6",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "123 Fixture St, Austin, TX",
+        "original_value": "123 Fixture St, Austin, TX",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:04fea9c390243ed252105312f5befb71ca639d18f00081d4861129d0e2e1b6d6",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_5c86c7b232f778e8fc4f71aedb4e70049514973b344dbd36091e61b9a55be11d",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 0,
+        "original_value": 0,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:24758dd5cf5bc8e7ac7c9a916bd62436e39373237b3c784342692c32c2a2b598",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_5cc2b54d359b219ce41e926c60adc5771a4261653109bc9be72031e0fc4294dc",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 200,
+        "original_value": 200,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:0491f8478ca18f7aec04191cfd09093ad030d7127c915d65c380e774a54c40b1",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_6c1238bc803d7f57a80f1ff8f66d767d50811980842c59392c0db045dfa1a418",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:396249e49de5079bf888eccc3d7b034b9b69eeacdee1fe846787f7ab6e2998f2",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_6ee7322e6c8cd330ce36bb3d799f496fa306611a700f29f8a3e67a3f23dc8e71",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "home",
+        "original_value": "home",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:baee2d2f8dc58c6a2e9be148828f66f94fd1e59631d5e0f296fcb2e461c0ab3a",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_77bcdaca52107b3f8928799a54ac46f868ac9608428febc9c0fc04569bb0c14c",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:2c60a733bedae0b93240cd8a7d3aa8bad96f36d2b6bf569bfe83f34bb7317dd9",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_7993477d16d4d568e9301cac2c25203a183fd55756a6955665b551276a1a14fc",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "Round Rock",
+        "original_value": "Round Rock",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:3d0dd3bb105c681a51795a4999e22a018ee186af75cd6f098371205ac5f5802e",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "checked",
+        "original_value": "checked",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:a89bec7dec742a92c9b0d5a59029b0dd6fefd3c7c78dce7a78e7bbe9468f1c31",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_843909f68e1464d9cf10698faf6fe7f2b1865e1f6f004dce2517a4153eef201a",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "text/html",
+        "original_value": "text/html",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:d7ce994141471587d35fcd7795b42a4b7b81f5f93e746ec7b9e367f929d7fce8",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_8af6037bb3d2547c571b2295faa9fb882ee231300b59765fef3106581f405083",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "partial",
+        "original_value": "not_returned",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:347a8a3922d30693c729077df20010a6e4768a53e153724f43063f9ce945f4da",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "coverage"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_8c0ce0ff6061bd1b878591b305ec2e7a7af21538f741448986b2fb147507692f",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "Austin",
+        "original_value": "Austin",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:3d0dd3bb105c681a51795a4999e22a018ee186af75cd6f098371205ac5f5802e",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_8c8bbef8876e48eea17c023d0ad9ba0cdefb0cbc05372874f77d7773ddad4e93",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "https://maps.google.com/?cid=12345",
+        "original_value": "https://maps.google.com/?cid=12345",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:a08c6d382fe992e63e6645bf73e968cf34ba646c4541041da50593c0cd8c922c",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_8f216da2eaa24361a04da33a78fce11764dcde513ee59086964969970e94d675",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": true,
+        "original_value": true,
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:1a28e22500c5fb98c2316d048e12b5b951caa9b10d26b8119c2cf3ca99f5cb6b",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_931de7b2c3ccd81b02e2b59ff5ac5ec50acbc83f3a956df90f160832e0080e09",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "https://example.test/",
+        "original_value": "https://example.test/",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:8eb688fbd3543f5eb7b4dc39ad8f3f6084ec05ea79af90ee33fc215ac49e8de6",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a10500bffc96edf8e28a1a5520d7112bccae55e57cf29dcaa6d207f4ea913fff",
+        "health_status": "healthy",
+        "limitations": [
+          "This evidence records a missing field in the saved, approved sample after required checks; it is not a business value or proof that the field is absent from the entire internet."
+        ],
+        "normalized_value": "gbp_missing",
+        "original_value": "gbp_missing",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:c77db00c0970c70fc1c10b2eff87824abc0465a4e19c3278340c4905c8030bbd",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "coverage"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a16f145041053fc33a09938d552ad9528d9d78adead6ac4c527a421654873db4",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "Organization",
+        "original_value": "Organization",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:e02c23ba0d5811e9ab148da2cae2e55242c7781d370b8a14dfcc28d0505dafff",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a4de5e2ecefd172662568d31ffe02aaf476a6cb94847a920e78d51476c1351ae",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "Fixture Plumbing",
+        "original_value": "Fixture Plumbing",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:7e995c2c52dbb5b2aed50aa1f70dc23b81bd4b06dbb44cc33ad0869fa91ad791",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a4f67186db5e9f98130b2f94c09649349a1792891f939852d8877fcd13110f58",
+        "health_status": "healthy",
+        "limitations": [
+          "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+          "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+        ],
+        "normalized_value": "123 Fixture St, Austin, TX",
+        "original_value": "123 Fixture St, Austin, TX",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:dcae42adab3b651936648cbdf55cf36be7731e78e816004ca0a2ef31fef9ff77",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a540fec5eb5e4f5ed627ee5958946bc0013080770fbdd7889918a5a9598ec9e9",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "https://example.test/",
+        "original_value": "https://example.test/",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:9cc6e4624db288998fda3841fc063e544078b4e60767bcbd414334ed62191b91",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_a6e96f6f0f4f5d777f12194f14ba2d3983d593527d1f22f1112b56915efb73fa",
+        "health_status": "healthy",
+        "limitations": [
+          "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+          "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+        ],
+        "normalized_value": "Round Rock",
+        "original_value": "Round Rock",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:5812cbeaf4996650ebd544f2df2078547fd453cbe13aaa3ab35a6b6782790c30",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_aec672f80faca55a87b59421683eb69e6d23609e4299af7765822105e088235d",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:e0e25b98e922cb4c07ef048c46a9650b5c05d42ce85d5e84faf9be8bd232e04a",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:9043cb708c44008d204e698271c0aa5cf58258d044d1358712bd03944aeb8009",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "low",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_b1ccf85184d1d956f152a904b18211f2a5fd2ba607efdef4bae66a1f80964053",
+        "health_status": "healthy",
+        "limitations": [
+          "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+          "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+        ],
+        "normalized_value": "+1 512 555 0100",
+        "original_value": "+1 512 555 0100",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:f95e784d4793deeb99b3ec568b570957b66939373c50a31e984562de26ef60e6",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-29T23:30:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_b7fc6655ec120202cb9af21fd4e86348e329d01e157eef5261dc1a138065815a",
+        "health_status": "healthy",
+        "limitations": [
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "normalized_value": "fixture-customer-place",
+        "original_value": "fixture-customer-place",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": "place_id:fixture-customer-place",
+          "field_path": "selector:c13b6fa1b6f7e534d2c9095b85290f254fe4e6182231b394a3dc7dff6dc2eb57",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://maps.google.com/?cid=12345"
+        },
+        "source_type": "gbp"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_d021b841d5613823ed5274aefa49fc4d886aee3844a673ecbbadc1a5ae25d697",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "Example",
+        "original_value": "Example",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:f1e3c13d7fdd63656894d263cc43cb80f1517c2638254c95d741ef194899766c",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_d0a360a5024682b955239d1783c7b2f397ab0868b976485f270b06a1b953a03b",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": "Example",
+        "original_value": "Example",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:203631d051fea5941007a63765e2959f788e90f973f51cedcffc245dc4826abc",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      },
+      {
+        "collected_at": "2026-08-28T08:00:00Z",
+        "confidence": "medium",
+        "coverage_end": null,
+        "coverage_start": null,
+        "evidence_id": "ev_df1e864a19c11c72757627c220e004c9bfaa682bb35b7ff3250e4175547a2e7e",
+        "health_status": "healthy",
+        "limitations": [],
+        "normalized_value": 1,
+        "original_value": 1,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_locator": {
+          "device": null,
+          "external_resource_id": null,
+          "field_path": "selector:45eb0019567684b6c1086131a18d2cffe3d3b6943f35cfa88b9726c9f67685e5",
+          "language": null,
+          "latitude": null,
+          "longitude": null,
+          "page_path": null,
+          "query": null,
+          "url": "https://example.test/"
+        },
+        "source_type": "site"
+      }
+    ],
+    "source_summaries": [
+      {
+        "business_eligible": true,
+        "evidence_count": 25,
+        "gbp_origin": null,
+        "health_status": "not_checked",
+        "identity_match_status": "not_checked",
+        "limitations": [
+          "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+          "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page."
+        ],
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_type": "site"
+      },
+      {
+        "business_eligible": true,
+        "evidence_count": 11,
+        "gbp_origin": "public_profile",
+        "health_status": "healthy",
+        "identity_match_status": "matched",
+        "limitations": [
+          "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+          "Customer public GBP identity: strong_id_matched.",
+          "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+        ],
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_type": "gbp"
+      }
+    ],
+    "source_traces": [
+      {
+        "evidence_id": "ev_02bfde5bd0ec1bcf661824a981f232d90484868fe70f977c4b214c5d5627cc81",
+        "origin_paths": [
+          "/payload/record/observed_entity_keys/1/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "observed_entity_keys.cid",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "observed_entity_keys.cid"
+          ],
+          "record_key": "f45b05de7f24f69664b0588348a0085766d51e40d88cf4c29075a03173567376",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+        "origin_paths": [
+          "/payload/completed_at",
+          "/payload/pages"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "eligible_page_type_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "eligible_page_type_count",
+            "location",
+            "eligible_html_counts_v1"
+          ],
+          "record_key": "eade051abc6ae401ea7c198d0a6d9b801eec2f66142efe46f724f5782ede7437",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_09cc3836be63fcc683c5a73ce65aa4dde66e5cc9d9e272a08ede791e2251f4e9",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/html"
+        ],
+        "selector": {
+          "category": "site_business_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "service_area",
+          "metric_key": null,
+          "record_context": [
+            "site_business_extraction_v1",
+            "https://example.test/",
+            "https://example.test/",
+            "sha256:407715636c5f3c20c13a5afb490d00b069032affee2278ecf4568abcec8a0e36",
+            "sha256:8253c7491d9860927c6059bdf92e1f72f287ee7d0fe74558e824459e86cdc84b",
+            "jsonld_property",
+            "service_area",
+            "sha256:f8b3acbd933ffa3e708829b30d36376e1d9d0d52e77c5dcebb2778dd8494e410",
+            null
+          ],
+          "record_key": "5a9fece4a48f6a1c7bde7158a847e6bd35440156ee84f76ac55d130fe5999736",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+        "origin_paths": [
+          "/payload/completed_at",
+          "/payload/pages"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "eligible_page_type_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "eligible_page_type_count",
+            "service_detail",
+            "eligible_html_counts_v1"
+          ],
+          "record_key": "3b74ca66419741f16b87f408d3c5a9dabd0118772e5e8a3729a6041054c8be94",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_256f115c711baef62820b9850ef711630d4011a05ccac513d2db510540a113c6",
+        "origin_paths": [
+          "/payload/record/fields/website_url/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "website_url",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "website_url"
+          ],
+          "record_key": "97ba2af5e47652c52ce3e405aa3cc926306e5b2450703145299f8b57b8eb0a86",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_2578b2b24b6a6652d81605f63de7d9a76b51c6bbe92cb3bb7d2154f90f1a4832",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/text"
+        ],
+        "selector": {
+          "category": "page_fragment",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "text",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "Main page",
+            "text",
+            "Saved text is not an extraction fallback."
+          ],
+          "record_key": "7f2a9a4d21172e3d9df6db3c0302c306c533b1de6a97d5952c4b808b857d29ed",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_295821a86dbaa4c9c9029a80e790f6a984774861a2e970dc741a957c9522a4b8",
+        "origin_paths": [
+          "/payload/discovered_url_count"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "discovered_url_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_2ca216b11f44051effbf1582390b89c8e545023470f5272d94f0fbfa1dd1a5e7",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/html"
+        ],
+        "selector": {
+          "category": "site_business_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "business_name",
+          "metric_key": null,
+          "record_context": [
+            "site_business_extraction_v1",
+            "https://example.test/",
+            "https://example.test/",
+            "sha256:407715636c5f3c20c13a5afb490d00b069032affee2278ecf4568abcec8a0e36",
+            "sha256:8253c7491d9860927c6059bdf92e1f72f287ee7d0fe74558e824459e86cdc84b",
+            "jsonld_property",
+            "business_name",
+            "sha256:c3d225e821ef2fa2324297b26d677a20125da3bf4f0ca6041e5d7be7c30ac272",
+            null
+          ],
+          "record_key": "61c3ea4399a0ef4bad23a6c907c7bf3d273ba2d957ed725bdb14ce424741052f",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_39c9ebbefa5ea1e0ad0fc685d487a1ee80001ffce7321688495dec7a46992ab7",
+        "origin_paths": [
+          "/payload/pages/0/response_bytes"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "response_bytes",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_4084943f77867838bb23eb048867051bacd92bdd54dc82d085bf9f2dcb775ea6",
+        "origin_paths": [
+          "/payload/record/fields/address/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "address",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "address"
+          ],
+          "record_key": "0fed24b06ce1b17d91329c6db0e05177352034d9846e29655400b929dda8a825",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_5c86c7b232f778e8fc4f71aedb4e70049514973b344dbd36091e61b9a55be11d",
+        "origin_paths": [
+          "/payload/completed_at",
+          "/payload/pages"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "eligible_page_type_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "eligible_page_type_count",
+            "service_area",
+            "eligible_html_counts_v1"
+          ],
+          "record_key": "67952193bb84fcaeed7dd5736470de40508b06e6c829354f1beb8a88008cc346",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_5cc2b54d359b219ce41e926c60adc5771a4261653109bc9be72031e0fc4294dc",
+        "origin_paths": [
+          "/payload/pages/0/status_code"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "status_code",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_6c1238bc803d7f57a80f1ff8f66d767d50811980842c59392c0db045dfa1a418",
+        "origin_paths": [
+          "/payload/source_counts/0/count"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "source_counts",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "source_counts",
+            "seed"
+          ],
+          "record_key": "944fe8f867cad4711e0a14732038e0a8c0a1ca401c8200b2400233a90a4de109",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_6ee7322e6c8cd330ce36bb3d799f496fa306611a700f29f8a3e67a3f23dc8e71",
+        "origin_paths": [
+          "/payload/pages/0/page_type"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "page_type",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_77bcdaca52107b3f8928799a54ac46f868ac9608428febc9c0fc04569bb0c14c",
+        "origin_paths": [
+          "/payload/structurally_checked_count"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "structurally_checked_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_7993477d16d4d568e9301cac2c25203a183fd55756a6955665b551276a1a14fc",
+        "origin_paths": [
+          "/payload/record/fields/service_areas/value/1"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "service_areas",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "service_areas"
+          ],
+          "record_key": "674982a3986ab942cd67e21d7fd79c7d53eaa95d507aeea13dcdfcf24e2202f7",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132",
+        "origin_paths": [
+          "/payload/pages/0/check_status"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "check_status",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_843909f68e1464d9cf10698faf6fe7f2b1865e1f6f004dce2517a4153eef201a",
+        "origin_paths": [
+          "/payload/pages/0/content_type"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "content_type",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_8af6037bb3d2547c571b2295faa9fb882ee231300b59765fef3106581f405083",
+        "origin_paths": [
+          "/payload/record/fields/phone/state"
+        ],
+        "selector": {
+          "category": "coverage",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "phone",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "phone"
+          ],
+          "record_key": "33e17273b92065afd9f475961e1a7005bdf0c0464b170edb2f24530ef4d45de8",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_8c0ce0ff6061bd1b878591b305ec2e7a7af21538f741448986b2fb147507692f",
+        "origin_paths": [
+          "/payload/record/fields/service_areas/value/0"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "service_areas",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "service_areas"
+          ],
+          "record_key": "674982a3986ab942cd67e21d7fd79c7d53eaa95d507aeea13dcdfcf24e2202f7",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_8c8bbef8876e48eea17c023d0ad9ba0cdefb0cbc05372874f77d7773ddad4e93",
+        "origin_paths": [
+          "/payload/record/observed_public_gbp_url"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "observed_public_gbp_url",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "observed_public_gbp_url"
+          ],
+          "record_key": "0e66cb23859c798f5ed311a01683c6c294755c5fa72e3ac5acd7f6c984f2c583",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_8f216da2eaa24361a04da33a78fce11764dcde513ee59086964969970e94d675",
+        "origin_paths": [
+          "/payload/record/fields/service_area_business/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "service_area_business",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "service_area_business"
+          ],
+          "record_key": "22f2d3df0fe9ffdcadf8c647a612063846d0e7cbd2186436fa7b7e7662ac5204",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_931de7b2c3ccd81b02e2b59ff5ac5ec50acbc83f3a956df90f160832e0080e09",
+        "origin_paths": [
+          "/payload/pages/0/canonical_url"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "canonical_url",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_a10500bffc96edf8e28a1a5520d7112bccae55e57cf29dcaa6d207f4ea913fff",
+        "origin_paths": [
+          "/payload/record/fields/phone/state"
+        ],
+        "selector": {
+          "category": "coverage",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "phone",
+          "metric_key": null,
+          "record_context": [
+            "site_gbp_alignment_v1",
+            "phone",
+            "gbp",
+            "00000000-0000-0000-0000-000000000047",
+            "site_business_extraction_v1",
+            "site_business_selection_v1",
+            "gbp_missing",
+            "https://example.test/"
+          ],
+          "record_key": "f7a87856c8c3d14c321f4c57a94c5ddb5e3a73b0027bb47763865efa08cb8cf9",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_a16f145041053fc33a09938d552ad9528d9d78adead6ac4c527a421654873db4",
+        "origin_paths": [
+          "/payload/pages/0/schema_types/0"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "schema_types",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_a4de5e2ecefd172662568d31ffe02aaf476a6cb94847a920e78d51476c1351ae",
+        "origin_paths": [
+          "/payload/record/fields/business_name/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "business_name",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "business_name"
+          ],
+          "record_key": "f96a874fa3f818a65e05ab488c463ef4b85d1c37ba25ffa36c153336a980dc97",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_a4f67186db5e9f98130b2f94c09649349a1792891f939852d8877fcd13110f58",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/html"
+        ],
+        "selector": {
+          "category": "site_business_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "address",
+          "metric_key": null,
+          "record_context": [
+            "site_business_extraction_v1",
+            "https://example.test/",
+            "https://example.test/",
+            "sha256:407715636c5f3c20c13a5afb490d00b069032affee2278ecf4568abcec8a0e36",
+            "sha256:8253c7491d9860927c6059bdf92e1f72f287ee7d0fe74558e824459e86cdc84b",
+            "jsonld_property",
+            "address",
+            "sha256:e435df8926d84ecc8060dba4d85b8446c422c1c85a43d75392f6853bf1716240",
+            null
+          ],
+          "record_key": "2c395713209450f4b28ad94d19af91e84a395aa5ee2918b22ee641342832742d",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_a540fec5eb5e4f5ed627ee5958946bc0013080770fbdd7889918a5a9598ec9e9",
+        "origin_paths": [
+          "/payload/pages/0/final_url"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "final_url",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_a6e96f6f0f4f5d777f12194f14ba2d3983d593527d1f22f1112b56915efb73fa",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/html"
+        ],
+        "selector": {
+          "category": "site_business_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "service_area",
+          "metric_key": null,
+          "record_context": [
+            "site_business_extraction_v1",
+            "https://example.test/",
+            "https://example.test/",
+            "sha256:407715636c5f3c20c13a5afb490d00b069032affee2278ecf4568abcec8a0e36",
+            "sha256:8253c7491d9860927c6059bdf92e1f72f287ee7d0fe74558e824459e86cdc84b",
+            "jsonld_property",
+            "service_area",
+            "sha256:f75c45bae877f3901b462dbbb039171f06d680ff46cdca1a1878c3c8322d3d0b",
+            null
+          ],
+          "record_key": "197713080632ccb765e8625efbd0552e0a673cf9eaf1648b0a01ef1a279cc190",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_aec672f80faca55a87b59421683eb69e6d23609e4299af7765822105e088235d",
+        "origin_paths": [
+          "/payload/page_type_counts/0/count"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "page_type_counts",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "page_type_counts",
+            "home"
+          ],
+          "record_key": "a56e38b129c6cc0a77751ae87a6c2dcfd564864ee2b36f6a7a0754e6f854d541",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1",
+        "origin_paths": [
+          "/payload/completed_at",
+          "/payload/pages"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "eligible_html_page_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/",
+            "eligible_html_page_count",
+            null,
+            "eligible_html_counts_v1"
+          ],
+          "record_key": "62a979b97cc58f32862d48a7b1ec8e0d26a26b0f6fd42ff5cf9551902f748514",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_b1ccf85184d1d956f152a904b18211f2a5fd2ba607efdef4bae66a1f80964053",
+        "origin_paths": [
+          "/payload/selected_pages/0/deep_snapshot/html"
+        ],
+        "selector": {
+          "category": "site_business_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "phone",
+          "metric_key": null,
+          "record_context": [
+            "site_business_extraction_v1",
+            "https://example.test/",
+            "https://example.test/",
+            "sha256:407715636c5f3c20c13a5afb490d00b069032affee2278ecf4568abcec8a0e36",
+            "sha256:8253c7491d9860927c6059bdf92e1f72f287ee7d0fe74558e824459e86cdc84b",
+            "jsonld_property",
+            "phone",
+            "sha256:66cce73efeea28132473774a18e47c04c903799feb8691891870d565d67f409e",
+            null
+          ],
+          "record_key": "b3364a3c47a4ccaf075f0959f2b47cf848918ff7f495e443c9133d3e43741552",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_b7fc6655ec120202cb9af21fd4e86348e329d01e157eef5261dc1a138065815a",
+        "origin_paths": [
+          "/payload/record/observed_entity_keys/0/value"
+        ],
+        "selector": {
+          "category": "public_gbp_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "observed_entity_keys.place_id",
+          "metric_key": null,
+          "record_context": [
+            "customer_public_gbp_v1",
+            "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd",
+            "place_id:fixture-customer-place",
+            "cid:12345",
+            "observed_entity_keys.place_id"
+          ],
+          "record_key": "f0271214a2b89d5391802a696d1ae8a438dfa5308ae09d0cd0e3954b9502e724",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-000000000047"
+      },
+      {
+        "evidence_id": "ev_d021b841d5613823ed5274aefa49fc4d886aee3844a673ecbbadc1a5ae25d697",
+        "origin_paths": [
+          "/payload/pages/0/title"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "title",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_d0a360a5024682b955239d1783c7b2f397ab0868b976485f270b06a1b953a03b",
+        "origin_paths": [
+          "/payload/pages/0/h1"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "h1",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      },
+      {
+        "evidence_id": "ev_df1e864a19c11c72757627c220e004c9bfaa682bb35b7ff3250e4175547a2e7e",
+        "origin_paths": [
+          "/payload/deep_analyzed_count"
+        ],
+        "selector": {
+          "category": "site_field",
+          "competitor_id": null,
+          "dimensions": [],
+          "field": "deep_analyzed_count",
+          "metric_key": null,
+          "record_context": [
+            "https://example.test/"
+          ],
+          "record_key": "1ed4509c808de4dd131d0114e95325f705784a3e895cb12c8a7535e9384b4943",
+          "request_context": null,
+          "unit": null
+        },
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "affected_queries": [],
+      "affected_urls": [
+        "https://example.test/"
+      ],
+      "change_conditions": [
+        "Update the public business phone or the eligible website phone, then inspect new bound snapshots."
+      ],
+      "classification": "fact",
+      "comparator_ids": [
+        "ev_a10500bffc96edf8e28a1a5520d7112bccae55e57cf29dcaa6d207f4ea913fff"
+      ],
+      "confidence": "low",
+      "evidence_ids": [
+        "ev_b1ccf85184d1d956f152a904b18211f2a5fd2ba607efdef4bae66a1f80964053"
+      ],
+      "finding_id": "fn_ef7302b68f8fd780cd1b525d9b2b1d9527721d2fcef88f25be120f2726a82e94",
+      "missing_data": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Customer public GBP identity: strong_id_matched.",
+        "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data.",
+        "These observations concern the saved sample only, not complete site or market coverage.",
+        "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment.",
+        "This evidence records a missing field in the saved, approved sample after required checks; it is not a business value or proof that the field is absent from the entire internet."
+      ],
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "rule_version": "1.1.0",
+      "scope": "customer_gbp:32f6fce08df8330da71b3e81",
+      "severity": "medium",
+      "statement": "The eligible website phone does not align with the saved public GBP phone."
+    }
+  ],
+  "rule_evaluations": [
+    {
+      "comparator_ids": [],
+      "evidence_ids": [
+        "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+        "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.competitor_sample_page_type_gap",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "page_type",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": "location",
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [
+        "ev_5c86c7b232f778e8fc4f71aedb4e70049514973b344dbd36091e61b9a55be11d",
+        "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.competitor_sample_page_type_gap",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "page_type",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": "service_area",
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [
+        "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+        "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.competitor_sample_page_type_gap",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "page_type",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": "service_detail",
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [
+        "ev_4084943f77867838bb23eb048867051bacd92bdd54dc82d085bf9f2dcb775ea6"
+      ],
+      "evidence_ids": [
+        "ev_a4f67186db5e9f98130b2f94c09649349a1792891f939852d8877fcd13110f58"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Customer public GBP identity: strong_id_matched.",
+        "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data.",
+        "These observations concern the saved sample only, not complete site or market coverage.",
+        "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+      ],
+      "reason": "exact_match",
+      "rule_id": "v22_public.gbp_address_alignment",
+      "rule_version": "1.1.0",
+      "state": "not_triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "customer_gbp",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    },
+    {
+      "comparator_ids": [
+        "ev_a4de5e2ecefd172662568d31ffe02aaf476a6cb94847a920e78d51476c1351ae"
+      ],
+      "evidence_ids": [
+        "ev_2ca216b11f44051effbf1582390b89c8e545023470f5272d94f0fbfa1dd1a5e7"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Customer public GBP identity: strong_id_matched.",
+        "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data.",
+        "These observations concern the saved sample only, not complete site or market coverage.",
+        "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+      ],
+      "reason": "exact_match",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "rule_version": "1.1.0",
+      "state": "not_triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "customer_gbp",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    },
+    {
+      "comparator_ids": [
+        "ev_a10500bffc96edf8e28a1a5520d7112bccae55e57cf29dcaa6d207f4ea913fff"
+      ],
+      "evidence_ids": [
+        "ev_b1ccf85184d1d956f152a904b18211f2a5fd2ba607efdef4bae66a1f80964053"
+      ],
+      "finding_id": "fn_ef7302b68f8fd780cd1b525d9b2b1d9527721d2fcef88f25be120f2726a82e94",
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Customer public GBP identity: strong_id_matched.",
+        "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data.",
+        "These observations concern the saved sample only, not complete site or market coverage.",
+        "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment.",
+        "This evidence records a missing field in the saved, approved sample after required checks; it is not a business value or proof that the field is absent from the entire internet."
+      ],
+      "reason": "gbp_field_missing",
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "rule_version": "1.1.0",
+      "state": "triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "customer_gbp",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    },
+    {
+      "comparator_ids": [
+        "ev_7993477d16d4d568e9301cac2c25203a183fd55756a6955665b551276a1a14fc",
+        "ev_8c0ce0ff6061bd1b878591b305ec2e7a7af21538f741448986b2fb147507692f"
+      ],
+      "evidence_ids": [
+        "ev_09cc3836be63fcc683c5a73ce65aa4dde66e5cc9d9e272a08ede791e2251f4e9",
+        "ev_a6e96f6f0f4f5d777f12194f14ba2d3983d593527d1f22f1112b56915efb73fa"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Customer public GBP identity: strong_id_matched.",
+        "Extraction is limited to supported rules in saved HTML; rendered visibility and complete website coverage have not been verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data.",
+        "These observations concern the saved sample only, not complete site or market coverage.",
+        "These values are declarations found in saved customer-site pages; they do not establish the confirmed customer entity, a primary location, or GBP alignment."
+      ],
+      "reason": "exact_match",
+      "rule_id": "v22_public.gbp_service_area_alignment",
+      "rule_version": "1.1.0",
+      "state": "not_triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "customer_gbp",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "emergency plumber",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "plumber",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "local_pack",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "maps",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "source_missing",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": "US",
+        "device": "mobile",
+        "kind": "market",
+        "language": "en",
+        "latitude": 30.2672,
+        "longitude": -97.7431,
+        "page_type": null,
+        "query": "water heater repair",
+        "result_type": "organic",
+        "snapshot_id": null,
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [],
+      "finding_id": null,
+      "limitations": [
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "insufficient_sample",
+      "rule_id": "v22_public.site_duplicate_title",
+      "rule_version": "1.0.0",
+      "state": "not_checked",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "site",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": []
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [
+        "ev_5cc2b54d359b219ce41e926c60adc5771a4261653109bc9be72031e0fc4294dc",
+        "ev_843909f68e1464d9cf10698faf6fe7f2b1865e1f6f004dce2517a4153eef201a"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Only saved meta_robots tokens were inspected; response headers, policy intent and actual search-engine indexing were not verified.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "condition_not_met",
+      "rule_id": "v22_public.site_explicit_noindex",
+      "rule_version": "1.0.0",
+      "state": "not_triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "page",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    },
+    {
+      "comparator_ids": [],
+      "evidence_ids": [
+        "ev_5cc2b54d359b219ce41e926c60adc5771a4261653109bc9be72031e0fc4294dc",
+        "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132"
+      ],
+      "finding_id": null,
+      "limitations": [
+        "A saved HTTP error is not proof that the URL is permanently inaccessible.",
+        "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "reason": "condition_not_met",
+      "rule_id": "v22_public.site_http_error",
+      "rule_version": "1.0.0",
+      "state": "not_triggered",
+      "target": {
+        "competitor_ids": [],
+        "country_code": null,
+        "device": null,
+        "kind": "page",
+        "language": null,
+        "latitude": null,
+        "longitude": null,
+        "page_type": null,
+        "query": null,
+        "result_type": null,
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "title_key": null,
+        "urls": [
+          "https://example.test/"
+        ]
+      }
+    }
+  ],
+  "ruleset_version": "v22_public_findings_v1",
+  "site_rollup": {
+    "counts": {
+      "checked": 1,
+      "deep_analyzed": 1,
+      "discovered": 1,
+      "eligible_html": 1
+    },
+    "evidence_ids": [
+      "ev_295821a86dbaa4c9c9029a80e790f6a984774861a2e970dc741a957c9522a4b8",
+      "ev_77bcdaca52107b3f8928799a54ac46f868ac9608428febc9c0fc04569bb0c14c",
+      "ev_b09fa1d562830bba763c30e3f421f6cc2a99ee95b69034f9706b82b5f6fcc7d1",
+      "ev_df1e864a19c11c72757627c220e004c9bfaa682bb35b7ff3250e4175547a2e7e"
+    ],
+    "finding_ids": [
+      "fn_ef7302b68f8fd780cd1b525d9b2b1d9527721d2fcef88f25be120f2726a82e94"
+    ],
+    "layers": [
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "foundation",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "entity_presence",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "entity_consistency",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "specificity",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "real_world_connection",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "accountability",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "page_unique_value",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      },
+      {
+        "evidence_ids": [],
+        "finding_ids": [],
+        "layer_key": "algorithm_fit",
+        "status": "not_checked",
+        "summary": "Not checked: semantic_rules_not_implemented in this public-rule batch. Technical and sampled market observations are not trust-layer ratings."
+      }
+    ],
+    "limitations": [
+      "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.",
+      "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page.",
+      "The site scope is this saved sample, not proof of complete website coverage."
+    ],
+    "page_type": null,
+    "scope": "sampled_site",
+    "site_url": "https://example.test/",
+    "urls": [
+      "https://example.test/"
+    ]
+  }
+}
