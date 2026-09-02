@@ -28,7 +28,7 @@
 验证：
 
 ```bash
-.venv/bin/pytest -q tests/test_v22_public_findings_stage.py
+.venv/bin/python -m pytest -q tests/test_v22_public_findings_stage.py
 ```
 
 ## Task 2：实现最小严格阶段
@@ -68,7 +68,7 @@
 验证：
 
 ```bash
-.venv/bin/pytest -q tests/test_v22_public_findings_stage.py tests/test_v22_findings_builder.py tests/test_v22_public_gbp_findings.py tests/test_v22_site_gbp_findings.py
+.venv/bin/python -m pytest -q tests/test_v22_public_findings_stage.py tests/test_v22_findings_builder.py tests/test_v22_public_gbp_findings.py tests/test_v22_site_gbp_findings.py
 ```
 
 ## Task 4：完整回归与完成记录
@@ -90,7 +90,7 @@
 
 ```bash
 git diff --check
-.venv/bin/pytest -q
+.venv/bin/python -m pytest -q
 git status --short
 ```
 
