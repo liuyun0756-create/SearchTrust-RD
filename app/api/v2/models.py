@@ -45,11 +45,32 @@ class PreflightRequest(StrictModel):
     target_market: TargetMarket | None = None
 
 
+IdentityComparisonField = Literal["business_name", "phone", "address", "service_area"]
+IdentityComparisonStatus = Literal["exact_match", "partial_match", "not_matched", "error"]
+
+
+class IdentityFieldComparison(StrictModel):
+    field: IdentityComparisonField
+    site_value: str | None = Field(default=None, min_length=1, max_length=500)
+    gbp_value: str | None = Field(default=None, min_length=1, max_length=500)
+    status: IdentityComparisonStatus
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class BusinessIdentityCandidate(StrictModel):
     business: BusinessIdentity
     confidence: Literal["low", "medium", "high"]
     match_reasons: list[str] = Field(min_length=1)
     requires_confirmation: bool
+    field_comparisons: list[IdentityFieldComparison] = Field(min_length=4, max_length=4)
+
+    @model_validator(mode="after")
+    def validate_field_comparisons(self) -> "BusinessIdentityCandidate":
+        expected = ["business_name", "phone", "address", "service_area"]
+        actual = [item.field for item in self.field_comparisons]
+        if actual != expected:
+            raise ValueError("identity field comparisons must contain all four fields in contract order")
+        return self
 
 
 class TextCandidate(StrictModel):

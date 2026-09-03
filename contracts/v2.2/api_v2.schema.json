@@ -184,6 +184,15 @@
           "title": "Confidence",
           "type": "string"
         },
+        "field_comparisons": {
+          "items": {
+            "$ref": "#/$defs/IdentityFieldComparison"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Field Comparisons",
+          "type": "array"
+        },
         "match_reasons": {
           "items": {
             "type": "string"
@@ -201,7 +210,8 @@
         "business",
         "confidence",
         "match_reasons",
-        "requires_confirmation"
+        "requires_confirmation",
+        "field_comparisons"
       ],
       "title": "BusinessIdentityCandidate",
       "type": "object"
@@ -1449,6 +1459,72 @@
         }
       },
       "title": "GenerationLimits",
+      "type": "object"
+    },
+    "IdentityFieldComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "enum": [
+            "business_name",
+            "phone",
+            "address",
+            "service_area"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "gbp_value": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gbp Value"
+        },
+        "reason": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "site_value": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Value"
+        },
+        "status": {
+          "enum": [
+            "exact_match",
+            "partial_match",
+            "not_matched",
+            "error"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "status",
+        "reason"
+      ],
+      "title": "IdentityFieldComparison",
       "type": "object"
     },
     "IdentitySection": {

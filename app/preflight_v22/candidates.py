@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 
 from app.api.v2.models import (
     BusinessIdentityCandidate,
+    IdentityFieldComparison,
     MarketCandidate,
     PreflightRequest,
     TextCandidate,
@@ -77,6 +78,112 @@ def _markets_match(left: TargetMarket | None, right: TargetMarket | None) -> boo
     if left.city and right.city:
         return left.city.casefold() == right.city.casefold()
     return bool(left.region and right.region and left.region.casefold() == right.region.casefold())
+
+
+def _comparison(
+    *,
+    field: str,
+    site_value: str | None,
+    gbp_value: str | None,
+    matches: bool,
+    exact: bool = False,
+) -> IdentityFieldComparison:
+    if site_value is None and gbp_value is None:
+        status = "error"
+        reason = "This required GBP signal is missing from both the website and public profile."
+    elif site_value is None:
+        status = "not_matched"
+        reason = "The public GBP value was found, but the website does not provide a comparable value."
+    elif gbp_value is None:
+        status = "not_matched"
+        reason = "The website value was found, but the public GBP profile does not provide a comparable value."
+    elif exact:
+        status = "exact_match"
+        reason = "The website and public GBP values match exactly after normalization."
+    elif matches:
+        status = "partial_match"
+        reason = "The website and public GBP values overlap, but are not identical."
+    else:
+        status = "not_matched"
+        reason = "The website and public GBP values do not match."
+    return IdentityFieldComparison(
+        field=field,
+        site_value=site_value,
+        gbp_value=gbp_value,
+        status=status,
+        reason=reason,
+    )
+
+
+def _identity_comparisons(
+    signals: SiteSignals,
+    candidate: GbpCandidate | None,
+) -> list[IdentityFieldComparison]:
+    site_name = signals.names[0].value if signals.names else None
+    site_phone = signals.phones[0].value if signals.phones else None
+    site_market = signals.markets[0] if signals.markets else None
+    site_address = site_market.display_name if site_market else None
+    site_model = signals.operating_models[0].value if signals.operating_models else None
+
+    gbp_name = candidate.business_name if candidate else None
+    gbp_phone = candidate.phone if candidate else None
+    gbp_address = candidate.address if candidate else None
+    gbp_market = candidate.market if candidate else None
+    gbp_model = candidate.operating_model if candidate else None
+
+    name_exact = bool(site_name and gbp_name and _normalized_text(site_name) == _normalized_text(gbp_name))
+    phone_exact = bool(site_phone and gbp_phone and _phones_match(site_phone, gbp_phone))
+    address_exact = bool(
+        site_address
+        and gbp_address
+        and _normalized_text(site_address) == _normalized_text(gbp_address)
+    )
+    model_exact = bool(site_model and gbp_model and site_model == gbp_model)
+    model_partial = bool(
+        site_model
+        and gbp_model
+        and not model_exact
+        and "hybrid" in {site_model, gbp_model}
+    )
+    return [
+        _comparison(
+            field="business_name",
+            site_value=site_name,
+            gbp_value=gbp_name,
+            exact=name_exact,
+            matches=_names_match(site_name, gbp_name),
+        ),
+        _comparison(
+            field="phone",
+            site_value=site_phone,
+            gbp_value=gbp_phone,
+            exact=phone_exact,
+            matches=phone_exact,
+        ),
+        _comparison(
+            field="address",
+            site_value=site_address,
+            gbp_value=gbp_address,
+            exact=address_exact,
+            matches=_markets_match(
+                TargetMarket(
+                    display_name=site_market.display_name,
+                    country_code=site_market.country_code,
+                    region=site_market.region,
+                    city=site_market.city,
+                    postal_code=site_market.postal_code,
+                ) if site_market else None,
+                gbp_market,
+            ),
+        ),
+        _comparison(
+            field="service_area",
+            site_value=site_model,
+            gbp_value=gbp_model,
+            exact=model_exact,
+            matches=model_exact or model_partial,
+        ),
+    ]
 
 
 def _text_candidates(request: PreflightRequest, signals: SiteSignals, gbp: GbpLookupResult) -> tuple[TextCandidate, ...]:
@@ -206,6 +313,7 @@ def _identity_from_gbp(
         confidence=confidence,
         match_reasons=reasons,
         requires_confirmation=confidence != "high",
+        field_comparisons=_identity_comparisons(signals, candidate),
     )
 
 
@@ -236,6 +344,7 @@ def _website_identity(
             f"operating model observed from {operating_model.source.replace('_', ' ')}",
         ],
         requires_confirmation=confidence != "high",
+        field_comparisons=_identity_comparisons(signals, None),
     )
 
 

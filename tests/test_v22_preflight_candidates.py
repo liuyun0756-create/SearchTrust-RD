@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from app.api.v2.models import PreflightRequest
@@ -64,6 +65,53 @@ def test_candidate_builder_prioritizes_user_inputs_and_merges_matching_gbp() -> 
     assert result.identities[0].confidence == "high"
     assert result.identities[0].requires_confirmation is False
     assert "website domain matched" in result.identities[0].match_reasons
+    comparisons = {item.field: item for item in result.identities[0].field_comparisons}
+    assert set(comparisons) == {"business_name", "phone", "address", "service_area"}
+    assert comparisons["business_name"].status == "exact_match"
+    assert comparisons["phone"].status == "exact_match"
+    assert comparisons["address"].status in {"exact_match", "partial_match"}
+    assert comparisons["service_area"].status == "partial_match"
+
+
+def test_candidate_comparisons_distinguish_partial_missing_and_error() -> None:
+    signals = complete_signals()
+    result = build_candidates(
+        request=request_with_user_context(),
+        normalized_site_url="https://example.com/",
+        signals=replace(signals, phones=()),
+        gbp_result=GbpLookupResult(
+            "found",
+            "GBP_FOUND",
+            "GBP candidates found.",
+            (replace(gbp_candidate(), business_name="Acme Plumbing LLC", phone=None),),
+        ),
+    )
+
+    comparisons = {item.field: item for item in result.identities[0].field_comparisons}
+    assert comparisons["business_name"].status == "partial_match"
+    assert comparisons["phone"].status == "error"
+
+
+def test_candidate_comparison_treats_one_sided_value_as_not_matched() -> None:
+    signals = complete_signals()
+    result = build_candidates(
+        request=request_with_user_context(),
+        normalized_site_url="https://example.com/",
+        signals=signals,
+        gbp_result=GbpLookupResult(
+            "found",
+            "GBP_FOUND",
+            "GBP candidates found.",
+            (replace(gbp_candidate(), phone=None),),
+        ),
+    )
+
+    phone = next(
+        item for item in result.identities[0].field_comparisons if item.field == "phone"
+    )
+    assert phone.site_value is not None
+    assert phone.gbp_value is None
+    assert phone.status == "not_matched"
 
 
 def test_candidate_builder_marks_multiple_similar_gbp_candidates_for_confirmation() -> None:
