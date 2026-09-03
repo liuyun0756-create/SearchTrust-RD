@@ -76,7 +76,8 @@ def _validated_input(value: PublicActionPlanInput | dict[str, Any]) -> PublicAct
         raise PublicActionError("INPUT_INVALID") from None
 
 
-def _canonical_findings(value: PublicFindingsResult) -> PublicFindingsResult:
+def canonical_public_findings(value: PublicFindingsResult) -> PublicFindingsResult:
+    """Return the stable findings representation used by downstream checksums."""
     evidence = value.evidence_result
     canonical_evidence = evidence.model_copy(
         update={
@@ -451,7 +452,7 @@ def build_public_action_plan(
     value: PublicActionPlanInput | dict[str, Any],
 ) -> PublicActionPlan:
     request = _validated_input(value)
-    result = _canonical_findings(request.findings_result)
+    result = canonical_public_findings(request.findings_result)
     findings, evaluations, evidence_sources = _validated_references(
         result,
         max_findings=request.limits.max_findings,
