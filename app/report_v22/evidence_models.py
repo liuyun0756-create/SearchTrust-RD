@@ -15,6 +15,7 @@ from app.api.v2.models import ConfirmedCompetitor, DimensionValue, FirstPartySna
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
+from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
 from app.report_v22.models import (
     CaseContext, CompetitorId, Confidence, EvidenceId, EvidenceItem, HealthStatus,
     IdentityMatchStatus, ReportType, ScalarValue, SourceLocator, SourceType, StrictModel,
@@ -46,13 +47,16 @@ class EvidenceBuildContext(CaseContext):
     case_id: UUID
     report_type: ReportType
     site_url: HttpUrl
-    competitors: list[ConfirmedCompetitor] = Field(min_length=3, max_length=3)
+    competitors: list[ConfirmedCompetitor] = Field(
+        min_length=COMPETITOR_MIN_COUNT,
+        max_length=COMPETITOR_MAX_COUNT,
+    )
     evaluated_at: AwareDatetime
     customer_public_gbp: CustomerPublicGbpReference | None = None
 
     @model_validator(mode="after")
     def unique_competitors(self):
-        if len({c.competitor_id for c in self.competitors}) != 3:
+        if len({c.competitor_id for c in self.competitors}) != len(self.competitors):
             raise ValueError("duplicate competitor")
         return self
 

@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
 from app.api.v2.models import CompetitorCandidate, DataGap
+from app.competitors_v22.limits import COMPETITOR_MIN_COUNT
 from app.report_v22.models import BusinessIdentity, StrictModel, TargetMarket
 
 
@@ -83,8 +84,8 @@ class CompetitorDiscoveryResult(StrictModel):
             raise ValueError("candidate IDs must be unique")
         if len(set(domains)) != len(domains):
             raise ValueError("candidate websites must be unique")
-        if self.ready_for_confirmation and len(self.candidates) < 3:
-            raise ValueError("ready discovery results require at least three candidates")
+        if self.ready_for_confirmation and len(self.candidates) < COMPETITOR_MIN_COUNT:
+            raise ValueError("ready discovery results require at least one candidate")
         if not self.ready_for_confirmation and not any(gap.blocking for gap in self.data_gaps):
             raise ValueError("unready discovery results require a blocking gap")
         return self

@@ -1,9 +1,9 @@
 {
   "contract_version": "2.2.0",
   "files": {
-    "api_v2.schema.json": "sha256:926f322e134de19fc886cafbeefe1f693ed852ae7d576b9da1a9b1cba122970f",
+    "api_v2.schema.json": "sha256:1839c699d0501c87549ab7311ea0bcc2568dc9ea754bcc42eee53fc59c72102b",
     "fixtures/prospect.json": "sha256:b0e613c0680db34e71edf90439a92f05f8073f951d7b7680a891f9625bd193b0",
     "fixtures/verified.json": "sha256:fa8b290b577c9a3aa565182beca1e064c674735981baf689e2b63088cfbddca4",
-    "report_v2_2.schema.json": "sha256:d8504e4a319e78ff5a9d29642bac44c258493da086e8448902a9729dd5ae8e2f"
+    "report_v2_2.schema.json": "sha256:b90fff517d528d9d7599080ef88beea9762a7b5c3f994d86e13803551f87d807"
   }
 }

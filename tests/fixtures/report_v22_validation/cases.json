@@ -3201,6 +3201,53 @@
           ]
         }
       ],
+      "accepted": true
+    },
+    {
+      "id": "one_competitor",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors"
+          ],
+          "value": [
+            {
+              "analyzed_page_count": 3,
+              "best_position": 1,
+              "business_name": "Alpha Plumbing",
+              "competitor_id": "cp_alpha_plumbing",
+              "evidence_ids": [
+                "ev_serp_competitor_alpha"
+              ],
+              "gaps": [],
+              "public_gbp_url": null,
+              "query_appearance_count": 3,
+              "strengths": [
+                "Dedicated emergency service page"
+              ],
+              "website_url": "https://alpha-plumbing.test"
+            }
+          ]
+        }
+      ],
+      "accepted": true
+    },
+    {
+      "id": "zero_competitors",
+      "fixture": "prospect",
+      "operations": [
+        {
+          "op": "set",
+          "path": [
+            "competitor_analysis",
+            "competitors"
+          ],
+          "value": []
+        }
+      ],
       "accepted": false,
       "error": {
         "code": "REPORT_CONTRACT_INVALID",

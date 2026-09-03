@@ -1,4 +1,4 @@
-"""Bounded, first-party-free website inventory for three confirmed competitors."""
+"""Bounded, first-party-free website inventory for confirmed competitors."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from pydantic import Field, model_validator
 from app.api.v2.models import ConfirmedCompetitor
 from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot
 from app.competitors_v22.models import (
-    COMPETITOR_COUNT,
+    COMPETITOR_MAX_COUNT,
+    COMPETITOR_MIN_COUNT,
     COMPETITOR_SITE_DEEP_LIMIT,
     COMPETITOR_SITE_DISCOVERY_LIMIT,
 )
@@ -79,8 +80,8 @@ class CheckpointedCompetitorSiteStage:
         max_pages_each: int,
         checkpoints: JobCheckpoints,
     ) -> list[CompetitorSiteInventoryResult]:
-        if len(competitors) != COMPETITOR_COUNT:
-            raise ValueError("competitor site collection requires exactly three competitors")
+        if not COMPETITOR_MIN_COUNT <= len(competitors) <= COMPETITOR_MAX_COUNT:
+            raise ValueError("competitor site collection requires one to three competitors")
         deep_limit = min(max_pages_each, COMPETITOR_SITE_DEEP_LIMIT)
         if deep_limit < 1:
             raise ValueError("competitor deep page limit must be positive")

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
 from app.report_v22.contract_version import ContractVersion
+from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
 from app.report_v22.models import (
     BusinessIdentity,
     CompetitorId,
@@ -172,7 +173,7 @@ class GenerationLimits(StrictModel):
     max_site_urls: int = Field(default=500, ge=1, le=500)
     max_deep_pages: int = Field(default=50, ge=1, le=50)
     max_competitor_pages_each: int = Field(default=10, ge=1, le=10)
-    competitor_count: Literal[3] = 3
+    competitor_count: int = Field(default=COMPETITOR_MAX_COUNT, ge=COMPETITOR_MIN_COUNT, le=COMPETITOR_MAX_COUNT)
     max_pagespeed_pages: int = Field(default=5, ge=0, le=5)
     max_review_samples_each: int = Field(default=30, ge=0, le=30)
 
@@ -184,7 +185,10 @@ class AnalyzeRequest(StrictModel):
     primary_service: str = Field(min_length=1, max_length=200)
     target_market: TargetMarket
     queries: list[str] = Field(min_length=3, max_length=5)
-    competitors: list[ConfirmedCompetitor] = Field(min_length=3, max_length=3)
+    competitors: list[ConfirmedCompetitor] = Field(
+        min_length=COMPETITOR_MIN_COUNT,
+        max_length=COMPETITOR_MAX_COUNT,
+    )
     first_party_snapshots: list[FirstPartySnapshotEnvelope] = Field(default_factory=list, max_length=3)
     parent_report: ReportV22 | None = None
     generation_limits: GenerationLimits = Field(default_factory=GenerationLimits)
@@ -196,8 +200,10 @@ class AnalyzeRequest(StrictModel):
             raise ValueError("queries must be unique after case normalization")
         competitor_ids = [competitor.competitor_id for competitor in self.competitors]
         competitor_domains = [str(competitor.website_url).casefold() for competitor in self.competitors]
-        if len(set(competitor_ids)) != 3 or len(set(competitor_domains)) != 3:
-            raise ValueError("analyze requires three distinct competitors")
+        if len(set(competitor_ids)) != len(competitor_ids) or len(set(competitor_domains)) != len(competitor_domains):
+            raise ValueError("analyze requires distinct competitors")
+        if self.generation_limits.competitor_count != len(self.competitors):
+            raise ValueError("generation limit competitor count must match selected competitors")
 
         source_types = [snapshot.source_type for snapshot in self.first_party_snapshots]
         if len(set(source_types)) != len(source_types):

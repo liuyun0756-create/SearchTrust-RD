@@ -31,7 +31,7 @@ def market_snapshot():
     return snapshot(records)
 
 
-def analyze_request(source, candidates) -> AnalyzeRequest:
+def analyze_request(source, candidates, *, count: int = 3) -> AnalyzeRequest:
     return AnalyzeRequest(
         case_id=source.case_id,
         report_type="prospect",
@@ -47,8 +47,9 @@ def analyze_request(source, candidates) -> AnalyzeRequest:
                 public_gbp_url=candidate.public_gbp_url,
                 confirmation_source="user",
             )
-            for candidate in candidates[:3]
+            for candidate in candidates[:count]
         ],
+        generation_limits={"competitor_count": count},
     )
 
 
@@ -108,6 +109,22 @@ async def test_valid_user_selection_links_frozen_discovery_snapshot() -> None:
     assert link.discovery_id == JOB_ID
     assert link.candidate_digest == result.candidate_digest
     assert link.market_snapshot_checksum == result.market_snapshot_checksum
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("competitor_count", [1, 2, 3])
+async def test_user_can_confirm_one_to_three_discovered_competitors(
+    competitor_count: int,
+) -> None:
+    verifier, discovery, result = await setup_verifier()
+
+    link = await verifier.verify(
+        discovery_id=JOB_ID,
+        request=analyze_request(discovery, result.candidates, count=competitor_count),
+        now=NOW + timedelta(hours=1),
+    )
+
+    assert link.discovery_id == JOB_ID
 
 
 @pytest.mark.anyio

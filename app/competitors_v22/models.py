@@ -18,18 +18,21 @@ from app.api.v2.competitor_models import (
 from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.competitors_v22.limits import (
+    COMPETITOR_COUNT,
+    COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
+    COMPETITOR_DISCOVERY_SUPPLEMENTAL_LIMIT,
+    COMPETITOR_MAX_COUNT,
+    COMPETITOR_MIN_COUNT,
+    COMPETITOR_PROVIDER_ATTEMPT_LIMIT,
+    COMPETITOR_REVIEW_PAGE_LIMIT,
+    COMPETITOR_REVIEW_PAGE_SIZE,
+    COMPETITOR_REVIEW_SAMPLE_LIMIT,
+    COMPETITOR_SITE_DEEP_LIMIT,
+    COMPETITOR_SITE_DISCOVERY_LIMIT,
+)
 from app.report_v22.models import StrictModel
 
-
-COMPETITOR_DISCOVERY_CANDIDATE_LIMIT = 6
-COMPETITOR_DISCOVERY_SUPPLEMENTAL_LIMIT = 3
-COMPETITOR_COUNT = 3
-COMPETITOR_SITE_DISCOVERY_LIMIT = 50
-COMPETITOR_SITE_DEEP_LIMIT = 10
-COMPETITOR_REVIEW_PAGE_SIZE = 8
-COMPETITOR_REVIEW_PAGE_LIMIT = 4
-COMPETITOR_REVIEW_SAMPLE_LIMIT = 30
-COMPETITOR_PROVIDER_ATTEMPT_LIMIT = 15
 
 CandidateDisposition = Literal["eligible", "excluded", "ambiguous"]
 CompetitorSourceStatus = Literal["available", "partial", "unavailable"]
@@ -174,8 +177,8 @@ class CandidateRankingResult(StrictModel):
         ]
         if len(set(ids)) != len(ids) or len(set(domains)) != len(domains):
             raise ValueError("ranked candidates must have unique IDs and websites")
-        if self.ready_for_confirmation and len(self.candidates) < COMPETITOR_COUNT:
-            raise ValueError("ready rankings require at least three candidates")
+        if self.ready_for_confirmation and len(self.candidates) < COMPETITOR_MIN_COUNT:
+            raise ValueError("ready rankings require at least one candidate")
         if not self.ready_for_confirmation and not any(gap.blocking for gap in self.data_gaps):
             raise ValueError("unready rankings require a blocking gap")
         return self
@@ -280,8 +283,8 @@ class CompetitorCollectionBudget(StrictModel):
     review_sample_limit_each: int = Field(ge=0, le=COMPETITOR_REVIEW_SAMPLE_LIMIT)
     provider_attempt_limit: int = Field(ge=0, le=COMPETITOR_PROVIDER_ATTEMPT_LIMIT)
     provider_attempts_used: int = Field(ge=0, le=COMPETITOR_PROVIDER_ATTEMPT_LIMIT)
-    place_detail_calls: int = Field(ge=0, le=COMPETITOR_COUNT)
-    review_page_calls: int = Field(ge=0, le=COMPETITOR_COUNT * COMPETITOR_REVIEW_PAGE_LIMIT)
+    place_detail_calls: int = Field(ge=0, le=COMPETITOR_MAX_COUNT)
+    review_page_calls: int = Field(ge=0, le=COMPETITOR_MAX_COUNT * COMPETITOR_REVIEW_PAGE_LIMIT)
     checkpoint_hits: int = Field(ge=0)
     truncated: bool
 
@@ -303,7 +306,10 @@ class CompetitorCollectionSnapshot(StrictModel):
     market_snapshot_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     started_at: AwareDatetime
     completed_at: AwareDatetime
-    competitors: list[CompetitorSnapshot] = Field(min_length=COMPETITOR_COUNT, max_length=COMPETITOR_COUNT)
+    competitors: list[CompetitorSnapshot] = Field(
+        min_length=COMPETITOR_MIN_COUNT,
+        max_length=COMPETITOR_MAX_COUNT,
+    )
     budget: CompetitorCollectionBudget
     limitations: list[BoundedLimitation] = Field(default_factory=list, max_length=200)
 
@@ -316,8 +322,8 @@ class CompetitorCollectionSnapshot(StrictModel):
             (urlsplit(str(item.competitor.website_url)).hostname or "").casefold().removeprefix("www.")
             for item in self.competitors
         ]
-        if len(set(ids)) != COMPETITOR_COUNT:
+        if len(set(ids)) != len(ids):
             raise ValueError("competitor IDs must be unique")
-        if len(set(domains)) != COMPETITOR_COUNT:
+        if len(set(domains)) != len(domains):
             raise ValueError("competitor websites must be unique")
         return self

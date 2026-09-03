@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from app.api.v2.models import CompetitorCandidate, DataGap
 from app.collectors.serp_market_models import SerpMarketResultRecord, SerpMarketSnapshot
+from app.competitors_v22.limits import COMPETITOR_MIN_COUNT
 from app.competitors_v22.models import (
     COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
     CandidateAuditRecord,
@@ -520,14 +521,14 @@ def rank_competitor_candidates(
             selected.sort(key=_sort_key)
 
     candidates = [record.candidate for record in selected if record.candidate is not None]
-    ready = len(candidates) >= 3
+    ready = len(candidates) >= COMPETITOR_MIN_COUNT
     if not ready:
         data_gaps.append(
             DataGap(
                 gap_code="INSUFFICIENT_COMPETITORS",
-                message="Fewer than three eligible competitors were found.",
+                message="No eligible competitors were found.",
                 blocking=True,
-                resolution="Add a market-visible competitor or adjust the confirmed queries.",
+                resolution="Add at least one market-visible competitor or adjust the confirmed queries.",
             )
         )
     return CandidateRankingResult(

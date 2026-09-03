@@ -336,7 +336,7 @@ def test_ranking_is_deterministic_and_manual_market_candidate_can_replace_sixth(
     assert "rival-7.example" in {item.website_url.host for item in supplemented.candidates}
 
 
-def test_fewer_than_three_candidates_returns_blocking_gap_and_unknown_supplement_is_safe() -> None:
+def test_one_candidate_is_ready_with_limited_coverage_and_unknown_supplement_is_safe() -> None:
     ranked = rank_competitor_candidates(
         snapshot(business_records("Only Rival Plumbing", "only.example", 500)),
         business=client_business(),
@@ -345,6 +345,20 @@ def test_fewer_than_three_candidates_returns_blocking_gap_and_unknown_supplement
         supplemental_website_urls=["https://not-in-market.example"],
     )
 
-    assert ranked.ready_for_confirmation is False
-    assert any(gap.gap_code == "INSUFFICIENT_COMPETITORS" and gap.blocking for gap in ranked.data_gaps)
+    assert ranked.ready_for_confirmation is True
+    assert len(ranked.candidates) == 1
+    assert not any(gap.gap_code == "INSUFFICIENT_COMPETITORS" for gap in ranked.data_gaps)
     assert any(gap.gap_code == "SUPPLEMENTAL_COMPETITOR_NOT_IN_MARKET" for gap in ranked.data_gaps)
+
+
+def test_zero_candidates_returns_blocking_gap() -> None:
+    ranked = rank_competitor_candidates(
+        snapshot([]),
+        business=client_business(),
+        primary_service="Emergency plumbing",
+        target_market=target_market(),
+    )
+
+    assert ranked.ready_for_confirmation is False
+    assert ranked.candidates == []
+    assert any(gap.gap_code == "INSUFFICIENT_COMPETITORS" and gap.blocking for gap in ranked.data_gaps)

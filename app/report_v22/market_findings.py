@@ -74,10 +74,11 @@ def evaluate(view):
             client_position, basis, client_refs = positions[client]
             comparable = {domain: position for domain, position in positions.items() if domain in competitors and position[1] == basis}
             leaders = {domain: position for domain, position in comparable.items() if position[0] < client_position}
+            confirmed_count = len(competitors)
             if len(leaders) >= 2:
                 chosen = leaders
                 state, reason = "triggered", "condition_met"
-            elif len(comparable) == 3:
+            elif confirmed_count >= 2 and len(comparable) == confirmed_count:
                 chosen = comparable
                 state, reason = "not_triggered", "condition_not_met"
             else:
@@ -87,7 +88,12 @@ def evaluate(view):
             target = target.model_copy(update={"competitor_ids": sorted(competitors[d] for d in chosen)})
             refs = [key for position in chosen.values() for key in position[2]]
             notes = ["Only the same result type and rank_source are compared; no ranking cause or commercial outcome is inferred."]
-            if len(comparable) < 3:
-                notes.append("Not all three confirmed competitor domains had comparable positions.")
+            if len(comparable) < confirmed_count:
+                notes.append(
+                    f"Only {len(comparable)} of {confirmed_count} confirmed competitor domains "
+                    "had comparable positions."
+                )
+            if confirmed_count < 2:
+                notes.append("At least two confirmed competitors are required for this market consensus rule.")
             yield decision(view, AHEAD, target, state, reason, evidence=call_refs + client_refs, comparators=refs,
                            statement=f"In the saved {kind} sample for query {run.query!r}, {len(leaders)} confirmed competitor domains had positions ahead of the client site's best observed position {client_position}.", notes=notes)

@@ -16,6 +16,7 @@ from pydantic import (
 )
 
 from app.report_v22.contract_version import ContractVersion
+from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
 
 
 EvidenceId = Annotated[str, Field(pattern=r"^ev_[a-z0-9][a-z0-9_-]{2,80}$")]
@@ -274,7 +275,10 @@ class CompetitorSummary(StrictModel):
 
 class CompetitorAnalysis(StrictModel):
     selection_method: Literal["system_ranked_user_confirmed", "system_ranked"]
-    competitors: list[CompetitorSummary] = Field(min_length=3, max_length=3)
+    competitors: list[CompetitorSummary] = Field(
+        min_length=COMPETITOR_MIN_COUNT,
+        max_length=COMPETITOR_MAX_COUNT,
+    )
     comparison_summary: str = Field(min_length=1)
     limitations: list[str] = Field(default_factory=list)
 

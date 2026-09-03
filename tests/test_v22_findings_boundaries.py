@@ -138,7 +138,7 @@ def test_two_ahead_with_unknown_third_discloses_partial_comparison():
     result = builder.build_public_findings(request(source))
     found = [f for f in result.findings if f.rule_id == AHEAD]
     assert len(found) == 3
-    assert all(any("Not all three" in note for note in f.missing_data) for f in found)
+    assert all(any("Only 2 of 3" in note for note in f.missing_data) for f in found)
 
 
 def test_competitor_404_classification_and_multiple_pages_do_not_count_as_two_sites():

@@ -44,7 +44,7 @@
             "$ref": "#/$defs/ConfirmedCompetitor"
           },
           "maxItems": 3,
-          "minItems": 3,
+          "minItems": 1,
           "title": "Competitors",
           "type": "array"
         },
@@ -316,7 +316,7 @@
             "$ref": "#/$defs/CompetitorSummary"
           },
           "maxItems": 3,
-          "minItems": 3,
+          "minItems": 1,
           "title": "Competitors",
           "type": "array"
         },
@@ -1406,8 +1406,9 @@
       "additionalProperties": false,
       "properties": {
         "competitor_count": {
-          "const": 3,
           "default": 3,
+          "maximum": 3,
+          "minimum": 1,
           "title": "Competitor Count",
           "type": "integer"
         },

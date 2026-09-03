@@ -11,6 +11,7 @@ from pydantic import Field
 from app.api.v2.competitor_models import CompetitorDiscoveryRequest
 from app.api.v2.models import AnalyzeRequest
 from app.competitors_v22.discovery_service import competitor_discovery_input_digest
+from app.competitors_v22.limits import COMPETITOR_MIN_COUNT
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
 from app.competitors_v22.normalization import canonical_competitor_url
 from app.competitors_v22.store import CompetitorDiscoveryStore
@@ -69,10 +70,10 @@ def validate_confirmed_competitors(
     candidates,
 ) -> None:
     by_id = {candidate.competitor_id: candidate for candidate in candidates}
-    if len(by_id) < 3:
+    if len(by_id) < COMPETITOR_MIN_COUNT:
         raise DiscoverySelectionError(
             "COMPETITOR_DISCOVERY_NOT_READY",
-            "The competitor discovery does not contain enough eligible candidates.",
+            "The competitor discovery does not contain an eligible candidate.",
         )
     seen_domains: set[str] = set()
     for confirmed in request.competitors:
@@ -166,7 +167,7 @@ class RedisDiscoveryVerifier:
         if not result.ready_for_confirmation:
             raise DiscoverySelectionError(
                 "COMPETITOR_DISCOVERY_NOT_READY",
-                "The competitor discovery does not contain three eligible competitors.",
+                "The competitor discovery does not contain an eligible competitor.",
             )
         shared = await self.market_store.get(input_digest=result.input_digest, now=now)
         if (

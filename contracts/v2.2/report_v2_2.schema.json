@@ -198,7 +198,7 @@
             "$ref": "#/$defs/CompetitorSummary"
           },
           "maxItems": 3,
-          "minItems": 3,
+          "minItems": 1,
           "title": "Competitors",
           "type": "array"
         },

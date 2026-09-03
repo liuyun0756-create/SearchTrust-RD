@@ -15,6 +15,8 @@ from app.api.v2.competitor_models import (
 from app.api.v2.models import ApiV2ContractBundle, CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.competitors_v22.models import (
     COMPETITOR_COUNT,
+    COMPETITOR_MAX_COUNT,
+    COMPETITOR_MIN_COUNT,
     COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
     COMPETITOR_DISCOVERY_SUPPLEMENTAL_LIMIT,
     COMPETITOR_PROVIDER_ATTEMPT_LIMIT,
@@ -167,14 +169,15 @@ def test_discovery_request_is_strict_and_bounded() -> None:
         discovery_request(access_token="must-not-cross")
 
 
-def test_discovery_result_requires_three_candidates_when_ready() -> None:
+def test_discovery_result_requires_at_least_one_candidate_when_ready() -> None:
     result = discovery_result()
 
     assert result.ready_for_confirmation is True
     assert len(result.candidates) == 3
 
-    with pytest.raises(ValidationError, match="at least three candidates"):
-        discovery_result(count=2, ready=True)
+    assert len(discovery_result(count=1, ready=True).candidates) == 1
+    with pytest.raises(ValidationError, match="at least one candidate"):
+        discovery_result(count=0, ready=True)
     with pytest.raises(ValidationError, match="blocking gap"):
         CompetitorDiscoveryResult.model_validate(
             {**discovery_result(count=3, ready=False).model_dump(), "data_gaps": []}
@@ -258,7 +261,10 @@ def test_review_model_rejects_personal_profile_fields() -> None:
         )
 
 
-def test_collection_snapshot_requires_three_unique_competitors_and_budget() -> None:
+@pytest.mark.parametrize("competitor_count", [1, 2, 3])
+def test_collection_snapshot_accepts_one_to_three_unique_competitors_and_budget(
+    competitor_count: int,
+) -> None:
     snapshot = CompetitorCollectionSnapshot(
         schema_version="competitor_collection_snapshot_v1",
         job_id=JOB_ID,
@@ -268,7 +274,7 @@ def test_collection_snapshot_requires_three_unique_competitors_and_budget() -> N
         market_snapshot_checksum=CHECKSUM,
         started_at=NOW,
         completed_at=NOW,
-        competitors=[competitor_snapshot(index) for index in range(1, 4)],
+        competitors=[competitor_snapshot(index) for index in range(1, competitor_count + 1)],
         budget=CompetitorCollectionBudget(
             site_discovery_limit_each=50,
             site_deep_limit_each=10,
@@ -282,11 +288,49 @@ def test_collection_snapshot_requires_three_unique_competitors_and_budget() -> N
         ),
         limitations=[],
     )
-    assert len(snapshot.competitors) == 3
+    assert len(snapshot.competitors) == competitor_count
+
+    if competitor_count > 1:
+        with pytest.raises(ValidationError, match="competitor IDs must be unique"):
+            CompetitorCollectionSnapshot.model_validate(
+                {**snapshot.model_dump(), "competitors": [competitor_snapshot(1).model_dump()] * competitor_count}
+            )
+
+
+def test_collection_snapshot_rejects_zero_or_more_than_three_competitors() -> None:
+    valid = CompetitorCollectionSnapshot(
+        schema_version="competitor_collection_snapshot_v1",
+        job_id=JOB_ID,
+        discovery_id=DISCOVERY_ID,
+        candidate_digest=CHECKSUM,
+        market_snapshot_id=MARKET_ID,
+        market_snapshot_checksum=CHECKSUM,
+        started_at=NOW,
+        completed_at=NOW,
+        competitors=[competitor_snapshot(1)],
+        budget=CompetitorCollectionBudget(
+            site_discovery_limit_each=50,
+            site_deep_limit_each=10,
+            review_sample_limit_each=30,
+            provider_attempt_limit=15,
+            provider_attempts_used=0,
+            place_detail_calls=0,
+            review_page_calls=0,
+            checkpoint_hits=0,
+            truncated=False,
+        ),
+        limitations=[],
+    )
+
+    for competitors in ([], [competitor_snapshot(index).model_dump() for index in range(1, 5)]):
+        with pytest.raises(ValidationError):
+            CompetitorCollectionSnapshot.model_validate(
+                {**valid.model_dump(), "competitors": competitors}
+            )
 
     with pytest.raises(ValidationError, match="competitor IDs must be unique"):
         CompetitorCollectionSnapshot.model_validate(
-            {**snapshot.model_dump(), "competitors": [competitor_snapshot(1).model_dump()] * 3}
+            {**valid.model_dump(), "competitors": [competitor_snapshot(1).model_dump()] * 2}
         )
 
 
@@ -294,13 +338,15 @@ def test_hard_limits_match_approved_design() -> None:
     assert (
         COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
         COMPETITOR_DISCOVERY_SUPPLEMENTAL_LIMIT,
+        COMPETITOR_MIN_COUNT,
+        COMPETITOR_MAX_COUNT,
         COMPETITOR_COUNT,
         COMPETITOR_SITE_DISCOVERY_LIMIT,
         COMPETITOR_SITE_DEEP_LIMIT,
         COMPETITOR_REVIEW_PAGE_LIMIT,
         COMPETITOR_REVIEW_SAMPLE_LIMIT,
         COMPETITOR_PROVIDER_ATTEMPT_LIMIT,
-    ) == (6, 3, 3, 50, 10, 4, 30, 15)
+    ) == (6, 3, 1, 3, 3, 50, 10, 4, 30, 15)
 
 
 def test_frozen_api_bundle_does_not_change_for_internal_discovery_contracts() -> None:

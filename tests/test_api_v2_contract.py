@@ -64,6 +64,51 @@ def test_prospect_analyze_request_validates() -> None:
     assert len(request.competitors) == 3
 
 
+@pytest.mark.parametrize("competitor_count", [1, 2, 3])
+def test_analyze_request_accepts_one_to_three_competitors(competitor_count: int) -> None:
+    payload = prospect_analyze_payload()
+    payload["competitors"] = payload["competitors"][:competitor_count]
+    payload["generation_limits"]["competitor_count"] = competitor_count
+
+    request = validate_analyze(payload)
+
+    assert len(request.competitors) == competitor_count
+    assert request.generation_limits.competitor_count == competitor_count
+
+
+@pytest.mark.parametrize("competitor_count", [0, 4])
+def test_analyze_request_rejects_competitor_counts_outside_one_to_three(
+    competitor_count: int,
+) -> None:
+    payload = prospect_analyze_payload()
+    competitor = payload["competitors"][0]
+    payload["competitors"] = (
+        []
+        if competitor_count == 0
+        else [
+            {
+                **competitor,
+                "competitor_id": f"cp_boundary_{index}",
+                "business_name": f"Boundary Competitor {index}",
+                "website_url": f"https://boundary-{index}.example",
+            }
+            for index in range(competitor_count)
+        ]
+    )
+    payload["generation_limits"]["competitor_count"] = max(1, competitor_count)
+
+    with pytest.raises(ValidationError):
+        validate_analyze(payload)
+
+
+def test_analyze_request_requires_generation_limit_to_match_selected_competitors() -> None:
+    payload = prospect_analyze_payload()
+    payload["competitors"] = payload["competitors"][:1]
+
+    with pytest.raises(ValidationError, match="competitor count must match"):
+        validate_analyze(payload)
+
+
 @pytest.mark.parametrize("token_field", ["access_token", "refresh_token", "google_token"])
 def test_analyze_contract_rejects_google_tokens(token_field: str) -> None:
     payload = prospect_analyze_payload()

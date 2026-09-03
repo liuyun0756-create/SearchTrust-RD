@@ -63,6 +63,26 @@ async def test_competitor_sites_use_independent_50_10_budgets_without_gsc() -> N
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("competitor_count", [1, 2, 3])
+async def test_competitor_site_stage_accepts_one_to_three_competitors(
+    competitor_count: int,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    collector = RecordingSiteCollector()
+
+    results = await CheckpointedCompetitorSiteStage(collector).collect(
+        job_id=JOB_ID,
+        competitors=[confirmed(index) for index in range(1, competitor_count + 1)],
+        primary_service="Emergency plumbing",
+        target_market=discovery_request().target_market,
+        max_pages_each=10,
+        checkpoints=JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800),
+    )
+
+    assert len(results) == competitor_count
+
+
+@pytest.mark.anyio
 async def test_one_inaccessible_competitor_does_not_abort_other_sites() -> None:
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     checkpoints = JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800)
