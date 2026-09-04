@@ -116,5 +116,9 @@ Deployment order:
    a not-found page.
 
 Rollback is included as commented SQL at the bottom of the migration. It is
-destructive because it removes every issued share. Until step 1 is confirmed,
-V22-043 remains **waiting for database migration**.
+destructive because it removes every issued share.
+
+Production migration status: **confirmed applied on 2026-09-04**. The user ran
+the v2.2 Case model, Case invariants, job revision, Case payment, and report-share
+migrations in dependency order; every Supabase SQL Editor run returned
+`Success. No rows returned`. V22-043 is no longer waiting for database migration.
