@@ -28,6 +28,16 @@ def test_railway_worker_runs_arq_not_uvicorn() -> None:
     assert "uvicorn" not in command
 
 
+def test_railway_image_selects_web_or_worker_role_at_runtime() -> None:
+    web_config = tomllib.loads((ROOT / "railway.toml").read_text(encoding="utf-8"))
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "startCommand" not in web_config["deploy"]
+    assert "SEARCHTRUST_SERVICE_ROLE" in dockerfile
+    assert "arq app.jobs_v22.worker.WorkerSettings" in dockerfile
+    assert "uvicorn app.main:app" in dockerfile
+
+
 def test_environment_template_is_disabled_and_contains_no_real_secrets() -> None:
     template = (ROOT / ".env.example").read_text(encoding="utf-8")
 
