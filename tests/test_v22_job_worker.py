@@ -10,10 +10,11 @@ import pytest
 from arq.worker import Retry
 
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
-from app.jobs_v22.executor import UnavailableV22Executor
+from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
 from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
-from app.jobs_v22.worker import execute_v22_job
+from app.jobs_v22.worker import execute_v22_job, on_shutdown, on_startup
+from app.core.config import settings
 from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.api.v2.models import AnalyzeRequest
 from app.report_v22.models import ReportV22
@@ -37,7 +38,7 @@ class RecordingExecutor:
         self.calls = 0
         self.last_request = None
 
-    async def execute(self, *, job_id, request, checkpoints):
+    async def execute(self, *, job_id, request, submitted_at, checkpoints):
         self.last_request = request
         outcome = self.outcomes[min(self.calls, len(self.outcomes) - 1)]
         self.calls += 1
@@ -192,7 +193,7 @@ async def test_stale_physical_generation_is_ignored() -> None:
 
 
 @pytest.mark.anyio
-async def test_worker_unwraps_internal_discovery_envelope_for_executor() -> None:
+async def test_worker_preserves_internal_discovery_envelope_for_executor() -> None:
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     store = DurableJobStore(redis, prefix="test:v22", state_ttl_seconds=604800)
     analyze = AnalyzeRequest.model_validate_json(json.dumps(prospect_analyze_payload()))
@@ -225,7 +226,7 @@ async def test_worker_unwraps_internal_discovery_envelope_for_executor() -> None
     await execute_v22_job(ctx, str(JOB_ID), 1)
 
     assert executor.calls == 1
-    assert executor.last_request == analyze.model_dump(mode="json")
+    assert executor.last_request == envelope
 
 
 @pytest.mark.anyio
@@ -233,6 +234,29 @@ async def test_production_executor_is_explicitly_unavailable_and_never_imports_v
     executor = UnavailableV22Executor()
 
     with pytest.raises(DeterministicJobError, match="V22_PIPELINE_NOT_READY"):
-        await executor.execute(job_id=JOB_ID, request={}, checkpoints=None)
+        await executor.execute(
+            job_id=JOB_ID,
+            request={},
+            submitted_at=NOW,
+            checkpoints=None,
+        )
 
     assert "app.tasks.pipeline" not in inspect.getsource(UnavailableV22Executor.execute)
+
+
+@pytest.mark.anyio
+async def test_worker_builds_real_isolated_executor_only_when_analyze_is_enabled(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", True)
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    try:
+        assert isinstance(ctx["executor"], ProspectV22Executor)
+        assert "app.tasks.pipeline" not in inspect.getsource(
+            ProspectV22Executor.execute
+        )
+    finally:
+        await on_shutdown(ctx)

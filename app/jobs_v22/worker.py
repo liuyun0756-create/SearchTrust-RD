@@ -18,21 +18,27 @@ from pydantic import SecretStr
 
 from app.core.config import settings
 from app.competitors_v22.discovery_service import CompetitorDiscoveryService
+from app.competitors_v22.collection_stage import CheckpointedCompetitorCollectionStage
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
+from app.competitors_v22.public_profile_stage import build_public_profile_stage
 from app.competitors_v22.reconciler import reconcile_v22_competitor_discoveries
+from app.competitors_v22.site_stage import CheckpointedCompetitorSiteStage
 from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.competitors_v22.worker import execute_v22_competitor_discovery
 from app.competitors_v22.selection import AnalysisRequestEnvelope
 from app.competitors_v22.supplements import SupplementalHomepageValidator
 from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.copy_provider import DifyControlledCopyProvider
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
-from app.jobs_v22.executor import UnavailableV22Executor
+from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
+from app.jobs_v22.prospect_report_pipeline import PublicProspectReportPipeline
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.serp_market_stage import build_serp_market_stage
+from app.jobs_v22.site_inventory_stage import build_site_inventory_stage
 from app.preflight_v22.fetcher import BoundedHomepageFetcher
 
 
@@ -91,8 +97,13 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         executor_request = request
         if request.get("schema_version") == "v22_analysis_request_envelope_v1":
             envelope = AnalysisRequestEnvelope.model_validate_json(canonical_json_bytes(request))
-            executor_request = envelope.analyze_request.model_dump(mode="json")
-        report = await executor.execute(job_id=job_id, request=executor_request, checkpoints=checkpoints)
+            executor_request = envelope
+        report = await executor.execute(
+            job_id=job_id,
+            request=executor_request,
+            submitted_at=state.created_at,
+            checkpoints=checkpoints,
+        )
     except asyncio.CancelledError:
         logger.info("v2.2 worker execution cancelled job_id=%s", job_id)
         raise
@@ -185,22 +196,23 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         prefix=settings.V22_REDIS_PREFIX,
         state_ttl_seconds=settings.V22_JOB_STATE_TTL_SECONDS,
     )
-    ctx["executor"] = UnavailableV22Executor()
     ctx["max_attempts"] = settings.V22_JOB_MAX_ATTEMPTS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
     ctx["competitor_state_ttl_seconds"] = settings.V22_COMPETITOR_STATE_TTL_SECONDS
-    ctx["competitor_discovery_store"] = CompetitorDiscoveryStore(
+    discovery_store = CompetitorDiscoveryStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
         state_ttl_seconds=settings.V22_COMPETITOR_STATE_TTL_SECONDS,
     )
+    market_store = SharedMarketSnapshotStore(
+        pool,
+        prefix=settings.V22_REDIS_PREFIX,
+        ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
+    )
+    ctx["competitor_discovery_store"] = discovery_store
     ctx["competitor_discovery_service"] = CompetitorDiscoveryService(
         market_stage=build_serp_market_stage(settings),
-        market_store=SharedMarketSnapshotStore(
-            pool,
-            prefix=settings.V22_REDIS_PREFIX,
-            ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
-        ),
+        market_store=market_store,
         supplemental_validator=SupplementalHomepageValidator(
             BoundedHomepageFetcher(
                 connect_timeout=settings.V22_COMPETITOR_CONNECT_TIMEOUT_SECONDS,
@@ -211,6 +223,31 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             )
         ),
     )
+    if settings.V22_ANALYZE_ENABLED:
+        site_stage = build_site_inventory_stage(settings)
+        copy_http_client = httpx.AsyncClient(
+            timeout=settings.V22_DIFY_TIMEOUT_SECONDS
+        )
+        ctx["copy_http_client"] = copy_http_client
+        ctx["executor"] = ProspectV22Executor(
+            discovery_store=discovery_store,
+            market_store=market_store,
+            site_stage=site_stage,
+            competitor_stage=CheckpointedCompetitorCollectionStage(
+                site_stage=CheckpointedCompetitorSiteStage(site_stage),
+                profile_stage=build_public_profile_stage(settings),
+            ),
+            report_pipeline=PublicProspectReportPipeline(
+                copy_provider=DifyControlledCopyProvider(
+                    api_key=_secret_value(settings.V22_DIFY_API_KEY),
+                    api_url=settings.V22_DIFY_API_URL,
+                    model_version=settings.V22_DIFY_COPY_MODEL_VERSION,
+                    http_client=copy_http_client,
+                )
+            ),
+        )
+    else:
+        ctx["executor"] = UnavailableV22Executor()
     callback_url = settings.V22_CALLBACK_URL
     callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
     if callback_url and callback_secret:
@@ -228,6 +265,9 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
     http_client: httpx.AsyncClient | None = ctx.get("callback_http_client")
     if http_client is not None:
         await http_client.aclose()
+    copy_http_client: httpx.AsyncClient | None = ctx.get("copy_http_client")
+    if copy_http_client is not None:
+        await copy_http_client.aclose()
 
 
 def _redis_settings() -> RedisSettings:

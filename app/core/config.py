@@ -91,6 +91,14 @@ class Settings(BaseSettings):
     V22_INTERNAL_API_TOKEN: SecretStr = Field(default="", repr=False)
     V22_CALLBACK_URL: str = Field(default="")
     V22_CALLBACK_SECRET: SecretStr = Field(default="", repr=False)
+    V22_DIFY_API_KEY: SecretStr = Field(default="", repr=False)
+    V22_DIFY_API_URL: str = Field(default="https://api.dify.ai/v1")
+    V22_DIFY_COPY_MODEL_VERSION: str = Field(
+        default="dify-controlled-copy-v1",
+        min_length=1,
+        max_length=120,
+    )
+    V22_DIFY_TIMEOUT_SECONDS: Annotated[int, Field(ge=10, le=600)] = 180
     V22_CALLBACK_CLOCK_SKEW_SECONDS: Annotated[int, Field(ge=30, le=900)] = 300
     V22_CALLBACK_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
     V22_JOB_MAX_ATTEMPTS: Annotated[int, Field(ge=1, le=10)] = 3
@@ -161,7 +169,13 @@ class Settings(BaseSettings):
     )
 
     # ── Validators ────────────────────────────────────────────────────────────
-    @field_validator("DIFY_API_URL", "ADDRESS_AI_BASE_URL", "V22_CALLBACK_URL", mode="before")
+    @field_validator(
+        "DIFY_API_URL",
+        "ADDRESS_AI_BASE_URL",
+        "V22_CALLBACK_URL",
+        "V22_DIFY_API_URL",
+        mode="before",
+    )
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
         return str(v).rstrip("/")
