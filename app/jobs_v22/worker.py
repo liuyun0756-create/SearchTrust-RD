@@ -36,6 +36,7 @@ from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
 from app.jobs_v22.prospect_report_pipeline import PublicProspectReportPipeline
+from app.jobs_v22.result_persistence import SupabaseResultPersister
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.serp_market_stage import build_serp_market_stage
 from app.jobs_v22.site_inventory_stage import build_site_inventory_stage
@@ -229,6 +230,10 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             timeout=settings.V22_DIFY_TIMEOUT_SECONDS
         )
         ctx["copy_http_client"] = copy_http_client
+        result_http_client = httpx.AsyncClient(
+            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS
+        )
+        ctx["result_http_client"] = result_http_client
         ctx["executor"] = ProspectV22Executor(
             discovery_store=discovery_store,
             market_store=market_store,
@@ -244,6 +249,11 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                     model_version=settings.V22_DIFY_COPY_MODEL_VERSION,
                     http_client=copy_http_client,
                 )
+            ),
+            result_persister=SupabaseResultPersister(
+                url=settings.V22_SUPABASE_URL,
+                service_role_key=_secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY),
+                http_client=result_http_client,
             ),
         )
     else:
@@ -268,6 +278,9 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
     copy_http_client: httpx.AsyncClient | None = ctx.get("copy_http_client")
     if copy_http_client is not None:
         await copy_http_client.aclose()
+    result_http_client: httpx.AsyncClient | None = ctx.get("result_http_client")
+    if result_http_client is not None:
+        await result_http_client.aclose()
 
 
 def _redis_settings() -> RedisSettings:

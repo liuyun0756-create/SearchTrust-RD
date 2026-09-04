@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Protocol
-from uuid import NAMESPACE_URL, UUID, uuid5
+from uuid import UUID
 
 from app.api.v2.competitor_models import CompetitorDiscoveryResult
 from app.api.v2.models import AnalyzeRequest
@@ -13,6 +13,7 @@ from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarke
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.digest import request_digest
 from app.jobs_v22.public_findings_stage import CheckpointedPublicFindingsStage
+from app.jobs_v22.result_persistence import result_snapshot_id
 from app.report_v22.action_models import PublicActionPlanInput
 from app.report_v22.actions import build_public_action_plan
 from app.report_v22.assembler import assemble_prospect_report
@@ -36,10 +37,6 @@ class ControlledCopyProvider(Protocol):
     model_version: str
 
     async def generate(self, *, job_id: UUID, request: CopyRequestV1) -> object: ...
-
-
-def _snapshot_id(kind: str, checksum: str) -> UUID:
-    return uuid5(NAMESPACE_URL, f"searchtrust:v22:{kind}:{checksum}")
 
 
 def _binding(
@@ -104,7 +101,7 @@ def build_prospect_evidence_input(
     sources = [
         SiteEvidenceSource(
             binding=_binding(
-                snapshot_id=_snapshot_id("site", site_checksum),
+                snapshot_id=result_snapshot_id("site", request.case_id, site_checksum),
                 case_id=request.case_id,
                 source_type="site",
                 schema_version=site_inventory.schema_version,
@@ -128,7 +125,7 @@ def build_prospect_evidence_input(
         ),
         CompetitorEvidenceSource(
             binding=_binding(
-                snapshot_id=_snapshot_id("competitor", competitor_checksum),
+                snapshot_id=result_snapshot_id("competitor", request.case_id, competitor_checksum),
                 case_id=request.case_id,
                 source_type="competitor",
                 schema_version=competitor_collection.schema_version,

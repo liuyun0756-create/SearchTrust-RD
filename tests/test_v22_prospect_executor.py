@@ -79,6 +79,14 @@ class ReportPipeline:
         return self.report
 
 
+class ResultPersister:
+    def __init__(self) -> None:
+        self.kwargs = None
+
+    async def persist(self, **kwargs) -> None:
+        self.kwargs = kwargs
+
+
 def envelope(shared, result) -> AnalysisRequestEnvelope:
     return AnalysisRequestEnvelope(
         schema_version="v22_analysis_request_envelope_v1",
@@ -99,6 +107,7 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
     site_stage = SiteStage()
     competitor_stage = CompetitorStage()
     report_pipeline = ReportPipeline(prospect_report())
+    result_persister = ResultPersister()
     market_store = MarketStore(shared)
     executor = ProspectV22Executor(
         discovery_store=DiscoveryStore(result),
@@ -106,6 +115,7 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
         site_stage=site_stage,
         competitor_stage=competitor_stage,
         report_pipeline=report_pipeline,
+        result_persister=result_persister,
         clock=lambda: NOW,
     )
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
@@ -126,6 +136,9 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
     assert competitor_stage.kwargs["shared_market"] == shared
     assert report_pipeline.kwargs["site_inventory"] == "site-snapshot"
     assert report_pipeline.kwargs["competitor_collection"] == "competitor-snapshot"
+    assert result_persister.kwargs["report"] == report
+    assert result_persister.kwargs["site_inventory"] == "site-snapshot"
+    assert result_persister.kwargs["shared_market"] == shared
 
 
 @pytest.mark.anyio

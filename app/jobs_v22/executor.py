@@ -83,6 +83,19 @@ class ProspectReportPipeline(Protocol):
     ) -> ReportV22: ...
 
 
+class ResultPersister(Protocol):
+    async def persist(
+        self,
+        *,
+        job_id: UUID,
+        request: AnalyzeRequest,
+        site_inventory: SiteInventorySnapshot,
+        shared_market: SharedMarketSnapshot,
+        competitor_collection: CompetitorCollectionSnapshot,
+        report: ReportV22,
+    ) -> None: ...
+
+
 class ProspectV22Executor:
     """Run a prospect report from the exact discovery snapshot the user confirmed."""
 
@@ -94,6 +107,7 @@ class ProspectV22Executor:
         site_stage: SiteStage,
         competitor_stage: CompetitorStage,
         report_pipeline: ProspectReportPipeline,
+        result_persister: ResultPersister | None = None,
         clock=None,
     ) -> None:
         self.discovery_store = discovery_store
@@ -101,6 +115,7 @@ class ProspectV22Executor:
         self.site_stage = site_stage
         self.competitor_stage = competitor_stage
         self.report_pipeline = report_pipeline
+        self.result_persister = result_persister
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     @staticmethod
@@ -194,12 +209,22 @@ class ProspectV22Executor:
             checkpoints=checkpoints,
         )
         try:
-            return ReportV22.model_validate(report.model_dump(mode="python"))
+            validated = ReportV22.model_validate(report.model_dump(mode="python"))
         except (AttributeError, TypeError, ValueError, ValidationError):
             raise DeterministicJobError(
                 "V22_REPORT_INVALID",
                 "The analysis result did not satisfy the v2.2 report contract.",
             ) from None
+        if self.result_persister is not None:
+            await self.result_persister.persist(
+                job_id=job_id,
+                request=analyze,
+                site_inventory=site_inventory,
+                shared_market=shared_market,
+                competitor_collection=competitor_collection,
+                report=validated,
+            )
+        return validated
 
 
 class UnavailableV22Executor:

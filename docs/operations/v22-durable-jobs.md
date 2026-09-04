@@ -17,18 +17,21 @@ Configure the same values on the appropriate services:
 - `V22_REDIS_URL`: private persistent Redis URL on Web and Worker;
 - `V22_INTERNAL_API_TOKEN`: long random server-to-server token on Web and Next.js;
 - `V22_CALLBACK_URL`: Next.js internal callback URL on Worker;
-- `V22_CALLBACK_SECRET`: a different long random value on Worker and Next.js as `V22_JOB_CALLBACK_SECRET`.
+- `V22_CALLBACK_SECRET`: a different long random value on Worker and Next.js as `V22_JOB_CALLBACK_SECRET`;
+- `V22_SUPABASE_URL` and `V22_SUPABASE_SERVICE_ROLE_KEY`: Worker-only credentials used solely to call the atomic `persist_v22_prospect_result` RPC;
+- `V22_DIFY_API_KEY`: Worker-only controlled-copy application key.
 
 Never place these values in source control or expose them with a `NEXT_PUBLIC_` prefix.
 
 ## Safe rollout
 
 1. Provision persistent Redis and confirm persistence is enabled.
-2. Deploy FastAPI Web with `V22_ANALYZE_ENABLED=false`.
-3. Deploy the ARQ Worker and confirm its health key appears.
-4. Configure the signed Next.js callback and verify a test event updates `analysis_jobs` once.
-5. Check `/api/v2/health/queue`: Redis and Worker should both be healthy and pending callbacks should drain.
-6. Keep `V22_ANALYZE_ENABLED=false` until V22-020 through V22-034 have passed their acceptance tests.
+2. Apply all Supabase migrations, including the analysis result persistence RPC.
+3. Deploy FastAPI Web with `V22_ANALYZE_ENABLED=false`.
+4. Deploy the ARQ Worker with result persistence configured and confirm its health key appears.
+5. Configure the signed Next.js callback and verify a test event updates `analysis_jobs` once.
+6. Check `/api/v2/health/queue`: Redis and Worker should both be healthy and pending callbacks should drain.
+7. Keep `V22_ANALYZE_ENABLED=false` until the end-to-end paid prospect smoke test is ready.
 
 ## Health and recovery
 
