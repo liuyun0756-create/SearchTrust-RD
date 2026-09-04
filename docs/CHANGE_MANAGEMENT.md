@@ -78,3 +78,43 @@ JSONB payload or the request used to render one PDF.
 - **Database action for this release:** none, provided `reports.report_v2_1 jsonb null` already exists in the target Supabase project.
 - **Lite Agency PDF:** agency name, client name, footer note, and a locally uploaded PNG/JPEG logo are used only for the export request. They are not stored in Supabase, object storage, or a new table.
 - **Future manual database handoff is required before implementation** if the product adds saved agency profiles, persisted logos, reusable client branding, share links, external-source history, or any new report column. Codex must first provide the table/field list and executable SQL under section 2.
+
+## 7. v2.2 Revocable Report Shares (2026-09)
+
+V22-043 adds one server-only table. The target is the same production Supabase
+project that contains `users`, `client_cases`, and `reports`.
+
+| Table | Field | Type | Null/default | Purpose |
+| --- | --- | --- | --- | --- |
+| `report_shares` | `id` | `uuid` | PK, `gen_random_uuid()` | Internal share record ID |
+| `report_shares` | `user_id` | `uuid` | not null | Owner; cascades from `users` |
+| `report_shares` | `case_id` | `uuid` | not null | Case boundary; cascades from `client_cases` |
+| `report_shares` | `report_id` | `uuid` | not null | Shared report; cascades from `reports` |
+| `report_shares` | `token_hash` | `text` | not null, unique | Lowercase SHA-256 digest; plaintext is never persisted |
+| `report_shares` | `view_mode` | `text` | not null, `client` | Database-enforced client-only public view |
+| `report_shares` | `expires_at` | `timestamptz` | not null, +30 days | Automatic link expiry |
+| `report_shares` | `revoked_at` | `timestamptz` | null | Explicit revocation timestamp |
+| `report_shares` | `last_accessed_at` | `timestamptz` | null | Last successful public access |
+| `report_shares` | `created_at` | `timestamptz` | not null, `now()` | Audit timestamp |
+
+The executable migration is:
+
+`search-trust/supabase/migrations/20260904000000_add_v2_2_report_shares.sql`
+
+It creates the table, token/expiry/ownership constraints, one-active-share index,
+lookup indexes, RLS, service-role-only grants, and the atomic
+`rotate_v22_report_share` function. Existing reports and v2.1 behavior are not
+modified. Agency names, client names, footer notes, and uploaded logos remain
+ephemeral PDF-request inputs and are not persisted.
+
+Deployment order:
+
+1. In the production Supabase SQL Editor, execute the complete migration file.
+2. Run the three verification queries included at the bottom of that file.
+3. Deploy the frontend application only after the table and RPC are present.
+4. Create a share, open it signed out, revoke it, then confirm the same URL returns
+   a not-found page.
+
+Rollback is included as commented SQL at the bottom of the migration. It is
+destructive because it removes every issued share. Until step 1 is confirmed,
+V22-043 remains **waiting for database migration**.
