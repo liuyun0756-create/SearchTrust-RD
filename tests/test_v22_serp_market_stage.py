@@ -8,6 +8,7 @@ from pathlib import Path
 from uuid import UUID
 
 import fakeredis.aioredis
+import httpx
 import pytest
 
 from app.api.v2.models import AnalyzeRequest
@@ -20,6 +21,7 @@ from app.collectors.serp_market_requests import SerpPlannedCall, build_serp_sear
 from app.collectors.serp_market_requests import serp_market_context_from_analyze
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.serp_market_stage import (
+    _BoundedHttpClient,
     CheckpointedSerpMarketStage,
     CheckpointedSerpProvider,
     SerpMarketCheckpointError,
@@ -134,6 +136,21 @@ class SuccessfulSearchProvider:
 def checkpoints():
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     return JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604800)
+
+
+@pytest.mark.anyio
+async def test_bounded_http_client_requests_identity_encoding() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["accept-encoding"] == "identity"
+        return httpx.Response(200, json={"search_metadata": {"status": "Success"}})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        response = await _BoundedHttpClient(
+            client,
+            max_response_bytes=10_000,
+        ).get("https://serpapi.example/search.json")
+
+    assert response.json()["search_metadata"]["status"] == "Success"
 
 
 @pytest.mark.anyio

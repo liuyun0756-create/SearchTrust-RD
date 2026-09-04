@@ -115,6 +115,8 @@ async def test_discovery_state_transitions_and_first_terminal_wins(store) -> Non
 @pytest.mark.anyio
 async def test_retry_reopens_only_retryable_failure(store) -> None:
     await register(store)
+    checkpoint_key = store.keys.checkpoint(JOB_ID, "serp_market_v1:attempt:1")
+    await store.redis.set(checkpoint_key, b"saved-attempt")
     await store.transition(
         JOB_ID,
         status="failed",
@@ -136,6 +138,8 @@ async def test_retry_reopens_only_retryable_failure(store) -> None:
     assert retried.status == "queued"
     assert retried.run_generation == 2
     assert retried.result is None
+    assert await store.redis.get(checkpoint_key) is None
+    assert await store.redis.get(store.keys.request(JOB_ID)) is not None
     with pytest.raises(JobNotRetryable):
         await store.retry_failed(JOB_ID, now=NOW + timedelta(seconds=3))
 

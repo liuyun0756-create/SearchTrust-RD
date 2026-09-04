@@ -34,6 +34,9 @@ class CompetitorDiscoveryRedisKeys:
         digest = hashlib.sha256(checkpoint_key.encode("utf-8")).hexdigest()
         return f"{self.prefix}:job:{job_id}:checkpoint:{digest}"
 
+    def checkpoint_pattern(self, job_id: UUID | str) -> str:
+        return f"{self.prefix}:job:{job_id}:checkpoint:*"
+
     @property
     def active(self) -> str:
         return f"{self.prefix}:active"

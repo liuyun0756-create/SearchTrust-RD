@@ -329,7 +329,13 @@ class _BoundedHttpClient:
         self.max_response_bytes = max_response_bytes
 
     async def get(self, url: str, **kwargs: Any) -> httpx.Response:
-        async with self.client.stream("GET", url, **kwargs) as response:
+        # SerpAPI can occasionally advertise a compressed response while
+        # returning an uncompressed body.  Requesting identity encoding keeps
+        # httpx from rejecting an otherwise valid JSON payload while it is
+        # being streamed through the response-size guard below.
+        headers = httpx.Headers(kwargs.pop("headers", None))
+        headers["Accept-Encoding"] = "identity"
+        async with self.client.stream("GET", url, headers=headers, **kwargs) as response:
             chunks: list[bytes] = []
             size = 0
             async for chunk in response.aiter_bytes():

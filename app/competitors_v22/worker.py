@@ -113,6 +113,13 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
     failure = classify_job_exception(exc)
     max_attempts = int(ctx.get("max_attempts", 3))
     attempt_count = max(state.attempt_count, 1)
+    logger.warning(
+        "competitor discovery attempt failed job_id=%s attempt=%d error_code=%s retryable=%s",
+        state.discovery_job_id,
+        attempt_count,
+        failure.error_code,
+        failure.retryable,
+    )
     if failure.retryable and attempt_count < max_attempts:
         await store.transition(
             state.discovery_job_id,

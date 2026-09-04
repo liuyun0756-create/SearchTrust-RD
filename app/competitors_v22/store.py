@@ -219,6 +219,12 @@ class CompetitorDiscoveryStore:
 
     async def retry_failed(self, discovery_job_id: UUID, *, now: datetime) -> CompetitorDiscoveryJobState:
         state_key = self.keys.state(discovery_job_id)
+        checkpoint_keys = [
+            key
+            async for key in self.redis.scan_iter(
+                match=self.keys.checkpoint_pattern(discovery_job_id)
+            )
+        ]
         next_state: CompetitorDiscoveryJobState | None = None
         async with self.redis.pipeline(transaction=True) as pipe:
             while True:
@@ -248,6 +254,12 @@ class CompetitorDiscoveryStore:
                     pipe.multi()
                     pipe.set(state_key, next_state.model_dump_json(), ex=self.state_ttl_seconds)
                     pipe.expire(self.keys.request(discovery_job_id), self.state_ttl_seconds)
+                    if checkpoint_keys:
+                        # A manual retry is a fresh provider-attempt budget.
+                        # Successful automatic retries still retain their
+                        # checkpoints; only an explicitly reopened terminal
+                        # task clears the exhausted ledger.
+                        pipe.delete(*checkpoint_keys)
                     pipe.zadd(self.keys.active, {str(discovery_job_id): now.timestamp()})
                     await pipe.execute()
                     break
