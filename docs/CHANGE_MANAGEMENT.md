@@ -155,3 +155,29 @@ Production migration status: **applied and verified on 2026-09-05**. The local a
 remote migration catalogs both list version `20260905000000`. The OAuth routes
 remain hidden and disabled in production pending external Google approval and a
 separate live acceptance test.
+
+## 9. v2.2 Google Resource Selection and Case Binding (2026-09)
+
+V22-051 reuses the existing production `case_source_bindings`, `client_cases`,
+and `google_connections` tables. No tables or columns are added.
+
+Migration: `search-trust/supabase/migrations/20260905100000_add_v2_2_google_resource_binding.sql`.
+
+- `select_v22_google_resource` locks the owned connection and Case, checks current
+  scopes and expected binding ID, then atomically retires the previous binding
+  and creates a new selection. History and snapshot references are retained.
+- `disconnect_v22_google_resource` deactivates only the requested binding on an
+  owned Case; old browser state cannot disconnect its replacement.
+- `deactivate_v22_google_bindings` deactivates bindings when a Google connection
+  becomes revoked, deleted, or requires reauthorization.
+- RPC execution is restricted to service role. Browser roles remain denied.
+- Selection records use `needs_confirmation` / `not_checked`, plus the selecting
+  user and timestamp. They do not assert a verified identity or healthy data.
+- Discovery metadata, including GBP address/service-area clues, is read on demand
+  and returned with no-store headers. No raw discovery payload is persisted.
+
+The migration was applied on 2026-09-05 and the local/remote migration catalog
+entries for `20260905100000` match. No manual SQL action remains. Deploy the
+resource-selection routes after migration; keep Google feature flags off until
+live credentials and acceptance checks are ready. Rollback SQL is included in
+the migration and preserves all binding/history rows.
