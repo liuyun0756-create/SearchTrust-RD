@@ -2,7 +2,7 @@
 
 日期：2026-09-05
 
-状态：设计已通过对话评审，等待书面确认；尚未实施。
+状态：设计已批准并实施；生产 Google 连接功能保持关闭。
 
 对应开发计划：V22-050 OAuth 加密与增量授权。
 
@@ -140,7 +140,7 @@ Additional Authenticated Data 固定绑定：
 
 仅供 service role 使用，字段包括：
 
-- `id`、`user_id`、可空 `case_id`；
+- `id`、`user_id`、可空 `case_id`、可空 `connection_id`；
 - `state_digest`；
 - 加密 PKCE verifier 三元组和 key version；
 - `requested_sources`、`requested_scopes`；
@@ -149,6 +149,8 @@ Additional Authenticated Data 固定绑定：
 - `created_at`。
 
 约束要求密文三元组完整、有效期不晚于创建后 10 分钟、state digest 唯一。定时清理删除超过 24 小时的已消费/过期会话。
+
+`connection_id` 只在已有连接的增量授权中写入，用于把一次性 OAuth 会话绑定到明确的目标连接。回调必须验证 Google subject 与该连接一致，禁止把另一个 Google 账号的授权结果覆盖到现有连接。
 
 ### 7.3 新增 `google_connection_events`
 
@@ -162,6 +164,17 @@ Additional Authenticated Data 固定绑定：
 - `created_at`。
 
 事件类型固定为授权开始、授权成功、授权拒绝、授权失败、权限扩展、刷新成功、刷新失败、撤销和删除。表禁止 anon/authenticated 直接访问，不保存 token、授权码、state、PKCE、Cookie 或 Google 原始正文。
+
+### 7.4 新增 `google_token_broker_requests`
+
+仅供 service role 使用，持久化 Worker token broker 的重放保护记录：
+
+- 唯一 request ID；
+- nonce 的 SHA-256 摘要；
+- connection ID、source type、请求时间与过期时间；
+- 创建时间。
+
+表不保存 nonce 原文、HMAC 签名、access token、refresh token 或请求正文。request ID 与 nonce 摘要均受唯一约束；请求校验和记录在发放 token 之前完成。清理函数只删除已过期超过 24 小时的记录，确保多实例和重启后仍能拒绝重放。
 
 ## 8. 服务端接口
 
@@ -262,6 +275,7 @@ Additional Authenticated Data 固定绑定：
 - `GOOGLE_OAUTH_CLIENT_ID`；
 - `GOOGLE_OAUTH_CLIENT_SECRET`；
 - `GOOGLE_OAUTH_REDIRECT_URI`；
+- `GOOGLE_OAUTH_COOKIE_SECRET`；
 - `GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION`；
 - 对应当前及历史版本的 32-byte 加密密钥；
 - `GOOGLE_TOKEN_BROKER_SECRET`。

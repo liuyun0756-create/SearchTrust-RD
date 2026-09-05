@@ -2,7 +2,7 @@
 
 日期：2026-09-05
 
-状态：已批准进入实施。
+状态：实现与自动化回归已完成；等待正式部署验收记录。
 
 设计依据：[Google OAuth 安全基础设计](./2026-09-05-searchtrust-v2-2-google-oauth-foundation-design.md)
 
@@ -30,7 +30,7 @@
 2. 新增 migration：
    - 扩展 `google_connections` 状态和 active/terminal token 约束；
    - 增加 `refresh_lease_id` 与 `refresh_lease_expires_at`；
-   - 新建 `google_oauth_sessions` 和 `google_connection_events`；
+   - 新建 `google_oauth_sessions`、`google_connection_events` 和 `google_token_broker_requests`；
    - 只授予 service role 权限，撤销 anon/authenticated；
    - 增加过期会话清理函数。
 3. 更新 TypeScript 数据库类型。

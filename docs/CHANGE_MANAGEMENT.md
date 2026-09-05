@@ -122,3 +122,36 @@ Production migration status: **confirmed applied on 2026-09-04**. The user ran
 the v2.2 Case model, Case invariants, job revision, Case payment, and report-share
 migrations in dependency order; every Supabase SQL Editor run returned
 `Success. No rows returned`. V22-043 is no longer waiting for database migration.
+
+## 8. v2.2 Google OAuth Security Foundation (2026-09)
+
+V22-050 extends the existing server-only `google_connections` table and adds
+three server-only security tables in the same production Supabase project.
+
+| Table | Change | Purpose |
+| --- | --- | --- |
+| `google_connections` | Adds `reauth_required` plus paired refresh-lease fields and stricter token-state constraints | Safe refresh coordination and terminal-state token clearing |
+| `google_oauth_sessions` | Adds one-time state digest, encrypted PKCE verifier, requested scopes, and optional target connection | CSRF/PKCE protection for initial and incremental authorization |
+| `google_connection_events` | Adds non-sensitive lifecycle events and stable result codes | Security audit without credentials or provider response bodies |
+| `google_token_broker_requests` | Adds unique request ID and nonce SHA-256 digest | Durable replay protection across server instances and restarts |
+
+The executable migration is:
+
+`search-trust/supabase/migrations/20260905000000_add_v2_2_google_oauth_foundation.sql`
+
+All four tables are protected by RLS and service-role-only grants. The database
+stores no plaintext access token, refresh token, PKCE verifier, nonce, signature,
+authorization code, or OAuth state. Existing connection token ciphertext remains
+application-encrypted with versioned AES-256-GCM keys.
+
+Deployment order:
+
+1. Apply and verify the Supabase migration.
+2. Deploy the frontend routes with `GOOGLE_CONNECTIONS_ENABLED` absent or false.
+3. Complete Google consent-screen verification, GBP API approval, and production secret configuration.
+4. Enable the feature only after a real-account acceptance test confirms scopes, refresh, revoke, and broker behavior.
+
+Production migration status: **applied and verified on 2026-09-05**. The local and
+remote migration catalogs both list version `20260905000000`. The OAuth routes
+remain hidden and disabled in production pending external Google approval and a
+separate live acceptance test.
