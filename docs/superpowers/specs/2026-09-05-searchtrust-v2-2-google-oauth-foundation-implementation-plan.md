@@ -2,7 +2,7 @@
 
 日期：2026-09-05
 
-状态：实现与自动化回归已完成；等待正式部署验收记录。
+状态：实现、数据库迁移与正式部署验收已完成；生产 Google 连接功能保持关闭。
 
 设计依据：[Google OAuth 安全基础设计](./2026-09-05-searchtrust-v2-2-google-oauth-foundation-design.md)
 
