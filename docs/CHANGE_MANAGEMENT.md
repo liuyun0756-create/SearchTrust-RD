@@ -181,3 +181,28 @@ entries for `20260905100000` match. No manual SQL action remains. Deploy the
 resource-selection routes after migration; keep Google feature flags off until
 live credentials and acceptance checks are ready. Rollback SQL is included in
 the migration and preserves all binding/history rows.
+
+## 10. v2.2 Google Resource Identity Matching (2026-09)
+
+V22-052 reuses `case_source_bindings` identity evidence and confirmation columns.
+No new columns or tables. Migration:
+`search-trust/supabase/migrations/20260905200000_add_v2_2_google_identity_matching.sql`.
+
+- `select_v22_matched_google_resource` checks the owned connection, locked Case
+  revision and expected binding ID, then atomically saves a confirmed identity.
+  Automatic confirmation requires matched/high; manual confirmation requires
+  needs_confirmation/medium or low. Mismatch is rejected, not overridden.
+- Confirmation evidence records evaluator version, original assessment,
+  confidence, safe reason codes, method, evaluation time and Case revision.
+  The existing confirmer/time fields identify the acting user.
+- `invalidate_v22_google_identity` clears confirmation on active bindings when
+  Case identity changes. Selection and report/snapshot history remain intact;
+  previous confirmation/evidence remains in the invalidation audit record.
+- RPCs are service-role-only; browser roles cannot submit matching assessments
+  directly. Frontend API recomputes evidence and requires the preview digest.
+- Feature flag remains off pending official Google credentials and live acceptance.
+
+Deployment order: validate tests and migration dry-run, apply migration, verify
+catalog, publish frontend, inspect Vercel build/alias and Railway API/queue health.
+Production migration status: **applied and verified on 2026-09-05**. Local and
+remote catalogs both list `20260905200000`. No manual SQL action remains.
