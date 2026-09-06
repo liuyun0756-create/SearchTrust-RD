@@ -229,8 +229,9 @@ V22-060 migration:
   audit/snapshot data; do not destructively drop production sync history.
 
 Deployment order is migration → backend/frontend with flags off → read-only health
-checks. Production migration status: **applied on 2026-09-06**; remote/local
-migration catalogs are checked before the application rollout.
+checks. Production migration status: **applied and verified on 2026-09-06**;
+remote/local migration catalogs both list `20260906000000` before the application
+rollout. No manual SQL action remains.
 
 Later activation requires both frontend `GOOGLE_GSC_SYNC_ENABLED=true` (alongside
 the existing Google OAuth configuration) and Worker `V22_GSC_SYNC_ENABLED=true`.

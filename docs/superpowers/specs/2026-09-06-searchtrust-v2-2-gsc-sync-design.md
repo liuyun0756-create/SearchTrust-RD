@@ -60,7 +60,7 @@ Center, report adapters and verified-report generation remain later milestones.
 - [x] Implement signed token-broker client, job repository and leased worker.
 - [x] Wire private request/status endpoint and minimal sync control with tests.
 - [x] Run backend/frontend tests, type checks, build, migration dry-run and review.
-- [ ] Apply migration before deployment; keep flags off; check production health.
+- [x] Apply migration before deployment; keep flags off; check production health.
 
 Self-review: no unresolved product choices, no all-query completeness claim,
 no current/previous overlap, no summing overlapping breakdowns, no automatic
