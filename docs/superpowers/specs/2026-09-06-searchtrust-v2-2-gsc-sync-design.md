@@ -55,11 +55,11 @@ Center, report adapters and verified-report generation remain later milestones.
 
 ## Checklist
 
-- [ ] Add SQL job lifecycle and transactional snapshot persistence, with DB tests.
-- [ ] Implement typed GSC provider, bounded data normalization and health tests.
-- [ ] Implement signed token-broker client, job repository and leased worker.
-- [ ] Wire private request/status endpoint and minimal sync control with tests.
-- [ ] Run backend/frontend tests, type checks, build, migration dry-run and review.
+- [x] Add SQL job lifecycle and transactional snapshot persistence, with DB tests.
+- [x] Implement typed GSC provider, bounded data normalization and health tests.
+- [x] Implement signed token-broker client, job repository and leased worker.
+- [x] Wire private request/status endpoint and minimal sync control with tests.
+- [x] Run backend/frontend tests, type checks, build, migration dry-run and review.
 - [ ] Apply migration before deployment; keep flags off; check production health.
 
 Self-review: no unresolved product choices, no all-query completeness claim,

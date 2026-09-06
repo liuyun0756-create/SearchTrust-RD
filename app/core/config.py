@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     # pipeline is complete. Empty connection/auth values keep the legacy v1
     # process bootable when Redis has not been provisioned.
     V22_ANALYZE_ENABLED: bool = False
+    V22_GSC_SYNC_ENABLED: bool = False
+    V22_GOOGLE_BROKER_ORIGIN: str = ""
+    V22_GOOGLE_BROKER_SECRET: SecretStr = Field(default="", repr=False)
     V22_REDIS_URL: SecretStr = Field(default="", repr=False)
     V22_REDIS_PREFIX: str = Field(default="searchtrust:v22", min_length=1, max_length=100)
     V22_QUEUE_NAME: str = Field(default="searchtrust:v22:queue", min_length=1, max_length=100)

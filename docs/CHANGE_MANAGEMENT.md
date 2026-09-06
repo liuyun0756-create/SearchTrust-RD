@@ -206,3 +206,35 @@ Deployment order: validate tests and migration dry-run, apply migration, verify
 catalog, publish frontend, inspect Vercel build/alias and Railway API/queue health.
 Production migration status: **applied and verified on 2026-09-05**. Local and
 remote catalogs both list `20260905200000`. No manual SQL action remains.
+
+## 11. v2.2 GSC Durable Synchronization (2026-09)
+
+V22-060 migration:
+`search-trust/supabase/migrations/20260906000000_add_v2_2_gsc_sync.sql`.
+
+- Adds `google_sync_jobs`, RLS-protected with service-role-only table and RPC access.
+  Stores user intent, Case/binding/connection IDs, fixed date boundary, Case revision,
+  attempts, lease, safe failure code and immutable snapshot ID. No token fields.
+- `request_v22_gsc_sync` checks ownership/scopes/confirmed identity, accepts a UUID
+  idempotency key, and rejects a different simultaneous request for the same binding.
+- `claim_v22_gsc_sync` issues a five-minute fenced lease. Up to three attempts;
+  expired executions recover through the existing ARQ queue. A reconciliation timer
+  dispatches only pending user requests; it never schedules periodic collection.
+- `finish_v22_gsc_sync` rechecks current binding, connection and Case under locks,
+  inserts one immutable `gsc_sync_v1` snapshot and updates the binding/job atomically.
+  Duplicate completions reuse the result; stale/revoked/replaced bindings cannot commit.
+- `fail_v22_gsc_sync` records a safe code, optionally delays a retry, and preserves
+  previous snapshots. Snapshot freshness is seven days and evaluated on reads.
+- No existing tables/columns removed. Disable sync flags for rollback and retain
+  audit/snapshot data; do not destructively drop production sync history.
+
+Deployment order is migration → backend/frontend with flags off → read-only health
+checks. Production migration status: **applied on 2026-09-06**; remote/local
+migration catalogs are checked before the application rollout.
+
+Later activation requires both frontend `GOOGLE_GSC_SYNC_ENABLED=true` (alongside
+the existing Google OAuth configuration) and Worker `V22_GSC_SYNC_ENABLED=true`.
+Worker `V22_GOOGLE_BROKER_ORIGIN` must be the trusted HTTPS frontend origin, and
+`V22_GOOGLE_BROKER_SECRET` must match frontend `GOOGLE_TOKEN_BROKER_SECRET`.
+The existing Worker Supabase URL/service-role key and Redis queue are reused.
+Validate credentials/approvals and a real owned test Case before enabling these flags.

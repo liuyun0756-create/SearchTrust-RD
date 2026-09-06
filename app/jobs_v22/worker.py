@@ -17,6 +17,9 @@ import httpx
 from pydantic import SecretStr
 
 from app.core.config import settings
+from app.google_connections_v22.gsc import GscProvider
+from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
+from app.google_connections_v22.sync_worker import execute_v22_gsc_sync, reconcile_v22_gsc_syncs
 from app.competitors_v22.discovery_service import CompetitorDiscoveryService
 from app.competitors_v22.collection_stage import CheckpointedCompetitorCollectionStage
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
@@ -192,6 +195,13 @@ def _secret_value(value: SecretStr | str) -> str:
 
 async def on_startup(ctx: dict[str, Any]) -> None:
     pool = ctx["redis"]
+    if settings.V22_GSC_SYNC_ENABLED:
+        gsc_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
+        ctx["gsc_http_client"] = gsc_client
+        ctx["gsc_sync_repository"] = SyncRepository(settings.V22_SUPABASE_URL, _secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY), gsc_client)
+        ctx["gsc_token_broker"] = TokenBroker(settings.V22_GOOGLE_BROKER_ORIGIN, _secret_value(settings.V22_GOOGLE_BROKER_SECRET), gsc_client)
+        ctx["gsc_provider"] = GscProvider(gsc_client)
+        ctx["gsc_queue_name"] = settings.V22_QUEUE_NAME
     ctx["store"] = DurableJobStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
@@ -272,6 +282,8 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
 
 async def on_shutdown(ctx: dict[str, Any]) -> None:
+    if ctx.get("gsc_http_client") is not None:
+        await ctx["gsc_http_client"].aclose()
     http_client: httpx.AsyncClient | None = ctx.get("callback_http_client")
     if http_client is not None:
         await http_client.aclose()
@@ -290,6 +302,7 @@ def _redis_settings() -> RedisSettings:
 
 class WorkerSettings:
     functions = [
+        func(execute_v22_gsc_sync, name="execute_v22_gsc_sync", max_tries=1, timeout=270, keep_result=0),
         func(
             execute_v22_job,
             name="execute_v22_job",
@@ -306,6 +319,7 @@ class WorkerSettings:
         ),
     ]
     cron_jobs = [
+        cron(reconcile_v22_gsc_syncs, name="reconcile_v22_gsc_syncs", second={15, 45}, unique=True, max_tries=1),
         cron(
             reconcile_v22_jobs,
             name="reconcile_v22_jobs",
