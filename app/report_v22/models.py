@@ -569,6 +569,10 @@ class ReportV22(StrictModel):
             self.first_party_performance.gbp,
             self.first_party_performance.ga4,
         )
+        verified_core = (
+            self.first_party_performance.gsc,
+            self.first_party_performance.ga4,
+        )
         if report_type == "prospect":
             if parent_report_id is not None:
                 raise ValueError("prospect reports must not have a parent report")
@@ -587,16 +591,22 @@ class ReportV22(StrictModel):
                 raise ValueError("verified version diff must reference the report parent")
             if not self.version_diff.entries:
                 raise ValueError("verified reports require version diff entries")
-            for source in first_party:
+            for source in verified_core:
                 if source.connection_state == "not_connected" or source.snapshot_id is None:
-                    raise ValueError("verified reports require GSC, GBP, and GA4 sync snapshots")
+                    raise ValueError("verified reports require GSC and GA4 sync snapshots")
+            gbp = self.first_party_performance.gbp
+            if (gbp.connection_state == "not_connected") != (gbp.snapshot_id is None):
+                raise ValueError("verified GBP connection state and snapshot must be consistent")
             for entry in self.version_diff.entries:
                 if entry.previous_finding and entry.previous_finding.report_id != parent_report_id:
                     raise ValueError("previous finding references must point to the parent report")
 
         if self.data_coverage.full_evidence_coverage:
             if any(
-                source.health_status != "healthy" or source.identity_match_status != "matched"
+                source.connection_state == "not_connected"
+                or source.snapshot_id is None
+                or source.health_status != "healthy"
+                or source.identity_match_status != "matched"
                 for source in first_party
             ):
                 raise ValueError("full evidence coverage requires healthy, matched GSC, GBP, and GA4 sources")

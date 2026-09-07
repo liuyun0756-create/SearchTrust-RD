@@ -314,6 +314,11 @@ Redis 负责队列和实时状态，Supabase `analysis_jobs` 保存持久审计�
 
 ## 8. Google OAuth 与数据同步
 
+2026-09-07 决策更新：v2.2 默认使用现有 SerpAPI 三 Key 轮换链路获取公开 GBP
+资料、评论与公开活跃信号，不将官方 GBP 后台账号作为 Verified Core 的阻塞条件。
+官方 GBP Performance 保留为可选增强；只有 GSC、官方 GBP Performance 和 GA4 全部
+健康且身份匹配时，才允许显示 Full Evidence。
+
 ### 8.1 OAuth scopes
 
 - GSC：`https://www.googleapis.com/auth/webmasters.readonly`；
@@ -929,13 +934,12 @@ src/components/report/v22/**
 
 #### V22-062 GBP connector
 
-- account/location；
-- Business Information；
-- Performance；
-- read-only code path；
--30天原始Content TTL；
-- user-triggered sync；
-- health evaluator。
+- 默认公开路径：SerpAPI Google Maps place details、评论、图片与帖子的有界采集；
+- 用户确认 GBP/Google Maps 身份，找不到时要求提供链接；
+- 公开 GBP 证据支持 Verified Core，但不得冒充官方 Performance；
+- 可选官方路径：account/location、Business Information、Performance、read-only code path、
+  30 天原始 Content TTL、user-triggered sync 和 health evaluator；
+- 官方开关默认关闭，通过 Google GBP API 准入后才启用。
 
 #### V22-063 Connection Center
 
@@ -947,7 +951,8 @@ src/components/report/v22/**
 
 测试使用fake providers和recorded sanitized fixtures；GBP没有沙箱，不允许CI调用真实商家。
 
-验收：真实授权测试Case生成三份健康快照，错误绑定和不健康数据被准确阻止或降级。
+验收：公开 GBP 快照 + GSC/GA4 健康快照可继续生成 Verified Core；错误绑定和
+不健康数据被准确阻止或降级。官方 GBP Performance 未连接时 Full Evidence 必须为 false。
 
 ### M7：验证执行计划和版本升级
 
@@ -1180,7 +1185,8 @@ src/components/report/v22/**
 
 - 两种入口真实可用；
 - 无授权能购买并生成获客报告；
-- 三源健康后能升级执行报告；
+- GSC、GA4 健康且公开 GBP 已确认后能升级 Verified Core 执行报告；
+- 三个官方数据源都健康时可升级为 Full Evidence；
 - 用户能看到版本差异；
 - 客户版可分享/PDF；
 - 三项行动可直接实施和验收。

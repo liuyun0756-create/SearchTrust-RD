@@ -4,7 +4,18 @@
 
 范围：V22-062。
 
-状态：本地实施、回归、生产数据库迁移与代码发布完成；真实 Google 账号验收和开关启用仍待执行。
+状态：官方连接器实施、回归、生产数据库迁移与代码发布完成；由于 Google GBP API
+配额为 0 且当前商家资料不满足“已验证并活跃 60 天”准入条件，v2.2 已改用 SerpAPI
+公开 GBP 作为默认路径，官方同步保留为可选增强并继续关闭。
+
+## 2026-09-07 路径调整
+
+- Railway 生产环境已配置三个 SerpAPI Key，现有轮换、限流与额度故障切换继续复用。
+- 公开 GBP 可覆盖名称、网站、电话、地址/服务区、类别、营业时间、评分、评论、图片与帖子。
+- 公开数据不包含 Search/Maps 曝光、电话点击、路线请求、网站点击和后台搜索词。
+- Verified Core 要求 GSC 与 GA4 快照，官方 GBP 快照可为 not_connected；Full Evidence 仍要求
+  GSC、官方 GBP 和 GA4 都是 healthy + matched。
+- 连接页在官方 GBP 开关关闭时隐藏 GBP OAuth 选项，并明确显示“公开 GBP 已纳入、无需业主账号”。
 
 ## 完成内容
 
@@ -26,8 +37,8 @@
 
 - 测试 fixture 全部使用 Example、`example.test` 和 555 电话；CI/本地回归没有调用真实 GBP 账号。
 - 同步日志、错误响应、浏览器状态和长期 manifest 都不包含 access token 或商家实际 Content。
-- 后端：`.venv/bin/python -m pytest -q`，1,486 项通过。
-- 前端：`npm test -- --run`，58 个文件、527 项通过。
+- 后端：`.venv/bin/python -m pytest -q`，1,487 项通过。
+- 前端：`npm test -- --run`，59 个文件、530 项通过。
 - 数据库：`npm run test:database`，19 项迁移回归通过。
 - 静态与构建：`npm run typecheck` 和 `npm run build` 通过。项目现有 `next lint` 脚本与 Next.js 16 不兼容，直接 ESLint 又被现有循环配置阻断；这两项均未产生 GBP 代码诊断。
 

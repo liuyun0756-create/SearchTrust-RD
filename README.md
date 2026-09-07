@@ -187,6 +187,10 @@ GET /api/v1/health
 
 ## GBP 数据获取优先级
 
+SearchTrust v2.2 默认使用 SerpAPI 采集公开 GBP 证据，不要求用户拥有或授权官方
+GBP 后台。官方 GBP Performance 连接器是可选增强；未连接时不得将公开数据标记为
+Performance 数据或 Full Evidence。
+
 1. `gbp_url` 含 `data_id`（如 `query_place_id=0x...`）→ 直接查 place details，**与主页抓取并发执行**（最精准、最快）
 2. 页面域名 → Google Maps 搜索 + 域名匹配
 3. 商家名称 + 城市 → Google Maps 搜索 + 城市匹配

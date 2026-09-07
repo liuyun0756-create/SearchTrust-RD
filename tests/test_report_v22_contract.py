@@ -88,11 +88,22 @@ def test_verified_requires_parent_report() -> None:
         validate(payload)
 
 
-def test_verified_requires_all_three_sync_snapshots() -> None:
+def test_verified_requires_gsc_and_ga4_sync_snapshots() -> None:
     payload = load_fixture("verified.json")
     payload["first_party_performance"]["ga4"]["snapshot_id"] = None
-    with pytest.raises(ValidationError, match="require GSC, GBP, and GA4 sync snapshots"):
+    with pytest.raises(ValidationError, match="require GSC and GA4 sync snapshots"):
         validate(payload)
+
+
+def test_verified_core_allows_official_gbp_to_remain_unconnected() -> None:
+    payload = load_fixture("verified.json")
+    prospect = load_fixture("prospect.json")
+    payload["data_coverage"]["full_evidence_coverage"] = False
+    payload["data_coverage"]["sources"][4] = prospect["data_coverage"]["sources"][3]
+    payload["first_party_performance"]["gbp"] = prospect["first_party_performance"]["gbp"]
+    report = validate(payload)
+    assert report.report_version.report_type == "verified_execution"
+    assert report.first_party_performance.gbp.connection_state == "not_connected"
 
 
 def test_full_coverage_requires_healthy_matched_sources() -> None:
