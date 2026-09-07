@@ -949,6 +949,14 @@ src/components/report/v22/**
 - Full Evidence Coverage gate；
 - 数据同步进度和重试。
 
+完成于 2026-09-07：已交付 `connection_center_v1` 私有只读聚合接口、Case 所有权与
+一致性重读边界、公开 GBP / GSC / GA4 三源确定性门禁、可选官方 GBP 折叠区、唯一
+下一步动作和统一响应式页面。Verified Core 要求三项必需证据全部 healthy + matched；
+Full Evidence 额外要求未过期且内容可用的官方 GBP Performance。V22-063 不创建验证
+任务，生成按钮继续锁定到 M7 的双端开关与执行链路完成。无数据库迁移，正式环境
+Google 连接与同步开关继续关闭。详见
+`2026-09-07-searchtrust-v2-2-connection-center-completion.md`。
+
 测试使用fake providers和recorded sanitized fixtures；GBP没有沙箱，不允许CI调用真实商家。
 
 验收：公开 GBP 快照 + GSC/GA4 健康快照可继续生成 Verified Core；错误绑定和
