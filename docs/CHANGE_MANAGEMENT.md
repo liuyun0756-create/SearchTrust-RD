@@ -239,3 +239,29 @@ Worker `V22_GOOGLE_BROKER_ORIGIN` must be the trusted HTTPS frontend origin, and
 `V22_GOOGLE_BROKER_SECRET` must match frontend `GOOGLE_TOKEN_BROKER_SECRET`.
 The existing Worker Supabase URL/service-role key and Redis queue are reused.
 Validate credentials/approvals and a real owned test Case before enabling these flags.
+
+## 12. v2.2 GA4 Durable Synchronization (2026-09)
+
+V22-061 migration:
+`search-trust/supabase/migrations/20260907000000_add_v2_2_ga4_sync.sql`.
+
+- Extends the existing service-role-only `google_sync_jobs` lifecycle to `ga4`
+  without changing historic GSC rows. GA4 jobs freeze Case revision, Property,
+  current/previous 90-day boundary and a server-derived hostname allowlist.
+- The allowlist is the Case registrable domain plus its `www` form, or the exact
+  hostname for other subdomains. Every Data API request additionally filters to web.
+- Source-specific request, claim, finish and fail RPCs preserve ownership, scope,
+  identity, idempotency, one-active-job, five-minute lease and three-attempt rules.
+  GSC claim/reconciliation now explicitly ignore GA4 rows.
+- `finish_v22_ga4_sync` validates `ga4_sync_v1`, Property, host filter and both
+  date periods before atomically inserting a seven-day immutable snapshot and
+  updating binding health. Partial collection and stale identities cannot commit.
+- Snapshot rows contain aggregate totals, landing pages, dates, key events and
+  whitelisted response metadata. Tokens, raw Google responses, query parameters,
+  user/device identifiers and event parameters are not stored.
+- Disable GA4 frontend/worker flags for rollback and retain job/snapshot history.
+
+Deployment order: tests and migration dry-run → production migration → application
+rollout with `GOOGLE_GA4_SYNC_ENABLED` and `V22_GA4_SYNC_ENABLED` absent/off →
+read-only Vercel/Railway health checks. Live Google acceptance remains separately
+pending approved credentials and an owned test Case.

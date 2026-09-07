@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     # process bootable when Redis has not been provisioned.
     V22_ANALYZE_ENABLED: bool = False
     V22_GSC_SYNC_ENABLED: bool = False
+    V22_GA4_SYNC_ENABLED: bool = False
     V22_GOOGLE_BROKER_ORIGIN: str = ""
     V22_GOOGLE_BROKER_SECRET: SecretStr = Field(default="", repr=False)
     V22_REDIS_URL: SecretStr = Field(default="", repr=False)
