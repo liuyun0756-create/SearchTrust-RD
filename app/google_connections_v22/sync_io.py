@@ -12,9 +12,10 @@ import httpx
 
 from .broker_signature import sign_google_broker_body
 from .ga4 import GA4_SCOPE
+from .gbp import GBP_SCOPE
 from .gsc import GSC_SCOPE, SyncError, bounded_json
 
-SYNC_SCOPES = {"gsc": GSC_SCOPE, "ga4": GA4_SCOPE}
+SYNC_SCOPES = {"gsc": GSC_SCOPE, "ga4": GA4_SCOPE, "gbp": GBP_SCOPE}
 
 
 class TokenBroker:
@@ -85,10 +86,48 @@ class SyncRepository:
             raise SyncError("SYNC_INVALID_STORAGE_RESPONSE")
         return data
 
-    async def finish(self, job: dict, payload: dict, checksum: str, health: str, reasons: list[str]):
-        return await self.request("POST", f"rpc/finish_v22_{self.source}_sync", body={"p_job_id": job["id"], "p_lease_id": job["lease_id"],
-            "p_payload": payload, "p_checksum": checksum, "p_health": health, "p_reasons": reasons})
+    async def finish(
+        self,
+        job: dict,
+        payload: dict,
+        checksum: str,
+        health: str,
+        reasons: list[str],
+        *,
+        raw_payload: dict | None = None,
+    ):
+        body = {
+            "p_job_id": job["id"],
+            "p_lease_id": job["lease_id"],
+            "p_checksum": checksum,
+            "p_health": health,
+            "p_reasons": reasons,
+        }
+        if self.source == "gbp":
+            if not isinstance(raw_payload, dict):
+                raise SyncError("SYNC_INVALID_STORAGE_REQUEST")
+            body.update({"p_manifest": payload, "p_raw_payload": raw_payload})
+        else:
+            body["p_payload"] = payload
+        return await self.request(
+            "POST", f"rpc/finish_v22_{self.source}_sync", body=body
+        )
 
     async def fail(self, job: dict, error: SyncError):
         await self.request("POST", f"rpc/fail_v22_{self.source}_sync", body={"p_job_id": job["id"], "p_lease_id": job["lease_id"],
             "p_code": error.code, "p_retryable": error.retryable})
+
+    async def cleanup_expired(self, *, batch_size: int = 100) -> int:
+        if self.source != "gbp" or not isinstance(batch_size, int) or isinstance(batch_size, bool) or not 1 <= batch_size <= 500:
+            raise SyncError("SYNC_INVALID_STORAGE_REQUEST")
+        data = await self.request(
+            "POST",
+            "rpc/cleanup_v22_expired_gbp_content",
+            body={
+                "p_now": datetime.now(timezone.utc).isoformat(),
+                "p_batch_size": batch_size,
+            },
+        )
+        if not isinstance(data, int) or isinstance(data, bool) or data < 0:
+            raise SyncError("SYNC_INVALID_STORAGE_RESPONSE")
+        return data

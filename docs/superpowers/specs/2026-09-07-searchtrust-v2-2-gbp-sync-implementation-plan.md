@@ -6,7 +6,7 @@
 
 前置规格：`docs/superpowers/specs/2026-09-07-searchtrust-v2-2-gbp-sync-design.md`
 
-状态：待用户批准后实施。
+状态：实施与本地验证完成，生产发布待执行。
 
 ## 1. 实施原则
 

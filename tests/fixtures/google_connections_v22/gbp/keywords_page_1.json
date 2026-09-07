@@ -1,0 +1,6 @@
+{
+  "searchKeywordsCounts": [
+    { "searchKeyword": "fictional example service", "insightsValue": { "value": "12" } },
+    { "searchKeyword": "sample business nearby", "insightsValue": { "threshold": "15" } }
+  ]
+}

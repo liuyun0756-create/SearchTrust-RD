@@ -8,6 +8,7 @@ from uuid import UUID
 import fakeredis.aioredis
 import pytest
 from arq.worker import Retry
+from pydantic import SecretStr
 
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
@@ -260,3 +261,25 @@ async def test_worker_builds_real_isolated_executor_only_when_analyze_is_enabled
         )
     finally:
         await on_shutdown(ctx)
+
+
+@pytest.mark.anyio
+async def test_gbp_sync_stays_off_while_expired_content_cleanup_remains_available(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_GBP_SYNC_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setattr(settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service"))
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    try:
+        assert "gbp_provider" not in ctx
+        assert "gbp_token_broker" not in ctx
+        assert "gbp_sync_repository" not in ctx
+        assert ctx["gbp_cleanup_repository"].source == "gbp"
+    finally:
+        await on_shutdown(ctx)
+
+    assert ctx["gbp_cleanup_http_client"].is_closed

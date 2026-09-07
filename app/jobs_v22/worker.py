@@ -19,7 +19,13 @@ from pydantic import SecretStr
 from app.core.config import settings
 from app.google_connections_v22.gsc import GscProvider
 from app.google_connections_v22.ga4 import Ga4Provider
+from app.google_connections_v22.gbp import GbpProvider
 from app.google_connections_v22.ga4_sync_worker import execute_v22_ga4_sync, reconcile_v22_ga4_syncs
+from app.google_connections_v22.gbp_sync_worker import (
+    cleanup_v22_gbp_content,
+    execute_v22_gbp_sync,
+    reconcile_v22_gbp_syncs,
+)
 from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
 from app.google_connections_v22.sync_worker import execute_v22_gsc_sync, reconcile_v22_gsc_syncs
 from app.competitors_v22.discovery_service import CompetitorDiscoveryService
@@ -213,6 +219,33 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             _secret_value(settings.V22_GOOGLE_BROKER_SECRET), ga4_client, source="ga4")
         ctx["ga4_provider"] = Ga4Provider(ga4_client)
         ctx["ga4_queue_name"] = settings.V22_QUEUE_NAME
+    if settings.V22_GBP_SYNC_ENABLED:
+        gbp_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
+        ctx["gbp_http_client"] = gbp_client
+        ctx["gbp_sync_repository"] = SyncRepository(
+            settings.V22_SUPABASE_URL,
+            _secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY),
+            gbp_client,
+            source="gbp",
+        )
+        ctx["gbp_token_broker"] = TokenBroker(
+            settings.V22_GOOGLE_BROKER_ORIGIN,
+            _secret_value(settings.V22_GOOGLE_BROKER_SECRET),
+            gbp_client,
+            source="gbp",
+        )
+        ctx["gbp_provider"] = GbpProvider(gbp_client)
+        ctx["gbp_queue_name"] = settings.V22_QUEUE_NAME
+    storage_key = _secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY)
+    if settings.V22_SUPABASE_URL and storage_key:
+        cleanup_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
+        ctx["gbp_cleanup_http_client"] = cleanup_client
+        ctx["gbp_cleanup_repository"] = SyncRepository(
+            settings.V22_SUPABASE_URL,
+            storage_key,
+            cleanup_client,
+            source="gbp",
+        )
     ctx["store"] = DurableJobStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
@@ -297,6 +330,10 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
         await ctx["gsc_http_client"].aclose()
     if ctx.get("ga4_http_client") is not None:
         await ctx["ga4_http_client"].aclose()
+    if ctx.get("gbp_http_client") is not None:
+        await ctx["gbp_http_client"].aclose()
+    if ctx.get("gbp_cleanup_http_client") is not None:
+        await ctx["gbp_cleanup_http_client"].aclose()
     http_client: httpx.AsyncClient | None = ctx.get("callback_http_client")
     if http_client is not None:
         await http_client.aclose()
@@ -317,6 +354,7 @@ class WorkerSettings:
     functions = [
         func(execute_v22_gsc_sync, name="execute_v22_gsc_sync", max_tries=1, timeout=270, keep_result=0),
         func(execute_v22_ga4_sync, name="execute_v22_ga4_sync", max_tries=1, timeout=270, keep_result=0),
+        func(execute_v22_gbp_sync, name="execute_v22_gbp_sync", max_tries=1, timeout=270, keep_result=0),
         func(
             execute_v22_job,
             name="execute_v22_job",
@@ -335,6 +373,8 @@ class WorkerSettings:
     cron_jobs = [
         cron(reconcile_v22_gsc_syncs, name="reconcile_v22_gsc_syncs", second={15, 45}, unique=True, max_tries=1),
         cron(reconcile_v22_ga4_syncs, name="reconcile_v22_ga4_syncs", second={20, 50}, unique=True, max_tries=1),
+        cron(reconcile_v22_gbp_syncs, name="reconcile_v22_gbp_syncs", second={25, 55}, unique=True, max_tries=1),
+        cron(cleanup_v22_gbp_content, name="cleanup_v22_gbp_content", minute={7, 37}, second=5, unique=True, max_tries=1),
         cron(
             reconcile_v22_jobs,
             name="reconcile_v22_jobs",

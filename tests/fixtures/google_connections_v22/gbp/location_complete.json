@@ -1,0 +1,25 @@
+{
+  "name": "locations/12345",
+  "title": "Example Home Services",
+  "phoneNumbers": { "primaryPhone": "+1 202-555-0147" },
+  "categories": {
+    "primaryCategory": { "name": "categories/gcid:example_service", "displayName": "Example Service" },
+    "additionalCategories": []
+  },
+  "storefrontAddress": {
+    "regionCode": "US",
+    "locality": "Example City",
+    "addressLines": ["100 Example Street"]
+  },
+  "websiteUri": "https://merchant.example.test/",
+  "regularHours": {
+    "periods": [{ "openDay": "MONDAY", "openTime": { "hours": 9 }, "closeDay": "MONDAY", "closeTime": { "hours": 17 } }]
+  },
+  "specialHours": { "specialHourPeriods": [] },
+  "serviceArea": { "businessType": "CUSTOMER_AND_BUSINESS_LOCATION", "places": { "placeInfos": [] } },
+  "openInfo": { "status": "OPEN" },
+  "metadata": { "hasVoiceOfMerchant": true, "placeId": "example-place-id" },
+  "profile": { "description": "A fictional business used only for automated tests." },
+  "moreHours": [],
+  "serviceItems": []
+}
