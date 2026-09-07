@@ -6,7 +6,7 @@
 
 前置规格：`docs/superpowers/specs/2026-09-07-searchtrust-v2-2-gbp-sync-design.md`
 
-状态：实施与本地验证完成，生产发布待执行。
+状态：实施、本地验证与生产发布完成；真实 Google 账号验收和开关启用仍待执行。
 
 ## 1. 实施原则
 

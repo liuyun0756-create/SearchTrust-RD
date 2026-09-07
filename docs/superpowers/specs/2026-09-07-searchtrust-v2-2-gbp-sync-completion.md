@@ -4,7 +4,7 @@
 
 范围：V22-062。
 
-状态：本地实施和回归通过；生产数据库迁移与代码发布待执行。
+状态：本地实施、回归、生产数据库迁移与代码发布完成；真实 Google 账号验收和开关启用仍待执行。
 
 ## 完成内容
 
@@ -38,3 +38,19 @@
 - 发布后只做健康、权限、disabled 响应和日志回归，不发起真实 Google 授权或同步。
 - 真实账号验收通过后，再分别打开前端和 Worker 的 GBP 开关。
 - 回滚时先关闭两端开关并回滚代码；保留数据结构和清理函数，直到所有受限 Content 已清除。
+
+## 生产发布结果
+
+- 数据库：`20260907100000_add_v2_2_gbp_sync.sql` 已应用，本地与远端迁移目录均列出 `20260907100000`。Supabase 在迁移成功后的本地 catalog cache 阶段出现连接超时警告，随后独立远端目录查询成功。
+- 后端实施提交：`ca4e04d`。Railway 正式 API 部署 `309ef74b-3c68-4140-a8b3-1110f3be6839` 与正式 Worker 部署 `af9dd7f6-1b66-41a0-b090-51abe5e26ab6` 均为 SUCCESS / RUNNING；正式 Redis 为 SUCCESS / RUNNING。
+- 前端提交：`6fe50f5`。Vercel 正式部署 `dpl_3iRUdtzFq3PVWcq196etDpLFijwe` 为 READY，耗时约 55 秒，正式别名为 `https://trysearchtrust.com`。
+- 两端 GBP 同步开关均未配置/非 `true`；此次发布没有改动任何凭据或开关值。
+
+### 发布后可观测性
+
+- 正式首页：HTTP 200。
+- 后端健康：`status=ok`。
+- 队列健康：`status=ok`，Redis 已连接，Worker 存活，pending callbacks 为 0。
+- 未登录私有 connections 页与 GBP sync 端点均返回 HTTP 404；中间件在进入 disabled handler 前保护私有路由，因此不以该 404 声称 handler 本身返回 503。
+- Vercel 最近 10 分钟 error 级别日志扫描返回 0 条。
+- 未审计 drains 和持续外部告警；本里程碑仅完成手工发布及健康验证，未创建新的监控自动化。
