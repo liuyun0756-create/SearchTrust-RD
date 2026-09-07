@@ -37,7 +37,7 @@
 
 - 测试 fixture 全部使用 Example、`example.test` 和 555 电话；CI/本地回归没有调用真实 GBP 账号。
 - 同步日志、错误响应、浏览器状态和长期 manifest 都不包含 access token 或商家实际 Content。
-- 后端：`.venv/bin/python -m pytest -q`，1,487 项通过。
+- 后端：`.venv/bin/python -m pytest -q`，1,489 项通过。
 - 前端：`npm test -- --run`，59 个文件、530 项通过。
 - 数据库：`npm run test:database`，19 项迁移回归通过。
 - 静态与构建：`npm run typecheck` 和 `npm run build` 通过。项目现有 `next lint` 脚本与 Next.js 16 不兼容，直接 ESLint 又被现有循环配置阻断；这两项均未产生 GBP 代码诊断。

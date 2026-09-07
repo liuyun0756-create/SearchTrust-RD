@@ -233,8 +233,8 @@ class AnalyzeRequest(StrictModel):
             if self.first_party_snapshots or self.parent_report is not None:
                 raise ValueError("prospect analysis must not include first-party snapshots or a parent report")
         else:
-            if set(source_types) != {"gsc", "gbp", "ga4"}:
-                raise ValueError("verified analysis requires GSC, GBP, and GA4 snapshots")
+            if not {"gsc", "ga4"}.issubset(source_types):
+                raise ValueError("verified analysis requires GSC and GA4 snapshots")
             if self.parent_report is None:
                 raise ValueError("verified analysis requires a parent report")
             if self.parent_report.identity.case_id != self.case_id:

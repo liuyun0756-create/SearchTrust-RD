@@ -54,6 +54,23 @@ def prospect_analyze_payload() -> dict:
     }
 
 
+def verified_snapshots(*source_types: str) -> list[dict]:
+    fixture_path = (
+        Path(__file__).resolve().parent
+        / "fixtures"
+        / "report_v22_evidence"
+        / "inputs"
+        / "verified.json"
+    )
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    snapshots = {
+        source["payload"]["source_type"]: source["payload"]
+        for source in fixture["sources"]
+        if source["kind"] == "first_party"
+    }
+    return [snapshots[source_type] for source_type in source_types]
+
+
 def validate_analyze(payload: dict) -> AnalyzeRequest:
     return AnalyzeRequest.model_validate_json(json.dumps(payload))
 
@@ -117,12 +134,33 @@ def test_analyze_contract_rejects_google_tokens(token_field: str) -> None:
         validate_analyze(payload)
 
 
-def test_verified_analyze_requires_all_source_snapshots() -> None:
+def test_verified_analyze_requires_core_source_snapshots() -> None:
     payload = prospect_analyze_payload()
     payload["report_type"] = "verified_execution"
     payload["parent_report"] = prospect_report()
-    with pytest.raises(ValidationError, match="requires GSC, GBP, and GA4 snapshots"):
+    payload["first_party_snapshots"] = verified_snapshots("gsc")
+    with pytest.raises(ValidationError, match="requires GSC and GA4 snapshots"):
         validate_analyze(payload)
+
+
+def test_verified_analyze_accepts_gsc_and_ga4_without_official_gbp() -> None:
+    payload = prospect_analyze_payload()
+    payload["report_type"] = "verified_execution"
+    payload["parent_report"] = prospect_report()
+    payload["first_party_snapshots"] = verified_snapshots("gsc", "ga4")
+
+    request = validate_analyze(payload)
+
+    assert [snapshot.source_type for snapshot in request.first_party_snapshots] == ["gsc", "ga4"]
+
+
+def test_verified_analyze_accepts_optional_official_gbp() -> None:
+    payload = prospect_analyze_payload()
+    payload["report_type"] = "verified_execution"
+    payload["parent_report"] = prospect_report()
+    payload["first_party_snapshots"] = verified_snapshots("gsc", "gbp", "ga4")
+
+    assert validate_analyze(payload).report_type == "verified_execution"
 
 
 def test_preflight_contract_rejects_report_conclusions() -> None:
