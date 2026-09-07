@@ -263,5 +263,7 @@ V22-061 migration:
 
 Deployment order: tests and migration dry-run → production migration → application
 rollout with `GOOGLE_GA4_SYNC_ENABLED` and `V22_GA4_SYNC_ENABLED` absent/off →
-read-only Vercel/Railway health checks. Live Google acceptance remains separately
-pending approved credentials and an owned test Case.
+read-only Vercel/Railway health checks. Production migration status: **applied and
+verified on 2026-09-07**; local and remote catalogs both list `20260907000000`.
+No manual SQL action remains. Live Google acceptance remains separately pending
+approved credentials and an owned test Case.
