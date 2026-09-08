@@ -54,7 +54,9 @@ V22-074 继续生成执行基线和路线图。
 - `cross_source_normalized_domain`、`cross_source_limits`、`cross_source_result` 与其 checksum；
 - 版本化资源上限。
 
-所有结果必须属于同一 Case、同一 parent report 和同一评估时点。阶段先重新运行现有公开
+公开 Findings 输入必须属于同一 Case 且为 prospect，并且其评估时点不得晚于本阶段；
+公开行动使用它原有的 planning date 重算。V22-070 输入必须与本阶段属于同一 Case、同一
+parent report 和同一评估时点，V22-071 从该输入重建。阶段先重新运行现有公开
 Findings/行动生成器、V22-070 与 V22-071，再对规范化输出做逐字节比较。V22-071 输入
 由本请求中已验证的 first-party 输入/结果、normalized domain 和 cross-source limits 重建，
 不再接受一份重复的含 raw Content 嵌套输入。任意不一致为确定性拒绝，不使用调用方
@@ -245,7 +247,7 @@ checkpoint schema 为 `verified_reprioritization_checkpoint_v1`。输入摘要�
 
 ### 15.1 合同与绑定
 
-- Case、parent、evaluation time、planning date 与上游 checksum；
+- Case、parent、公开评估时间上界、本次 evaluation time、两个 planning date 与上游 checksum；
 - 公开行动、V22-070、V22-071 重算结果不一致；
 - 重复/冲突 ID、未知引用、非有限值和超限。
 
