@@ -52,8 +52,9 @@
 
 - Supabase 已应用 `20260908000000_add_v2_2_first_party_findings_input.sql`，本地/远端 migration
   版本一致。
-- Railway API 与 `SearchTrust-v2-2-Worker-Production` 均运行提交 `1b9db8b`，部署状态
-  `SUCCESS`、实例状态 `RUNNING`；API `/api/v1/health` 返回正常。
+- Railway API 与 `SearchTrust-v2-2-Worker-Production` 均部署了包含实现提交 `1b9db8b`
+  的 `main` 分支，验证时状态为 `SUCCESS`、实例状态为 `RUNNING`；API
+  `/api/v1/health` 返回正常。
 - Vercel 生产部署状态 `Ready`，提交 `4048934` 已绑定 `trysearchtrust.com`；正式首页返回
   HTTP 200，最近一小时错误日志为空。
 - Railway 最近日志显示 API 正常启动，Worker reconcile jobs 均成功且没有 failed/retried/
