@@ -985,6 +985,16 @@ Worker 已运行相同最新提交。GBP 精确 Performance 和关键词只在 3
 - 禁止用户级因果归因；
 - 每条结论列出数据源和限制。
 
+完成于 2026-09-08：已交付 `v22_cross_source_findings_v1` 内部确定性规则阶段。
+GSC↔GA4 支持保守的同域页面、聚合 90 天对比和至少 8 个完整 ISO 周相关；
+可选官方 GBP 支持与 GSC 曝光、GA4 sessions 的聚合配对。双源同时健康、
+时间窗可比且两侧都达到固定样本与 20% 门槛才能生成业务 Finding；反向只生成
+测量一致性 Finding，不宣称因果。页面匹配不使用标题、重定向、canonical 或模糊匹配，
+无效/不明确身份为 `not_checked`。GBP 精确数值仅在内存中计算，持久结果仅保存档位。
+阶段已支持摘要绑定、引用校验、独立输出上限和可恢复 checkpoint；未新增数据库、
+前端路由或实时 provider 调用，Verified Generation 仍关闭。详见
+`2026-09-08-searchtrust-v2-2-cross-source-findings-completion.md`。
+
 #### V22-072 重新优先级
 
 - 新证据进入排序；
