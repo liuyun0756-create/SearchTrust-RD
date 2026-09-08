@@ -971,6 +971,14 @@ Google 连接与同步开关继续关闭。详见
 - GBP Performance；
 - 测量配置问题。
 
+完成于 2026-09-08：已交付 `v22_first_party_findings_v1` 确定性单来源规则引擎、三态规则
+评估、严格 Evidence/Trace 引用、可信快照解析客户端与可恢复 checkpoint。GSC/GA4 必需，
+官方 GBP Performance 为可选增强；缺失或不合格来源不会伪造业务事实。正式数据库已部署
+仅 `service_role` 可调用的 Case/parent/binding/current-snapshot 解析 RPC，Railway API 与正式
+Worker 已运行相同最新提交。GBP 精确 Performance 和关键词只在 30 天 Content 保留期内存
+中计算，持久结果仅保存不可逆档位。Verified Generation 与 Google 同步开关继续关闭。
+详见 `2026-09-08-searchtrust-v2-2-first-party-findings-completion.md`。
+
 #### V22-071 跨源 Findings
 
 - 只做聚合和页面/日期级合理关联；
