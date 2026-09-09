@@ -49,8 +49,9 @@ from app.integrations.serpapi import (
     execute_serpapi_get,
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.circuit_breaker import CircuitPermit, RedisCircuitBreaker
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
-from app.jobs_v22.errors import DeterministicJobError, TransientJobError
+from app.jobs_v22.errors import DeterministicJobError, ProviderCircuitOpen, TransientJobError
 from app.report_v22.models import StrictModel
 
 
@@ -198,11 +199,13 @@ class CheckpointedSerpProvider:
         checkpoints: JobCheckpoints,
         job_id: UUID,
         clock: Callable[[], datetime],
+        circuit_breaker: RedisCircuitBreaker | None = None,
     ) -> None:
         self.delegate = delegate
         self.checkpoints = checkpoints
         self.job_id = job_id
         self.clock = clock
+        self.circuit_breaker = circuit_breaker
         self.attempts = ProviderAttemptLedger(
             checkpoints=checkpoints,
             job_id=job_id,
@@ -265,6 +268,11 @@ class CheckpointedSerpProvider:
             await self.attempts.claim(call, key_slot, fingerprint)
 
         started_at = self.clock()
+        permit = None
+        if self.circuit_breaker is not None:
+            permit = await self.circuit_breaker.before_call(
+                "serpapi", f"search:{call.engine}", now=started_at
+            )
         try:
             response = await self.delegate.search(call, before_attempt=before_attempt)
         except SerpProviderAttemptsExhausted as exc:
@@ -275,6 +283,13 @@ class CheckpointedSerpProvider:
                 logical_call_used=True,
             ) from exc
         except SerpMarketProviderError as exc:
+            if permit is not None:
+                await self.circuit_breaker.record_failure(
+                    permit,
+                    now=self.clock(),
+                    eligible=exc.retryable,
+                    immediate=exc.code == "SERP_PROVIDER_KEYS_UNAVAILABLE",
+                )
             attempts = await self.attempts.count(call)
             raise SerpMarketProviderError(
                 exc.code,
@@ -282,6 +297,9 @@ class CheckpointedSerpProvider:
                 provider_attempts=attempts,
                 logical_call_used=attempts > 0,
             ) from exc
+
+        if permit is not None:
+            await self.circuit_breaker.record_success(permit)
 
         attempts = await self.attempts.count(call)
         if attempts == 0:
@@ -363,6 +381,7 @@ class SerpApiSearchAdapter:
         max_response_bytes: int,
         clock: Callable[[], datetime] | None = None,
         client_factory: Callable[[], httpx.AsyncClient] | None = None,
+        circuit_breaker: RedisCircuitBreaker | None = None,
     ) -> None:
         self.keys = configured_serpapi_keys(*keys)
         self.base_url = base_url
@@ -383,6 +402,7 @@ class SerpApiSearchAdapter:
                 trust_env=False,
             )
         )
+        self.circuit_breaker = circuit_breaker
 
     async def search(
         self,
@@ -398,6 +418,39 @@ class SerpApiSearchAdapter:
                 logical_call_used=False,
             )
         started_at = self.clock()
+        key_permits: dict[str, CircuitPermit] = {}
+
+        async def key_available(fingerprint: str) -> bool:
+            if self.circuit_breaker is None:
+                return True
+            try:
+                key_permits[fingerprint] = await self.circuit_breaker.before_call(
+                    f"serpapi-key:{fingerprint}",
+                    f"search:{call.engine}",
+                    now=self.clock(),
+                )
+                return True
+            except ProviderCircuitOpen:
+                return False
+
+        async def after_attempt(_slot: int, fingerprint: str, failure_kind: str | None) -> None:
+            permit = key_permits.pop(fingerprint, None)
+            if self.circuit_breaker is None or permit is None:
+                return
+            if failure_kind is None:
+                await self.circuit_breaker.record_success(permit)
+                return
+            immediate = failure_kind in {
+                "invalid_or_forbidden", "monthly_quota_exhausted", "rate_limited"
+            }
+            eligible = immediate or failure_kind == "transport" or failure_kind.startswith("http_5")
+            await self.circuit_breaker.record_failure(
+                permit,
+                now=self.clock(),
+                eligible=eligible,
+                immediate=immediate,
+                failure_threshold=3,
+            )
         try:
             async with asyncio.timeout(self.total_timeout):
                 async with self.client_factory() as client:
@@ -412,6 +465,8 @@ class SerpApiSearchAdapter:
                         base_url=self.base_url,
                         state=self.state,
                         before_attempt=before_attempt,
+                        key_available=key_available,
+                        after_attempt=after_attempt,
                     )
         except SerpProviderAttemptsExhausted:
             raise
@@ -461,10 +516,12 @@ class CheckpointedSerpMarketStage:
         location_provider: LocationProvider,
         search_provider: AttemptAwareProvider,
         clock: Callable[[], datetime] | None = None,
+        circuit_breaker: RedisCircuitBreaker | None = None,
     ) -> None:
         self.location_provider = location_provider
         self.search_provider = search_provider
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.circuit_breaker = circuit_breaker
 
     async def _target_point(
         self,
@@ -572,6 +629,7 @@ class CheckpointedSerpMarketStage:
             checkpoints=checkpoints,
             job_id=job_id,
             clock=self.clock,
+            circuit_breaker=self.circuit_breaker,
         )
         try:
             snapshot = await SerpMarketCollector(
@@ -619,7 +677,11 @@ def serp_market_cost_counters(snapshot: SerpMarketSnapshot) -> dict[str, int]:
     }
 
 
-def build_serp_market_stage(settings: Settings) -> CheckpointedSerpMarketStage:
+def build_serp_market_stage(
+    settings: Settings,
+    *,
+    circuit_breaker: RedisCircuitBreaker | None = None,
+) -> CheckpointedSerpMarketStage:
     clock = lambda: datetime.now(timezone.utc)
     location_provider = SerpApiLocationProvider(
         url=settings.SERPAPI_LOCATIONS_URL,
@@ -640,9 +702,11 @@ def build_serp_market_stage(settings: Settings) -> CheckpointedSerpMarketStage:
         total_timeout=settings.V22_SERP_MARKET_TOTAL_TIMEOUT_SECONDS,
         max_response_bytes=settings.V22_SERP_MARKET_MAX_RESPONSE_BYTES,
         clock=clock,
+        circuit_breaker=circuit_breaker,
     )
     return CheckpointedSerpMarketStage(
         location_provider=location_provider,
         search_provider=search_provider,
         clock=clock,
+        circuit_breaker=circuit_breaker,
     )

@@ -44,6 +44,7 @@ from app.jobs_v22.errors import (
     DurableJobError,
     IdempotencyConflict,
     JobIdentityConflict,
+    JobNewAttemptRequired,
     JobNotFound,
     JobNotRetryable,
 )
@@ -111,13 +112,8 @@ class V22JobRuntime:
         return TaskCreateResponse(job_id=job_id, status="queued", estimated_seconds=600)
 
     async def retry(self, job_id: UUID) -> RetryTaskResponse:
-        state = await self.store.retry_failed(job_id, now=datetime.now(timezone.utc))
-        await self.queue.enqueue(job_id, state.run_generation)
-        return RetryTaskResponse(
-            job_id=job_id,
-            status="queued",
-            attempt_count=state.attempt_count + 1,
-        )
+        await self.store.require_state(job_id)
+        raise JobNewAttemptRequired()
 
 
 def state_to_public(state: JobState) -> TaskStatusResponse:
@@ -126,6 +122,8 @@ def state_to_public(state: JobState) -> TaskStatusResponse:
         error = JobError.model_validate(state.error.model_dump())
     return TaskStatusResponse(
         job_id=state.job_id,
+        revision=state.revision,
+        run_generation=state.run_generation,
         status=state.status,
         stage=state.stage,
         progress=state.progress,
@@ -133,6 +131,7 @@ def state_to_public(state: JobState) -> TaskStatusResponse:
         report=state.report,
         error=error,
         created_at=state.created_at,
+        deadline_at=state.deadline_at,
         updated_at=state.updated_at,
     )
 
@@ -183,7 +182,7 @@ async def stream_job_states(
 def _job_error(exc: DurableJobError) -> HTTPException:
     if isinstance(exc, JobNotFound):
         status_code = status.HTTP_404_NOT_FOUND
-    elif isinstance(exc, (IdempotencyConflict, JobIdentityConflict, JobNotRetryable)):
+    elif isinstance(exc, (IdempotencyConflict, JobIdentityConflict, JobNotRetryable, JobNewAttemptRequired)):
         status_code = status.HTTP_409_CONFLICT
     else:
         status_code = status.HTTP_400_BAD_REQUEST
@@ -336,6 +335,7 @@ async def create_v22_runtime() -> V22JobRuntime | None:
         pool,
         prefix=settings.V22_REDIS_PREFIX,
         state_ttl_seconds=settings.V22_JOB_STATE_TTL_SECONDS,
+        job_timeout_seconds=settings.V22_JOB_TIMEOUT_SECONDS,
     )
     queue = ArqJobQueue(pool, queue_name=settings.V22_QUEUE_NAME)
     competitor_store = CompetitorDiscoveryStore(

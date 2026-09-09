@@ -217,6 +217,39 @@ async def test_manual_retry_reuses_logical_job_and_increases_generation(store: D
     assert retried.error is None
 
 
+@pytest.mark.anyio
+async def test_stale_takeover_fences_old_generation(store: DurableJobStore) -> None:
+    await register(store)
+    takeover = await store.take_over_stale(
+        JOB_ID,
+        expected_generation=1,
+        now=NOW + timedelta(minutes=4),
+    )
+
+    assert takeover.applied is True
+    assert takeover.state.run_generation == 2
+    with pytest.raises(Exception, match="JOB_LEASE_LOST"):
+        await store.transition(
+            JOB_ID,
+            status="running",
+            stage="collecting_site",
+            progress=10,
+            message="Old worker",
+            now=NOW + timedelta(minutes=4, seconds=1),
+            expected_generation=1,
+        )
+
+
+@pytest.mark.anyio
+async def test_lease_refresh_and_release_require_same_token(store: DurableJobStore) -> None:
+    await register(store)
+    assert await store.acquire_lease(JOB_ID, generation=1, token="owner", ttl_seconds=180)
+    assert not await store.refresh_lease(JOB_ID, generation=1, token="other", ttl_seconds=180)
+    assert await store.refresh_lease(JOB_ID, generation=1, token="owner", ttl_seconds=180)
+    assert not await store.release_lease(JOB_ID, generation=1, token="other")
+    assert await store.release_lease(JOB_ID, generation=1, token="owner")
+
+
 def test_job_state_fixture_is_valid_json() -> None:
     fixture = Path(__file__).parent / "fixtures" / "v22_job_state.json"
     payload = json.loads(fixture.read_text(encoding="utf-8"))

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 import httpx
@@ -33,6 +33,7 @@ def queued_state(**overrides: object) -> JobState:
         "idempotency_key_digest": "sha256:" + "b" * 64,
         "heartbeat_at": None,
         "created_at": NOW,
+        "deadline_at": NOW + timedelta(minutes=20),
         "updated_at": NOW,
         "completed_at": None,
         "report": None,

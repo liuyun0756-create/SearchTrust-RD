@@ -172,6 +172,8 @@ def test_preflight_contract_rejects_report_conclusions() -> None:
 def test_succeeded_task_requires_completed_report() -> None:
     payload = {
         "job_id": "55555555-5555-4555-8555-555555555555",
+        "revision": 3,
+        "run_generation": 1,
         "status": "succeeded",
         "stage": "completed",
         "progress": 100,
@@ -179,6 +181,7 @@ def test_succeeded_task_requires_completed_report() -> None:
         "report": None,
         "error": None,
         "created_at": "2026-08-26T08:00:00Z",
+        "deadline_at": "2026-08-26T08:20:00Z",
         "updated_at": "2026-08-26T08:10:00Z",
     }
     with pytest.raises(ValidationError, match="succeeded jobs require a completed report"):

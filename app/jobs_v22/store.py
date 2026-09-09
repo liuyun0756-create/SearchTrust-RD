@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Mapping
 from uuid import UUID
 
@@ -16,6 +16,7 @@ from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import (
     IdempotencyConflict,
     InvalidJobTransition,
+    JobLeaseLost,
     JobIdentityConflict,
     JobNotFound,
     JobNotRetryable,
@@ -54,10 +55,18 @@ def _decode_json(raw: bytes | str) -> Any:
 class DurableJobStore:
     """Atomic durable state operations shared by Web and Worker processes."""
 
-    def __init__(self, redis: Redis, *, prefix: str, state_ttl_seconds: int) -> None:
+    def __init__(
+        self,
+        redis: Redis,
+        *,
+        prefix: str,
+        state_ttl_seconds: int,
+        job_timeout_seconds: int = 1200,
+    ) -> None:
         self.redis = redis
         self.keys = JobRedisKeys(prefix)
         self.state_ttl_seconds = state_ttl_seconds
+        self.job_timeout_seconds = job_timeout_seconds
 
     async def register_job(
         self,
@@ -87,6 +96,7 @@ class DurableJobStore:
             idempotency_key_digest=idempotency_key_digest,
             heartbeat_at=None,
             created_at=now,
+            deadline_at=now + timedelta(seconds=self.job_timeout_seconds),
             updated_at=now,
             completed_at=None,
             report=None,
@@ -174,6 +184,7 @@ class DurableJobStore:
         report: ReportV22 | None = None,
         error: JobErrorState | None = None,
         cost_counters: dict[str, int | float] | None = None,
+        expected_generation: int | None = None,
     ) -> TransitionResult:
         state_key = self.keys.state(job_id)
         next_state: JobState | None = None
@@ -185,6 +196,8 @@ class DurableJobStore:
                     current = await self.get_state(job_id, client=pipe)
                     if current is None:
                         raise JobNotFound()
+                    if expected_generation is not None and current.run_generation != expected_generation:
+                        raise JobLeaseLost()
                     if current.terminal:
                         return TransitionResult(current, applied=False)
                     if status not in _ALLOWED_TRANSITIONS[current.status]:
@@ -235,6 +248,124 @@ class DurableJobStore:
         assert next_state is not None
         await self.redis.publish(self.keys.events(job_id), str(next_state.revision))
         return TransitionResult(next_state, applied=True)
+
+    async def heartbeat(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+        now: datetime,
+    ) -> TransitionResult:
+        current = await self.require_state(job_id)
+        return await self.transition(
+            job_id,
+            status=current.status,
+            stage=current.stage,
+            progress=current.progress,
+            message=current.message,
+            now=now,
+            heartbeat_at=now,
+            expected_generation=generation,
+        )
+
+    async def take_over_stale(
+        self,
+        job_id: UUID,
+        *,
+        expected_generation: int,
+        now: datetime,
+    ) -> TransitionResult:
+        """Fence the former worker and create a new physical run generation."""
+
+        state_key = self.keys.state(job_id)
+        next_state: JobState | None = None
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(state_key)
+                    current = await self.get_state(job_id, client=pipe)
+                    if current is None:
+                        raise JobNotFound()
+                    if current.terminal or current.run_generation != expected_generation:
+                        return TransitionResult(current, applied=False)
+                    next_state = current.model_copy(
+                        update={
+                            "status": "queued",
+                            "stage": "queued",
+                            "message": "Queued for recovery after a lost worker heartbeat.",
+                            "run_generation": current.run_generation + 1,
+                            "revision": current.revision + 1,
+                            "heartbeat_at": None,
+                            "updated_at": now,
+                        }
+                    )
+                    next_state = JobState.model_validate(next_state.model_dump())
+                    pipe.multi()
+                    pipe.set(state_key, next_state.model_dump_json(), ex=self.state_ttl_seconds)
+                    pipe.delete(self.keys.lease(job_id))
+                    pipe.zadd(self.keys.active, {str(job_id): now.timestamp()})
+                    pipe.zadd(self.keys.sync_pending, {str(job_id): next_state.revision})
+                    await pipe.execute()
+                    break
+                except WatchError:
+                    continue
+        assert next_state is not None
+        await self.redis.publish(self.keys.events(job_id), str(next_state.revision))
+        return TransitionResult(next_state, applied=True)
+
+    async def acquire_lease(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+        token: str,
+        ttl_seconds: int,
+    ) -> bool:
+        value = f"{generation}:{hashlib.sha256(token.encode('utf-8')).hexdigest()}"
+        return bool(await self.redis.set(self.keys.lease(job_id), value, ex=ttl_seconds, nx=True))
+
+    async def refresh_lease(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+        token: str,
+        ttl_seconds: int,
+    ) -> bool:
+        key = self.keys.lease(job_id)
+        expected = f"{generation}:{hashlib.sha256(token.encode('utf-8')).hexdigest()}"
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(key)
+                    raw = await pipe.get(key)
+                    actual = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                    if actual != expected:
+                        return False
+                    pipe.multi()
+                    pipe.expire(key, ttl_seconds)
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue
+
+    async def release_lease(self, job_id: UUID, *, generation: int, token: str) -> bool:
+        key = self.keys.lease(job_id)
+        expected = f"{generation}:{hashlib.sha256(token.encode('utf-8')).hexdigest()}"
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(key)
+                    raw = await pipe.get(key)
+                    actual = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                    if actual != expected:
+                        return False
+                    pipe.multi()
+                    pipe.delete(key)
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue
 
     async def mark_callback_synced(self, job_id: UUID, revision: int) -> JobState:
         state_key = self.keys.state(job_id)

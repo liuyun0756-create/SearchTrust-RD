@@ -93,6 +93,7 @@ class ResultPersister(Protocol):
         shared_market: SharedMarketSnapshot,
         competitor_collection: CompetitorCollectionSnapshot,
         report: ReportV22,
+        run_generation: int | None = None,
     ) -> None: ...
 
 
@@ -223,6 +224,7 @@ class ProspectV22Executor:
                 shared_market=shared_market,
                 competitor_collection=competitor_collection,
                 report=validated,
+                run_generation=checkpoints.run_generation,
             )
         return validated
 

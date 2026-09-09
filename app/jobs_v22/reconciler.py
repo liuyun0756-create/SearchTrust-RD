@@ -46,11 +46,16 @@ async def reconcile_once(
         state = await store.require_state(job_id)
         if state.terminal:
             continue
-        if state.status == "running" and state.attempt_count >= max_attempts:
+        deadline_exceeded = now >= state.deadline_at
+        if deadline_exceeded or (state.status == "running" and state.attempt_count >= max_attempts):
             error = JobErrorState(
-                error_code="JOB_RETRY_EXHAUSTED",
-                user_message="The analysis could not be completed after multiple attempts. Please retry later.",
-                retryable=True,
+                error_code=("JOB_DEADLINE_EXCEEDED" if deadline_exceeded else "JOB_RETRY_EXHAUSTED"),
+                user_message=(
+                    "The analysis exceeded its processing deadline."
+                    if deadline_exceeded
+                    else "The analysis could not be completed after multiple attempts. Please retry later."
+                ),
+                retryable=not deadline_exceeded,
                 stage="failed",
                 diagnostic_id=uuid4(),
             )
@@ -62,16 +67,13 @@ async def reconcile_once(
                 message=error.user_message,
                 now=now,
                 error=error,
+                expected_generation=state.run_generation,
             )
         else:
-            updated = await store.transition(
+            updated = await store.take_over_stale(
                 job_id,
-                status="queued",
-                stage="queued",
-                progress=state.progress,
-                message="Queued for recovery after a lost worker heartbeat.",
+                expected_generation=state.run_generation,
                 now=now,
-                attempt_count=state.attempt_count,
             )
             if updated.applied:
                 await queue.enqueue(job_id, updated.state.run_generation)

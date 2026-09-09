@@ -196,7 +196,7 @@ async def test_replay_cannot_switch_discovery_identity(monkeypatch: pytest.Monke
 
 
 @pytest.mark.anyio
-async def test_manual_retry_reuses_job_id_and_enqueues_next_generation(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_manual_retry_requires_a_new_paid_logical_attempt(monkeypatch: pytest.MonkeyPatch) -> None:
     app, _, store, queue = build_app(monkeypatch)
     transport = httpx.ASGITransport(app=app)
 
@@ -230,9 +230,9 @@ async def test_manual_retry_reuses_job_id_and_enqueues_next_generation(monkeypat
         )
         response = await client.post(f"/api/v2/tasks/{JOB_ID}/retry", headers=AUTH_HEADERS)
 
-    assert response.status_code == 202
-    assert response.json() == {"job_id": str(JOB_ID), "status": "queued", "attempt_count": 2}
-    assert queue.calls == [(JOB_ID, 1), (JOB_ID, 2)]
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "JOB_NEW_ATTEMPT_REQUIRED"
+    assert queue.calls == [(JOB_ID, 1)]
 
 
 @pytest.mark.anyio

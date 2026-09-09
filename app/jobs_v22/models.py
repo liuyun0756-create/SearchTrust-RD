@@ -41,6 +41,7 @@ class JobState(StrictModel):
     idempotency_key_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     heartbeat_at: AwareDatetime | None = None
     created_at: AwareDatetime
+    deadline_at: AwareDatetime
     updated_at: AwareDatetime
     completed_at: AwareDatetime | None = None
     report: ReportV22 | None = None
@@ -52,6 +53,8 @@ class JobState(StrictModel):
     def validate_lifecycle(self) -> "JobState":
         if self.updated_at < self.created_at:
             raise ValueError("updated_at must not precede created_at")
+        if self.deadline_at <= self.created_at:
+            raise ValueError("deadline_at must follow created_at")
         if self.callback_synced_revision > self.revision:
             raise ValueError("callback synced revision cannot exceed state revision")
         if self.status == "succeeded":
@@ -87,6 +90,8 @@ class JobCallbackEvent(StrictModel):
     progress: int = Field(ge=0, le=100)
     message: str = Field(min_length=1, max_length=500)
     attempt_count: int = Field(ge=0)
+    run_generation: int = Field(ge=1)
+    deadline_at: AwareDatetime
     heartbeat_at: AwareDatetime | None = None
     completed_at: AwareDatetime | None = None
     error: JobErrorState | None = None

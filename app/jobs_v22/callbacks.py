@@ -31,6 +31,8 @@ def build_callback_event(state: JobState) -> JobCallbackEvent:
         progress=state.progress,
         message=state.message,
         attempt_count=state.attempt_count,
+        run_generation=state.run_generation,
+        deadline_at=state.deadline_at,
         heartbeat_at=state.heartbeat_at,
         completed_at=state.completed_at,
         error=state.error,

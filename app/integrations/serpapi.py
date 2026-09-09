@@ -18,6 +18,8 @@ class HttpClient(Protocol):
 
 
 BeforeAttempt = Callable[[int, str], Awaitable[None] | None]
+KeyAvailable = Callable[[str], Awaitable[bool] | bool]
+AfterAttempt = Callable[[int, str, str | None], Awaitable[None] | None]
 
 
 class SerpApiKeysUnavailable(RuntimeError):
@@ -117,6 +119,26 @@ async def _notify_before_attempt(
         await result
 
 
+async def _key_is_available(callback: KeyAvailable | None, fingerprint: str) -> bool:
+    if callback is None:
+        return True
+    result = callback(fingerprint)
+    return bool(await result) if inspect.isawaitable(result) else bool(result)
+
+
+async def _notify_after_attempt(
+    callback: AfterAttempt | None,
+    slot: int,
+    fingerprint: str,
+    failure_kind: str | None,
+) -> None:
+    if callback is None:
+        return
+    result = callback(slot, fingerprint, failure_kind)
+    if inspect.isawaitable(result):
+        await result
+
+
 async def execute_serpapi_get(
     client: HttpClient,
     params: dict[str, str],
@@ -125,6 +147,8 @@ async def execute_serpapi_get(
     base_url: str,
     state: SerpApiKeyState | None = None,
     before_attempt: BeforeAttempt | None = None,
+    key_available: KeyAvailable | None = None,
+    after_attempt: AfterAttempt | None = None,
     monotonic: Callable[[], float] = time.monotonic,
     logger: logging.Logger | None = None,
 ) -> SerpApiResponse:
@@ -142,11 +166,11 @@ async def execute_serpapi_get(
             item[0],
         ),
     )
-    available = [
-        item
-        for item in ordered
-        if key_state.blocked_until.get(serpapi_key_fingerprint(item[1]), 0) <= now
-    ]
+    available = []
+    for item in ordered:
+        fingerprint = serpapi_key_fingerprint(item[1])
+        if key_state.blocked_until.get(fingerprint, 0) <= now and await _key_is_available(key_available, fingerprint):
+            available.append(item)
     if not available:
         raise SerpApiKeysUnavailable(
             "All configured SerpAPI keys are temporarily unavailable."
@@ -162,11 +186,13 @@ async def execute_serpapi_get(
         try:
             response = await client.get(base_url, params={**params, "api_key": key})
         except Exception as exc:  # noqa: BLE001
+            await _notify_after_attempt(after_attempt, slot + 1, fingerprint, "transport")
             raise SerpApiTransportError("SerpAPI transport request failed.") from exc
 
         try:
             payload = response.json()
         except Exception as exc:  # noqa: BLE001
+            await _notify_after_attempt(after_attempt, slot + 1, fingerprint, "invalid_response")
             raise SerpApiInvalidResponse("SerpAPI returned an invalid JSON response.") from exc
         data = payload if isinstance(payload, dict) else {}
         status_code = int(getattr(response, "status_code", 200) or 200)
@@ -175,6 +201,7 @@ async def execute_serpapi_get(
             serpapi_payload_error(data),
         )
         if failure_kind:
+            await _notify_after_attempt(after_attempt, slot + 1, fingerprint, failure_kind)
             last_kind = failure_kind
             cooldown = 60.0 if failure_kind == "rate_limited" else 300.0
             key_state.blocked_until[fingerprint] = monotonic() + cooldown
@@ -188,11 +215,13 @@ async def execute_serpapi_get(
             continue
 
         if status_code >= 400:
+            await _notify_after_attempt(after_attempt, slot + 1, fingerprint, f"http_{status_code}")
             raise SerpApiHttpError(status_code)
 
         if key_state.active_fingerprint != fingerprint:
             safe_logger.info("[SerpAPI] using configured key slot %d", slot + 1)
         key_state.active_fingerprint = fingerprint
+        await _notify_after_attempt(after_attempt, slot + 1, fingerprint, None)
         return SerpApiResponse(
             payload=data,
             metadata=SerpApiCallMetadata(

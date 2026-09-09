@@ -111,10 +111,13 @@ class Settings(BaseSettings):
     V22_CALLBACK_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
     V22_JOB_MAX_ATTEMPTS: Annotated[int, Field(ge=1, le=10)] = 3
     V22_WORKER_CONCURRENCY: Annotated[int, Field(ge=1, le=100)] = 5
-    V22_JOB_TIMEOUT_SECONDS: Annotated[int, Field(ge=60, le=7200)] = 3600
+    V22_JOB_TIMEOUT_SECONDS: Annotated[int, Field(ge=60, le=7200)] = 1200
     V22_JOB_STATE_TTL_SECONDS: Annotated[int, Field(ge=3600, le=2592000)] = 604800
     V22_JOB_HEARTBEAT_SECONDS: Annotated[int, Field(ge=5, le=300)] = 30
     V22_JOB_STALE_SECONDS: Annotated[int, Field(ge=30, le=3600)] = 180
+    V22_JOB_LEASE_SECONDS: Annotated[int, Field(ge=30, le=600)] = 180
+    V22_PROVIDER_CIRCUIT_FAILURE_THRESHOLD: Annotated[int, Field(ge=1, le=20)] = 5
+    V22_PROVIDER_CIRCUIT_WINDOW_SECONDS: Annotated[int, Field(ge=10, le=600)] = 60
 
     # ── v2.2 preflight ──────────────────────────────────────────────────────
     V22_PREFLIGHT_ENABLED: bool = False

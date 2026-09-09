@@ -40,9 +40,15 @@ from app.competitors_v22.selection import AnalysisRequestEnvelope
 from app.competitors_v22.supplements import SupplementalHomepageValidator
 from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.circuit_breaker import RedisCircuitBreaker
 from app.jobs_v22.copy_provider import DifyControlledCopyProvider
 from app.jobs_v22.digest import canonical_json_bytes
-from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
+from app.jobs_v22.errors import (
+    DeterministicJobError,
+    JobDeadlineExceeded,
+    JobLeaseLost,
+    classify_job_exception,
+)
 from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
@@ -74,13 +80,90 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
     if state.terminal or state.run_generation != run_generation:
         return
 
+    lease_token = str(uuid4())
+    lease_seconds = int(ctx.get("lease_seconds", settings.V22_JOB_LEASE_SECONDS))
+    if not await store.acquire_lease(
+        job_id,
+        generation=run_generation,
+        token=lease_token,
+        ttl_seconds=lease_seconds,
+    ):
+        return
+
+    heartbeat_stop = asyncio.Event()
+    heartbeat_lost = asyncio.Event()
+    heartbeat_task: asyncio.Task[None] | None = None
+
+    async def maintain_heartbeat() -> None:
+        interval = int(ctx.get("heartbeat_seconds", settings.V22_JOB_HEARTBEAT_SECONDS))
+        while True:
+            try:
+                await asyncio.wait_for(heartbeat_stop.wait(), timeout=interval)
+                return
+            except TimeoutError:
+                pass
+            try:
+                refreshed = await store.refresh_lease(
+                    job_id,
+                    generation=run_generation,
+                    token=lease_token,
+                    ttl_seconds=lease_seconds,
+                )
+                if not refreshed:
+                    heartbeat_lost.set()
+                    return
+                await store.heartbeat(job_id, generation=run_generation, now=utc_now())
+            except JobLeaseLost:
+                heartbeat_lost.set()
+                return
+            except Exception as exc:
+                logger.warning(
+                    "v2.2 heartbeat deferred job_id_suffix=%s error=%s",
+                    str(job_id)[-8:],
+                    type(exc).__name__,
+                )
+
+    heartbeat_task = asyncio.create_task(maintain_heartbeat())
+    try:
+        await _execute_with_lease(
+            ctx,
+            store=store,
+            state=state,
+            job_id=job_id,
+            run_generation=run_generation,
+            heartbeat_lost=heartbeat_lost,
+        )
+    finally:
+        heartbeat_stop.set()
+        if heartbeat_task is not None:
+            heartbeat_task.cancel()
+            await asyncio.gather(heartbeat_task, return_exceptions=True)
+        await store.release_lease(job_id, generation=run_generation, token=lease_token)
+
+
+async def _execute_with_lease(
+    ctx: dict[str, Any],
+    *,
+    store: DurableJobStore,
+    state,
+    job_id: UUID,
+    run_generation: int,
+    heartbeat_lost: asyncio.Event,
+) -> None:
+    """Run the task only while this physical generation owns its lease."""
+
+    now = utc_now()
+    if now >= state.deadline_at:
+        await _finish_failure(ctx, state, JobDeadlineExceeded(), run_generation=run_generation)
+        return
+
     request = await store.get_request(job_id)
     if request is None:
         exc: BaseException = DeterministicJobError(
             "JOB_REQUEST_MISSING",
             "The persisted analysis request is unavailable.",
         )
-        await _finish_failure(ctx, state, exc)
+        await _finish_failure(ctx, state, exc, run_generation=run_generation)
         return
 
     attempt_count = state.attempt_count + 1
@@ -94,6 +177,7 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         now=started,
         attempt_count=attempt_count,
         heartbeat_at=started,
+        expected_generation=run_generation,
     )
     if not running.applied:
         return
@@ -103,6 +187,7 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         ctx["redis"],
         prefix=store.keys.prefix,
         ttl_seconds=int(ctx.get("state_ttl_seconds", settings.V22_JOB_STATE_TTL_SECONDS)),
+        run_generation=run_generation,
     )
     executor = ctx["executor"]
     try:
@@ -110,17 +195,26 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         if request.get("schema_version") == "v22_analysis_request_envelope_v1":
             envelope = AnalysisRequestEnvelope.model_validate_json(canonical_json_bytes(request))
             executor_request = envelope
-        report = await executor.execute(
-            job_id=job_id,
-            request=executor_request,
-            submitted_at=state.created_at,
-            checkpoints=checkpoints,
+        remaining = max((state.deadline_at - utc_now()).total_seconds(), 0.001)
+        report = await asyncio.wait_for(
+            executor.execute(
+                job_id=job_id,
+                request=executor_request,
+                submitted_at=state.created_at,
+                checkpoints=checkpoints,
+            ),
+            timeout=remaining,
         )
+        if heartbeat_lost.is_set():
+            raise JobLeaseLost()
+    except TimeoutError:
+        await _finish_failure(ctx, running.state, JobDeadlineExceeded(), run_generation=run_generation)
+        return
     except asyncio.CancelledError:
         logger.info("v2.2 worker execution cancelled job_id=%s", job_id)
         raise
     except Exception as exc:  # ARQ must receive Retry for classified transient failures.
-        await _finish_failure(ctx, running.state, exc)
+        await _finish_failure(ctx, running.state, exc, run_generation=run_generation)
         return
 
 
@@ -132,16 +226,26 @@ async def execute_v22_job(ctx: dict[str, Any], job_id_value: str, run_generation
         message="Analysis complete.",
         now=utc_now(),
         report=report,
+        expected_generation=run_generation,
     )
     if completed.applied:
         await _notify_state(ctx, job_id)
 
 
-async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> None:
+async def _finish_failure(
+    ctx: dict[str, Any],
+    state,
+    exc: BaseException,
+    *,
+    run_generation: int,
+) -> None:
     store: DurableJobStore = ctx["store"]
     failure = classify_job_exception(exc)
     max_attempts = int(ctx.get("max_attempts", settings.V22_JOB_MAX_ATTEMPTS))
     attempt_count = max(state.attempt_count, 1)
+
+    if isinstance(exc, JobLeaseLost):
+        return
 
     if failure.retryable and attempt_count < max_attempts:
         queued = await store.transition(
@@ -152,6 +256,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
             message="A temporary issue occurred. The task will retry automatically.",
             now=utc_now(),
             attempt_count=attempt_count,
+            expected_generation=run_generation,
         )
         if queued.applied:
             await _notify_state(ctx, state.job_id)
@@ -179,6 +284,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
         now=utc_now(),
         attempt_count=attempt_count,
         error=error,
+        expected_generation=run_generation,
     )
     if failed.applied:
         await _notify_state(ctx, state.job_id)
@@ -250,8 +356,11 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         pool,
         prefix=settings.V22_REDIS_PREFIX,
         state_ttl_seconds=settings.V22_JOB_STATE_TTL_SECONDS,
+        job_timeout_seconds=settings.V22_JOB_TIMEOUT_SECONDS,
     )
     ctx["max_attempts"] = settings.V22_JOB_MAX_ATTEMPTS
+    ctx["heartbeat_seconds"] = settings.V22_JOB_HEARTBEAT_SECONDS
+    ctx["lease_seconds"] = settings.V22_JOB_LEASE_SECONDS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
     ctx["competitor_state_ttl_seconds"] = settings.V22_COMPETITOR_STATE_TTL_SECONDS
     discovery_store = CompetitorDiscoveryStore(
@@ -264,9 +373,16 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         prefix=settings.V22_REDIS_PREFIX,
         ttl_seconds=settings.V22_COMPETITOR_MARKET_TTL_SECONDS,
     )
+    circuit_breaker = RedisCircuitBreaker(
+        pool,
+        prefix=settings.V22_REDIS_PREFIX,
+        failure_threshold=settings.V22_PROVIDER_CIRCUIT_FAILURE_THRESHOLD,
+        window_seconds=settings.V22_PROVIDER_CIRCUIT_WINDOW_SECONDS,
+    )
+    ctx["provider_circuit_breaker"] = circuit_breaker
     ctx["competitor_discovery_store"] = discovery_store
     ctx["competitor_discovery_service"] = CompetitorDiscoveryService(
-        market_stage=build_serp_market_stage(settings),
+        market_stage=build_serp_market_stage(settings, circuit_breaker=circuit_breaker),
         market_store=market_store,
         supplemental_validator=SupplementalHomepageValidator(
             BoundedHomepageFetcher(
@@ -302,6 +418,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                     api_url=settings.V22_DIFY_API_URL,
                     model_version=settings.V22_DIFY_COPY_MODEL_VERSION,
                     http_client=copy_http_client,
+                    circuit_breaker=circuit_breaker,
                 )
             ),
             result_persister=SupabaseResultPersister(

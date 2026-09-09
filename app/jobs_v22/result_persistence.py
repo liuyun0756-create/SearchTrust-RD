@@ -44,6 +44,7 @@ class SupabaseResultPersister:
         shared_market: SharedMarketSnapshot,
         competitor_collection: CompetitorCollectionSnapshot,
         report: ReportV22,
+        run_generation: int | None = None,
     ) -> None:
         if not self.url or not self.service_role_key:
             raise DeterministicJobError(
@@ -70,6 +71,8 @@ class SupabaseResultPersister:
             "p_competitor_checksum": competitor_checksum,
             "p_report_payload": report.model_dump(mode="json"),
         }
+        if run_generation is not None:
+            payload["p_run_generation"] = run_generation
         try:
             response = await self.http_client.post(
                 f"{self.url}/rest/v1/rpc/persist_v22_prospect_result",

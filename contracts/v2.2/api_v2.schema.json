@@ -3029,6 +3029,11 @@
           "title": "Created At",
           "type": "string"
         },
+        "deadline_at": {
+          "format": "date-time",
+          "title": "Deadline At",
+          "type": "string"
+        },
         "error": {
           "anyOf": [
             {
@@ -3067,6 +3072,16 @@
           ],
           "default": null
         },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "run_generation": {
+          "minimum": 1,
+          "title": "Run Generation",
+          "type": "integer"
+        },
         "stage": {
           "enum": [
             "queued",
@@ -3102,11 +3117,14 @@
       },
       "required": [
         "job_id",
+        "revision",
+        "run_generation",
         "status",
         "stage",
         "progress",
         "message",
         "created_at",
+        "deadline_at",
         "updated_at"
       ],
       "title": "TaskStatusResponse",

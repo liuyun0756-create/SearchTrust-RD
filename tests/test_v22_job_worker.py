@@ -24,7 +24,7 @@ from test_api_v2_jobs import prospect_analyze_payload
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
 CASE_ID = UUID("11111111-1111-4111-8111-111111111111")
-NOW = datetime(2026, 8, 27, 8, 0, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 CONTRACT_DIR = Path(__file__).resolve().parents[1] / "contracts" / "v2.2"
 
 

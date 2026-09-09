@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 import httpx
 
+from app.jobs_v22.circuit_breaker import RedisCircuitBreaker
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.report_v22.copy_models import CopyRequestV1
 
@@ -18,17 +20,24 @@ class DifyControlledCopyProvider:
         api_url: str,
         model_version: str,
         http_client: httpx.AsyncClient,
+        circuit_breaker: RedisCircuitBreaker | None = None,
     ) -> None:
         self.api_key = api_key
         self.api_url = api_url.rstrip("/")
         self.model_version = model_version
         self.http_client = http_client
+        self.circuit_breaker = circuit_breaker
 
     async def generate(self, *, job_id: UUID, request: CopyRequestV1) -> object:
         if not self.api_key:
             raise DeterministicJobError(
                 "V22_COPY_PROVIDER_NOT_CONFIGURED",
                 "The v2.2 copy service is not configured.",
+            )
+        permit = None
+        if self.circuit_breaker is not None:
+            permit = await self.circuit_breaker.before_call(
+                "dify", "controlled_copy", now=datetime.now(timezone.utc)
             )
         try:
             response = await self.http_client.post(
@@ -41,20 +50,30 @@ class DifyControlledCopyProvider:
                 },
             )
         except httpx.HTTPError as exc:
+            if permit is not None:
+                await self.circuit_breaker.record_failure(permit, now=datetime.now(timezone.utc))
             raise TransientJobError(
                 "V22_COPY_PROVIDER_UNAVAILABLE",
                 "The copy service is temporarily unavailable.",
             ) from exc
         if response.status_code >= 500 or response.status_code == 429:
+            if permit is not None:
+                await self.circuit_breaker.record_failure(permit, now=datetime.now(timezone.utc))
             raise TransientJobError(
                 "V22_COPY_PROVIDER_UNAVAILABLE",
                 "The copy service is temporarily unavailable.",
             )
         if response.status_code >= 400:
+            if permit is not None:
+                await self.circuit_breaker.record_failure(
+                    permit, now=datetime.now(timezone.utc), eligible=False
+                )
             raise DeterministicJobError(
                 "V22_COPY_PROVIDER_REJECTED",
                 "The copy service rejected the v2.2 request.",
             )
+        if permit is not None:
+            await self.circuit_breaker.record_success(permit)
         try:
             payload = response.json()
             outputs = payload["data"]["outputs"]

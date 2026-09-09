@@ -60,9 +60,35 @@ class JobNotRetryable(DeterministicJobError):
         super().__init__("JOB_NOT_RETRYABLE", "The task is not eligible for a manual retry.")
 
 
+class JobNewAttemptRequired(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__(
+            "JOB_NEW_ATTEMPT_REQUIRED",
+            "Generate again by creating a new task with one account credit.",
+        )
+
+
 class InvalidJobTransition(DeterministicJobError):
     def __init__(self, message: str = "The task state transition is not allowed.") -> None:
         super().__init__("INVALID_JOB_TRANSITION", message)
+
+
+class JobLeaseLost(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__("JOB_LEASE_LOST", "This task run was superseded by recovery.")
+
+
+class JobDeadlineExceeded(DeterministicJobError):
+    def __init__(self) -> None:
+        super().__init__("JOB_DEADLINE_EXCEEDED", "The analysis exceeded its processing deadline.")
+
+
+class ProviderCircuitOpen(TransientJobError):
+    def __init__(self) -> None:
+        super().__init__(
+            "PROVIDER_CIRCUIT_OPEN",
+            "A data provider is cooling down after repeated temporary failures.",
+        )
 
 
 def classify_job_exception(exc: BaseException) -> ClassifiedJobError:

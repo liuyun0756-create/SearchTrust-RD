@@ -258,6 +258,8 @@ class TaskCreateResponse(StrictModel):
 
 class TaskStatusResponse(StrictModel):
     job_id: UUID
+    revision: int = Field(ge=1)
+    run_generation: int = Field(ge=1)
     status: JobStatus
     stage: JobStage
     progress: int = Field(ge=0, le=100)
@@ -265,12 +267,15 @@ class TaskStatusResponse(StrictModel):
     report: ReportV22 | None = None
     error: JobError | None = None
     created_at: AwareDatetime
+    deadline_at: AwareDatetime
     updated_at: AwareDatetime
 
     @model_validator(mode="after")
     def validate_terminal_payload(self) -> "TaskStatusResponse":
         if self.updated_at < self.created_at:
             raise ValueError("updated_at must not precede created_at")
+        if self.deadline_at <= self.created_at:
+            raise ValueError("deadline_at must follow created_at")
         if self.status == "succeeded":
             if self.report is None or self.error is not None or self.progress != 100 or self.stage != "completed":
                 raise ValueError("succeeded jobs require a completed report and no error")

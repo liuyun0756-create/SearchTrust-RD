@@ -75,7 +75,7 @@ async def test_reconciler_requeues_stale_queued_orphan_once() -> None:
         max_attempts=3,
     )
 
-    assert queue.calls == [(JOB_ID, 1)]
+    assert queue.calls == [(JOB_ID, 2)]
     assert JOB_ID in synchronizer.calls
 
 
@@ -134,4 +134,26 @@ async def test_reconciler_requeues_stale_running_job_below_attempt_limit() -> No
     state = await store.require_state(JOB_ID)
 
     assert state.status == "queued"
-    assert queue.calls == [(JOB_ID, 1)]
+    assert queue.calls == [(JOB_ID, 2)]
+    assert state.run_generation == 2
+
+
+@pytest.mark.anyio
+async def test_reconciler_closes_job_at_immutable_deadline() -> None:
+    store = await build_store()
+    queue = RecordingQueue()
+
+    await reconcile_once(
+        store=store,
+        queue=queue,
+        synchronizer=None,
+        now=NOW + timedelta(minutes=21),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+    state = await store.require_state(JOB_ID)
+
+    assert state.status == "failed"
+    assert state.error is not None
+    assert state.error.error_code == "JOB_DEADLINE_EXCEEDED"
+    assert queue.calls == []
