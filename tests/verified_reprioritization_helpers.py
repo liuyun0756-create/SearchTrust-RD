@@ -18,7 +18,7 @@ VERIFIED_AT = NOW + timedelta(hours=1)
 PLANNING_DATE = date(2026, 9, 8)
 
 
-def verified_request(*, gsc=None, ga4=None):
+def verified_request(*, gsc=None, ga4=None, gbp=None):
     serp = market()
     public_request = public_input(
         site([
@@ -37,6 +37,11 @@ def verified_request(*, gsc=None, ga4=None):
         trusted("gsc", gsc or gsc_value(), 950).model_copy(update={"case_id": CASE}),
         trusted("ga4", ga4 or ga4_value(), 951).model_copy(update={"case_id": CASE}),
     ]
+    if gbp is not None:
+        value, raw = gbp
+        snapshots.append(
+            trusted("gbp", value, 952, raw=raw).model_copy(update={"case_id": CASE})
+        )
     first_input = FirstPartyFindingsInput(
         case_id=CASE,
         parent_report_id=PARENT_ID,
