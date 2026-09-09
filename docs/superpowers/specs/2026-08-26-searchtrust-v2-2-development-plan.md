@@ -1018,6 +1018,19 @@ GSC↔GA4 支持保守的同域页面、聚合 90 天对比和至少 8 个完整
 - 旧结论、新证据、新结论、原因；
 - 旧报告不可变。
 
+完成于 2026-09-09：已交付 `version_diff_result_v1` 后端内部确定性阶段。阶段校验完整
+parent report checksum、Prospect/Case/report 绑定，并把父 Findings、Evidence 与公开行动
+事实逐项绑定到 V22-072 输入；随后重算 V22-072 并逐字节比较，重新签名的父报告或上游
+篡改均不能进入差异。每个父 Finding 使用完整规范化内容 SHA-256 指纹。
+
+差异只展示真实变化：严格目标支持且行动位置不变为 Confirmed，可靠增长降低紧迫度为
+Refined，行动入选状态或前三顺序变化为 Reprioritized；没有变化的旧 Finding 仅进入内部
+unchanged 审计。新 Finding 已用于解释旧变化后不会重复显示为 New；未消费的新业务、
+测量、冲突或审计 Finding 才生成 New。当前没有明确反证规则，因此合同保留 Replaced，
+规则 v1 不生成它。阶段含固定理由目录、最小决策证据、完整引用/分区审计、资源上限和
+仅结果 checkpoint；无数据库、前端、公开 API 或 provider 调用，Verified Generation 仍
+不可达。详见 `2026-09-09-searchtrust-v2-2-version-diff-completion.md`。
+
 #### V22-074 执行基线和路线图
 
 - Action对应GSC/GBP/GA4指标；
