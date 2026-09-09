@@ -1070,6 +1070,22 @@ Google 同步与 Verified Generation 仍保持关闭。详见
 -前端断线重连；
 -失败权益返还。
 
+完成于 2026-09-09：已交付 Redis 共享 lease、generation fencing、30 秒心跳、
+180 秒失联接管和不可延长的 20 分钟任务截止时间。自动外部重试最多 3 次，
+provider + operation 共享熔断器按 60/120/300 秒冷却；SerpAPI 每个密钥使用
+独立熔断状态，鉴权、配额和限流错误立即隔离，连续 3 次传输/服务错误隔离。
+
+新增每个逻辑生成任务唯一的 `analysis_attempt_charges` 和不可变
+`audit_credit_ledger`。首次任务消耗 Case 付费权益；技术失败后该权益永久关闭为
+`compensated`，账户只返还 1 个通用 credit。重复/乱序回调不会重复返还；
+再次生成建立新 job ID 和新幂等键，先消耗 1 credit，若再次失败则再返还 1。
+结果持久化和回调都校验 generation。
+
+前端增加按 Case 查找服务端最新任务，优先使用认证 SSE，失败时以最多每 10 秒
+一次的轮询恢复，并根据 revision 忽略过时状态。正式环境已先应用数据库迁移，
+再发布 Railway API/Worker 和 Vercel 前端；生产失败、重复回调、单次返还及临时数据
+清理演练通过。详见 `2026-09-09-searchtrust-v2-2-task-reliability-completion.md`。
+
 #### V22-081 安全
 
 - OAuth威胁模型；
