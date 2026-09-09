@@ -1042,6 +1042,23 @@ unchanged 审计。新 Finding 已用于解释旧变化后不会重复显示为 
 
 验收：真实全覆盖Case从获客报告升级，用户能解释每个结论变化和每项行动的验证方式。
 
+完成于 2026-09-09：已交付 `execution_plan_result_v1` 后端内部确定性阶段。
+阶段会在任何 checkpoint 查询前校验 V22-072/V22-073 输入和结果 checksum，
+重算两个上游阶段并逐字节比较。结果固定为三项行动和 30/60/90 三阶段，
+每项一个 primary、最多一个必要 guardrail；公开结构行动以原 Finding 规则不再
+触发为成功条件，仅在严格目标关系存在时加入可追溯 GSC/GA4 样本保护或合规
+GBP 档位保护。
+
+GSC/GA4 测量修复在需要时强制为第一行动，后两项在通过前不得正式验收；
+普通跨源方向冲突使用“冲突不再触发”指标，不宣称任一来源错误。最终组装
+`verified_execution` ReportV22，保留经验证的公开事实、合并当前 Findings/Evidence，
+原样附加 V22-073 变化差异，并保证父报告字节不变。官方 GBP 缺失不阻断
+Verified Core；只有 GSC、GA4、官方 GBP 均健康且 matched 时才标记 Full Evidence。
+官方 GBP 精确 Performance、keywords 和 raw payload 不进入结果或 checkpoint。新增
+仅结果 checkpoint、安全错误和资源上限；无数据库、前端、公开 API、provider 或开关变更，
+Google 同步与 Verified Generation 仍保持关闭。详见
+`2026-09-09-searchtrust-v2-2-execution-plan-completion.md`。
+
 ### M8：可靠性、安全、成本和可观测性
 
 #### V22-080 任务可靠性
