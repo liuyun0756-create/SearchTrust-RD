@@ -11,6 +11,7 @@ from app.jobs_v22.errors import (
     classify_job_exception,
 )
 from app.jobs_v22.models import JobErrorState, JobState
+from app.jobs_v22.cost_models import ALLOWED_COUNTER_KEYS
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -51,6 +52,19 @@ def test_job_state_rejects_unknown_fields_and_invalid_progress() -> None:
 
     with pytest.raises(ValidationError):
         queued_state(progress=101)
+
+
+def test_job_state_accepts_only_complete_bounded_cost_snapshots() -> None:
+    counters = {key: 0 for key in ALLOWED_COUNTER_KEYS}
+    counters["cost_schema_version"] = 1
+    counters["cost_ledger_revision"] = 1
+    counters["pricing_revision"] = 1
+    assert queued_state(cost_counters=counters).cost_counters == counters
+
+    with pytest.raises(ValidationError):
+        queued_state(cost_counters={"provider_attempts_total": 1})
+    with pytest.raises(ValidationError):
+        queued_state(cost_counters={**counters, "dify_total_tokens": -1})
 
 
 def test_job_state_requires_structured_terminal_payloads() -> None:

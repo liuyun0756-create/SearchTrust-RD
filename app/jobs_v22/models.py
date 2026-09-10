@@ -6,13 +6,20 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, model_validator
+from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from app.api.v2.models import JobStage
 from app.report_v22.models import ReportV22, StrictModel
+from app.jobs_v22.cost_models import CostCountersV1
 
 
 JobStatus = Literal["queued", "running", "succeeded", "failed"]
+
+
+def _validated_cost_counters(value: dict[str, int | float]) -> dict[str, int]:
+    if not value:
+        return {}
+    return CostCountersV1.model_validate(value).root
 
 
 class JobErrorState(StrictModel):
@@ -48,6 +55,11 @@ class JobState(StrictModel):
     error: JobErrorState | None = None
     cost_counters: dict[str, int | float] = Field(default_factory=dict)
     callback_synced_revision: int = Field(default=0, ge=0)
+
+    @field_validator("cost_counters")
+    @classmethod
+    def validate_cost_counters(cls, value):
+        return _validated_cost_counters(value)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "JobState":
@@ -97,6 +109,11 @@ class JobCallbackEvent(StrictModel):
     error: JobErrorState | None = None
     cost_counters: dict[str, int | float] = Field(default_factory=dict)
     occurred_at: AwareDatetime
+
+    @field_validator("cost_counters")
+    @classmethod
+    def validate_cost_counters(cls, value):
+        return _validated_cost_counters(value)
 
 
 class QueueHealth(StrictModel):
