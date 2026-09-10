@@ -107,6 +107,7 @@ V22-082 为每个 V2.2 逻辑任务建立可恢复、可审计的内部成本账
 `CostCountersV1` 使用稳定的扁平键，所有值均为有限非负数字。至少包含：
 
 - `cost_schema_version = 1`；
+- `cost_ledger_revision`；
 - `pricing_revision`；
 - `job_wall_elapsed_ms`；
 - `job_active_elapsed_ms`；
@@ -194,10 +195,12 @@ Dify Token 使用按响应中真实 usage 记录。单次 Token 限制继续由 
 - `job_kind`: `competitor_discovery`、`prospect_report`、`verified_report`、`gsc_sync`、`ga4_sync` 或 `gbp_sync`；
 - `status`: `succeeded` 或 `failed`；
 - `attempt_count`；
+- `ledger_revision`；
 - `cost_counters jsonb`；
 - `started_at`、`completed_at`、`created_at` 和 `updated_at`。
 
-`job_id` 冲突使用终态幂等 upsert，只允许相同任务更新为更完整的摘要，不允许修改 `case_id` 或 `job_kind`。
+`job_id` 冲突使用终态幂等 upsert，只允许更高的
+`ledger_revision` 更新摘要，不允许修改 `case_id` 或 `job_kind`。
 
 表启用 RLS，撤销 `anon` 和 `authenticated` 的所有权限，只授权 `service_role`。不提供浏览器 RPC。
 
@@ -232,6 +235,8 @@ Dify Token 使用按响应中真实 usage 记录。单次 Token 限制继续由 
 在无法完成 `claim` 时不得发出外部请求。这是 fail-closed 边界，防止实际成本脱离账本。
 
 如果外部请求已经发出，但 `complete` 暂时失败，预先写入的 claim 仍然占用额度。后续重试可幂等补全；无法补全时最终按 `outcome_unknown` 汇总。
+
+如果报告或发现结果已经成功，但长期成本汇总暂时无法写入数据库，不重跑供应商请求，也不将已成功的产品结果改为失败。该摘要进入 Redis 持久待同步集合，由独立协调器按 `ledger_revision` 幂等重试。成本汇总重试不得重跑任务。
 
 ### 10.3 与 V22-080 的边界
 
