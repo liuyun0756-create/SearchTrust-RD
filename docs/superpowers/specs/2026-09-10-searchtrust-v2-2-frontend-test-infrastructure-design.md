@@ -1,7 +1,7 @@
 # V22-090 Frontend test infrastructure design
 
 Date: 2026-09-10  
-Status: design approved, awaiting written-spec review
+Status: implemented and protected by the production deployment gate
 
 ## 1. Goal
 

@@ -1,6 +1,6 @@
 # SearchTrust v2.2 完整开发计划
 
-状态：准备实施
+状态：实施中（V22-090 前端测试基础设施已完成）
 
 日期：2026-08-26
 
@@ -1146,6 +1146,17 @@ PostHog 页面访问和现有粗粒度事件，仅用于估算从访问、登录
 - Vitest + Testing Library：view model、health、coverage、diff；
 - Playwright：获客支付stub、报告、OAuth fake、升级和分享；
 - `npm run typecheck`、`npm run test`、`npm run build`进入CI。
+
+完成于 2026-09-10：已建立 Vitest、Testing Library、Playwright 三层前端测试体系，
+覆盖 6 条本地确定性旅程、11 个浏览器用例和关键组件交互；浏览器请求守卫会阻断
+Supabase、Railway、Dodo、Google、PostHog 及任意外网请求。失败截图、日志和 trace
+在上传前扫描，包含授权头、OAuth 参数、分享凭据或配置密钥的文件不会进入上传目录。
+GitHub Actions 已改为 PR/main 双入口门禁，Vercel 正式部署必须等待代码质量和浏览器
+两组任务全部成功。正式运行 `34481203591` 已验证两组前置任务和部署任务均通过，
+部署 `dpl_A3r6t4vvUNynS2WaCN4NPD3Mo9E3` 已接管 `trysearchtrust.com` 并返回 HTTP 200。
+Railway 自动发布仍留给 V22-091，Google 同步与 Verified
+Generation 正式开关未改变。详见
+`2026-09-10-searchtrust-v2-2-frontend-test-infrastructure-completion.md`。
 
 #### V22-091 后端测试
 
