@@ -40,6 +40,9 @@ class JobRedisKeys:
     def cost_ledger(self, job_id: UUID | str) -> str:
         return f"{self.prefix}:job:{job_id}:cost-ledger"
 
+    def cost_summary(self, job_id: UUID | str) -> str:
+        return f"{self.prefix}:job:{job_id}:cost-summary"
+
     def circuit(self, provider: str, operation: str) -> str:
         digest = hashlib.sha256(f"{provider}:{operation}".encode("utf-8")).hexdigest()
         return f"{self.prefix}:circuit:{digest}"
@@ -55,6 +58,10 @@ class JobRedisKeys:
     @property
     def sync_pending(self) -> str:
         return f"{self.prefix}:sync-pending"
+
+    @property
+    def cost_sync_pending(self) -> str:
+        return f"{self.prefix}:cost-sync-pending"
 
     @property
     def worker_health(self) -> str:

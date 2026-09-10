@@ -38,6 +38,15 @@ CostOperation = Literal[
     "dify_workflow",
 ]
 CostOutcome = Literal["success", "failure"]
+CostJobKind = Literal[
+    "competitor_discovery",
+    "prospect_report",
+    "verified_report",
+    "gsc_sync",
+    "ga4_sync",
+    "gbp_sync",
+]
+CostJobStatus = Literal["succeeded", "failed"]
 
 
 PROVIDERS: tuple[CostProvider, ...] = (
@@ -226,6 +235,26 @@ class CostCountersV1(RootModel[dict[str, int]]):
                 raise ValueError("cost counter is outside the safe range")
         if self.root["cost_schema_version"] != 1:
             raise ValueError("unsupported cost counter schema")
+        return self
+
+
+class CostSummaryRecord(StrictModel):
+    job_id: UUID
+    case_id: UUID
+    job_kind: CostJobKind
+    status: CostJobStatus
+    attempt_count: int = Field(ge=0, le=100)
+    ledger_revision: int = Field(ge=1)
+    cost_counters: CostCountersV1
+    started_at: AwareDatetime
+    completed_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_summary(self) -> "CostSummaryRecord":
+        if self.completed_at < self.started_at:
+            raise ValueError("cost summary completion cannot precede start")
+        if self.cost_counters.root["cost_ledger_revision"] != self.ledger_revision:
+            raise ValueError("cost summary revision must match counters")
         return self
 
 
