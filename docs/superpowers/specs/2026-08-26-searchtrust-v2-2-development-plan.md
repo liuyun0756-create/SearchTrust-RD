@@ -1095,6 +1095,18 @@ provider + operation 共享熔断器按 60/120/300 秒冷却；SerpAPI 每个密
 - PII/secret日志扫描；
 -数据删除和账户断开测试。
 
+完成于 2026-09-10：已交付 OAuth 威胁矩阵、双密钥可恢复轮换、统一 SSRF
+验证与固定 IP 传输、fragment-only 匿名分享、统一安全日志和浏览器产物扫描，
+以及 Clerk 删除栅栏、Google 凭据撤销、原子级联删除、幂等回执和晚到创建阻断。
+
+正式环境已先应用 Supabase 迁移，再发布 Vercel 与 Railway。前端 587 项、后端
+1,592 项测试通过，类型、合同、生产构建、产物和部署日志检查通过。Clerk 正式
+Webhook 已同时订阅 `user.created` 和 `user.deleted`；删除明确标记的合成用户后，
+Svix 显示签名事件投递成功，本地用户、Case、Google 连接、报告和分享全部清除，
+删除回执验证后也已精确清理。Google OAuth、GSC、GA4、官方 GBP 同步及 Verified
+Generation 开关仍关闭。详见
+`2026-09-10-searchtrust-v2-2-security-hardening-completion.md`。
+
 #### V22-082 成本控制
 
 每个job记录：
