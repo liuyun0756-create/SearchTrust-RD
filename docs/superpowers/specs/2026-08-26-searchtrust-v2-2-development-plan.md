@@ -1132,17 +1132,12 @@ API/Worker、Vercel 顺序发布到正式环境；完整测试、权限验证、
 
 #### V22-083 产品埋点
 
-- mode selected；
-- preflight started/completed；
-- checkout started/paid；
-- report completed/shared/exported；
-- connect source started/completed/failed；
-- full coverage achieved；
-- verified report generated；
-- action viewed/copied；
-- refund requested/issued。
+范围调整于 2026-09-10：当前阶段不建设自研精细埋点与独立事件数据仓。继续使用已接入的
+PostHog 页面访问和现有粗粒度事件，仅用于估算从访问、登录、填写、结账到报告生成的大致转化率。
 
-所有埋点不得包含OAuth token、原始搜索词全量、客户敏感数据。
+支付成功、credit 消耗/返还和退款仍以正式数据库不可变业务记录为准，不依赖 PostHog 作为
+财务真实来源。PostHog 事件不得包含 OAuth token、完整原始搜索词、分享凭据或客户敏感数据。
+本项按“现有 PostHog 足够，无新开发”关闭。
 
 ### M9：测试、迁移和发布
 
