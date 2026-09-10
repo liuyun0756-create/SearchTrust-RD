@@ -71,6 +71,9 @@ and Verified Generation remain disabled in production.
   invalid, expired, revoked, wrong-view and wrong-report records.
 - Add `noindex`, no-referrer and no-store protections to every successful and failed
   share response without exposing Case, evidence, Google connection, task or payment data.
+- Keep the bearer token in a URL fragment, resolve it through a bounded fixed-path POST
+  body and disable third-party analytics on the share page so platform request logs and
+  pageview events cannot collect the credential.
 - Add route and service tests for cross-owner management, rotation, expiry boundaries,
   PDF access and client-view field exclusion.
 

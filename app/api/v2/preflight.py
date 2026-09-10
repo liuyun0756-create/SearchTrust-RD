@@ -13,7 +13,7 @@ from app.api.v2.dependencies import (
 )
 from app.api.v2.models import PreflightRequest, PreflightResponse
 from app.preflight_v22.service import PreflightService, build_preflight_service
-from app.preflight_v22.urls import UrlSafetyError
+from app.security_v22.urls import UrlSafetyError
 
 
 router = APIRouter(prefix="/api/v2", tags=["SearchTrust v2 preflight"])

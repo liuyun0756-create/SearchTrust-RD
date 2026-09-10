@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
-from app.preflight_v22.urls import UrlSafetyError, normalize_site_url
+from app.security_v22.urls import UrlSafetyError, normalize_site_url
 
 
 _TRACKING_QUERY_PREFIXES = ("utm_",)

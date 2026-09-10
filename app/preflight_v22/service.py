@@ -21,7 +21,8 @@ from app.preflight_v22.candidates import CandidateSet, build_candidates
 from app.preflight_v22.extractors import SiteSignals, extract_site_signals
 from app.preflight_v22.fetcher import BoundedHomepageFetcher, HomepageFetchError, HomepageSnapshot
 from app.preflight_v22.gbp import GbpLookupResult, GoogleMapsUrlExpander, LimitedGbpLookup
-from app.preflight_v22.urls import UrlUnreachableError, normalize_site_url, validate_gbp_url
+from app.security_v22.logging import digest_suffix
+from app.security_v22.urls import UrlUnreachableError, normalize_site_url, validate_gbp_url
 from app.core.config import settings
 
 
@@ -67,13 +68,14 @@ class PreflightService:
         started = time.monotonic()
         normalized_input_url = normalize_site_url(str(request.site_url))
         normalized_domain = (urlsplit(normalized_input_url).hostname or "").removeprefix("www.")
+        domain_digest = digest_suffix(normalized_domain)
         user_gbp_url = validate_gbp_url(str(request.gbp_url)) if request.gbp_url else None
         cache_key = self.cache.key(request, normalized_input_url)
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.info(
-                "v2.2 preflight cache_hit domain=%s preflight_id=%s",
-                normalized_domain,
+                "v2.2 preflight cache_hit domain_digest=%s preflight_id=%s",
+                domain_digest,
                 cached.preflight_id,
             )
             return cached
@@ -132,9 +134,9 @@ class PreflightService:
         if site_snapshot is not None:
             await self.cache.set(cache_key, response)
         logger.info(
-            "v2.2 preflight completed domain=%s preflight_id=%s total_ms=%d "
+            "v2.2 preflight completed domain_digest=%s preflight_id=%s total_ms=%d "
             "fetch_ms=%d gbp_ms=%d identities=%d services=%d markets=%d gaps=%s",
-            normalized_domain,
+            domain_digest,
             response.preflight_id,
             round((time.monotonic() - started) * 1000),
             fetch_ms,

@@ -2,7 +2,7 @@
 
 日期：2026-09-10
 
-状态：设计已批准，尚未实施。
+状态：设计已批准，实施中。
 
 对应开发计划：V22-081 安全。
 
@@ -131,6 +131,8 @@ V2.2 可达的用户可控 URL 请求必须复用同一组安全规则。允许�
 - 用户可以随时撤销；
 - 无效、过期、撤销、错误 view mode 和越权访问统一表现为 404；
 - 响应禁止搜索引擎索引、禁止 referrer 泄漏并禁止共享缓存；
+- bearer token 只放在 URL fragment 中，实际 HTTP 路径固定为 `/share`；浏览器通过固定 POST 路由的请求体解析报告和下载 PDF；
+- 分享页不初始化第三方分析 SDK，避免 fragment 被客户端 pageview 采集；
 - token 不授予 Case、证据原文、Google 连接、资源绑定、任务、付款或分享管理权限。
 
 ### 5.5 敏感信息防泄漏
@@ -190,7 +192,9 @@ OAuth session 的 PKCE verifier 和 Google connection 的 access/refresh token �
 
 ### 6.3 匿名分享访问
 
-访问者提交路径中的 token，服务端先验证固定格式，再计算 hash 并查询唯一记录。数据库和服务层同时校验过期时间、撤销状态、view mode、report/case 绑定和 V2.2 报告结构。成功时只构建 client view model；PDF 路由调用相同解析器，不另建旁路。
+创建分享时返回 `/share#<token>`。浏览器只向平台请求固定 `/share` 路径，fragment 不进入 HTTP 请求、Vercel request path 或 referrer；分享页也不初始化第三方分析。页面从 fragment 读取 token 后，通过带大小上限的固定 POST 请求体提交给服务端。服务端验证固定格式，再计算 hash 并查询唯一记录。数据库和服务层同时校验过期时间、撤销状态、view mode、report/case 绑定和 V2.2 报告结构。成功时只构建 client view model；PDF 使用相同 POST token 和相同解析器，不另建旁路。
+
+采用 fragment 是因为 Vercel Runtime Logs 会记录实际 Request Path，而不是只记录动态路由模板；bearer token 不得出现在该路径中。依据：https://vercel.com/docs/logs/runtime
 
 ### 6.4 账户删除
 
@@ -243,6 +247,7 @@ Clerk 的已签名删除事件是唯一身份来源。删除编排器先阻止�
 - 同报告轮换只保留一个有效链接；
 - 撤销、过期、错误 report/case/view mode 和跨用户管理；
 - 页面与 PDF 使用相同解析器；
+- 分享 token 不出现在 HTTP pathname、query、服务端 route parameter 或第三方分析事件中；
 - client view 不含内部证据、连接、任务或付款字段；
 - 404、noindex、referrer policy 和 cache policy。
 

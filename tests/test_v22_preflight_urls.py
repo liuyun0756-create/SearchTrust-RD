@@ -43,6 +43,8 @@ def test_normalize_site_url_supports_idna_and_ipv6() -> None:
         ("http://127.0.0.1/admin", "URL_ADDRESS_FORBIDDEN"),
         ("http://169.254.169.254/latest", "URL_ADDRESS_FORBIDDEN"),
         ("http://[::1]/", "URL_ADDRESS_FORBIDDEN"),
+        ("http://[::ffff:8.8.8.8]/", "URL_ADDRESS_FORBIDDEN"),
+        ("http://metadata.aws.internal/latest", "URL_HOST_FORBIDDEN"),
     ],
 )
 def test_normalize_site_url_rejects_unsafe_syntax_and_direct_targets(
@@ -77,6 +79,23 @@ async def test_resolve_public_url_returns_stable_unique_public_addresses() -> No
     assert target.normalized_url == "https://example.com/"
     assert target.hostname == "example.com"
     assert target.addresses == ("2606:4700:4700::1111", "8.8.8.8")
+
+
+@pytest.mark.anyio
+async def test_resolve_public_url_rejects_mapped_and_excessive_dns_answers() -> None:
+    async def mapped(_: str) -> list[str]:
+        return ["::ffff:8.8.8.8"]
+
+    with pytest.raises(UrlSafetyError) as mapped_error:
+        await resolve_public_url("https://example.com", resolver=mapped)
+    assert mapped_error.value.code == "URL_ADDRESS_FORBIDDEN"
+
+    async def excessive(_: str) -> list[str]:
+        return [f"8.8.8.{index}" for index in range(1, 18)]
+
+    with pytest.raises(UrlSafetyError) as excessive_error:
+        await resolve_public_url("https://example.com", resolver=excessive)
+    assert excessive_error.value.code == "URL_ADDRESS_INVALID"
 
 
 @pytest.mark.anyio

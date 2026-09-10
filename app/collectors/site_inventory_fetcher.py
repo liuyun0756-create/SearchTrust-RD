@@ -13,8 +13,8 @@ from urllib.parse import urljoin
 import httpx
 
 from app.collectors.site_inventory_urls import SiteScope
-from app.preflight_v22.fetcher import _PinnedAsyncHTTPTransport
-from app.preflight_v22.urls import Resolver, SafeUrl, resolve_public_url
+from app.security_v22.http import PinnedAsyncHTTPTransport
+from app.security_v22.urls import Resolver, SafeUrl, resolve_public_url
 
 
 ClientFactory = Callable[[SafeUrl], httpx.AsyncClient]
@@ -120,7 +120,7 @@ class BoundedSiteFetcher:
             pool=self.connect_timeout,
         )
         return httpx.AsyncClient(
-            transport=_PinnedAsyncHTTPTransport(target),
+            transport=PinnedAsyncHTTPTransport(target),
             timeout=timeout,
             follow_redirects=False,
             trust_env=False,

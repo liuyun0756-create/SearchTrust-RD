@@ -9,7 +9,7 @@ from app.competitors_v22.normalization import (
 )
 from app.preflight_v22.extractors import extract_site_signals
 from app.preflight_v22.fetcher import BoundedHomepageFetcher, HomepageFetchError
-from app.preflight_v22.urls import UrlUnreachableError
+from app.security_v22.urls import UrlUnreachableError
 from app.report_v22.models import TargetMarket
 
 

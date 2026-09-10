@@ -3,7 +3,7 @@ from urllib.parse import urlsplit
 
 from app.collectors.site_inventory_urls import SiteScope
 from app.jobs_v22.digest import request_digest
-from app.preflight_v22.urls import normalize_site_url
+from app.security_v22.urls import normalize_site_url
 from app.report_v22.evidence_bindings import host
 from app.report_v22.site_business_errors import require
 

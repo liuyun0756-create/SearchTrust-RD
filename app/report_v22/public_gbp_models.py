@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import AfterValidator, AwareDatetime, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
-from app.preflight_v22.urls import validate_gbp_url
+from app.security_v22.urls import validate_gbp_url
 from app.report_v22.models import StrictModel
 
 IDENTITY_VERSION = "customer_public_gbp_identity_v1"

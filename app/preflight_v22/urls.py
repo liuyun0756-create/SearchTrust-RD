@@ -13,7 +13,9 @@ from urllib.parse import SplitResult, urlsplit, urlunsplit
 Resolver = Callable[[str], Awaitable[list[str]]]
 
 _BLOCKED_HOSTNAMES = {
+    "instance-data",
     "localhost",
+    "metadata.aws.internal",
     "metadata.google",
     "metadata.google.internal",
 }
@@ -131,6 +133,11 @@ def normalize_site_url(value: str) -> str:
 
 
 def _require_global_address(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> None:
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        raise UrlSafetyError(
+            "URL_ADDRESS_FORBIDDEN",
+            "The URL resolves to a private or reserved address.",
+        )
     if not address.is_global:
         raise UrlSafetyError(
             "URL_ADDRESS_FORBIDDEN",
@@ -169,6 +176,11 @@ async def resolve_public_url(value: str, *, resolver: Resolver | None = None) ->
             raise UrlUnreachableError(
                 "SITE_DNS_UNAVAILABLE",
                 "The site hostname could not be resolved.",
+            )
+        if len(address_values) > 16:
+            raise UrlSafetyError(
+                "URL_ADDRESS_INVALID",
+                "The site hostname resolved to too many addresses.",
             )
 
     unique_addresses: list[str] = []

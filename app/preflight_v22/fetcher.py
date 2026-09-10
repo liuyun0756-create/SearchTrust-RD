@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 import httpcore
 import httpx
 
-from app.preflight_v22.urls import Resolver, SafeUrl, normalize_site_url, resolve_public_url
+from app.security_v22.urls import Resolver, SafeUrl, normalize_site_url, resolve_public_url
 
 
 ClientFactory = Callable[[SafeUrl], httpx.AsyncClient]

@@ -19,8 +19,8 @@ from app.tasks.scraper import (
     _serpapi_get,
 )
 from app.preflight_v22.extractors import SiteSignals
-from app.preflight_v22.fetcher import _PinnedAsyncHTTPTransport
-from app.preflight_v22.urls import Resolver, SafeUrl, resolve_public_url, validate_gbp_url
+from app.security_v22.http import PinnedAsyncHTTPTransport
+from app.security_v22.urls import Resolver, SafeUrl, resolve_public_url, validate_gbp_url
 
 
 Provider = Callable[[dict[str, str]], Awaitable[dict[str, Any]]]
@@ -78,7 +78,7 @@ class GoogleMapsUrlExpander:
 
     def _default_client(self, target: SafeUrl) -> httpx.AsyncClient:
         return httpx.AsyncClient(
-            transport=_PinnedAsyncHTTPTransport(target),
+            transport=PinnedAsyncHTTPTransport(target),
             timeout=httpx.Timeout(
                 connect=self.connect_timeout,
                 read=self.read_timeout,
