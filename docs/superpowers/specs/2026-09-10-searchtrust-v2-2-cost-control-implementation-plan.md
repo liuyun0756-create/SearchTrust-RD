@@ -1,5 +1,7 @@
 # V22-082 Cost control implementation plan
 
+Status: completed, verified and deployed to production on 2026-09-10.
+
 Design source: `2026-09-10-searchtrust-v2-2-cost-control-design.md`.
 
 This milestone adds internal provider usage accounting and bounded per-job request
