@@ -119,6 +119,21 @@ class Settings(BaseSettings):
     V22_PROVIDER_CIRCUIT_FAILURE_THRESHOLD: Annotated[int, Field(ge=1, le=20)] = 5
     V22_PROVIDER_CIRCUIT_WINDOW_SECONDS: Annotated[int, Field(ge=10, le=600)] = 60
 
+    # ── v2.2 internal provider pricing ───────────────────────────
+    # Prices are integer microdollars and are telemetry only. Missing means
+    # explicitly unknown; it must never be interpreted as a known zero cost.
+    V22_COST_PRICING_REVISION: Annotated[int, Field(ge=1, le=1_000_000)] = 1
+    V22_COST_SERPAPI_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_FIRECRAWL_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_JINA_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_PAGESPEED_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_GSC_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_GA4_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_GBP_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_DIFY_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_DIFY_INPUT_MTOK_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+    V22_COST_DIFY_OUTPUT_MTOK_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
+
     # ── v2.2 preflight ──────────────────────────────────────────────────────
     V22_PREFLIGHT_ENABLED: bool = False
     V22_PREFLIGHT_CACHE_TTL_SECONDS: Annotated[int, Field(ge=60, le=3600)] = 900

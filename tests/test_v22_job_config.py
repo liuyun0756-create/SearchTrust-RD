@@ -10,6 +10,9 @@ def test_v22_durable_job_defaults_are_safe() -> None:
     assert fields["V22_REDIS_URL"].default == ""
     assert fields["V22_INTERNAL_API_TOKEN"].default == ""
     assert fields["V22_CALLBACK_SECRET"].default == ""
+    assert fields["V22_COST_PRICING_REVISION"].default == 1
+    assert fields["V22_COST_SERPAPI_REQUEST_USD_MICROS"].default is None
+    assert fields["V22_COST_DIFY_INPUT_MTOK_USD_MICROS"].default is None
 
 
 def test_v22_secrets_are_not_exposed_by_settings_repr() -> None:
@@ -22,4 +25,3 @@ def test_v22_secrets_are_not_exposed_by_settings_repr() -> None:
 
     assert "internal-secret-value" not in rendered
     assert "callback-secret-value" not in rendered
-

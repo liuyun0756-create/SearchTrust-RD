@@ -62,6 +62,20 @@ def test_environment_template_is_disabled_and_contains_no_real_secrets() -> None
     assert "V22_INTERNAL_API_TOKEN=replace-with-a-long-random-value" in template
     assert "V22_CALLBACK_SECRET=replace-with-a-different-long-random-value" in template
     assert "V22_SUPABASE_SERVICE_ROLE_KEY=your-service-role-key" in template
+    assert "V22_COST_PRICING_REVISION=1" in template
+    for provider in (
+        "SERPAPI",
+        "FIRECRAWL",
+        "JINA",
+        "PAGESPEED",
+        "GSC",
+        "GA4",
+        "GBP",
+        "DIFY",
+    ):
+        assert f"V22_COST_{provider}_REQUEST_USD_MICROS=" in template
+    assert "V22_COST_DIFY_INPUT_MTOK_USD_MICROS=" in template
+    assert "V22_COST_DIFY_OUTPUT_MTOK_USD_MICROS=" in template
     assert "eyJ" not in next(
         line for line in template.splitlines()
         if line.startswith("V22_SUPABASE_SERVICE_ROLE_KEY=")

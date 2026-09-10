@@ -37,6 +37,9 @@ class JobRedisKeys:
     def lease(self, job_id: UUID | str) -> str:
         return f"{self.prefix}:job:{job_id}:lease"
 
+    def cost_ledger(self, job_id: UUID | str) -> str:
+        return f"{self.prefix}:job:{job_id}:cost-ledger"
+
     def circuit(self, provider: str, operation: str) -> str:
         digest = hashlib.sha256(f"{provider}:{operation}".encode("utf-8")).hexdigest()
         return f"{self.prefix}:circuit:{digest}"
