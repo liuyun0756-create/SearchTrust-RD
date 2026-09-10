@@ -238,6 +238,14 @@ class CostCountersV1(RootModel[dict[str, int]]):
         return self
 
 
+def validate_cost_counters_snapshot(value: dict[str, int | float]) -> dict[str, int]:
+    """Accept an empty pre-accounting state or one complete V1 snapshot."""
+
+    if not value:
+        return {}
+    return CostCountersV1.model_validate(value).root
+
+
 class CostSummaryRecord(StrictModel):
     job_id: UUID
     case_id: UUID

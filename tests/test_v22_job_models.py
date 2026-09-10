@@ -12,6 +12,7 @@ from app.jobs_v22.errors import (
 )
 from app.jobs_v22.models import JobErrorState, JobState
 from app.jobs_v22.cost_models import ALLOWED_COUNTER_KEYS
+from app.api.v2.runtime import state_to_public
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -65,6 +66,16 @@ def test_job_state_accepts_only_complete_bounded_cost_snapshots() -> None:
         queued_state(cost_counters={"provider_attempts_total": 1})
     with pytest.raises(ValidationError):
         queued_state(cost_counters={**counters, "dify_total_tokens": -1})
+
+
+def test_public_job_status_never_exposes_private_cost_counters() -> None:
+    counters = {key: 0 for key in ALLOWED_COUNTER_KEYS}
+    counters.update(cost_schema_version=1, cost_ledger_revision=1, pricing_revision=1)
+
+    public = state_to_public(queued_state(cost_counters=counters)).model_dump(mode="json")
+
+    assert "cost_counters" not in public
+    assert not (set(public) & ALLOWED_COUNTER_KEYS)
 
 
 def test_job_state_requires_structured_terminal_payloads() -> None:

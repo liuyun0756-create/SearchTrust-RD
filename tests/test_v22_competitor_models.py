@@ -12,6 +12,7 @@ from app.api.v2.competitor_models import (
     CompetitorDiscoveryResult,
     CompetitorDiscoveryStatusResponse,
 )
+from app.api.v2.competitors import discovery_state_to_public
 from app.api.v2.models import ApiV2ContractBundle, CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.competitors_v22.models import (
     COMPETITOR_COUNT,
@@ -29,7 +30,9 @@ from app.competitors_v22.models import (
     CompetitorCollectionSnapshot,
     CompetitorSnapshot,
     PublicReviewRecord,
+    CompetitorDiscoveryJobState,
 )
+from app.jobs_v22.cost_models import ALLOWED_COUNTER_KEYS
 
 
 NOW = datetime(2026, 8, 29, 8, 0, tzinfo=timezone.utc)
@@ -216,6 +219,36 @@ def test_discovery_status_enforces_terminal_payloads() -> None:
             error=None,
             created_at=NOW,
             updated_at=NOW,
+        )
+
+
+def test_discovery_state_validates_and_hides_private_cost_counters() -> None:
+    counters = {key: 0 for key in ALLOWED_COUNTER_KEYS}
+    counters.update(cost_schema_version=1, cost_ledger_revision=1, pricing_revision=1)
+    state = CompetitorDiscoveryJobState(
+        discovery_job_id=JOB_ID,
+        case_id=CASE_ID,
+        status="queued",
+        stage="queued",
+        progress=0,
+        message="Queued",
+        attempt_count=0,
+        run_generation=1,
+        revision=1,
+        request_digest=DIGEST,
+        idempotency_key_digest=CHECKSUM,
+        created_at=NOW,
+        updated_at=NOW,
+        cost_counters=counters,
+    )
+
+    public = discovery_state_to_public(state).model_dump(mode="json")
+    assert "cost_counters" not in public
+    assert not (set(public) & ALLOWED_COUNTER_KEYS)
+
+    with pytest.raises(ValidationError):
+        CompetitorDiscoveryJobState.model_validate(
+            {**state.model_dump(), "cost_counters": {"provider_attempts_total": 1}}
         )
 
 

@@ -10,16 +10,14 @@ from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from app.api.v2.models import JobStage
 from app.report_v22.models import ReportV22, StrictModel
-from app.jobs_v22.cost_models import CostCountersV1
+from app.jobs_v22.cost_models import validate_cost_counters_snapshot
 
 
 JobStatus = Literal["queued", "running", "succeeded", "failed"]
 
 
 def _validated_cost_counters(value: dict[str, int | float]) -> dict[str, int]:
-    if not value:
-        return {}
-    return CostCountersV1.model_validate(value).root
+    return validate_cost_counters_snapshot(value)
 
 
 class JobErrorState(StrictModel):

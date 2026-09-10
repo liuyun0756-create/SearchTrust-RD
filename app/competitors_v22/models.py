@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, HttpUrl, model_validator
+from pydantic import AwareDatetime, Field, HttpUrl, field_validator, model_validator
 
 from app.api.v2.competitor_models import (
     CompetitorDiscoveryError,
@@ -31,6 +31,7 @@ from app.competitors_v22.limits import (
     COMPETITOR_SITE_DEEP_LIMIT,
     COMPETITOR_SITE_DISCOVERY_LIMIT,
 )
+from app.jobs_v22.cost_models import validate_cost_counters_snapshot
 from app.report_v22.models import StrictModel
 
 
@@ -59,7 +60,12 @@ class CompetitorDiscoveryJobState(StrictModel):
     completed_at: AwareDatetime | None = None
     result: CompetitorDiscoveryResult | None = None
     error: CompetitorDiscoveryError | None = None
-    cost_counters: dict[str, int] = Field(default_factory=dict)
+    cost_counters: dict[str, int | float] = Field(default_factory=dict)
+
+    @field_validator("cost_counters")
+    @classmethod
+    def validate_cost_counters(cls, value):
+        return validate_cost_counters_snapshot(value)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "CompetitorDiscoveryJobState":
