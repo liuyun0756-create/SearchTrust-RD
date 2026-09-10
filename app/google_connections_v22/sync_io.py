@@ -95,6 +95,7 @@ class SyncRepository:
         reasons: list[str],
         *,
         raw_payload: dict | None = None,
+        cost_counters: dict[str, int] | None = None,
     ):
         body = {
             "p_job_id": job["id"],
@@ -109,13 +110,28 @@ class SyncRepository:
             body.update({"p_manifest": payload, "p_raw_payload": raw_payload})
         else:
             body["p_payload"] = payload
+        if cost_counters is not None:
+            body["p_cost_counters"] = cost_counters
         return await self.request(
             "POST", f"rpc/finish_v22_{self.source}_sync", body=body
         )
 
-    async def fail(self, job: dict, error: SyncError):
-        await self.request("POST", f"rpc/fail_v22_{self.source}_sync", body={"p_job_id": job["id"], "p_lease_id": job["lease_id"],
-            "p_code": error.code, "p_retryable": error.retryable})
+    async def fail(
+        self,
+        job: dict,
+        error: SyncError,
+        *,
+        cost_counters: dict[str, int] | None = None,
+    ):
+        body = {
+            "p_job_id": job["id"],
+            "p_lease_id": job["lease_id"],
+            "p_code": error.code,
+            "p_retryable": error.retryable,
+        }
+        if cost_counters is not None:
+            body["p_cost_counters"] = cost_counters
+        await self.request("POST", f"rpc/fail_v22_{self.source}_sync", body=body)
 
     async def cleanup_expired(self, *, batch_size: int = 100) -> int:
         if self.source != "gbp" or not isinstance(batch_size, int) or isinstance(batch_size, bool) or not 1 <= batch_size <= 500:

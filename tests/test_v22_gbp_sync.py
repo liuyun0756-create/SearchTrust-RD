@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
+import fakeredis.aioredis
 import pytest
 
 from app.google_connections_v22.gbp import (
@@ -21,6 +22,8 @@ from app.google_connections_v22.gbp_sync_worker import (
     reconcile_v22_gbp_syncs,
 )
 from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 
 END = date(2026, 9, 4)
 LOCATION = "locations/12345"
@@ -82,6 +85,27 @@ async def test_collects_only_bound_location_fixed_metrics_and_monthly_keywords()
     assert "Example Home Services" not in json.dumps(result.manifest())
     assert result.raw_payload["business_information"]["title"] == "Example Home Services"
     assert "fake-token" not in json.dumps(result.raw_payload)
+
+
+@pytest.mark.anyio
+async def test_gbp_cost_ledger_separates_profile_performance_and_keywords() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    job_id = __import__("uuid").UUID("11111111-1111-4111-8111-111111111111")
+    ledger = JobCostLedger(
+        redis,
+        prefix="test:v22",
+        job_id=job_id,
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=datetime.now(timezone.utc),
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(google)) as client:
+        await GbpProvider(client).collect(
+            LOCATION, "fake-token", END, cost_ledger=ledger
+        )
+    counters = (await ledger.snapshot()).root
+    assert counters["gbp_attempts"] == 3
+    assert counters["gbp_successes"] == 3
 
 
 @pytest.mark.anyio

@@ -9,7 +9,9 @@ from typing import Literal
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .gsc import SyncError, bounded_json
+from app.jobs_v22.cost_ledger import JobCostLedger
+
+from .gsc import SyncError, costed_google_json
 
 GA4_SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
 DATA_ORIGIN = "https://analyticsdata.googleapis.com/v1beta"
@@ -280,11 +282,24 @@ class Ga4Provider:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
-    async def _configured_events(self, resource_id: str, token: str) -> list[KeyEventConfig]:
+    async def _configured_events(
+        self,
+        resource_id: str,
+        token: str,
+        *,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> list[KeyEventConfig]:
         result, page_token, seen = [], "", set()
         for _ in range(20):
-            status, payload = await bounded_json(self.client, "GET", f"{ADMIN_ORIGIN}/{resource_id}/keyEvents",
-                headers={"authorization": f"Bearer {token}"}, params={"pageSize": "200", "pageToken": page_token})
+            status, payload = await costed_google_json(
+                self.client,
+                "GET",
+                f"{ADMIN_ORIGIN}/{resource_id}/keyEvents",
+                headers={"authorization": f"Bearer {token}"},
+                params={"pageSize": "200", "pageToken": page_token},
+                operation="ga4_key_events",
+                cost_ledger=cost_ledger,
+            )
             _classify(status, payload)
             try:
                 if not isinstance(payload, dict) or not isinstance(payload.get("keyEvents", []), list) or len(payload.get("keyEvents", [])) > 200:
@@ -331,11 +346,21 @@ class Ga4Provider:
         labels = host.split(".")
         return len(labels) >= 2 and all(1 <= len(label) <= 63 and not label.startswith("-") and not label.endswith("-") for label in labels)
 
-    async def collect(self, resource_id: str, hosts: list[str], token: str, end: date) -> Ga4Snapshot:
+    async def collect(
+        self,
+        resource_id: str,
+        hosts: list[str],
+        token: str,
+        end: date,
+        *,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> Ga4Snapshot:
         if not PROPERTY.fullmatch(resource_id) or not 1 <= len(hosts) <= 2 or len(set(hosts)) != len(hosts) or any(
             not self._valid_host(host) for host in hosts):
             raise SyncError("SYNC_INVALID_RESOURCE")
-        configured = await self._configured_events(resource_id, token)
+        configured = await self._configured_events(
+            resource_id, token, cost_ledger=cost_ledger
+        )
         periods = []
         for last in (end, end - timedelta(days=90)):
             first, views = last - timedelta(days=89), {}
@@ -352,8 +377,15 @@ class Ga4Provider:
                     body["orderBys"] = [{"metric": {"metricName": "keyEvents"}, "desc": True}]
                     body["metricFilter"] = {"filter": {"fieldName": "keyEvents", "numericFilter": {
                         "operation": "GREATER_THAN", "value": {"int64Value": "0"}}}}
-                status, payload = await bounded_json(self.client, "POST", f"{DATA_ORIGIN}/{resource_id}:runReport",
-                    headers={"authorization": f"Bearer {token}", "content-type": "application/json"}, body=body)
+                status, payload = await costed_google_json(
+                    self.client,
+                    "POST",
+                    f"{DATA_ORIGIN}/{resource_id}:runReport",
+                    headers={"authorization": f"Bearer {token}", "content-type": "application/json"},
+                    body=body,
+                    operation="ga4_run_report",
+                    cost_ledger=cost_ledger,
+                )
                 _classify(status, payload)
                 views[name] = normalize_report(payload, view=name, start=first, end=last)
             periods.append(Ga4Period(start_date=first, end_date=last, **views))

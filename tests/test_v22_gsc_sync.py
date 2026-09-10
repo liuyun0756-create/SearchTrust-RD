@@ -5,12 +5,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
+import fakeredis.aioredis
 import pytest
 
 from app.google_connections_v22.gsc import GscProvider, SyncError, evaluate_health, normalize_view
 from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
 from app.google_connections_v22.sync_worker import execute_v22_gsc_sync, reconcile_v22_gsc_syncs
 from app.google_connections_v22.broker_signature import sign_google_broker_body
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 
 ID = "11111111-1111-4111-8111-111111111111"
 END = date(2026, 9, 1)
@@ -58,6 +61,26 @@ async def test_exact_windows_views_totals_and_private_fixed_endpoint():
     health, reasons = evaluate_health(result)
     assert health == "healthy"
     assert "GSC_QUERY_PRIVACY_FILTERING" in reasons
+
+
+@pytest.mark.anyio
+async def test_gsc_cost_ledger_counts_twelve_real_google_requests() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    ledger = JobCostLedger(
+        redis,
+        prefix="test:v22",
+        job_id=__import__("uuid").UUID(ID),
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=datetime.now(timezone.utc),
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await GscProvider(client).collect(
+            "sc-domain:example.com", "fake-token", END, cost_ledger=ledger
+        )
+    counters = (await ledger.snapshot()).root
+    assert counters["gsc_attempts"] == 12
+    assert counters["gsc_successes"] == 12
 
 
 @pytest.mark.anyio
@@ -208,6 +231,25 @@ async def test_worker_claims_before_token_and_persists_normalized_snapshot():
     ctx["gsc_token_broker"].access_token.reset_mock()
     await execute_v22_gsc_sync(ctx, ID)
     ctx["gsc_token_broker"].access_token.assert_not_called()
+
+
+@pytest.mark.anyio
+async def test_worker_passes_complete_private_cost_snapshot_to_terminal_rpc() -> None:
+    ctx = worker_context()
+    ctx["redis"] = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    ctx["cost_pricing"] = PricingCatalog()
+    ctx["state_ttl_seconds"] = 604_800
+    ctx["gsc_sync_repository"].claim.return_value["created_at"] = datetime.now(
+        timezone.utc
+    ).isoformat()
+    ctx["gsc_provider"].collect.return_value = await snapshot()
+
+    await execute_v22_gsc_sync(ctx, ID)
+
+    counters = ctx["gsc_sync_repository"].finish.call_args.kwargs["cost_counters"]
+    assert counters["cost_schema_version"] == 1
+    assert counters["job_attempts"] == 1
+    assert counters["gsc_attempts"] == 0
 
 
 @pytest.mark.anyio

@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import json
 from datetime import date, timedelta
+from time import monotonic
 from typing import Literal
 from urllib.parse import quote
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import CostOperation
 
 GSC_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly"
 VIEWS = {"totals": (None, 1), "queries": ("query", 250), "pages": ("page", 250),
@@ -39,6 +43,45 @@ async def bounded_json(client: httpx.AsyncClient, method: str, url: str, *, head
             return response.status_code, payload
     except (httpx.HTTPError, OSError):
         raise SyncError("SYNC_NETWORK_UNAVAILABLE", True) from None
+
+
+async def costed_google_json(
+    client: httpx.AsyncClient,
+    method: str,
+    url: str,
+    *,
+    headers: dict,
+    operation: CostOperation,
+    cost_ledger: JobCostLedger | None,
+    body: dict | None = None,
+    params: dict | None = None,
+) -> tuple[int, object]:
+    claim = await cost_ledger.claim(operation) if cost_ledger is not None else None
+    started = monotonic()
+    try:
+        status, payload = await bounded_json(
+            client,
+            method,
+            url,
+            headers=headers,
+            body=body,
+            params=params,
+        )
+    except Exception:
+        if claim is not None:
+            await cost_ledger.complete(
+                claim.claim_id,
+                outcome="failure",
+                duration_ms=max(int((monotonic() - started) * 1000), 0),
+            )
+        raise
+    if claim is not None:
+        await cost_ledger.complete(
+            claim.claim_id,
+            outcome="success" if 200 <= status < 300 else "failure",
+            duration_ms=max(int((monotonic() - started) * 1000), 0),
+        )
+    return status, payload
 
 
 class MetricRow(BaseModel):
@@ -119,7 +162,14 @@ class GscProvider:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
-    async def collect(self, resource_id: str, token: str, end: date) -> GscSnapshot:
+    async def collect(
+        self,
+        resource_id: str,
+        token: str,
+        end: date,
+        *,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> GscSnapshot:
         if not resource_id or len(resource_id) > 2048:
             raise SyncError("SYNC_INVALID_RESOURCE")
         periods = []
@@ -127,26 +177,49 @@ class GscProvider:
             first = last - timedelta(days=89)
             views = {}
             for name, (dimension, limit) in VIEWS.items():
-                status, payload = await bounded_json(self.client, "POST",
-                    f"https://www.googleapis.com/webmasters/v3/sites/{quote(resource_id, safe='')}/searchAnalytics/query",
-                    headers={"authorization": f"Bearer {token}", "content-type": "application/json"},
-                    body={"startDate": first.isoformat(), "endDate": last.isoformat(), "type": "web", "dataState": "final",
-                          "dimensions": [dimension] if dimension else [], "rowLimit": limit + 1, "startRow": 0,
-                          "aggregationType": "auto" if dimension == "page" else "byProperty"})
-                if status == 429 or status >= 500:
-                    raise SyncError("SYNC_GOOGLE_UNAVAILABLE", True)
-                if status == 401:
-                    raise SyncError("SYNC_GOOGLE_TOKEN_EXPIRED", True)
-                if status in (403, 404):
-                    error = payload.get("error", {}) if isinstance(payload, dict) else {}
-                    errors = error.get("errors", []) if isinstance(error, dict) else []
-                    if isinstance(errors, list) and any(isinstance(e, dict) and e.get("reason") in
-                        ("rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded") for e in errors):
+                claim = (
+                    await cost_ledger.claim("gsc_search_analytics")
+                    if cost_ledger is not None
+                    else None
+                )
+                started = monotonic()
+                try:
+                    status, payload = await bounded_json(self.client, "POST",
+                        f"https://www.googleapis.com/webmasters/v3/sites/{quote(resource_id, safe='')}/searchAnalytics/query",
+                        headers={"authorization": f"Bearer {token}", "content-type": "application/json"},
+                        body={"startDate": first.isoformat(), "endDate": last.isoformat(), "type": "web", "dataState": "final",
+                              "dimensions": [dimension] if dimension else [], "rowLimit": limit + 1, "startRow": 0,
+                              "aggregationType": "auto" if dimension == "page" else "byProperty"})
+                    if status == 429 or status >= 500:
                         raise SyncError("SYNC_GOOGLE_UNAVAILABLE", True)
-                    raise SyncError("SYNC_GOOGLE_ACCESS_DENIED")
-                if status != 200:
-                    raise SyncError("SYNC_GOOGLE_REJECTED")
-                views[name] = normalize_view(payload, dimension=dimension, limit=limit, start=first, end=last)
+                    if status == 401:
+                        raise SyncError("SYNC_GOOGLE_TOKEN_EXPIRED", True)
+                    if status in (403, 404):
+                        error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                        errors = error.get("errors", []) if isinstance(error, dict) else []
+                        if isinstance(errors, list) and any(isinstance(e, dict) and e.get("reason") in
+                            ("rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded") for e in errors):
+                            raise SyncError("SYNC_GOOGLE_UNAVAILABLE", True)
+                        raise SyncError("SYNC_GOOGLE_ACCESS_DENIED")
+                    if status != 200:
+                        raise SyncError("SYNC_GOOGLE_REJECTED")
+                    views[name] = normalize_view(
+                        payload, dimension=dimension, limit=limit, start=first, end=last
+                    )
+                except Exception:
+                    if claim is not None:
+                        await cost_ledger.complete(
+                            claim.claim_id,
+                            outcome="failure",
+                            duration_ms=max(int((monotonic() - started) * 1000), 0),
+                        )
+                    raise
+                if claim is not None:
+                    await cost_ledger.complete(
+                        claim.claim_id,
+                        outcome="success",
+                        duration_ms=max(int((monotonic() - started) * 1000), 0),
+                    )
             periods.append(Period(start_date=first, end_date=last, **views))
         limitations = list(LIMITATIONS)
         if any(getattr(period, view).truncated for period in periods for view in VIEWS):

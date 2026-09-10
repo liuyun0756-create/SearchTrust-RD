@@ -10,7 +10,10 @@ import re
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from .gsc import SyncError, bounded_json
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import CostOperation
+
+from .gsc import SyncError, costed_google_json
 
 GBP_SCOPE = "https://www.googleapis.com/auth/business.manage"
 INFO_ORIGIN = "https://mybusinessbusinessinformation.googleapis.com/v1"
@@ -308,19 +311,44 @@ class GbpProvider:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
-    async def _get(self, url: str, token: str, params: object) -> object:
-        status, payload = await bounded_json(
-            self.client, "GET", url, headers={"authorization": f"Bearer {token}"}, params=params  # type: ignore[arg-type]
+    async def _get(
+        self,
+        url: str,
+        token: str,
+        params: object,
+        *,
+        operation: CostOperation,
+        cost_ledger: JobCostLedger | None,
+    ) -> object:
+        status, payload = await costed_google_json(
+            self.client,
+            "GET",
+            url,
+            headers={"authorization": f"Bearer {token}"},
+            params=params,  # type: ignore[arg-type]
+            operation=operation,
+            cost_ledger=cost_ledger,
         )
         _classify(status, payload)
         return payload
 
-    async def collect(self, resource_id: str, token: str, end: date) -> GbpCollection:
+    async def collect(
+        self,
+        resource_id: str,
+        token: str,
+        end: date,
+        *,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> GbpCollection:
         if not LOCATION.fullmatch(resource_id) or not isinstance(token, str) or not token:
             raise SyncError("SYNC_INVALID_RESOURCE")
         start = end - timedelta(days=179)
         location_payload = await self._get(
-            f"{INFO_ORIGIN}/{resource_id}", token, {"readMask": READ_MASK}
+            f"{INFO_ORIGIN}/{resource_id}",
+            token,
+            {"readMask": READ_MASK},
+            operation="gbp_location",
+            cost_ledger=cost_ledger,
         )
         profile_checks = normalize_location(location_payload, resource_id)
 
@@ -335,6 +363,8 @@ class GbpProvider:
             f"{PERFORMANCE_ORIGIN}/{resource_id}:fetchMultiDailyMetricsTimeSeries",
             token,
             performance_params,
+            operation="gbp_performance",
+            cost_ledger=cost_ledger,
         )
         performance = normalize_performance(performance_payload, start, end)
 
@@ -355,7 +385,11 @@ class GbpProvider:
                 "pageToken": page_token,
             }
             payload = await self._get(
-                f"{PERFORMANCE_ORIGIN}/{resource_id}/searchkeywords/impressions/monthly", token, params
+                f"{PERFORMANCE_ORIGIN}/{resource_id}/searchkeywords/impressions/monthly",
+                token,
+                params,
+                operation="gbp_keywords",
+                cost_ledger=cost_ledger,
             )
             page_rows, next_token = normalize_keyword_page(payload, seen_keywords)
             keyword_rows.extend(page_rows)

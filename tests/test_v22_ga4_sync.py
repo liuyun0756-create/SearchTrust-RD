@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
+import fakeredis.aioredis
 import pytest
 
 from app.google_connections_v22.ga4 import (
@@ -13,6 +14,8 @@ from app.google_connections_v22.ga4 import (
 from app.google_connections_v22.ga4_sync_worker import execute_v22_ga4_sync, reconcile_v22_ga4_syncs
 from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
 from app.google_connections_v22.broker_signature import sign_google_broker_body
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 
 END = date(2026, 9, 5)
 PROPERTY = "properties/12345"
@@ -90,6 +93,27 @@ async def test_fixed_property_hosts_windows_and_eight_bounded_reports():
     assert result.configured_key_events[0].event_name == "generate_lead"
     assert "fake-token" not in result.model_dump_json()
     assert evaluate_health(result)[0] == "healthy"
+
+
+@pytest.mark.anyio
+async def test_ga4_cost_ledger_separates_config_and_report_requests() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    job_id = __import__("uuid").UUID("11111111-1111-4111-8111-111111111111")
+    ledger = JobCostLedger(
+        redis,
+        prefix="test:v22",
+        job_id=job_id,
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=datetime.now(timezone.utc),
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(google)) as client:
+        await Ga4Provider(client).collect(
+            PROPERTY, HOSTS, "fake-token", END, cost_ledger=ledger
+        )
+    counters = (await ledger.snapshot()).root
+    assert counters["ga4_attempts"] == 9
+    assert counters["ga4_successes"] == 9
 
 
 @pytest.mark.anyio
