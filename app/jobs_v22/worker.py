@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import logging
 from datetime import timedelta
+from time import monotonic
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -42,6 +43,9 @@ from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.circuit_breaker import RedisCircuitBreaker
 from app.jobs_v22.copy_provider import DifyControlledCopyProvider
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import CostSummaryRecord, pricing_catalog_from_settings
+from app.jobs_v22.cost_persistence import CostSummaryOutbox, CostSummaryPersister
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import (
     DeterministicJobError,
@@ -152,9 +156,25 @@ async def _execute_with_lease(
 ) -> None:
     """Run the task only while this physical generation owns its lease."""
 
+    ledger = JobCostLedger(
+        ctx["redis"],
+        prefix=store.keys.prefix,
+        job_id=job_id,
+        ttl_seconds=int(ctx.get("state_ttl_seconds", settings.V22_JOB_STATE_TTL_SECONDS)),
+        pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
+        job_created_at=state.created_at,
+    )
+    await ledger.ensure()
+
     now = utc_now()
     if now >= state.deadline_at:
-        await _finish_failure(ctx, state, JobDeadlineExceeded(), run_generation=run_generation)
+        await _finish_failure(
+            ctx,
+            state,
+            JobDeadlineExceeded(),
+            run_generation=run_generation,
+            cost_counters=(await ledger.snapshot()).root,
+        )
         return
 
     request = await store.get_request(job_id)
@@ -163,7 +183,13 @@ async def _execute_with_lease(
             "JOB_REQUEST_MISSING",
             "The persisted analysis request is unavailable.",
         )
-        await _finish_failure(ctx, state, exc, run_generation=run_generation)
+        await _finish_failure(
+            ctx,
+            state,
+            exc,
+            run_generation=run_generation,
+            cost_counters=(await ledger.snapshot()).root,
+        )
         return
 
     attempt_count = state.attempt_count + 1
@@ -190,6 +216,7 @@ async def _execute_with_lease(
         run_generation=run_generation,
     )
     executor = ctx["executor"]
+    attempt_started = monotonic()
     try:
         executor_request = request
         if request.get("schema_version") == "v22_analysis_request_envelope_v1":
@@ -202,22 +229,47 @@ async def _execute_with_lease(
                 request=executor_request,
                 submitted_at=state.created_at,
                 checkpoints=checkpoints,
+                cost_ledger=ledger,
             ),
             timeout=remaining,
         )
         if heartbeat_lost.is_set():
             raise JobLeaseLost()
     except TimeoutError:
-        await _finish_failure(ctx, running.state, JobDeadlineExceeded(), run_generation=run_generation)
+        await ledger.record_job_attempt(
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        )
+        await _finish_failure(
+            ctx,
+            running.state,
+            JobDeadlineExceeded(),
+            run_generation=run_generation,
+            cost_counters=(await ledger.snapshot()).root,
+        )
         return
     except asyncio.CancelledError:
+        await ledger.record_job_attempt(
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        )
         logger.info("v2.2 worker execution cancelled job_id=%s", job_id)
         raise
     except Exception as exc:  # ARQ must receive Retry for classified transient failures.
-        await _finish_failure(ctx, running.state, exc, run_generation=run_generation)
+        await ledger.record_job_attempt(
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        )
+        await _finish_failure(
+            ctx,
+            running.state,
+            exc,
+            run_generation=run_generation,
+            cost_counters=(await ledger.snapshot()).root,
+        )
         return
 
-
+    await ledger.record_job_attempt(
+        active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+    )
+    cost_counters = (await ledger.snapshot()).root
     completed = await store.transition(
         job_id,
         status="succeeded",
@@ -226,10 +278,12 @@ async def _execute_with_lease(
         message="Analysis complete.",
         now=utc_now(),
         report=report,
+        cost_counters=cost_counters,
         expected_generation=run_generation,
     )
     if completed.applied:
         await _notify_state(ctx, job_id)
+        await _enqueue_cost_summary(ctx, completed.state, job_kind="prospect_report")
 
 
 async def _finish_failure(
@@ -238,6 +292,7 @@ async def _finish_failure(
     exc: BaseException,
     *,
     run_generation: int,
+    cost_counters: dict[str, int] | None = None,
 ) -> None:
     store: DurableJobStore = ctx["store"]
     failure = classify_job_exception(exc)
@@ -256,6 +311,7 @@ async def _finish_failure(
             message="A temporary issue occurred. The task will retry automatically.",
             now=utc_now(),
             attempt_count=attempt_count,
+            cost_counters=cost_counters,
             expected_generation=run_generation,
         )
         if queued.applied:
@@ -284,10 +340,52 @@ async def _finish_failure(
         now=utc_now(),
         attempt_count=attempt_count,
         error=error,
+        cost_counters=cost_counters,
         expected_generation=run_generation,
     )
     if failed.applied:
         await _notify_state(ctx, state.job_id)
+        await _enqueue_cost_summary(ctx, failed.state, job_kind="prospect_report")
+
+
+async def _enqueue_cost_summary(ctx: dict[str, Any], state, *, job_kind: str) -> None:
+    outbox: CostSummaryOutbox | None = ctx.get("cost_summary_outbox")
+    if outbox is None or not state.terminal or state.completed_at is None:
+        return
+    try:
+        counters = await JobCostLedger(
+            ctx["redis"],
+            prefix=ctx["store"].keys.prefix,
+            job_id=state.job_id,
+            ttl_seconds=int(ctx.get("state_ttl_seconds", settings.V22_JOB_STATE_TTL_SECONDS)),
+            pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
+            job_created_at=state.created_at,
+        ).snapshot()
+        summary = CostSummaryRecord(
+            job_id=state.job_id,
+            case_id=state.case_id,
+            job_kind=job_kind,
+            status=state.status,
+            attempt_count=state.attempt_count,
+            ledger_revision=counters.root["cost_ledger_revision"],
+            cost_counters=counters,
+            started_at=state.created_at,
+            completed_at=state.completed_at,
+        )
+        await outbox.enqueue(summary)
+        await outbox.sync(state.job_id)
+    except Exception as exc:
+        logger.warning(
+            "v2.2 cost summary deferred job_id_suffix=%s error=%s",
+            str(state.job_id)[-8:],
+            type(exc).__name__,
+        )
+
+
+async def reconcile_v22_cost_summaries(ctx: dict[str, Any]) -> None:
+    outbox: CostSummaryOutbox | None = ctx.get("cost_summary_outbox")
+    if outbox is not None:
+        await outbox.flush(limit=50)
 
 
 async def _notify_state(ctx: dict[str, Any], job_id: UUID) -> None:
@@ -352,6 +450,21 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             cleanup_client,
             source="gbp",
         )
+        cost_http_client = httpx.AsyncClient(
+            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+        ctx["cost_http_client"] = cost_http_client
+        ctx["cost_summary_outbox"] = CostSummaryOutbox(
+            pool,
+            prefix=settings.V22_REDIS_PREFIX,
+            ttl_seconds=settings.V22_JOB_STATE_TTL_SECONDS,
+            persister=CostSummaryPersister(
+                url=settings.V22_SUPABASE_URL,
+                service_role_key=storage_key,
+                http_client=cost_http_client,
+            ),
+        )
     ctx["store"] = DurableJobStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
@@ -363,6 +476,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     ctx["lease_seconds"] = settings.V22_JOB_LEASE_SECONDS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
     ctx["competitor_state_ttl_seconds"] = settings.V22_COMPETITOR_STATE_TTL_SECONDS
+    ctx["cost_pricing"] = pricing_catalog_from_settings(settings)
     discovery_store = CompetitorDiscoveryStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
@@ -451,6 +565,8 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
         await ctx["gbp_http_client"].aclose()
     if ctx.get("gbp_cleanup_http_client") is not None:
         await ctx["gbp_cleanup_http_client"].aclose()
+    if ctx.get("cost_http_client") is not None:
+        await ctx["cost_http_client"].aclose()
     http_client: httpx.AsyncClient | None = ctx.get("callback_http_client")
     if http_client is not None:
         await http_client.aclose()
@@ -492,6 +608,14 @@ class WorkerSettings:
         cron(reconcile_v22_ga4_syncs, name="reconcile_v22_ga4_syncs", second={20, 50}, unique=True, max_tries=1),
         cron(reconcile_v22_gbp_syncs, name="reconcile_v22_gbp_syncs", second={25, 55}, unique=True, max_tries=1),
         cron(cleanup_v22_gbp_content, name="cleanup_v22_gbp_content", minute={7, 37}, second=5, unique=True, max_tries=1),
+        cron(
+            reconcile_v22_cost_summaries,
+            name="reconcile_v22_cost_summaries",
+            minute=set(range(60)),
+            second=35,
+            unique=True,
+            max_tries=1,
+        ),
         cron(
             reconcile_v22_jobs,
             name="reconcile_v22_jobs",

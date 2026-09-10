@@ -20,17 +20,27 @@ from app.jobs_v22.cost_models import (
     cost_counters_from_state,
 )
 from app.jobs_v22.keys import JobRedisKeys
+from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 
 
-class CostLedgerError(RuntimeError):
+class CostLedgerError(TransientJobError):
     error_code = "V22_COST_LEDGER_UNAVAILABLE"
 
+    def __init__(self, error_code: str | None = None) -> None:
+        super().__init__(
+            error_code or self.error_code,
+            "Cost controls are temporarily unavailable. The task will be retried.",
+        )
 
-class CostLimitExceeded(CostLedgerError):
+
+class CostLimitExceeded(DeterministicJobError):
     error_code = "V22_PROVIDER_ATTEMPT_LIMIT"
 
     def __init__(self, operation: CostOperation) -> None:
-        super().__init__(self.error_code)
+        super().__init__(
+            self.error_code,
+            "The task reached its safe provider request limit and could not be completed.",
+        )
         self.operation = operation
 
 

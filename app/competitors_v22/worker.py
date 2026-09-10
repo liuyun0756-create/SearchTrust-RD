@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import logging
 from datetime import datetime, timezone
+from time import monotonic
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -14,6 +15,11 @@ from arq import Retry
 from app.api.v2.competitor_models import CompetitorDiscoveryError, CompetitorDiscoveryRequest
 from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import pricing_catalog_from_settings
+from app.jobs_v22.cost_models import CostSummaryRecord
+from app.jobs_v22.cost_persistence import CostSummaryOutbox
+from app.core.config import settings
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError, classify_job_exception
 
@@ -40,6 +46,16 @@ async def execute_v22_competitor_discovery(
     state = await store.require_state(discovery_job_id)
     if state.terminal or state.run_generation != run_generation:
         return
+
+    ledger = JobCostLedger(
+        ctx["redis"],
+        prefix=store.keys.prefix,
+        job_id=discovery_job_id,
+        ttl_seconds=int(ctx.get("competitor_state_ttl_seconds", store.state_ttl_seconds)),
+        pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
+        job_created_at=state.created_at,
+    )
+    await ledger.ensure()
 
     attempt_count = state.attempt_count + 1
     started = _now(ctx)
@@ -76,6 +92,7 @@ async def execute_v22_competitor_discovery(
         )
 
     service = ctx["competitor_discovery_service"]
+    attempt_started = monotonic()
     try:
         raw_request = await store.get_request(discovery_job_id)
         if raw_request is None:
@@ -89,15 +106,30 @@ async def execute_v22_competitor_discovery(
             request=request,
             checkpoints=checkpoints,
             progress=progress,
+            cost_ledger=ledger,
         )
     except asyncio.CancelledError:
+        await ledger.record_job_attempt(
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        )
         logger.info("competitor discovery cancelled job_id=%s", discovery_job_id)
         raise
     except Exception as exc:
-        await _finish_failure(ctx, running.state, exc)
+        await ledger.record_job_attempt(
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        )
+        await _finish_failure(
+            ctx,
+            running.state,
+            exc,
+            cost_counters=(await ledger.snapshot()).root,
+        )
         return
 
-    await store.transition(
+    await ledger.record_job_attempt(
+        active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+    )
+    completed = await store.transition(
         discovery_job_id,
         status="succeeded",
         stage="completed",
@@ -105,10 +137,19 @@ async def execute_v22_competitor_discovery(
         message="Competitor discovery complete.",
         now=_now(ctx),
         result=result,
+        cost_counters=(await ledger.snapshot()).root,
     )
+    if completed.applied:
+        await _enqueue_cost_summary(ctx, completed.state)
 
 
-async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> None:
+async def _finish_failure(
+    ctx: dict[str, Any],
+    state,
+    exc: BaseException,
+    *,
+    cost_counters: dict[str, int] | None = None,
+) -> None:
     store: CompetitorDiscoveryStore = ctx["competitor_discovery_store"]
     failure = classify_job_exception(exc)
     max_attempts = int(ctx.get("max_attempts", 3))
@@ -129,6 +170,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
             message="A temporary issue occurred. Competitor discovery will retry automatically.",
             now=_now(ctx),
             attempt_count=attempt_count,
+            cost_counters=cost_counters,
         )
         raise Retry(defer=_retry_delay_seconds(state.discovery_job_id, attempt_count))
 
@@ -145,7 +187,7 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
         stage="failed",
         diagnostic_id=uuid4(),
     )
-    await store.transition(
+    failed = await store.transition(
         state.discovery_job_id,
         status="failed",
         stage="failed",
@@ -154,4 +196,47 @@ async def _finish_failure(ctx: dict[str, Any], state, exc: BaseException) -> Non
         now=_now(ctx),
         attempt_count=attempt_count,
         error=error,
+        cost_counters=cost_counters,
     )
+    if failed.applied:
+        await _enqueue_cost_summary(ctx, failed.state)
+
+
+async def _enqueue_cost_summary(ctx: dict[str, Any], state) -> None:
+    outbox: CostSummaryOutbox | None = ctx.get("cost_summary_outbox")
+    if outbox is None or not state.terminal or state.completed_at is None:
+        return
+    try:
+        ledger = JobCostLedger(
+            ctx["redis"],
+            prefix=ctx["competitor_discovery_store"].keys.prefix,
+            job_id=state.discovery_job_id,
+            ttl_seconds=int(
+                ctx.get(
+                    "competitor_state_ttl_seconds",
+                    ctx["competitor_discovery_store"].state_ttl_seconds,
+                )
+            ),
+            pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
+            job_created_at=state.created_at,
+        )
+        counters = await ledger.snapshot()
+        summary = CostSummaryRecord(
+            job_id=state.discovery_job_id,
+            case_id=state.case_id,
+            job_kind="competitor_discovery",
+            status=state.status,
+            attempt_count=state.attempt_count,
+            ledger_revision=counters.root["cost_ledger_revision"],
+            cost_counters=counters,
+            started_at=state.created_at,
+            completed_at=state.completed_at,
+        )
+        await outbox.enqueue(summary)
+        await outbox.sync(state.discovery_job_id)
+    except Exception as exc:
+        logger.warning(
+            "competitor cost summary deferred job_id_suffix=%s error=%s",
+            str(state.discovery_job_id)[-8:],
+            type(exc).__name__,
+        )

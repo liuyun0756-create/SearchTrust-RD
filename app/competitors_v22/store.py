@@ -169,6 +169,7 @@ class CompetitorDiscoveryStore:
         heartbeat_at: datetime | None = None,
         result: CompetitorDiscoveryResult | None = None,
         error: CompetitorDiscoveryError | None = None,
+        cost_counters: dict[str, int] | None = None,
     ) -> DiscoveryTransitionResult:
         state_key = self.keys.state(discovery_job_id)
         next_state: CompetitorDiscoveryJobState | None = None
@@ -199,6 +200,11 @@ class CompetitorDiscoveryStore:
                             "completed_at": completed_at,
                             "result": result,
                             "error": error,
+                            "cost_counters": (
+                                current.cost_counters
+                                if cost_counters is None
+                                else cost_counters
+                            ),
                         }
                     )
                     next_state = CompetitorDiscoveryJobState.model_validate(next_state.model_dump())

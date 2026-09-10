@@ -20,6 +20,8 @@ from app.collectors.serp_market_location import LocationLookupResponse
 from app.collectors.serp_market_requests import SerpPlannedCall, build_serp_search_plan
 from app.collectors.serp_market_requests import serp_market_context_from_analyze
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 from app.jobs_v22.serp_market_stage import (
     _BoundedHttpClient,
     CheckpointedSerpMarketStage,
@@ -106,12 +108,16 @@ class InterruptingSearchProvider:
         self.network_calls: list[tuple[str, str]] = []
         self.interrupted = False
 
-    async def search(self, call: SerpPlannedCall, *, before_attempt) -> SerpProviderResponse:
+    async def search(
+        self, call: SerpPlannedCall, *, before_attempt, after_attempt=None
+    ) -> SerpProviderResponse:
         await before_attempt(1, "a" * 12)
         self.network_calls.append((call.query, call.engine))
         if len(self.network_calls) == 4 and not self.interrupted:
             self.interrupted = True
             raise asyncio.CancelledError()
+        if after_attempt is not None:
+            await after_attempt(1, "a" * 12, None)
         return SerpProviderResponse(
             payload_for(call),
             started_at=NOW,
@@ -123,9 +129,13 @@ class SuccessfulSearchProvider:
     def __init__(self) -> None:
         self.network_calls = 0
 
-    async def search(self, call: SerpPlannedCall, *, before_attempt) -> SerpProviderResponse:
+    async def search(
+        self, call: SerpPlannedCall, *, before_attempt, after_attempt=None
+    ) -> SerpProviderResponse:
         await before_attempt(1, "b" * 12)
         self.network_calls += 1
+        if after_attempt is not None:
+            await after_attempt(1, "b" * 12, None)
         return SerpProviderResponse(
             payload_for(call),
             started_at=NOW,
@@ -228,6 +238,44 @@ async def test_location_lookup_is_checkpointed_once() -> None:
 
 
 @pytest.mark.anyio
+async def test_market_search_records_only_real_provider_attempts() -> None:
+    saved = checkpoints()
+    ledger = JobCostLedger(
+        saved.redis,
+        prefix="test:v22",
+        job_id=JOB_ID,
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=NOW,
+        clock=lambda: NOW,
+    )
+    search = SuccessfulSearchProvider()
+    stage = CheckpointedSerpMarketStage(
+        location_provider=UnusedLocationProvider(),
+        search_provider=search,
+        clock=lambda: NOW,
+    )
+
+    await stage.collect(
+        job_id=JOB_ID,
+        request=prospect_request(),
+        checkpoints=saved,
+        cost_ledger=ledger,
+    )
+    await stage.collect(
+        job_id=JOB_ID,
+        request=prospect_request(),
+        checkpoints=saved,
+        cost_ledger=ledger,
+    )
+
+    counters = (await ledger.snapshot()).root
+    assert counters["serpapi_attempts"] == 6
+    assert counters["serpapi_successes"] == 6
+    assert counters["checkpoint_hits_total"] == 6
+
+
+@pytest.mark.anyio
 async def test_context_entrypoint_matches_analyze_wrapper() -> None:
     request = prospect_request()
     context = serp_market_context_from_analyze(request)
@@ -261,9 +309,13 @@ class AlwaysFailingProvider:
     def __init__(self) -> None:
         self.network_calls = 0
 
-    async def search(self, call: SerpPlannedCall, *, before_attempt) -> SerpProviderResponse:
+    async def search(
+        self, call: SerpPlannedCall, *, before_attempt, after_attempt=None
+    ) -> SerpProviderResponse:
         await before_attempt(1, "c" * 12)
         self.network_calls += 1
+        if after_attempt is not None:
+            await after_attempt(1, "c" * 12, "transport")
         raise SerpMarketProviderError(
             "SERP_PROVIDER_TEMPORARY",
             retryable=True,

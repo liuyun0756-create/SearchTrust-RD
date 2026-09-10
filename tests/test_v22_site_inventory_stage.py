@@ -1,5 +1,6 @@
 import asyncio
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -11,6 +12,8 @@ from app.collectors.site_inventory_fetcher import SiteFetchResponse
 from app.collectors.site_inventory_firecrawl import FirecrawlMapResult
 from app.collectors.site_inventory_urls import SiteScope
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 from app.jobs_v22.site_inventory_stage import (
     CheckpointedSiteFetcher,
     CheckpointedSiteInventoryStage,
@@ -152,6 +155,48 @@ async def test_stage_resumes_external_calls_and_reuses_final_snapshot() -> None:
     assert fetcher.calls.count("https://example.com/sitemap.xml") == 1
     assert fetcher.calls.count("https://example.com/a") == 1
     assert firecrawl.calls == 2
+
+
+@pytest.mark.anyio
+async def test_firecrawl_retries_share_ledger_and_checkpoint_reuse_is_not_a_call() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    checkpoints = JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604800)
+    ledger = JobCostLedger(
+        redis,
+        prefix="test:v22",
+        job_id=JOB_ID,
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=datetime.now(timezone.utc),
+    )
+    fetcher = RecordingFetcher()
+    firecrawl = InterruptingFirecrawl()
+    inventory_stage = stage(fetcher, firecrawl)
+
+    with pytest.raises(asyncio.CancelledError):
+        await inventory_stage.collect(
+            job_id=JOB_ID,
+            request=prospect_request(),
+            checkpoints=checkpoints,
+            cost_ledger=ledger,
+        )
+    await inventory_stage.collect(
+        job_id=JOB_ID,
+        request=prospect_request(),
+        checkpoints=checkpoints,
+        cost_ledger=ledger,
+    )
+    await inventory_stage.collect(
+        job_id=JOB_ID,
+        request=prospect_request(),
+        checkpoints=checkpoints,
+        cost_ledger=ledger,
+    )
+
+    counters = (await ledger.snapshot()).root
+    assert counters["firecrawl_attempts"] == 2
+    assert counters["firecrawl_successes"] == 1
+    assert counters["firecrawl_outcome_unknown"] == 1
 
 
 @pytest.mark.anyio

@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
+from time import monotonic
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -40,6 +41,7 @@ from app.collectors.serp_market_requests import (
 from app.core.config import Settings
 from app.integrations.serpapi import (
     BeforeAttempt,
+    AfterAttempt,
     SerpApiHttpError,
     SerpApiInvalidResponse,
     SerpApiKeyState,
@@ -50,6 +52,7 @@ from app.integrations.serpapi import (
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.circuit_breaker import CircuitPermit, RedisCircuitBreaker
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError, ProviderCircuitOpen, TransientJobError
 from app.report_v22.models import StrictModel
@@ -66,6 +69,7 @@ class AttemptAwareProvider(Protocol):
         call: SerpPlannedCall,
         *,
         before_attempt: BeforeAttempt,
+        after_attempt: AfterAttempt | None = None,
     ) -> SerpProviderResponse: ...
 
 
@@ -200,12 +204,14 @@ class CheckpointedSerpProvider:
         job_id: UUID,
         clock: Callable[[], datetime],
         circuit_breaker: RedisCircuitBreaker | None = None,
+        cost_ledger: JobCostLedger | None = None,
     ) -> None:
         self.delegate = delegate
         self.checkpoints = checkpoints
         self.job_id = job_id
         self.clock = clock
         self.circuit_breaker = circuit_breaker
+        self.cost_ledger = cost_ledger
         self.attempts = ProviderAttemptLedger(
             checkpoints=checkpoints,
             job_id=job_id,
@@ -251,6 +257,8 @@ class CheckpointedSerpProvider:
         existing = await self.checkpoints.get(self.job_id, key)
         if existing is not None:
             logger.info("SERP checkpoint hit call_suffix=%s", call.request_digest[-12:])
+            if self.cost_ledger is not None:
+                await self.cost_ledger.record_checkpoint_hit()
             return self._response(
                 self._validated_checkpoint(existing, call),
                 checkpoint_hit=True,
@@ -264,8 +272,27 @@ class CheckpointedSerpProvider:
                 logical_call_used=True,
             )
 
+        active_claims: dict[tuple[int, str], tuple[UUID, float]] = {}
+
         async def before_attempt(key_slot: int, fingerprint: str) -> None:
             await self.attempts.claim(call, key_slot, fingerprint)
+            if self.cost_ledger is not None:
+                claim = await self.cost_ledger.claim("serpapi_market_search")
+                active_claims[(key_slot, fingerprint)] = (claim.claim_id, monotonic())
+
+        async def after_attempt(
+            key_slot: int,
+            fingerprint: str,
+            failure_kind: str | None,
+        ) -> None:
+            active = active_claims.pop((key_slot, fingerprint), None)
+            if self.cost_ledger is not None and active is not None:
+                claim_id, started = active
+                await self.cost_ledger.complete(
+                    claim_id,
+                    outcome="success" if failure_kind is None else "failure",
+                    duration_ms=max(int((monotonic() - started) * 1000), 0),
+                )
 
         started_at = self.clock()
         permit = None
@@ -274,7 +301,11 @@ class CheckpointedSerpProvider:
                 "serpapi", f"search:{call.engine}", now=started_at
             )
         try:
-            response = await self.delegate.search(call, before_attempt=before_attempt)
+            response = await self.delegate.search(
+                call,
+                before_attempt=before_attempt,
+                after_attempt=after_attempt,
+            )
         except SerpProviderAttemptsExhausted as exc:
             raise SerpMarketProviderError(
                 "SERP_PROVIDER_ATTEMPTS_EXHAUSTED",
@@ -409,6 +440,7 @@ class SerpApiSearchAdapter:
         call: SerpPlannedCall,
         *,
         before_attempt: BeforeAttempt,
+        after_attempt: AfterAttempt | None = None,
     ) -> SerpProviderResponse:
         if not self.keys:
             raise SerpMarketProviderError(
@@ -433,24 +465,35 @@ class SerpApiSearchAdapter:
             except ProviderCircuitOpen:
                 return False
 
-        async def after_attempt(_slot: int, fingerprint: str, failure_kind: str | None) -> None:
+        async def handle_after_attempt(
+            slot: int,
+            fingerprint: str,
+            failure_kind: str | None,
+        ) -> None:
             permit = key_permits.pop(fingerprint, None)
-            if self.circuit_breaker is None or permit is None:
-                return
-            if failure_kind is None:
-                await self.circuit_breaker.record_success(permit)
-                return
-            immediate = failure_kind in {
-                "invalid_or_forbidden", "monthly_quota_exhausted", "rate_limited"
-            }
-            eligible = immediate or failure_kind == "transport" or failure_kind.startswith("http_5")
-            await self.circuit_breaker.record_failure(
-                permit,
-                now=self.clock(),
-                eligible=eligible,
-                immediate=immediate,
-                failure_threshold=3,
-            )
+            if self.circuit_breaker is not None and permit is not None:
+                if failure_kind is None:
+                    await self.circuit_breaker.record_success(permit)
+                else:
+                    immediate = failure_kind in {
+                        "invalid_or_forbidden", "monthly_quota_exhausted", "rate_limited"
+                    }
+                    eligible = (
+                        immediate
+                        or failure_kind == "transport"
+                        or failure_kind.startswith("http_5")
+                    )
+                    await self.circuit_breaker.record_failure(
+                        permit,
+                        now=self.clock(),
+                        eligible=eligible,
+                        immediate=immediate,
+                        failure_threshold=3,
+                    )
+            if after_attempt is not None:
+                result = after_attempt(slot, fingerprint, failure_kind)
+                if asyncio.iscoroutine(result):
+                    await result
         try:
             async with asyncio.timeout(self.total_timeout):
                 async with self.client_factory() as client:
@@ -466,7 +509,7 @@ class SerpApiSearchAdapter:
                         state=self.state,
                         before_attempt=before_attempt,
                         key_available=key_available,
-                        after_attempt=after_attempt,
+                        after_attempt=handle_after_attempt,
                     )
         except SerpProviderAttemptsExhausted:
             raise
@@ -529,6 +572,7 @@ class CheckpointedSerpMarketStage:
         job_id: UUID,
         context: SerpMarketContext,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> tuple[SerpTargetPoint, int]:
         market = context.target_market
         if market.latitude is not None or market.longitude is not None:
@@ -547,6 +591,12 @@ class CheckpointedSerpMarketStage:
         key = f"{_CHECKPOINT_VERSION}:location:{identity[7:]}"
 
         async def operation() -> dict[str, Any]:
+            claim = (
+                await cost_ledger.claim("serpapi_location")
+                if cost_ledger is not None
+                else None
+            )
+            started = monotonic()
             try:
                 point = await resolve_target_point(
                     market,
@@ -554,14 +604,36 @@ class CheckpointedSerpMarketStage:
                     clock=self.clock,
                 )
             except SerpLocationResolutionError as exc:
+                if claim is not None:
+                    await cost_ledger.complete(
+                        claim.claim_id,
+                        outcome="failure",
+                        duration_ms=max(int((monotonic() - started) * 1000), 0),
+                    )
                 error_type = TransientJobError if exc.retryable else DeterministicJobError
                 raise error_type(f"V22_{exc.code}", exc.user_message) from exc
+            except Exception:
+                if claim is not None:
+                    await cost_ledger.complete(
+                        claim.claim_id,
+                        outcome="failure",
+                        duration_ms=max(int((monotonic() - started) * 1000), 0),
+                    )
+                raise
+            if claim is not None:
+                await cost_ledger.complete(
+                    claim.claim_id,
+                    outcome="success",
+                    duration_ms=max(int((monotonic() - started) * 1000), 0),
+                )
             return _LocationCheckpoint(
                 schema_version="serp_location_response_v1",
                 request_digest=identity,
                 point=point,
             ).model_dump(mode="json")
 
+        if cost_ledger is not None and await checkpoints.get(job_id, key) is not None:
+            await cost_ledger.record_checkpoint_hit()
         raw = await checkpoints.run_once(job_id, key, operation)
         checkpoint = _validate_model(_LocationCheckpoint, raw)
         if checkpoint.request_digest != identity:
@@ -574,11 +646,13 @@ class CheckpointedSerpMarketStage:
         job_id: UUID,
         request: AnalyzeRequest,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SerpMarketSnapshot:
         return await self.collect_context(
             job_id=job_id,
             context=serp_market_context_from_analyze(request),
             checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
         )
 
     async def collect_context(
@@ -587,6 +661,7 @@ class CheckpointedSerpMarketStage:
         job_id: UUID,
         context: SerpMarketContext,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SerpMarketSnapshot:
         identity = request_digest(
             {
@@ -605,12 +680,20 @@ class CheckpointedSerpMarketStage:
             snapshot = final_checkpoint.snapshot
             if snapshot.job_id != job_id or snapshot.queries != context.queries:
                 raise SerpMarketCheckpointError()
+            if cost_ledger is not None:
+                await cost_ledger.record_checkpoint_hit(
+                    count=(
+                        snapshot.budget.logical_calls_used
+                        + snapshot.budget.location_resolution_calls
+                    )
+                )
             return snapshot
 
         target_point, location_calls = await self._target_point(
             job_id=job_id,
             context=context,
             checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
         )
         try:
             plan = build_serp_search_plan(
@@ -630,6 +713,7 @@ class CheckpointedSerpMarketStage:
             job_id=job_id,
             clock=self.clock,
             circuit_breaker=self.circuit_breaker,
+            cost_ledger=cost_ledger,
         )
         try:
             snapshot = await SerpMarketCollector(

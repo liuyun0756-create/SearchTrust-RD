@@ -18,6 +18,7 @@ from app.competitors_v22.models import (
 )
 from app.competitors_v22.normalization import normalize_domain
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import CompetitorId, StrictModel, TargetMarket
 
@@ -35,6 +36,7 @@ class SiteCollector(Protocol):
         gsc_priorities: list[GscPagePriority],
         checkpoints: JobCheckpoints,
         checkpoint_namespace: str,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SiteInventorySnapshot: ...
 
 
@@ -79,6 +81,7 @@ class CheckpointedCompetitorSiteStage:
         target_market: TargetMarket,
         max_pages_each: int,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> list[CompetitorSiteInventoryResult]:
         if not COMPETITOR_MIN_COUNT <= len(competitors) <= COMPETITOR_MAX_COUNT:
             raise ValueError("competitor site collection requires one to three competitors")
@@ -98,6 +101,7 @@ class CheckpointedCompetitorSiteStage:
                     gsc_priorities=[],
                     checkpoints=checkpoints,
                     checkpoint_namespace=f"competitor:{competitor.competitor_id}",
+                    cost_ledger=cost_ledger,
                 )
                 if inventory.canonical_host != normalize_domain(str(competitor.website_url)):
                     raise ValueError("competitor inventory crossed its canonical website boundary")

@@ -59,6 +59,7 @@ class CompetitorDiscoveryJobState(StrictModel):
     completed_at: AwareDatetime | None = None
     result: CompetitorDiscoveryResult | None = None
     error: CompetitorDiscoveryError | None = None
+    cost_counters: dict[str, int] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "CompetitorDiscoveryJobState":

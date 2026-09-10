@@ -39,7 +39,7 @@ class RecordingExecutor:
         self.calls = 0
         self.last_request = None
 
-    async def execute(self, *, job_id, request, submitted_at, checkpoints):
+    async def execute(self, *, job_id, request, submitted_at, checkpoints, cost_ledger=None):
         self.last_request = request
         outcome = self.outcomes[min(self.calls, len(self.outcomes) - 1)]
         self.calls += 1
@@ -84,6 +84,8 @@ async def test_worker_success_updates_attempt_and_terminal_state() -> None:
     assert state.status == "succeeded"
     assert state.attempt_count == 1
     assert state.report is not None
+    assert state.cost_counters["job_attempts"] == 1
+    assert state.cost_counters["provider_attempts_total"] == 0
     assert executor.calls == 1
 
 
@@ -103,6 +105,7 @@ async def test_transient_failure_retries_then_becomes_explicit_terminal_failure(
     state = await store.require_state(JOB_ID)
     assert state.status == "failed"
     assert state.attempt_count == 3
+    assert state.cost_counters["job_attempts"] == 3
     assert state.error is not None
     assert state.error.error_code == "JOB_RETRY_EXHAUSTED"
     assert state.error.retryable is True

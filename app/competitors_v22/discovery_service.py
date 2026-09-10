@@ -15,6 +15,7 @@ from app.competitors_v22.normalization import normalize_domain
 from app.competitors_v22.supplements import SupplementalHomepageValidator
 from app.api.v2.models import DataGap
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import request_digest
 
 
@@ -25,6 +26,7 @@ class MarketStage(Protocol):
         job_id: UUID,
         context: SerpMarketContext,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SerpMarketSnapshot: ...
 
 
@@ -70,6 +72,7 @@ class CompetitorDiscoveryService:
         request: CompetitorDiscoveryRequest,
         checkpoints: JobCheckpoints,
         progress: Callable[[str, int, str], Awaitable[None]] | None = None,
+        cost_ledger: JobCostLedger | None = None,
     ) -> CompetitorDiscoveryResult:
         now = self.clock()
         input_digest = competitor_discovery_input_digest(request)
@@ -79,6 +82,7 @@ class CompetitorDiscoveryService:
                 job_id=discovery_job_id,
                 context=discovery_market_context(request),
                 checkpoints=checkpoints,
+                cost_ledger=cost_ledger,
             )
             shared = await self.market_store.save(
                 input_digest=input_digest,

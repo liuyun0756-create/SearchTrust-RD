@@ -7,6 +7,7 @@ import binascii
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from time import monotonic
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -36,6 +37,7 @@ from app.collectors.site_inventory_urls import (
 )
 from app.core.config import Settings
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import StrictModel
@@ -212,10 +214,12 @@ class _CheckpointedFirecrawl:
         delegate: FirecrawlMapper,
         checkpoints: JobCheckpoints,
         job_id: UUID,
+        cost_ledger: JobCostLedger | None = None,
     ) -> None:
         self.delegate = delegate
         self.checkpoints = checkpoints
         self.job_id = job_id
+        self.cost_ledger = cost_ledger
 
     async def map(self, root_url: str, *, limit: int) -> FirecrawlMapResult:
         key = (
@@ -224,13 +228,36 @@ class _CheckpointedFirecrawl:
         )
 
         async def operation() -> dict[str, Any]:
-            result = await self.delegate.map(root_url, limit=limit)
+            claim = (
+                await self.cost_ledger.claim("firecrawl_map")
+                if self.cost_ledger is not None
+                else None
+            )
+            started = monotonic()
+            try:
+                result = await self.delegate.map(root_url, limit=limit)
+            except Exception:
+                if claim is not None:
+                    await self.cost_ledger.complete(
+                        claim.claim_id,
+                        outcome="failure",
+                        duration_ms=max(int((monotonic() - started) * 1000), 0),
+                    )
+                raise
+            if claim is not None:
+                await self.cost_ledger.complete(
+                    claim.claim_id,
+                    outcome="success" if result.limitation is None else "failure",
+                    duration_ms=max(int((monotonic() - started) * 1000), 0),
+                )
             return _FirecrawlCheckpoint(
                 schema_version="site_inventory_firecrawl_v1",
                 urls=list(result.urls),
                 limitation=result.limitation,
             ).model_dump(mode="json")
 
+        if self.cost_ledger is not None and await self.checkpoints.get(self.job_id, key) is not None:
+            await self.cost_ledger.record_checkpoint_hit()
         raw = await self.checkpoints.run_once(self.job_id, key, operation)
         checkpoint = _validate_model(_FirecrawlCheckpoint, raw)
         if len(checkpoint.urls) > limit:
@@ -258,6 +285,7 @@ class CheckpointedSiteInventoryStage:
         job_id: UUID,
         request: AnalyzeRequest,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SiteInventorySnapshot:
         identity = {
             "site_url": str(request.business_identity.site_url),
@@ -285,6 +313,7 @@ class CheckpointedSiteInventoryStage:
                     delegate=self.firecrawl,
                     checkpoints=checkpoints,
                     job_id=job_id,
+                    cost_ledger=cost_ledger,
                 )
                 if self.firecrawl is not None
                 else None
@@ -378,6 +407,7 @@ class CheckpointedSiteInventoryStage:
         gsc_priorities: list[GscPagePriority],
         checkpoints: JobCheckpoints,
         checkpoint_namespace: str,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SiteInventorySnapshot:
         """Collect one bounded site with explicit limits and first-party priorities."""
 
@@ -404,6 +434,7 @@ class CheckpointedSiteInventoryStage:
                     delegate=self.firecrawl,
                     checkpoints=checkpoints,
                     job_id=job_id,
+                    cost_ledger=cost_ledger,
                 )
                 if self.firecrawl is not None
                 else None

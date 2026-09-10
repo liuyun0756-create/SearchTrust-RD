@@ -27,7 +27,9 @@ class RecordingMarketStage:
         self.market_snapshot = market_snapshot
         self.calls: list[tuple[UUID, SerpMarketContext]] = []
 
-    async def collect_context(self, *, job_id, context, checkpoints):
+    async def collect_context(
+        self, *, job_id, context, checkpoints, cost_ledger=None
+    ):
         self.calls.append((job_id, context))
         return self.market_snapshot.model_copy(update={"job_id": job_id})
 

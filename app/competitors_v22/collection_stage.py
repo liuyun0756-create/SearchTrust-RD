@@ -32,6 +32,7 @@ from app.competitors_v22.site_stage import (
     CompetitorSiteInventoryResult,
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError
 
@@ -66,6 +67,7 @@ class CheckpointedCompetitorCollectionStage:
         discovery: CompetitorDiscoveryResult,
         shared_market: SharedMarketSnapshot,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> CompetitorCollectionSnapshot:
         now = self.clock()
         if (
@@ -109,6 +111,7 @@ class CheckpointedCompetitorCollectionStage:
                 target_market=request.target_market,
                 max_pages_each=request.generation_limits.max_competitor_pages_each,
                 checkpoints=checkpoints,
+                cost_ledger=cost_ledger,
             )
             site_by_id = {item.competitor_id: item for item in site_results}
             expected_ids = {item.competitor_id for item in request.competitors}
@@ -128,6 +131,7 @@ class CheckpointedCompetitorCollectionStage:
                         language=shared_market.snapshot.language,
                         checkpoints=checkpoints,
                         budget=budget,
+                        cost_ledger=cost_ledger,
                     )
                 )
             profile_by_id = {item.competitor_id: item for item in profiles}

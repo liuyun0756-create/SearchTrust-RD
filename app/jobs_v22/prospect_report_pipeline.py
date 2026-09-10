@@ -11,6 +11,7 @@ from app.api.v2.models import AnalyzeRequest
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import request_digest
 from app.jobs_v22.public_findings_stage import CheckpointedPublicFindingsStage
 from app.jobs_v22.result_persistence import result_snapshot_id
@@ -36,7 +37,13 @@ from app.report_v22.public_gbp_models import CustomerPublicGbpReference
 class ControlledCopyProvider(Protocol):
     model_version: str
 
-    async def generate(self, *, job_id: UUID, request: CopyRequestV1) -> object: ...
+    async def generate(
+        self,
+        *,
+        job_id: UUID,
+        request: CopyRequestV1,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> object: ...
 
 
 def _binding(
@@ -175,6 +182,7 @@ class PublicProspectReportPipeline:
         competitor_collection: CompetitorCollectionSnapshot,
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> ReportV22:
         del discovery  # Its immutable identities were checked by the executor and collection stage.
         generated_at = self.clock()
@@ -204,8 +212,14 @@ class PublicProspectReportPipeline:
         copy_key = f"v22_controlled_copy_v1:result:{request_digest(copy_request)[7:]}"
 
         async def generate_copy() -> Any:
-            return await self.copy_provider.generate(job_id=job_id, request=copy_request)
+            return await self.copy_provider.generate(
+                job_id=job_id,
+                request=copy_request,
+                cost_ledger=cost_ledger,
+            )
 
+        if cost_ledger is not None and await checkpoints.get(job_id, copy_key) is not None:
+            await cost_ledger.record_checkpoint_hit()
         copy_outputs = await checkpoints.run_once(job_id, copy_key, generate_copy)
         action_copy = validate_and_render_copy(copy_request, copy_outputs)
         return assemble_prospect_report(

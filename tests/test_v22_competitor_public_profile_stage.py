@@ -12,6 +12,8 @@ from app.competitors_v22.public_profile_stage import (
     SharedProviderAttemptBudget,
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.cost_models import PricingCatalog
 from test_v22_competitor_candidates import business_records, snapshot
 from test_v22_competitor_models import NOW
 
@@ -46,15 +48,19 @@ class RecordingProvider:
     def __init__(self) -> None:
         self.calls = []
 
-    async def request(self, params, *, before_attempt):
+    async def request(self, params, *, before_attempt, after_attempt=None):
         await before_attempt(1, "fingerprint")
         self.calls.append(params)
         if params["engine"] == "google_maps_reviews":
             if "next_page_token" not in params:
+                if after_attempt is not None:
+                    await after_attempt(1, "fingerprint", None)
                 return {
                     "reviews": [{"review_id": "one", "rating": 5, "iso_date": NOW.isoformat(), "snippet": "Great"}],
                     "serpapi_pagination": {"next_page_token": "page-2"},
                 }
+            if after_attempt is not None:
+                await after_attempt(1, "fingerprint", None)
             return {
                 "reviews": [{"review_id": "two", "rating": 4, "iso_date": NOW.isoformat(), "snippet": "Good"}]
             }
@@ -68,6 +74,15 @@ async def test_complete_market_profile_skips_detail_and_pages_reviews_with_check
     budget = SharedProviderAttemptBudget(checkpoints, JOB_ID)
     provider = RecordingProvider()
     stage = CheckpointedPublicProfileStage(provider, clock=lambda: NOW)
+    ledger = JobCostLedger(
+        redis,
+        prefix="test:v22",
+        job_id=JOB_ID,
+        ttl_seconds=604_800,
+        pricing=PricingCatalog(),
+        job_created_at=NOW,
+        clock=lambda: NOW,
+    )
 
     first = await stage.collect_one(
         job_id=JOB_ID,
@@ -76,6 +91,7 @@ async def test_complete_market_profile_skips_detail_and_pages_reviews_with_check
         language="en",
         checkpoints=checkpoints,
         budget=budget,
+        cost_ledger=ledger,
     )
     repeated = await stage.collect_one(
         job_id=JOB_ID,
@@ -84,6 +100,7 @@ async def test_complete_market_profile_skips_detail_and_pages_reviews_with_check
         language="en",
         checkpoints=checkpoints,
         budget=budget,
+        cost_ledger=ledger,
     )
 
     assert first.profile is not None
@@ -94,6 +111,10 @@ async def test_complete_market_profile_skips_detail_and_pages_reviews_with_check
     assert len(provider.calls) == 2
     assert await budget.count() == 2
     assert repeated.checkpoint_hits == 2
+    counters = (await ledger.snapshot()).root
+    assert counters["serpapi_attempts"] == 2
+    assert counters["serpapi_successes"] == 2
+    assert counters["checkpoint_hits_total"] == 2
 
 
 @pytest.mark.anyio

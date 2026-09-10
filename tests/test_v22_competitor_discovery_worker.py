@@ -19,7 +19,15 @@ class SuccessfulService:
         self.calls = 0
         self.progress = []
 
-    async def discover(self, *, discovery_job_id, request, checkpoints, progress=None):
+    async def discover(
+        self,
+        *,
+        discovery_job_id,
+        request,
+        checkpoints,
+        progress=None,
+        cost_ledger=None,
+    ):
         self.calls += 1
         if progress is not None:
             await progress("ranking_candidates", 70, "Ranking competitor candidates.")

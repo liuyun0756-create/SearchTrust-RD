@@ -25,7 +25,7 @@ class CopyProvider:
     def __init__(self) -> None:
         self.calls = 0
 
-    async def generate(self, *, job_id, request):
+    async def generate(self, *, job_id, request, cost_ledger=None):
         self.calls += 1
         return valid_response(request)
 

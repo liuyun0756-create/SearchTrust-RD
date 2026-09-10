@@ -14,6 +14,7 @@ from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.competitors_v22.selection import AnalysisRequestEnvelope
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import ReportV22
@@ -30,6 +31,7 @@ class V22JobExecutor(Protocol):
         request: ExecutorRequest,
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> ReportV22: ...
 
 
@@ -53,6 +55,7 @@ class SiteStage(Protocol):
         job_id: UUID,
         request: AnalyzeRequest,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> SiteInventorySnapshot: ...
 
 
@@ -65,6 +68,7 @@ class CompetitorStage(Protocol):
         discovery: CompetitorDiscoveryResult,
         shared_market: SharedMarketSnapshot,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> CompetitorCollectionSnapshot: ...
 
 
@@ -80,6 +84,7 @@ class ProspectReportPipeline(Protocol):
         competitor_collection: CompetitorCollectionSnapshot,
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> ReportV22: ...
 
 
@@ -158,6 +163,7 @@ class ProspectV22Executor:
         request: ExecutorRequest,
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
     ) -> ReportV22:
         envelope = self._validate_envelope(request)
         analyze = envelope.analyze_request
@@ -191,6 +197,7 @@ class ProspectV22Executor:
             job_id=job_id,
             request=analyze,
             checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
         )
         competitor_collection = await self.competitor_stage.collect(
             job_id=job_id,
@@ -198,6 +205,7 @@ class ProspectV22Executor:
             discovery=discovery,
             shared_market=shared_market,
             checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
         )
         report = await self.report_pipeline.build(
             job_id=job_id,
@@ -208,6 +216,7 @@ class ProspectV22Executor:
             competitor_collection=competitor_collection,
             submitted_at=submitted_at,
             checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
         )
         try:
             validated = ReportV22.model_validate(report.model_dump(mode="python"))
@@ -239,6 +248,7 @@ class UnavailableV22Executor:
         request: ExecutorRequest,
         submitted_at: datetime,
         checkpoints: JobCheckpoints | None,
+        cost_ledger: JobCostLedger | None = None,
     ) -> ReportV22:
         raise DeterministicJobError(
             "V22_PIPELINE_NOT_READY",

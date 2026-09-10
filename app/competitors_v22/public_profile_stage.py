@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from time import monotonic
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -26,6 +27,7 @@ from app.competitors_v22.public_profile import (
     sanitize_public_profile_payload,
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.cost_ledger import CostLedgerError, JobCostLedger
 from app.jobs_v22.digest import request_digest
 from app.integrations.serpapi import (
     SerpApiKeyState,
@@ -36,7 +38,9 @@ from app.core.config import Settings
 
 
 class PublicProfileProvider(Protocol):
-    async def request(self, params: dict[str, str], *, before_attempt) -> dict[str, Any]: ...
+    async def request(
+        self, params: dict[str, str], *, before_attempt, after_attempt=None
+    ) -> dict[str, Any]: ...
 
 
 class _BoundedClient:
@@ -82,7 +86,9 @@ class SerpApiPublicProfileProvider:
             pool=connect_timeout,
         )
 
-    async def request(self, params: dict[str, str], *, before_attempt) -> dict[str, Any]:
+    async def request(
+        self, params: dict[str, str], *, before_attempt, after_attempt=None
+    ) -> dict[str, Any]:
         async with httpx.AsyncClient(
             timeout=self.timeout,
             follow_redirects=False,
@@ -97,6 +103,7 @@ class SerpApiPublicProfileProvider:
                     base_url=self.base_url,
                     state=self.state,
                     before_attempt=before_attempt,
+                    after_attempt=after_attempt,
                 ),
                 timeout=self.total_timeout,
             )
@@ -178,14 +185,50 @@ class CheckpointedPublicProfileStage:
         self.provider = provider
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
-    async def _request(self, *, job_id, params, checkpoints, budget):
+    async def _request(
+        self,
+        *,
+        job_id,
+        params,
+        checkpoints,
+        budget,
+        cost_ledger: JobCostLedger | None = None,
+    ):
         key = f"competitor-public:{request_digest(params)[7:]}"
         existing = await checkpoints.get(job_id, key)
         if existing is not None:
             if not isinstance(existing, dict) or sanitize_public_profile_payload(existing, params["engine"]) != existing:
                 raise ValueError("public profile checkpoint is invalid")
+            if cost_ledger is not None:
+                await cost_ledger.record_checkpoint_hit()
             return existing, True
-        payload = await self.provider.request(params, before_attempt=budget.claim)
+        active_claims: dict[tuple[int, str], tuple[UUID, float]] = {}
+
+        async def before_attempt(key_slot: int, fingerprint: str) -> None:
+            await budget.claim(key_slot, fingerprint)
+            if cost_ledger is not None:
+                claim = await cost_ledger.claim("serpapi_public_profile")
+                active_claims[(key_slot, fingerprint)] = (claim.claim_id, monotonic())
+
+        async def after_attempt(
+            key_slot: int,
+            fingerprint: str,
+            failure_kind: str | None,
+        ) -> None:
+            active = active_claims.pop((key_slot, fingerprint), None)
+            if cost_ledger is not None and active is not None:
+                claim_id, started = active
+                await cost_ledger.complete(
+                    claim_id,
+                    outcome="success" if failure_kind is None else "failure",
+                    duration_ms=max(int((monotonic() - started) * 1000), 0),
+                )
+
+        payload = await self.provider.request(
+            params,
+            before_attempt=before_attempt,
+            after_attempt=after_attempt,
+        )
         if not isinstance(payload, dict):
             raise ValueError("public profile provider returned an invalid payload")
         payload = sanitize_public_profile_payload(payload, params["engine"])
@@ -202,6 +245,7 @@ class CheckpointedPublicProfileStage:
         language: str,
         checkpoints: JobCheckpoints,
         budget: SharedProviderAttemptBudget,
+        cost_ledger: JobCostLedger | None = None,
     ) -> CompetitorPublicProfileResult:
         records = _matching_records(competitor, market_snapshot)
         strong = next((item for item in records if item.provider_data_id or item.provider_place_id or item.provider_cid), None)
@@ -222,7 +266,13 @@ class CheckpointedPublicProfileStage:
                 else:
                     params["data"] = strong.provider_data_id or ""
                     params["ll"] = f"@{strong.latitude},{strong.longitude},14z"
-                payload, hit = await self._request(job_id=job_id, params=params, checkpoints=checkpoints, budget=budget)
+                payload, hit = await self._request(
+                    job_id=job_id,
+                    params=params,
+                    checkpoints=checkpoints,
+                    budget=budget,
+                    cost_ledger=cost_ledger,
+                )
                 checkpoint_hits += int(hit)
                 detail_calls += int(not hit)
                 profile = normalize_place_profile(payload, collected_at=now, params=params)
@@ -245,7 +295,13 @@ class CheckpointedPublicProfileStage:
                     }
                     if token:
                         params["next_page_token"] = token
-                    payload, hit = await self._request(job_id=job_id, params=params, checkpoints=checkpoints, budget=budget)
+                    payload, hit = await self._request(
+                        job_id=job_id,
+                        params=params,
+                        checkpoints=checkpoints,
+                        budget=budget,
+                        cost_ledger=cost_ledger,
+                    )
                     checkpoint_hits += int(hit)
                     review_calls += int(not hit)
                     page_records, next_token = normalize_review_page(payload, collected_at=now, params=params)
@@ -272,6 +328,8 @@ class CheckpointedPublicProfileStage:
                 tuple(limitations),
             )
         except asyncio.CancelledError:
+            raise
+        except CostLedgerError:
             raise
         except ProviderBudgetExhausted:
             limitations.append("The shared public-provider attempt budget was exhausted.")
