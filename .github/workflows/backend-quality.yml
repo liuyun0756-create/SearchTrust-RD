@@ -1,0 +1,72 @@
+name: Backend quality gate
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-quality:
+    name: Backend quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run backend tests
+        run: >-
+          python -m pytest -q -m "not redis_integration"
+          --disable-socket --allow-unix-socket
+
+  redis-integration:
+    name: Redis integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      V22_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+      V22_TEST_REDIS_PREFIX: "searchtrust:v22:ci:"
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run Redis smoke test
+        run: >-
+          python -m pytest tests/test_v22_redis_protocol_smoke.py -q
+          --disable-socket --allow-unix-socket
+          --allow-hosts=127.0.0.1,localhost,::1
