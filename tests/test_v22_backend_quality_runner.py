@@ -88,6 +88,6 @@ def test_redis_runner_replaces_any_caller_prefix_with_a_generated_one(
 
     assert redis_quality.main() == 0
     assert re.fullmatch(
-        r"searchtrust:v22:local:[0-9a-f]{32}:",
+        r"searchtrust:v22:(?:local|ci):[0-9a-f]{32}:",
         captured["V22_TEST_REDIS_PREFIX"],
     )
