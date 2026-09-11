@@ -39,7 +39,6 @@ jobs:
     timeout-minutes: 10
     env:
       V22_TEST_REDIS_URL: redis://127.0.0.1:6379/15
-      V22_TEST_REDIS_PREFIX: "searchtrust:v22:ci:"
     services:
       redis:
         image: redis:7.4-alpine
@@ -63,5 +62,5 @@ jobs:
             requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
-      - name: Run Redis smoke test
+      - name: Run Redis integration suite
         run: python scripts/run_v22_redis_integration.py

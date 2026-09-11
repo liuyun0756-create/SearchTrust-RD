@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -69,3 +70,24 @@ def test_redis_command_allows_only_explicit_loopback_hosts() -> None:
 def test_redis_cleanup_scope_rejects_unowned_compose_projects() -> None:
     with pytest.raises(ValueError, match="unsafe Docker Compose project name"):
         redis_quality._compose_command("production", ["down"])
+
+
+def test_redis_runner_replaces_any_caller_prefix_with_a_generated_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+    monkeypatch.setenv("V22_TEST_REDIS_URL", "redis://127.0.0.1:6380/15")
+    monkeypatch.setenv("V22_TEST_REDIS_PREFIX", "searchtrust:production:")
+    monkeypatch.delenv("V22_REDIS_URL", raising=False)
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.setattr(
+        redis_quality,
+        "_run_against_environment",
+        lambda environment: captured.update(environment) or 0,
+    )
+
+    assert redis_quality.main() == 0
+    assert re.fullmatch(
+        r"searchtrust:v22:local:[0-9a-f]{32}:",
+        captured["V22_TEST_REDIS_PREFIX"],
+    )

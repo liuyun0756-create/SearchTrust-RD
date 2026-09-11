@@ -20,7 +20,7 @@ def test_test_redis_accepts_only_loopback_nonproduction_database() -> None:
     validate_redis_test_environment(
         {
             "V22_TEST_REDIS_URL": "redis://127.0.0.1:6380/15",
-            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:run-123:",
+            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:0123456789abcdef0123456789abcdef:",
         }
     )
 
@@ -30,11 +30,11 @@ def test_test_redis_accepts_only_loopback_nonproduction_database() -> None:
     [
         {
             "V22_TEST_REDIS_URL": "rediss://default:secret@redis.railway.internal:6379/0",
-            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:run:",
+            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:0123456789abcdef0123456789abcdef:",
         },
         {
             "V22_TEST_REDIS_URL": "redis://127.0.0.1:6379/0",
-            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:run:",
+            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:0123456789abcdef0123456789abcdef:",
         },
         {
             "V22_TEST_REDIS_URL": "redis://127.0.0.1:6379/15",
@@ -42,7 +42,7 @@ def test_test_redis_accepts_only_loopback_nonproduction_database() -> None:
         },
         {
             "V22_TEST_REDIS_URL": "redis://127.0.0.1:6379/15",
-            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:run:",
+            "V22_TEST_REDIS_PREFIX": "searchtrust:v22:test:0123456789abcdef0123456789abcdef:",
             "RAILWAY_ENVIRONMENT_NAME": "production",
         },
     ],

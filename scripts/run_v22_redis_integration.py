@@ -6,6 +6,8 @@ import subprocess
 import sys
 import uuid
 
+from redis import Redis
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS_ROOT = ROOT / "tests"
@@ -13,7 +15,11 @@ for import_root in (ROOT, TESTS_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-from support.network_guard import validate_redis_test_environment  # noqa: E402
+from integration.support.redis_process import (  # noqa: E402
+    clear_prefixed_keys,
+    generated_test_prefix,
+    require_test_redis_environment,
+)
 from support.output_security import (  # noqa: E402
     configured_secret_values,
     redact_sensitive_output,
@@ -21,17 +27,7 @@ from support.output_security import (  # noqa: E402
 )
 
 
-COMPOSE_DOCUMENT = """services:
-  redis:
-    image: redis:7.4-alpine
-    ports:
-      - \"127.0.0.1::6379\"
-    healthcheck:
-      test: [\"CMD\", \"redis-cli\", \"ping\"]
-      interval: 1s
-      timeout: 1s
-      retries: 20
-"""
+COMPOSE_FILE = ROOT / "docker-compose.test.yml"
 _PROJECT_PATTERN = re.compile(r"^searchtrust-v22-tests-[a-z0-9-]+$")
 
 
@@ -58,7 +54,7 @@ def _compose_command(project: str, arguments: Sequence[str]) -> list[str]:
         "--project-name",
         project,
         "--file",
-        "-",
+        str(COMPOSE_FILE),
         *arguments,
     ]
 
@@ -71,7 +67,6 @@ def _run_compose(
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         _compose_command(project, arguments),
-        input=COMPOSE_DOCUMENT,
         cwd=ROOT,
         env=dict(environment),
         capture_output=True,
@@ -106,18 +101,30 @@ def _port_from_compose(project: str, environment: Mapping[str, str]) -> int:
 
 
 def _run_against_environment(environment: Mapping[str, str]) -> int:
-    validate_redis_test_environment(environment)
-    return run_diagnostic_command(
-        redis_test_command(),
-        cwd=ROOT,
-        environment=environment,
-    )
+    redis_url, prefix = require_test_redis_environment(environment)
+    client = Redis.from_url(redis_url, decode_responses=False)
+    try:
+        client.ping()
+        clear_prefixed_keys(client, prefix)
+        return run_diagnostic_command(
+            redis_test_command(),
+            cwd=ROOT,
+            environment=environment,
+        )
+    finally:
+        clear_prefixed_keys(client, prefix)
+        client.close()
 
 
 def main() -> int:
     base_environment = {**os.environ, "SEARCHTRUST_TESTING": "1"}
     if base_environment.get("V22_TEST_REDIS_URL"):
-        return _run_against_environment(base_environment)
+        context = "ci" if base_environment.get("GITHUB_ACTIONS") == "true" else "local"
+        test_environment = {
+            **base_environment,
+            "V22_TEST_REDIS_PREFIX": generated_test_prefix(context=context),
+        }
+        return _run_against_environment(test_environment)
 
     project = f"searchtrust-v22-tests-{os.getpid()}-{uuid.uuid4().hex[:8]}"
     started = _run_compose(
@@ -134,7 +141,7 @@ def main() -> int:
         test_environment = {
             **base_environment,
             "V22_TEST_REDIS_URL": f"redis://127.0.0.1:{port}/15",
-            "V22_TEST_REDIS_PREFIX": f"searchtrust:v22:test:{project}:",
+            "V22_TEST_REDIS_PREFIX": generated_test_prefix(context="test"),
         }
         return _run_against_environment(test_environment)
     finally:

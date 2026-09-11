@@ -6,6 +6,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "backend-quality.yml"
+COMPOSE_PATH = ROOT / "docker-compose.test.yml"
 
 pytestmark = pytest.mark.contract
 
@@ -57,10 +58,24 @@ def test_redis_integration_job_uses_redis_74_and_localhost_only() -> None:
     assert "redis-cli ping" in redis_service["options"]
 
     test_step = next(
-        step for step in redis_job["steps"] if step.get("name") == "Run Redis smoke test"
+        step
+        for step in redis_job["steps"]
+        if step.get("name") == "Run Redis integration suite"
     )
     assert test_step["run"] == "python scripts/run_v22_redis_integration.py"
     assert redis_job["env"]["V22_TEST_REDIS_URL"] == "redis://127.0.0.1:6379/15"
+    assert "V22_TEST_REDIS_PREFIX" not in redis_job["env"]
+
+
+def test_local_redis_is_ephemeral_healthy_and_loopback_only() -> None:
+    compose = yaml.safe_load(COMPOSE_PATH.read_text(encoding="utf-8"))
+    redis_service = compose["services"]["redis"]
+
+    assert redis_service["image"] == "redis:7.4-alpine"
+    assert redis_service["ports"] == ["127.0.0.1::6379"]
+    assert redis_service["tmpfs"] == ["/data"]
+    assert "volumes" not in redis_service
+    assert redis_service["healthcheck"]["test"] == ["CMD", "redis-cli", "ping"]
 
 
 def test_backend_workflow_does_not_read_production_secrets() -> None:
