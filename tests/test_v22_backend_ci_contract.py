@@ -49,6 +49,20 @@ def test_backend_quality_uses_python_312_pip_cache_and_repository_entrypoint() -
     assert test_step["run"] == "python scripts/run_v22_backend_quality.py fast"
 
 
+def test_workflow_has_least_privilege_checkouts_and_bounded_jobs() -> None:
+    workflow = _load_workflow()
+
+    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["jobs"]["backend-quality"]["timeout-minutes"] == 15
+    assert workflow["jobs"]["redis-integration"]["timeout-minutes"] == 10
+    for job in workflow["jobs"].values():
+        checkout = next(
+            step for step in job["steps"]
+            if step.get("uses", "").startswith("actions/checkout@")
+        )
+        assert checkout["with"]["persist-credentials"] is False
+
+
 def test_redis_integration_job_uses_redis_74_and_localhost_only() -> None:
     workflow = _load_workflow()
     redis_job = workflow["jobs"]["redis-integration"]
