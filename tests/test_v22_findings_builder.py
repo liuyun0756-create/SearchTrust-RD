@@ -3,8 +3,8 @@ from datetime import timedelta
 from uuid import UUID
 import json
 import os
-from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
@@ -79,7 +79,7 @@ def test_source_order_duplicates_and_repeated_build_are_deterministic():
 def test_finding_identity_is_stable_across_processes():
     value = request(site([{"status_code": 503}]))
     program = "from app.report_v22.findings_models import PublicFindingsInput; from app.report_v22.findings import build_public_findings; import sys; print(build_public_findings(PublicFindingsInput.model_validate_json(sys.stdin.read())).model_dump_json())"
-    outputs = [subprocess.check_output([str(Path('.venv/bin/python').absolute()), "-c", program],
+    outputs = [subprocess.check_output([sys.executable, "-c", program],
                input=value.model_dump_json().encode(), env={**os.environ, "PYTHONHASHSEED": str(seed)}) for seed in (11, 92)]
     assert outputs[0] == outputs[1]
     assert json.loads(outputs[0])["findings"][0]["finding_id"] == builder.build_public_findings(value).findings[0].finding_id

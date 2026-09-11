@@ -3,8 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import date, timedelta
 import os
-from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
@@ -252,7 +252,7 @@ def test_output_is_stable_across_python_hash_seeds() -> None:
     )
     outputs = [
         subprocess.check_output(
-            [str(Path(".venv/bin/python").absolute()), "-c", program],
+            [sys.executable, "-c", program],
             input=value.model_dump_json().encode(),
             env={**os.environ, "PYTHONHASHSEED": str(seed)},
         )
