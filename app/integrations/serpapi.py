@@ -1,4 +1,4 @@
-"""Secret-safe SerpAPI key rotation shared by v2.1 and v2.2."""
+"""Secret-safe SerpAPI key rotation shared by V2.2 collectors."""
 
 from __future__ import annotations
 

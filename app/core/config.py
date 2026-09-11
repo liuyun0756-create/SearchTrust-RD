@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,14 +25,9 @@ class Settings(BaseSettings):
     )
 
     # ── Project meta ─────────────────────────────────────────────────────────
-    APP_NAME: str = "SEO Trust Path Analysis Service"
+    APP_NAME: str = "SearchTrust V2.2 Backend"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-
-    # ── Dify ──────────────────────────────────────────────────────────────────
-    DIFY_API_KEY: str = Field(default="", description="Dify application API key")
-    DIFY_API_URL: AnyHttpUrl = Field(default="https://api.dify.ai/v1", description="Base URL for Dify API")
-    DIFY_WORKFLOW_ID: str = Field(default="", description="Dify workflow ID")
 
     # ── SerpAPI ───────────────────────────────────────────────────────────────
     SERPAPI_KEY: str = Field(default="", description="SerpAPI key")
@@ -47,43 +42,17 @@ class Settings(BaseSettings):
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
     SERPAPI_LOCATIONS_URL: str = "https://serpapi.com/locations.json"
 
-    # ── Address AI fallback ─────────────────────────────────────────────────
-    ADDRESS_AI_ENABLED: bool = Field(
-        default=False,
-        description="Use an OpenAI-compatible model to confirm incomplete address candidates",
-    )
-    ADDRESS_AI_API_KEY: str = Field(default="", description="Address AI provider API key")
-    ADDRESS_AI_BASE_URL: str = Field(default="", description="OpenAI-compatible API base URL")
-    ADDRESS_AI_MODEL: str = Field(default="", description="Address AI model name")
-    ADDRESS_AI_TIMEOUT: Annotated[int, Field(ge=3, le=60)] = Field(default=20)
-
-    # ── Concurrency ───────────────────────────────────────────────────────────
-    MAX_CONCURRENT_REQUESTS: Annotated[int, Field(ge=1, le=100)] = Field(
-        default=10,
-        description="Maximum number of concurrent Dify requests",
-    )
-
-    # ── Scraper ───────────────────────────────────────────────────────────────
-    SCRAPER_TIMEOUT: Annotated[int, Field(ge=5, le=120)] = Field(default=30)
-    SCRAPER_RETRY: Annotated[int, Field(ge=0, le=10)] = Field(default=3)
-    JINA_BASE_URL: str = "https://r.jina.ai"
-    JINA_API_KEY: str = Field(default="")
+    # ── Site collection ───────────────────────────────────────────────────────
     FIRECRAWL_API_KEY: str = Field(default="")
     FIRECRAWL_API_URL: str = Field(default="https://api.firecrawl.dev/v1")
-    SCRAPER_MIN_CONTENT_LENGTH: int = Field(default=300)
 
-    # ── Dify streaming ────────────────────────────────────────────────────────
-    DIFY_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=1800)] = Field(default=1200)
-    DIFY_RETRY: Annotated[int, Field(ge=0, le=5)] = Field(default=3)
-
-    # ── Task progress streaming ───────────────────────────────────────────────
+    # ── V2.2 task event streaming ─────────────────────────────────────────────
     TASK_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=3600)] = Field(default=1260)
     TASK_STREAM_HEARTBEAT_INTERVAL: Annotated[int, Field(ge=5, le=60)] = Field(default=20)
 
     # ── v2.2 durable jobs ────────────────────────────────────────────────────
-    # The v2 runtime is deliberately disabled until the v2.2 generation
-    # pipeline is complete. Empty connection/auth values keep the legacy v1
-    # process bootable when Redis has not been provisioned.
+    # Empty connection/auth values leave public liveness available while the
+    # optional durable runtime stays disabled.
     V22_ANALYZE_ENABLED: bool = False
     V22_GSC_SYNC_ENABLED: bool = False
     V22_GA4_SYNC_ENABLED: bool = False
@@ -181,11 +150,6 @@ class Settings(BaseSettings):
         int, Field(ge=65_536, le=5_000_000)
     ] = 2_000_000
 
-    # ── Dify RPM token bucket (in-process) ───────────────────────────────────
-    DIFY_RPM_CAPACITY: Annotated[int, Field(ge=1)] = Field(default=60)
-    DIFY_RPM_REFILL: Annotated[int, Field(ge=1)] = Field(default=60)
-    DIFY_RPM_INTERVAL: Annotated[int, Field(ge=1)] = Field(default=60)
-
     # ── CORS ──────────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = Field(
         default=[
@@ -196,8 +160,6 @@ class Settings(BaseSettings):
 
     # ── Validators ────────────────────────────────────────────────────────────
     @field_validator(
-        "DIFY_API_URL",
-        "ADDRESS_AI_BASE_URL",
         "V22_CALLBACK_URL",
         "V22_DIFY_API_URL",
         mode="before",
@@ -205,11 +167,6 @@ class Settings(BaseSettings):
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
         return str(v).rstrip("/")
-
-    # ── Derived helpers ───────────────────────────────────────────────────────
-    @property
-    def dify_api_url_str(self) -> str:
-        return str(self.DIFY_API_URL)
 
 
 @lru_cache(maxsize=1)

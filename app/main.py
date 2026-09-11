@@ -26,7 +26,7 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.v1.analyze import router as analyze_router
+from app.api.health import router as health_router
 from app.api.v2.competitors import router as v2_competitors_router
 from app.api.v2.preflight import router as v2_preflight_router
 from app.api.v2.runtime import close_v22_runtime, create_v22_runtime, router as v2_runtime_router
@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         runtime = await create_v22_runtime()
         if runtime is not None:
             competitor_runtime = create_competitor_discovery_runtime(runtime.redis)
-    except Exception as exc:  # v1 must remain live when the optional v2 queue is down.
+    except Exception as exc:  # Liveness must remain available when the durable queue is down.
         logger.warning("v2.2 durable queue unavailable during startup: %s", type(exc).__name__)
     app.state.v22_runtime = runtime
     app.state.v22_competitor_runtime = competitor_runtime
@@ -101,10 +101,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        description=(
-            "Enterprise-grade SEO trust-path analysis service. "
-            "Submit a URL + page type, get a comprehensive AI-powered SEO report."
-        ),
+        description="SearchTrust V2.2 SEO evidence collection and reporting service.",
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
         openapi_url="/openapi.json" if settings.DEBUG else None,
@@ -121,7 +118,7 @@ def create_app() -> FastAPI:
     )
 
     # ── Routers ───────────────────────────────────────────────────────────────
-    app.include_router(analyze_router)
+    app.include_router(health_router)
     app.include_router(v2_preflight_router)
     app.include_router(v2_runtime_router)
     app.include_router(v2_competitors_router)

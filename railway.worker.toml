@@ -3,8 +3,8 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 # ── SearchTrust v2.2 ARQ Worker ──────────────────────────────────────────────
-# Deploy this file as a separate Railway service that shares REDIS_URL with
-# the FastAPI Web service. The v1 in-process dispatcher remains unchanged.
+# Deploy this file as a separate Railway service that shares V22_REDIS_URL
+# with the FastAPI Web service.
 [deploy]
 startCommand = "arq app.jobs_v22.worker.WorkerSettings"
 restartPolicyType = "on_failure"

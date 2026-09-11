@@ -10,14 +10,14 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx
 
-from app.report_v22.models import OperatingModel, TargetMarket
-from app.tasks.scraper import (
-    _configured_serpapi_keys,
-    _data_cid_from_data_id,
-    _extract_data_id_from_gbp_url,
-    _extract_google_place_id,
-    _serpapi_get,
+from app.report_common.google_business import (
+    configured_keys,
+    data_cid,
+    extract_data_id,
+    extract_google_place_id,
+    request_serpapi,
 )
+from app.report_v22.models import OperatingModel, TargetMarket
 from app.preflight_v22.extractors import SiteSignals
 from app.security_v22.http import PinnedAsyncHTTPTransport
 from app.security_v22.urls import Resolver, SafeUrl, resolve_public_url, validate_gbp_url
@@ -145,7 +145,7 @@ def _market_from_result(result: dict[str, Any]) -> TargetMarket | None:
 
 def _public_gbp_url(result: dict[str, Any], fallback: str | None) -> str | None:
     data_id = str(result.get("data_id") or "").strip()
-    cid = _data_cid_from_data_id(data_id)
+    cid = data_cid(data_id)
     if cid:
         return f"https://www.google.com/maps?cid={cid}"
     return fallback
@@ -208,12 +208,12 @@ class LimitedGbpLookup:
         url_expander: UrlExpander | None = None,
     ) -> None:
         self.provider = provider or self._default_provider
-        self.configured = bool(_configured_serpapi_keys()) if configured is None else configured
+        self.configured = bool(configured_keys()) if configured is None else configured
         self.url_expander = url_expander or GoogleMapsUrlExpander().expand
 
     async def _default_provider(self, params: dict[str, str]) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=False) as client:
-            return await _serpapi_get(client, params)
+            return await request_serpapi(client, params)
 
     def _request_params(
         self,
@@ -222,9 +222,9 @@ class LimitedGbpLookup:
         signals: SiteSignals,
         gbp_url: str | None,
     ) -> dict[str, str]:
-        place_id = _extract_google_place_id(gbp_url or "")
-        data_id = _extract_data_id_from_gbp_url(gbp_url or "")
-        cid = _data_cid_from_data_id(data_id)
+        place_id = extract_google_place_id(gbp_url or "")
+        raw_data_id = extract_data_id(gbp_url or "")
+        cid = data_cid(raw_data_id)
         params = {"engine": "google_maps", "hl": "en"}
         if place_id:
             params["place_id"] = place_id

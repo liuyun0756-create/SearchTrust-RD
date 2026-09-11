@@ -1,206 +1,68 @@
-# SEO Trust Path Analysis Service
+# SearchTrust V2.2 Backend
 
-异步 SEO 页面诊断后端服务。输入一个页面 URL，系统自动抓取页面内容、拉取 Google Business Profile 数据，Dify 工作流返回规则向量和英文话术，后端统一生成最终 `report_v2_1`。
+SearchTrust V2.2 的 FastAPI Web 服务与 Redis/ARQ Worker。Web 服务负责预检、竞品发现和任务 API；Worker 负责可恢复的数据采集、报告生成、结果保存与回调。
 
-## 技术栈
+## 架构
 
-| 层次 | 技术 |
-|------|------|
-| Web 框架 | FastAPI + Uvicorn |
-| 异步任务 | asyncio 内部队列（进程内，无需 Celery/Redis）|
-| HTTP 连接 | httpx 全局共享连接池（Jina / Firecrawl / SerpAPI / Dify）|
-| 网页抓取 | Jina Reader（首选）→ Firecrawl（降级）|
-| AI 分析 | Dify Workflow（SSE 流式）|
-| 商家数据 | SerpAPI → Google Business Profile + Reviews |
-| 容器化 | Docker + docker-compose |
+- Web：`app.main:app`
+- Worker：`app.jobs_v22.worker.WorkerSettings`
+- 持久任务状态：Redis
+- 报告结果：Supabase
+- 公开商家与市场数据：SerpAPI
+- 网站采集：安全直连与 Firecrawl 降级
+- 报告话术：V2.2 Dify copy provider
 
-## 项目结构
+V2.1 报告、旧分析接口和进程内任务队列已退役，不再提供兼容路径。
 
-```
-app/
-├── main.py                  # FastAPI 入口，CORS / 日志 / 异常处理 / 连接池生命周期
-├── api/v1/analyze.py        # HTTP 接口层 + 内部任务队列调度
-├── models/
-│   ├── request.py           # AnalyzeRequest（URL / 页面类型 / 语言 / GBP URL）
-│   └── response.py          # 任务状态 / 进度 / 响应模型
-├── core/
-│   ├── config.py            # 所有配置项（从 .env 读取）
-│   └── task_store.py        # 进程内任务状态存储 + SSE 订阅队列
-└── tasks/
-    ├── pipeline.py          # 核心任务编排（asyncio 协程）
-    ├── scraper.py           # 数据采集层（抓取 / GBP / 评论）
-    └── dify_client.py       # Dify SSE 调用 + 进度回调
-```
+## 主要接口
 
-## 跨系统变更
+- `GET /api/v1/health`：公开健康检查，响应固定为 `{"status":"ok","version":"1.0.0"}`。
+- `POST /api/v2/preflight`：网站与公开商家信息预检。
+- `POST /api/v2/competitors/discover`：竞品发现。
+- `POST /api/v2/analyze`：创建 V2.2 报告任务。
+- `GET /api/v2/tasks/{job_id}`：查询任务状态。
+- `GET /api/v2/tasks/{job_id}/stream`：任务事件流。
+- `DELETE /api/v2/tasks/{job_id}`：取消任务。
+- `GET /api/v2/health/queue`：内部队列健康状态。
 
-本项目的功能改动可能同时涉及前端、后端、Dify 和 Supabase。数据库 schema 变更由项目负责人在 Supabase SQL Editor 手动执行；只要迁移未确认执行，相关任务不能视为完成。完整的责任边界、现有 `reports.report_v2_1` 字段和验收门槛见 [跨系统变更与数据库交接规范](docs/CHANGE_MANAGEMENT.md)。
+除公开健康检查外，V2.2 API 使用 `Authorization: Bearer <V22_INTERNAL_API_TOKEN>`。
 
-## 请求流程
-
-```
-POST /api/v1/analyze
-    │
-    └─ 验证请求（SSRF 防护）
-       → 生成 task_id，写入进程内 task_store
-       → 放入内部 asyncio.Queue（立即返回 202）
-
-后台 dispatcher 协程：
-    → 等待空闲槽位（MAX_CONCURRENT_REQUESTS）
-    → 从队列取出任务，启动 run_pipeline()
-
-run_pipeline()：
-    1. [scraping]   Jina Reader / Firecrawl 抓主页 + 子页面
-                    （若 gbp_url 含 data_id，与主页抓取并发执行）
-    2. [scraping]   提取商家信息 → SerpAPI 查 GBP + 评论
-    3. [analyzing]  调用 Dify Workflow（SSE 进度 30%→90%）
-    4. [done]       写回 task_store，等待客户端查询
-
-GET /api/v1/task/{task_id}           ← 轮询状态
-GET /api/v1/task/{task_id}/stream    ← SSE 实时推送（推荐）
-```
-
-## 快速开始
-
-### 1. 环境准备
+## 本地运行
 
 ```bash
 cp .env.example .env
-# 填写 .env 中的各项 API Key（见下方配置说明）
-```
-
-### 2. 本地开发（不用 Docker）
-
-```bash
-# 需要 Homebrew Python 3.12；不要使用 macOS 自带的 Python 3.9
-brew install python@3.12
 /opt/homebrew/bin/python3.12 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-# 启动 FastAPI（单进程）
+.venv/bin/pip install -r requirements-dev.txt
 .venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
-### 3. Docker 部署
+Worker 需要可用的 `V22_REDIS_URL`：
 
 ```bash
-docker-compose up --build -d
+.venv/bin/arq app.jobs_v22.worker.WorkerSettings
 ```
 
-启动后：
-- API 服务：http://localhost:8000
-- Swagger 文档（DEBUG=true 时）：http://localhost:8000/docs
+## 质量门禁
 
-## 环境变量说明
-
-复制 `.env.example` 并按下表填写：
-
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `DIFY_API_KEY` | ✅ | Dify 控制台 → 应用 → API → 生成 |
-| `DIFY_API_URL` | ✅ | Dify API 地址，默认 `https://api.dify.ai/v1` |
-| `DIFY_WORKFLOW_ID` | ✅ | Dify 工作流 ID |
-| `SERPAPI_KEY` | ✅ | [serpapi.com](https://serpapi.com/manage-api-key) 获取，用于 GBP 数据和评论 |
-| `SERPAPI_KEY_SECONDARY` | 可选 | SerpAPI 备用 Key；主 Key 额度耗尽、限流或失效时自动切换 |
-| `SERPAPI_KEY_TERTIARY` | 可选 | SerpAPI 第三个 Key；前两个 Key 均不可用时自动切换 |
-| `FIRECRAWL_API_KEY` | 推荐 | [firecrawl.dev](https://www.firecrawl.dev/app/api-keys)，JS 渲染抓取（降级用）|
-| `JINA_API_KEY` | 可选 | 留空使用免费版 Jina Reader（主抓取器）|
-| `MAX_CONCURRENT_REQUESTS` | 可选 | 最大同时运行任务数，默认 10，超出自动排队 |
-| `DIFY_STREAM_TIMEOUT` | 可选 | 单次 Dify 流式读取上限（秒），默认 1200 |
-| `DIFY_RETRY` | 可选 | Dify 失败重试次数，默认 3 |
-| `TASK_STREAM_TIMEOUT` | 可选 | 单个任务 SSE 连接最长等待（秒），默认 1260 |
-| `TASK_STREAM_HEARTBEAT_INTERVAL` | 可选 | SSE 心跳间隔（秒），默认 20 |
-| `SCRAPER_RETRY` | 可选 | 抓取失败重试次数，默认 2 |
-| `DEBUG` | 可选 | `true` 时开启 Swagger 文档和 DEBUG 日志 |
-| `CORS_ORIGINS` | 可选 | 允许的前端域名，JSON 数组格式 |
-
-## API 接口
-
-### 提交分析任务
-
-```
-POST /api/v1/analyze
+```bash
+.venv/bin/python scripts/run_v22_backend_quality.py fast
+.venv/bin/python scripts/run_v22_redis_integration.py
+.venv/bin/python scripts/run_v22_backend_quality.py release
 ```
 
-```json
-{
-  "url": "https://example.com/",
-  "page_type": "本地服务落地页",
-  "language": "English",
-  "gbp_url": "https://www.google.com/maps/search/?api=1&query_place_id=0x..."
-}
-```
+测试会封锁非预期网络连接；Redis 集成测试只允许使用隔离的测试数据库与自动生成的键前缀，不得连接生产 Redis、Supabase 或第三方服务。
 
-`gbp_url` 支持含 `query_place_id` 的 Google Maps 链接，系统自动提取 data_id 直接查询 GBP，精度最高且与主页抓取并发执行。
+## 关键配置
 
-`page_type` 支持 21 种类型，包括：实体目的地、场馆页、活动日历、菜单、商品、本地服务落地页、关于我们、联系我们、博客、文章、FAQ 等。
+完整模板见 `.env.example`。正式环境至少需要按启用模块配置：
 
-`language` 为历史兼容字段，仍接受 `中文` / `English` / `Both`，但产品面向英语市场，后端会统一强制生成英文报告。原始页面摘录、企业名称和地址等客观证据保留源语言。
+- `V22_REDIS_URL`、`V22_REDIS_PREFIX`、`V22_QUEUE_NAME`
+- `V22_INTERNAL_API_TOKEN`
+- `V22_CALLBACK_URL`、`V22_CALLBACK_SECRET`
+- `V22_SUPABASE_URL`、`V22_SUPABASE_SERVICE_ROLE_KEY`
+- `V22_DIFY_API_KEY`、`V22_DIFY_API_URL`
+- `SERPAPI_KEY`（可配置三个顺序故障转移的 Key）
+- `FIRECRAWL_API_KEY`
+- `V22_ANALYZE_ENABLED`、`V22_PREFLIGHT_ENABLED`、`V22_COMPETITOR_DISCOVERY_ENABLED`
 
-### Dify v2.1 输出边界
-
-- `rule_results` 和 `rule_applicability` 是完整的规则事实向量；历史 Rule 5 已退役，所以实际为 38 个启用规则。
-- `report_copy_v2_1` 只包含英文解释、影响、建议和执行话术。
-- 后端将同一份页面事实、GBP事实和 `review_corpus` 输入 Dify，同时独立保留用于报告证据。
-- Dify 不输出 Evidence、Coverage、原始摘录或证据 ID；后端按固定规则范围从任务数据快照生成这些内容。
-- 后端独立生成层级状态、评分、Coverage、Evidence、GBP 状态、Business Presence 和报告身份字段。
-- 新契约规则向量不完整或英文话术出现中文时，后端会重试完整 Dify 工作流，最多 3 次。
-
-### 查询任务状态（轮询）
-
-```
-GET /api/v1/task/{task_id}
-```
-
-返回任务状态（`queued` → `scraping` → `analyzing` → `done` / `failed`）和进度百分比。
-
-### 实时进度推送（SSE，推荐）
-
-```
-GET /api/v1/task/{task_id}/stream
-```
-
-建立 Server-Sent Events 连接，实时接收任务状态更新，无需轮询。
-
-### 删除 / 取消任务
-
-```
-DELETE /api/v1/task/{task_id}
-```
-
-取消正在运行或排队中的任务，并从内存中删除其状态。
-
-### 健康检查
-
-```
-GET /api/v1/health
-```
-
-## 抓取策略
-
-页面内容抓取按以下顺序降级：
-
-1. **Jina Reader**（首选）— 返回干净 Markdown，免费，速度快
-2. **Firecrawl**（降级）— 支持 JS 渲染、滚动加载、动态内容
-
-同时会并发抓取 `contact` / `about` 子页面并拼入正文。
-
-## GBP 数据获取优先级
-
-SearchTrust v2.2 默认使用 SerpAPI 采集公开 GBP 证据，不要求用户拥有或授权官方
-GBP 后台。官方 GBP Performance 连接器是可选增强；未连接时不得将公开数据标记为
-Performance 数据或 Full Evidence。
-
-1. `gbp_url` 含 `data_id`（如 `query_place_id=0x...`）→ 直接查 place details，**与主页抓取并发执行**（最精准、最快）
-2. 页面域名 → Google Maps 搜索 + 域名匹配
-3. 商家名称 + 城市 → Google Maps 搜索 + 城市匹配
-
-## 并发与排队说明
-
-- `MAX_CONCURRENT_REQUESTS` 控制最大同时运行任务数（默认 10）
-- 超过上限时任务**自动进入内部队列排队等待**，不返回 429 报错
-- 槽位空闲后 dispatcher 自动取出下一个任务开始执行，用户无感知
-- 任务状态存储在进程内存，**不支持多实例横向扩容**
-- 部署时请确保使用 `--workers 1`
-
-> **如需水平扩容**，需引入 Redis 替换 `task_store.py` 中的内存存储，并用 Redis Pub/Sub 替换内部队列。
+Google Search Console、GA4 与官方 GBP 同步为独立可选开关；公开 GBP 证据使用 SerpAPI，不要求用户拥有官方 GBP 后台。

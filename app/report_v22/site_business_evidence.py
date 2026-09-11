@@ -60,7 +60,7 @@ def _expected_evidence(candidate):
             source_locator=locator, original_value=value, normalized_value=value, collected_at=candidate.collected_at,
             confidence="low", health_status="healthy", limitations=candidate.limitations,
             origin_paths=sorted({o.origin_path for o in origins}))
-        # Strictly checked candidate strings must survive legacy whitespace defaults.
+        # Strictly checked candidate strings must survive model whitespace defaults.
         observation = observation.model_copy(update={"original_value": value, "normalized_value": value})
         identifier = evidence_id(observation)
         item = EvidenceItem(evidence_id=identifier, snapshot_id=candidate.snapshot_id, source_type="site",

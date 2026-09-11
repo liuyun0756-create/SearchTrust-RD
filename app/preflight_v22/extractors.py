@@ -8,9 +8,6 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from app.tasks.scraper import extract_business_identity_signals, extract_maps_url_from_content
-
-
 Confidence = Literal["low", "medium", "high"]
 
 
@@ -62,6 +59,56 @@ _GENERIC_SERVICES = {
     "local business",
     "organization",
 }
+
+
+def _visible_identity_signals(document: str) -> tuple[list[TextSignal], list[TextSignal]]:
+    names: list[TextSignal] = []
+    phones: list[TextSignal] = []
+    meta_patterns = (
+        r'<meta[^>]+property=["\']og:site_name["\'][^>]+content=["\']([^"\']+)',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:site_name["\']',
+    )
+    for pattern in meta_patterns:
+        match = re.search(pattern, document, re.IGNORECASE)
+        if match:
+            value = html_module.unescape(match.group(1)).strip()
+            is_domain = bool(re.fullmatch(
+                r"(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}",
+                value.casefold(),
+            ))
+            if 1 <= len(value) <= 240:
+                names.append(TextSignal(
+                    value,
+                    "og_site_name",
+                    "low" if is_domain else "medium",
+                ))
+            break
+    for match in re.findall(
+        r"(?:tel:|phone[:：]?\s*|call[:：]?\s*)(\+?[\d\s().-]{7,22})",
+        document,
+        re.IGNORECASE,
+    ):
+        value = " ".join(match.split()).strip()
+        if len(re.sub(r"\D", "", value)) >= 10:
+            phones.append(TextSignal(value, "visible_phone", "medium"))
+    return names, phones
+
+
+def _maps_url(document: str) -> str | None:
+    decoded = html_module.unescape(document or "")
+    patterns = (
+        r'https://(?:www\.)?google\.com/maps/[^\s\'"<>]*0x[0-9a-fA-F]+:0x[0-9a-fA-F]+[^\s\'"<>]*',
+        r'https://(?:www\.)?google\.com/maps/(?:dir|search|place)/[^\s\'"<>]*(?:destination_place_id|query_place_id|place_id)=[^\s\'"<>&]+[^\s\'"<>]*',
+        r'https://search\.google\.com/local/reviews\?[^\s\'"<>]*placeid=[^\s\'"<>&]+[^\s\'"<>]*',
+        r'https://maps\.app\.goo\.gl/[^\s\'"<>\)\]]+',
+        r'https://goo\.gl/maps/[^\s\'"<>\)\]]+',
+        r'https://share\.google/[^\s\'"<>\)\]]+',
+    )
+    for pattern in patterns:
+        match = re.search(pattern, decoded, re.IGNORECASE)
+        if match:
+            return match.group(0).rstrip("),.;]")
+    return None
 
 
 def _records(value: Any) -> list[dict[str, Any]]:
@@ -177,13 +224,9 @@ def extract_site_signals(html: str) -> SiteSignals:
             if value.casefold() not in _GENERIC_SERVICES and len(value) <= 200:
                 services.append(TextSignal(value, "json_ld", "high"))
 
-    for signal in extract_business_identity_signals(html, scope="preflight_homepage"):
-        confidence: Confidence = "high" if signal.quality == "strong" else "medium" if signal.quality == "supporting" else "low"
-        candidate = TextSignal(signal.value, signal.source, confidence)
-        if signal.field == "name" and len(signal.value) <= 240:
-            names.append(candidate)
-        elif signal.field == "phone":
-            phones.append(candidate)
+    visible_names, visible_phones = _visible_identity_signals(html)
+    names.extend(visible_names)
+    phones.extend(visible_phones)
 
     operating_models: list[TextSignal] = []
     if has_address and has_service_area:
@@ -199,5 +242,5 @@ def extract_site_signals(html: str) -> SiteSignals:
         services=_dedupe_text(services),
         markets=tuple(dict.fromkeys(markets)),
         operating_models=_dedupe_text(operating_models),
-        gbp_url=extract_maps_url_from_content(html),
+        gbp_url=_maps_url(html),
     )

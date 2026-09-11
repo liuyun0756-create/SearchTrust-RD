@@ -67,7 +67,7 @@ class SiteBusinessFactsContext(CandidateModel):
 
 
 def preserve_saved_html(value, handler, info):
-    """Reuse the frozen source contract without its legacy HTML whitespace cleanup.
+    """Reuse the frozen source contract without its default HTML whitespace cleanup.
 
     Only restore an already type/length-checked HTML string, never other unvalidated
     fields. Copies keep caller-owned snapshots immutable.

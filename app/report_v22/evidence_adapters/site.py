@@ -1,6 +1,6 @@
-"""Reuse v2.1 text extraction, never its sequential IDs or rule conclusions."""
+"""Adapt checked site inventory into deterministic V2.2 evidence."""
 
-from app.report_v21.evidence_ledger import build_evidence_ledger
+from app.report_common.page_fragments import extract_page_fragments
 from app.report_v22.evidence_adapters.common import coverage, fields, observe
 from app.report_v22.models import SourceLocator
 from app.report_v22.evidence_adapters.site_counts import observations as count_observations
@@ -43,12 +43,12 @@ def observations(source, *, inventory=None, prefix="/payload", competitor_id=Non
                 locator=locator,health_status="unavailable",**kwargs)
             continue
         # content_checksum is the upstream byte digest, NOT a digest of decoded HTML.
-        ledger = build_evidence_ledger({"content":deep.text, "url":url})
-        if not ledger:
+        fragments = extract_page_fragments(deep.text)
+        if not fragments:
             yield coverage(source,url,"page_fragments","empty",None,f"{deep_path}/text",locator=locator,health_status="healthy",**kwargs)
-        for fragment in ledger.values():
+        for fragment in fragments:
             # Extractor section/kind is reproducible from text; no old page-N ID.
-            key = [url,fragment["page_section"],fragment["evidence_kind"],fragment["extracted_text"]]
-            yield observe(source,"page_fragment",key,"text",fragment["extracted_text"],f"{deep_path}/text",
+            key = [url,fragment["page_section"],fragment["kind"],fragment["text"]]
+            yield observe(source,"page_fragment",key,"text",fragment["text"],f"{deep_path}/text",
                 locator=locator,competitor_id=competitor_id,collected_at=deep.collected_at,limitations=[*notes,TEXT_LIMITATION])
     yield from count_observations(source, inventory, prefix, competitor_id, notes)

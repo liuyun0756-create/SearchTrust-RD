@@ -25,7 +25,7 @@ FROM python:3.12-slim AS runtime
 
 # Labels
 LABEL maintainer="SEO Trust Path Team"
-LABEL description="SEO Trust Path Analysis Service"
+LABEL description="SearchTrust V2.2 Backend"
 
 # Runtime system deps (curl for healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \

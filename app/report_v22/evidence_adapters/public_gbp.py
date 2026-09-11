@@ -26,7 +26,7 @@ def limited_notes(notes):
 def public_observe(source, key, field, value, path, **options):
     observation = observe(source, "public_gbp_field", key, field, value, path, **options)
     # These scalars were already strictly validated in the snapshot. Preserve
-    # their exact text across the legacy models' whitespace-stripping defaults.
+    # their exact text across the models' whitespace-stripping defaults.
     return observation.model_copy(update={"original_value": scalar(value), "normalized_value": scalar(value)})
 
 

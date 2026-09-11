@@ -49,3 +49,16 @@ def test_extract_site_signals_ignores_contract_oversized_structured_fields() -> 
 
     assert signals.names == ()
     assert signals.markets == ()
+
+
+def test_extract_site_signals_retains_visible_identity_without_structured_data() -> None:
+    document = '''
+      <meta property="og:site_name" content="Acme Plumbing">
+      <a href="tel:+15125550100">Call +1 (512) 555-0100</a>
+    '''
+
+    signals = extract_site_signals(document)
+
+    assert signals.names[0].value == "Acme Plumbing"
+    assert signals.names[0].confidence == "medium"
+    assert signals.phones[0].source == "visible_phone"
