@@ -1,0 +1,11 @@
+{
+  "name": "locations/12345",
+  "title": "Fixture Home Services",
+  "websiteUri": "https://fixture.example/",
+  "phoneNumbers": {"primaryPhone": "+1 555-0100"},
+  "categories": {"primaryCategory": {"name": "Plumber"}},
+  "regularHours": {"periods": [{"openDay": "MONDAY"}]},
+  "storefrontAddress": {"addressLines": ["100 Fixture Street"]},
+  "openInfo": {"status": "OPEN"},
+  "metadata": {"hasVoiceOfMerchant": true}
+}

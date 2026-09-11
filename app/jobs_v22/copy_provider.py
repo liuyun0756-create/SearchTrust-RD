@@ -24,12 +24,14 @@ class DifyControlledCopyProvider:
         model_version: str,
         http_client: httpx.AsyncClient,
         circuit_breaker: RedisCircuitBreaker | None = None,
+        max_response_bytes: int = 1_000_000,
     ) -> None:
         self.api_key = api_key
         self.api_url = api_url.rstrip("/")
         self.model_version = model_version
         self.http_client = http_client
         self.circuit_breaker = circuit_breaker
+        self.max_response_bytes = max_response_bytes
 
     async def generate(
         self,
@@ -101,6 +103,20 @@ class DifyControlledCopyProvider:
                 "V22_COPY_PROVIDER_REJECTED",
                 "The copy service rejected the v2.2 request.",
             )
+        if len(response.content) > self.max_response_bytes:
+            if claim is not None:
+                await _complete_dify_claim(
+                    cost_ledger,
+                    claim.claim_id,
+                    None,
+                    outcome="failure",
+                    started=started,
+                )
+            if permit is not None:
+                await self.circuit_breaker.record_failure(
+                    permit, now=datetime.now(timezone.utc), eligible=False
+                )
+            return {}
         if permit is not None:
             await self.circuit_breaker.record_success(permit)
         try:

@@ -133,6 +133,8 @@ def normalize_view(payload: object, *, dimension: str | None, limit: int, start:
         for row in rows:
             if not isinstance(row, dict):
                 raise ValueError()
+            if set(row) != {"keys", "clicks", "impressions", "ctr", "position"}:
+                raise ValueError()
             keys = row.get("keys", [])
             if not isinstance(keys, list) or len(keys) != (1 if dimension else 0):
                 raise ValueError()

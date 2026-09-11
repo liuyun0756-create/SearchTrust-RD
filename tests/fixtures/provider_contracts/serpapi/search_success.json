@@ -1,0 +1,12 @@
+{
+  "search_metadata": {"status": "Success", "id": "fixture-search-001"},
+  "search_parameters": {"engine": "google", "q": "fixture plumbing"},
+  "organic_results": [
+    {
+      "position": 1,
+      "title": "Fixture Plumbing",
+      "link": "https://fixture.example/services",
+      "snippet": "Sanitized provider contract result."
+    }
+  ]
+}

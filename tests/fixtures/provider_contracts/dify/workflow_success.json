@@ -1,0 +1,15 @@
+{
+  "data": {
+    "outputs": {
+      "copy": {
+        "headline": "Fix the verified issue",
+        "summary": "A sanitized deterministic fixture."
+      }
+    },
+    "usage": {
+      "prompt_tokens": 120,
+      "completion_tokens": 30,
+      "total_tokens": 150
+    }
+  }
+}

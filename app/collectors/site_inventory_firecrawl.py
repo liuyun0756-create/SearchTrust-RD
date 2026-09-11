@@ -66,6 +66,8 @@ class FirecrawlMapAdapter:
             payload: Any = json.loads(body)
             if not isinstance(payload, dict) or payload.get("success") is not True:
                 raise ValueError("Firecrawl returned an invalid result")
+            if set(payload) - {"success", "links"}:
+                raise ValueError("Firecrawl returned unknown fields")
             raw_links = payload.get("links")
             if not isinstance(raw_links, list):
                 raise ValueError("Firecrawl links were missing")

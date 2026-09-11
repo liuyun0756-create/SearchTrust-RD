@@ -30,10 +30,12 @@ class SupabaseResultPersister:
         url: str,
         service_role_key: str,
         http_client: httpx.AsyncClient,
+        max_response_bytes: int = 65_536,
     ) -> None:
         self.url = url.rstrip("/")
         self.service_role_key = service_role_key
         self.http_client = http_client
+        self.max_response_bytes = max_response_bytes
 
     async def persist(
         self,
@@ -98,6 +100,12 @@ class SupabaseResultPersister:
             raise DeterministicJobError(
                 "V22_RESULT_PERSISTENCE_REJECTED",
                 "The completed report could not be saved safely.",
+            )
+
+        if len(response.content) > self.max_response_bytes:
+            raise TransientJobError(
+                "V22_RESULT_PERSISTENCE_INVALID_RESPONSE",
+                "Report storage returned an invalid response. The task will retry automatically.",
             )
 
         try:

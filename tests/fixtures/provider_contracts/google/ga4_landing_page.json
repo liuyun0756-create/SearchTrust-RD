@@ -1,0 +1,24 @@
+{
+  "dimensionHeaders": [{"name": "landingPage"}],
+  "metricHeaders": [
+    {"name": "sessions", "type": "TYPE_INTEGER"},
+    {"name": "engagedSessions", "type": "TYPE_INTEGER"},
+    {"name": "engagementRate", "type": "TYPE_FLOAT"},
+    {"name": "averageSessionDuration", "type": "TYPE_FLOAT"},
+    {"name": "screenPageViews", "type": "TYPE_INTEGER"},
+    {"name": "keyEvents", "type": "TYPE_FLOAT"},
+    {"name": "sessionKeyEventRate", "type": "TYPE_FLOAT"}
+  ],
+  "rows": [
+    {
+      "dimensionValues": [{"value": "/fixture-service"}],
+      "metricValues": [
+        {"value": "10"}, {"value": "7"}, {"value": "0.7"},
+        {"value": "42.5"}, {"value": "15"}, {"value": "2"},
+        {"value": "0.2"}
+      ]
+    }
+  ],
+  "rowCount": 1,
+  "metadata": {"timeZone": "America/Chicago"}
+}

@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "links": [
+    "https://fixture.example/",
+    {"url": "https://fixture.example/services"},
+    "https://fixture.example/services"
+  ]
+}

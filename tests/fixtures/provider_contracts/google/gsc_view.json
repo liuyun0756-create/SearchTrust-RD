@@ -1,0 +1,12 @@
+{
+  "rows": [
+    {
+      "keys": ["fixture plumbing"],
+      "clicks": 2.0,
+      "impressions": 20.0,
+      "ctr": 0.1,
+      "position": 3.0
+    }
+  ],
+  "responseAggregationType": "byProperty"
+}

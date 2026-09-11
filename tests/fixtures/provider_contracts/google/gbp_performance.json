@@ -1,0 +1,16 @@
+{
+  "multiDailyMetricTimeSeries": [
+    {
+      "dailyMetricTimeSeries": [
+        {
+          "dailyMetric": "WEBSITE_CLICKS",
+          "timeSeries": {
+            "datedValues": [
+              {"date": {"year": 2026, "month": 9, "day": 1}, "value": "4"}
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

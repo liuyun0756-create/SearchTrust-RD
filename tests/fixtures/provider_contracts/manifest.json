@@ -1,0 +1,69 @@
+{
+  "schema_version": "v22_provider_contract_manifest_v1",
+  "operations": [
+    {
+      "id": "serpapi.search", "provider": "serpapi",
+      "adapter": "app.integrations.serpapi.execute_serpapi_get",
+      "request_contract": "GET with bounded public params and one rotated api_key",
+      "fixtures": ["serpapi/search_success.json"],
+      "error_mapping": {"timeout": "SerpApiTransportError", "401_403_429": "SerpApiKeysUnavailable", "5xx": "SerpApiHttpError"},
+      "max_response_bytes": 2000000
+    },
+    {
+      "id": "firecrawl.map", "provider": "firecrawl",
+      "adapter": "app.collectors.site_inventory_firecrawl.FirecrawlMapAdapter",
+      "request_contract": "POST /map with url and limit<=500",
+      "fixtures": ["firecrawl/map_success.json"],
+      "error_mapping": {"timeout_4xx_5xx_malformed_oversized": "firecrawl_unavailable"},
+      "max_response_bytes": 1000000
+    },
+    {
+      "id": "dify.workflow", "provider": "dify",
+      "adapter": "app.jobs_v22.copy_provider.DifyControlledCopyProvider",
+      "request_contract": "POST /workflows/run with one backend-owned CopyRequestV1",
+      "fixtures": ["dify/workflow_success.json"],
+      "error_mapping": {"timeout_429_5xx": "V22_COPY_PROVIDER_UNAVAILABLE", "401_403": "V22_COPY_PROVIDER_REJECTED", "malformed_oversized": "empty_output"},
+      "max_response_bytes": 1000000
+    },
+    {
+      "id": "google.gsc_query", "provider": "google",
+      "adapter": "app.google_connections_v22.gsc.GscProvider",
+      "request_contract": "POST searchAnalytics/query with fixed final-data views",
+      "fixtures": ["google/gsc_view.json"],
+      "error_mapping": {"timeout_429_5xx": "SYNC_GOOGLE_UNAVAILABLE", "401": "SYNC_GOOGLE_TOKEN_EXPIRED", "403_404": "SYNC_GOOGLE_ACCESS_DENIED", "malformed_oversized": "SYNC_INVALID_GOOGLE_RESPONSE"},
+      "max_response_bytes": 2000000
+    },
+    {
+      "id": "google.ga4_report", "provider": "google",
+      "adapter": "app.google_connections_v22.ga4.Ga4Provider",
+      "request_contract": "POST runReport with fixed host filter and aggregate views",
+      "fixtures": ["google/ga4_landing_page.json"],
+      "error_mapping": {"timeout_429_5xx": "SYNC_GOOGLE_UNAVAILABLE", "401": "SYNC_GOOGLE_TOKEN_EXPIRED", "403_404": "SYNC_GOOGLE_ACCESS_DENIED", "malformed_oversized": "SYNC_INVALID_GOOGLE_RESPONSE"},
+      "max_response_bytes": 2000000
+    },
+    {
+      "id": "google.gbp_collection", "provider": "google",
+      "adapter": "app.google_connections_v22.gbp.GbpProvider",
+      "request_contract": "GET one bound location, fixed daily metrics, and bounded monthly keywords",
+      "fixtures": ["google/gbp_location.json", "google/gbp_performance.json", "google/gbp_keywords.json"],
+      "error_mapping": {"timeout_429_5xx": "SYNC_GOOGLE_UNAVAILABLE", "401": "SYNC_GOOGLE_TOKEN_EXPIRED", "403_404": "SYNC_GOOGLE_ACCESS_DENIED", "malformed_oversized": "SYNC_INVALID_GOOGLE_RESPONSE"},
+      "max_response_bytes": 2000000
+    },
+    {
+      "id": "delivery.result_rpc", "provider": "delivery",
+      "adapter": "app.jobs_v22.result_persistence.SupabaseResultPersister",
+      "request_contract": "POST persist_v22_prospect_result with exact source snapshots",
+      "fixtures": ["delivery/supabase_ack.json"],
+      "error_mapping": {"timeout_429_5xx": "V22_RESULT_PERSISTENCE_UNAVAILABLE", "4xx": "V22_RESULT_PERSISTENCE_REJECTED", "malformed": "V22_RESULT_PERSISTENCE_INVALID_RESPONSE"},
+      "max_response_bytes": 65536
+    },
+    {
+      "id": "delivery.callback", "provider": "delivery",
+      "adapter": "app.jobs_v22.callbacks.SignedCallbackClient",
+      "request_contract": "POST one signed bounded job event with revision idempotency",
+      "fixtures": ["delivery/callback_ack.json"],
+      "error_mapping": {"timeout_4xx_5xx": "false_for_retry"},
+      "max_response_bytes": 0
+    }
+  ]
+}
