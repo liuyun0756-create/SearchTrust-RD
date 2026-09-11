@@ -38,6 +38,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+/.v22-test-artifacts/
 
 # ─────────────────────────────────────────────────────────────────────────────
 # IDE & 编辑器

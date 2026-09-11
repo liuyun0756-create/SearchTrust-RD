@@ -31,9 +31,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Run backend tests
-        run: >-
-          python -m pytest -q -m "not redis_integration"
-          --disable-socket --allow-unix-socket
+        run: python scripts/run_v22_backend_quality.py fast
 
   redis-integration:
     name: Redis integration
@@ -66,7 +64,4 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Run Redis smoke test
-        run: >-
-          python -m pytest tests/test_v22_redis_protocol_smoke.py -q
-          --disable-socket --allow-unix-socket
-          --allow-hosts=127.0.0.1,localhost,::1
+        run: python scripts/run_v22_redis_integration.py

@@ -33,7 +33,7 @@ def test_backend_quality_runs_for_pull_requests_and_main_pushes() -> None:
     assert workflow["concurrency"]["cancel-in-progress"] is True
 
 
-def test_backend_quality_uses_python_312_pip_cache_and_network_isolation() -> None:
+def test_backend_quality_uses_python_312_pip_cache_and_repository_entrypoint() -> None:
     workflow = _load_workflow()
     quality_job = workflow["jobs"]["backend-quality"]
     steps = quality_job["steps"]
@@ -45,9 +45,7 @@ def test_backend_quality_uses_python_312_pip_cache_and_network_isolation() -> No
     assert setup_python["with"]["cache"] == "pip"
 
     test_step = next(step for step in steps if step.get("name") == "Run backend tests")
-    assert "--disable-socket" in test_step["run"]
-    assert "--allow-unix-socket" in test_step["run"]
-    assert "not redis_integration" in test_step["run"]
+    assert test_step["run"] == "python scripts/run_v22_backend_quality.py fast"
 
 
 def test_redis_integration_job_uses_redis_74_and_localhost_only() -> None:
@@ -61,8 +59,7 @@ def test_redis_integration_job_uses_redis_74_and_localhost_only() -> None:
     test_step = next(
         step for step in redis_job["steps"] if step.get("name") == "Run Redis smoke test"
     )
-    assert "--disable-socket" in test_step["run"]
-    assert "--allow-hosts=127.0.0.1,localhost,::1" in test_step["run"]
+    assert test_step["run"] == "python scripts/run_v22_redis_integration.py"
     assert redis_job["env"]["V22_TEST_REDIS_URL"] == "redis://127.0.0.1:6379/15"
 
 
