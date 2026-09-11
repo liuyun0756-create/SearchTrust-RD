@@ -1158,7 +1158,7 @@ Railway 自动发布仍留给 V22-091，Google 同步与 Verified
 Generation 正式开关未改变。详见
 `2026-09-10-searchtrust-v2-2-frontend-test-infrastructure-completion.md`。
 
-#### V22-091 后端测试
+#### V22-091 后端测试（已完成）
 
 - pytest unit；
 - provider contract tests；
@@ -1168,6 +1168,16 @@ Generation 正式开关未改变。详见
 - 前后端 V2.1 产品路径完全退役，不保留报告兼容；
 - `/api/v1/health` 作为 Railway 基础设施探针独立保留；
 - GitHub Actions 全部通过后 Railway Web 与 Worker 才能发布。
+
+完成于 2026-09-11：已建立 1,477 项后端确定性检查，包括 provider contract、
+完整报告 golden、property/idempotency 与真实 Redis 7.4 重启恢复；意外外网请求默认
+阻断，测试不读取线上数据或密钥。前后端可执行 V2.1 产品路径已全部删除，仅保留独立
+健康探针。最终 GitHub Actions 运行 `34593665540` 成功后，Railway Web 部署
+`0092c603-e606-4120-bb3b-41ed91fb1845` 与 Worker 部署
+`40822911-92a8-46d1-bd75-dd70515dbb29` 才从等待状态继续，并将同一提交
+`c7a649109b03d9fb10a7eb17c1425a68466db4c7` 发布为 `SUCCESS`；生产健康检查返回
+HTTP 200，初始日志无错误级事件。V22-092 数据迁移和 V22-093 灰度发布边界未改变。
+详见 `2026-09-11-searchtrust-v2-2-backend-test-infrastructure-completion.md`。
 
 #### V22-092 数据迁移
 
