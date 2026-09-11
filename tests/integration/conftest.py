@@ -4,6 +4,7 @@ import os
 import uuid
 
 import pytest
+from arq.connections import RedisSettings, create_pool
 from redis.asyncio import Redis
 
 from app.jobs_v22.store import DurableJobStore
@@ -32,7 +33,20 @@ async def redis_client(redis_test_environment: tuple[str, str]):
         yield client
     finally:
         await clear_prefixed_keys_async(client, run_prefix)
+        leaked = [key async for key in client.scan_iter(match=f"*{run_prefix}*")]
+        if leaked:
+            pytest.fail(f"Redis integration leaked {len(leaked)} run-owned keys")
         await client.aclose()
+
+
+@pytest.fixture
+async def arq_pool(redis_test_environment: tuple[str, str]):
+    redis_url, _ = redis_test_environment
+    pool = await create_pool(RedisSettings.from_dsn(redis_url))
+    try:
+        yield pool
+    finally:
+        await pool.aclose()
 
 
 @pytest.fixture

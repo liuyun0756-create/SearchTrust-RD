@@ -32,7 +32,7 @@ def clear_prefixed_keys(client: Redis, prefix: str) -> int:
     deleted = 0
     cursor: int | str = 0
     while True:
-        cursor, keys = client.scan(cursor=cursor, match=f"{prefix}*", count=200)
+        cursor, keys = client.scan(cursor=cursor, match=f"*{prefix}*", count=200)
         if keys:
             deleted += int(client.delete(*keys))
         if int(cursor) == 0:
@@ -46,7 +46,7 @@ async def clear_prefixed_keys_async(client: AsyncRedis, prefix: str) -> int:
     deleted = 0
     cursor: int | str = 0
     while True:
-        cursor, keys = await client.scan(cursor=cursor, match=f"{prefix}*", count=200)
+        cursor, keys = await client.scan(cursor=cursor, match=f"*{prefix}*", count=200)
         if keys:
             deleted += int(await client.delete(*keys))
         if int(cursor) == 0:
