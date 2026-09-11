@@ -1165,7 +1165,9 @@ Generation 正式开关未改变。详见
 - golden report fixtures；
 - property-based/idempotency tests；
 - queue/restart integration；
-- v1 regression。
+- 前后端 V2.1 产品路径完全退役，不保留报告兼容；
+- `/api/v1/health` 作为 Railway 基础设施探针独立保留；
+- GitHub Actions 全部通过后 Railway Web 与 Worker 才能发布。
 
 #### V22-092 数据迁移
 

@@ -1,7 +1,7 @@
 # V22-091 Backend test infrastructure design
 
 Date: 2026-09-11  
-Status: approved design awaiting written-spec review
+Status: approved on 2026-09-11
 
 ## 1. Goal
 
