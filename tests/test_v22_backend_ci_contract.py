@@ -7,6 +7,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "backend-quality.yml"
 COMPOSE_PATH = ROOT / "docker-compose.test.yml"
+DEVELOPMENT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+DOCKERFILE_PATH = ROOT / "Dockerfile"
 
 pytestmark = pytest.mark.contract
 
@@ -61,6 +63,19 @@ def test_workflow_has_least_privilege_checkouts_and_bounded_jobs() -> None:
             if step.get("uses", "").startswith("actions/checkout@")
         )
         assert checkout["with"]["persist-credentials"] is False
+
+
+def test_worker_runtime_routes_normal_logs_to_stdout() -> None:
+    from app.jobs_v22.worker import ARQ_LOG_CONFIG
+
+    handler = ARQ_LOG_CONFIG["handlers"]["stdout"]
+    assert handler["stream"] == "ext://sys.stdout"
+    assert ARQ_LOG_CONFIG["loggers"]["arq"]["propagate"] is False
+
+    expected = "--custom-log-dict app.jobs_v22.worker.ARQ_LOG_CONFIG"
+    assert expected in DOCKERFILE_PATH.read_text(encoding="utf-8")
+    compose = yaml.safe_load(DEVELOPMENT_COMPOSE_PATH.read_text(encoding="utf-8"))
+    assert expected in compose["services"]["worker"]["command"]
 
 
 def test_redis_integration_job_uses_redis_74_and_localhost_only() -> None:

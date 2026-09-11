@@ -54,7 +54,7 @@ services:
       - .env
     environment:
       V22_REDIS_URL: redis://redis:6379/0
-    command: arq app.jobs_v22.worker.WorkerSettings
+    command: arq app.jobs_v22.worker.WorkerSettings --custom-log-dict app.jobs_v22.worker.ARQ_LOG_CONFIG
     depends_on:
       redis:
         condition: service_healthy

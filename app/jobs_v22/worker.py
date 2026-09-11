@@ -67,6 +67,39 @@ from app.preflight_v22.fetcher import BoundedHomepageFetcher
 logger = logging.getLogger(__name__)
 
 
+# ARQ's default StreamHandler writes ordinary INFO events to stderr. Railway then
+# labels healthy worker activity as error-level output. Keep the same concise ARQ
+# format, but send both ARQ and application logs to stdout so platform severity is
+# meaningful.
+ARQ_LOG_CONFIG: dict[str, Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "worker": {
+            "format": "%(asctime)s: %(message)s",
+            "datefmt": "%H:%M:%S",
+        },
+    },
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "worker",
+            "level": "INFO",
+        },
+    },
+    "root": {"handlers": ["stdout"], "level": "INFO"},
+    "loggers": {
+        "arq": {
+            "handlers": ["stdout"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "httpx": {"level": "WARNING"},
+    },
+}
+
+
 def retry_delay_seconds(job_id: UUID, attempt_count: int) -> int:
     """Bounded exponential delay with stable per-job jitter."""
 
