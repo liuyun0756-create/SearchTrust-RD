@@ -79,6 +79,17 @@ and V22-093 traffic enrollment was not started.
 
 The frontend/database repository is clean at
 `1056e57e8e8e6816baed96c1bc17445401e2158a`, equal to `origin/main`. The central
-documentation/backend repository is released through its existing GitHub and Railway
-Wait-for-CI gates; its final exact commit, Web/Worker deployment results and health/log
-checks are recorded after that gate completes.
+documentation/backend release commit is
+`04118c48eb420d2e43ebf60c04bb3b2dd9e79967`. GitHub Actions run
+`https://github.com/liuyun0756-create/SearchTrust-RD/actions/runs/34703865253` completed
+successfully: Backend quality ran from `15:59:31Z` to `16:01:32Z`, and Redis integration
+ran from `15:59:31Z` to `16:00:03Z`. Railway kept both production deployments in
+`WAITING` until that gate passed, then released the exact commit as `SUCCESS`:
+
+- Web deployment `78153551-5d79-4102-923c-f1147600cec6`;
+- Worker deployment `19d69f6d-c8ce-4e3d-8746-5a63e9fc38c8`.
+
+The post-deployment backend health check returned HTTP 200 with status `ok`; the first
+100 error-level log entries for both deployments were empty. This completion-evidence
+update is documentation-only and follows the same GitHub/Railway gate before repository
+closure.
