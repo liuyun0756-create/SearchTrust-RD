@@ -1,7 +1,7 @@
 # V22-092 Data migration release validation implementation plan
 
 Date: 2026-09-12
-Status: ready for implementation review
+Status: completed
 
 Design source:
 `2026-09-12-searchtrust-v2-2-data-migration-release-validation-design.md`.
@@ -27,6 +27,16 @@ pausing new V2.2 intake while preserving existing Case and report reads.
   `c9a0ab70fe8ba0ebac606866201cdbb446ea3626`.
 - V2.1 product code remains retired. No task may restore a V2.1 route, adapter, renderer
   or report contract.
+
+## Approved implementation amendment
+
+The design-time baseline contained 19 migrations. The production privilege acceptance
+test then identified inherited browser-role execution on the V2.2 report-share rotation
+function. With the owner's approval, implementation added and applied one forward-only
+security migration, `20260912100000_restrict_v2_2_report_share_rotation.sql`. It only
+revokes the unintended function grants; it does not change application rows. No existing
+migration was rewritten, repaired or reapplied. All final parity references below are
+therefore 20 migrations.
 
 ## Task 1: Lock the remote-validation safety contract
 
@@ -77,7 +87,7 @@ Steps:
 
 1. Start the acceptance file with `BEGIN`, enable pgTAP only inside that transaction and
    finish with `ROLLBACK`.
-2. Assert all 19 expected migration versions and the complete deployed object manifest.
+2. Assert all 20 final migration versions and the complete deployed object manifest.
 3. Assert RLS on the 18 application tables currently protected by migrations. Verify
    `anon` and `authenticated` have no direct access to server-only tables and
    `service_role` has only the table/function operations the application calls.
@@ -205,14 +215,15 @@ Steps:
    runner's exact typed confirmation.
 5. Run the residue pgTAP file in a fresh linked session.
 6. Capture the after baseline and prove exact equality with the before baseline.
-7. Confirm migration history still contains exactly the same 19 ordered versions.
+7. Confirm migration history contains exactly the same 20 final ordered versions.
 8. Read Supabase health/log summaries and record no migration or database error event.
 9. Save only the redacted JSON result under the completion-report evidence boundary;
    delete raw successful command output.
 
 Completion gate: all assertions pass, before/after evidence matches and there is no
-synthetic residue. Do not run `db push`, `migration repair`, a reverse migration or an
-automatic schema fix.
+synthetic residue. Apart from the explicitly approved forward security migration above,
+do not run `db push`, `migration repair`, a reverse migration or an automatic schema
+fix.
 
 ## Task 7: Configure and release the frontend gate
 
@@ -246,7 +257,7 @@ Backend/central documentation files:
 Steps:
 
 1. Record local Supabase, PGlite, pgTAP, frontend and backend test totals and durations.
-2. Record the exact 19-version migration parity result, schema/RLS/service-role assertion
+2. Record the exact 20-version migration parity result, schema/RLS/service-role assertion
    totals, before/after equality and zero-residue proof.
 3. Record the frontend GitHub Actions run, Vercel deployment, production smoke results
    and rollback dry-run evidence.

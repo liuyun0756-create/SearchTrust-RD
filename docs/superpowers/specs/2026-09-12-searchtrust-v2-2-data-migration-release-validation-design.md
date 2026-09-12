@@ -1,7 +1,7 @@
 # V22-092 Data migration release validation design
 
 Date: 2026-09-12
-Status: approved for implementation planning
+Status: implemented and validated
 
 ## 1. Decision summary
 
@@ -27,6 +27,13 @@ the application can safely stop new V2.2 intake without reversing schema changes
   implementation without reading customer fields or payloads.
 - The production frontend and backend are already V2.2-only. Executable V2.1 routes,
   adapters and report UI were retired in V22-091.
+
+Implementation amendment (approved 2026-09-12): the first acceptance run found that
+`anon` and `authenticated` still inherited `EXECUTE` on the V2.2 report-share rotation
+function. The owner approved one forward-only security migration,
+`20260912100000_restrict_v2_2_report_share_rotation.sql`. No recorded migration was
+rewritten, repaired or reapplied. Final local/remote parity is therefore twenty ordered
+migrations.
 
 ## 3. Goals
 
@@ -147,7 +154,7 @@ explicit operation after the incident is resolved.
 1. Confirm both Git worktrees are clean and equal to `origin/main`.
 2. Resolve and validate the linked Supabase project.
 3. Capture the redacted before baseline.
-4. Compare all nineteen local and remote migration versions in order.
+4. Compare all twenty final local and remote migration versions in order.
 5. Run the local migration, database, type, contract, build and browser gates.
 6. Statistically inspect the remote SQL file for its transaction and forbidden-operation
    contract.
@@ -201,7 +208,7 @@ continue into the next phase.
 
 V22-092 is complete only when all of the following are true at once:
 
-- nineteen local and remote migration versions match exactly in order;
+- twenty final local and remote migration versions match exactly in order;
 - all required remote schema and permission assertions pass;
 - the production acceptance transaction passes and leaves zero synthetic rows;
 - exact before/after counts and report equality checks match;

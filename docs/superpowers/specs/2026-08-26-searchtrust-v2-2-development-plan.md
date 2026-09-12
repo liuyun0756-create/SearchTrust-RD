@@ -1179,13 +1179,23 @@ Generation 正式开关未改变。详见
 HTTP 200，初始日志无错误级事件。V22-092 数据迁移和 V22-093 灰度发布边界未改变。
 详见 `2026-09-11-searchtrust-v2-2-backend-test-infrastructure-completion.md`。
 
-#### V22-092 数据迁移
+#### V22-092 数据迁移（已完成）
 
 - staging应用migration；
 - 历史报告读取回归；
 - 新表RLS和service role检查；
 - 不强制回填旧报告Case；
 - 回滚脚本只回滚新入口，不删除新数据。
+
+完成于 2026-09-12：本地与正式 Supabase 的 20 个 migration 顺序完全一致；远程
+schema 74 项、事务验收 28 项和独立残留检查 1 项全部通过。验收首次发现报告分享轮换
+函数仍向浏览器角色开放，已按批准新增一条只收紧权限的正向 migration，未改写历史
+migration、未删除或修改任何既有业务数据。验证前后精确计数保持为 17 个用户、9 个
+订单、28 份报告和 1 个 Case，报告服务端摘要完全一致。前端 655 项单元测试、12 条
+浏览器旅程与后端 1,477 项测试通过；GitHub 门禁成功后，Vercel 才发布准确提交
+`1056e57e8e8e6816baed96c1bc17445401e2158a`。新入口熔断工具已完成本地执行验证与
+正式环境 dry-run，未中断正式服务。详见
+`2026-09-12-searchtrust-v2-2-data-migration-release-validation-completion.md`。
 
 #### V22-093 灰度发布
 
