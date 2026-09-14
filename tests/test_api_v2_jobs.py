@@ -6,6 +6,7 @@ from uuid import UUID
 import fakeredis.aioredis
 import httpx
 import pytest
+from redis.exceptions import RedisError
 
 from app.api.v2.runtime import V22JobRuntime
 from app.competitors_v22.selection import AnalysisDiscoveryLink, DiscoverySelectionError
@@ -26,6 +27,12 @@ AUTH_HEADERS = {
     "X-SearchTrust-Job-ID": str(JOB_ID),
     "X-SearchTrust-Discovery-ID": str(DISCOVERY_ID),
     "Idempotency-Key": "generation-intent-1",
+}
+VERIFIED_JOB_ID = UUID("77777777-7777-4777-8777-777777777777")
+VERIFIED_HEADERS = {
+    "Authorization": "Bearer test-internal-token",
+    "X-SearchTrust-Job-ID": str(VERIFIED_JOB_ID),
+    "Idempotency-Key": "verified-generation-intent-1",
 }
 
 
@@ -254,3 +261,179 @@ async def test_missing_runtime_returns_queue_unavailable_but_v1_stays_live(
     assert unavailable.status_code == 503
     assert unavailable.json()["detail"]["code"] == "QUEUE_UNAVAILABLE"
     assert health.status_code == 200
+
+
+def verified_task_payload() -> dict:
+    return {
+        "schema_version": "v22_verified_task_request_v1",
+        "case_id": str(CASE_ID),
+        "parent_report_id": "22222222-2222-4222-8222-222222222222",
+        "gsc_snapshot_id": "33333333-3333-4333-8333-333333333333",
+        "ga4_snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "public_gbp_snapshot_id": "66666666-6666-4666-8666-666666666666",
+        "input_checksum": DIGEST,
+    }
+
+
+def build_verified_app(monkeypatch: pytest.MonkeyPatch, *, enabled: bool = True):
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", enabled)
+    app, runtime, store, queue = build_app(monkeypatch, enabled=False)
+
+    class ForbiddenDiscoveryVerifier:
+        async def verify(self, **kwargs):
+            pytest.fail("Verified jobs must never invoke competitor discovery verification")
+
+    runtime.discovery_verifier = ForbiddenDiscoveryVerifier()
+    return app, runtime, store, queue
+
+
+@pytest.mark.anyio
+async def test_verified_feature_flag_blocks_before_redis_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch, enabled=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", True)
+    app.state.v22_runtime = None
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=verified_task_payload())
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "V22_VERIFIED_ANALYSIS_NOT_READY"
+    assert await store.get_state(VERIFIED_JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+async def test_verified_submit_persists_exact_envelope_and_replays_without_discovery(monkeypatch: pytest.MonkeyPatch) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    payload = verified_task_payload()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        first = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=payload)
+        replay = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=payload)
+        status = await client.get(f"/api/v2/tasks/{VERIFIED_JOB_ID}", headers=VERIFIED_HEADERS)
+
+    assert first.status_code == replay.status_code == 202
+    assert first.json() == replay.json() == {"job_id": str(VERIFIED_JOB_ID), "status": "queued", "estimated_seconds": 600}
+    assert await store.get_request(VERIFIED_JOB_ID) == {
+        "schema_version": "v22_verified_request_envelope_v1",
+        "verified_request": payload,
+    }
+    assert status.status_code == 200
+    assert status.json()["status"] == "queued"
+    assert status.json()["run_generation"] == 1
+    assert queue.calls == [(VERIFIED_JOB_ID, 1)]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("authorization", [None, "Bearer wrong-token", "Basic test-internal-token"])
+async def test_verified_submit_requires_internal_auth(monkeypatch: pytest.MonkeyPatch, authorization) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    headers = {key: value for key, value in VERIFIED_HEADERS.items() if key != "Authorization"}
+    if authorization is not None:
+        headers["Authorization"] = authorization
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v2/verified-analyze", headers=headers, json=verified_task_payload())
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "INTERNAL_AUTH_FAILED"
+    assert await store.get_state(VERIFIED_JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("field,value", [
+    ("X-SearchTrust-Job-ID", None), ("X-SearchTrust-Job-ID", "invalid"),
+    ("Idempotency-Key", None), ("Idempotency-Key", "short"), ("Idempotency-Key", "a" * 201),
+    ("Idempotency-Key", "invalid key"),
+])
+async def test_verified_submit_rejects_invalid_headers(monkeypatch: pytest.MonkeyPatch, field, value) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    headers = dict(VERIFIED_HEADERS)
+    if value is None:
+        headers.pop(field)
+    else:
+        headers[field] = value
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v2/verified-analyze", headers=headers, json=verified_task_payload())
+    assert response.status_code == 422
+    assert await store.get_state(VERIFIED_JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("changes", [
+    {"input_checksum": "invalid"}, {"schema_version": "wrong"}, {"access_token": "must-not-be-echoed"},
+    {"gsc_snapshot_id": "invalid"}, {"ga4_snapshot_id": "33333333-3333-4333-8333-333333333333"},
+])
+async def test_verified_submit_rejects_invalid_body_safely(monkeypatch: pytest.MonkeyPatch, changes) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json={**verified_task_payload(), **changes})
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "VALIDATION_ERROR"
+    assert "must-not-be-echoed" not in response.text
+    assert await store.get_state(VERIFIED_JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("change", ["payload", "job_id", "idempotency_key"])
+async def test_verified_submit_preserves_durable_identity_conflicts(monkeypatch: pytest.MonkeyPatch, change) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    payload = verified_task_payload()
+    changed_payload = dict(payload)
+    headers = dict(VERIFIED_HEADERS)
+    if change == "payload":
+        changed_payload["input_checksum"] = "sha256:" + "b" * 64
+    elif change == "job_id":
+        headers["X-SearchTrust-Job-ID"] = str(JOB_ID)
+    else:
+        headers["Idempotency-Key"] = "another-verified-intent"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        first = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=payload)
+        conflict = await client.post("/api/v2/verified-analyze", headers=headers, json=changed_payload)
+    assert first.status_code == 202
+    assert conflict.status_code == 409
+    assert conflict.json()["detail"]["code"] == ("IDEMPOTENCY_CONFLICT" if change == "payload" else "JOB_IDENTITY_CONFLICT")
+    assert (await store.get_request(VERIFIED_JOB_ID))["verified_request"] == payload
+    assert queue.calls == [(VERIFIED_JOB_ID, 1)]
+
+
+@pytest.mark.anyio
+async def test_verified_submit_missing_runtime_returns_safe_503(monkeypatch: pytest.MonkeyPatch) -> None:
+    app, _, _, _ = build_verified_app(monkeypatch)
+    app.state.v22_runtime = None
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=verified_task_payload())
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "QUEUE_UNAVAILABLE"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("boundary", ["store", "queue"])
+@pytest.mark.parametrize("exception_type", [RedisError, OSError])
+async def test_verified_submit_preserves_store_and_queue_failure_semantics(monkeypatch: pytest.MonkeyPatch, boundary, exception_type) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+
+    async def unavailable(*args, **kwargs):
+        raise exception_type("private-infrastructure-detail")
+
+    def unavailable_pipeline(**kwargs):
+        raise exception_type("private-infrastructure-detail")
+
+    with monkeypatch.context() as failure:
+        if boundary == "store":
+            failure.setattr(store.redis, "pipeline", unavailable_pipeline)
+        else:
+            failure.setattr(queue, "enqueue", unavailable)
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/api/v2/verified-analyze", headers=VERIFIED_HEADERS, json=verified_task_payload())
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "QUEUE_UNAVAILABLE"
+    assert "private-infrastructure-detail" not in response.text
+    state = await store.get_state(VERIFIED_JOB_ID)
+    if boundary == "store":
+        assert state is None
+    else:
+        assert state.status == "queued"
+        assert state.run_generation == 1
+        assert (await store.get_request(VERIFIED_JOB_ID))["verified_request"] == verified_task_payload()
+    assert queue.calls == []

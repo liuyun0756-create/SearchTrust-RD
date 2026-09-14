@@ -21,8 +21,10 @@ from redis.exceptions import RedisError
 from app.api.v2.dependencies import (
     get_v22_runtime,
     parse_analyze_request,
+    parse_verified_task_request,
     require_internal_auth,
     require_v22_analyze_enabled,
+    require_v22_verified_analysis_enabled,
 )
 from app.api.v2.models import (
     AnalyzeRequest,
@@ -30,6 +32,7 @@ from app.api.v2.models import (
     RetryTaskResponse,
     TaskCreateResponse,
     TaskStatusResponse,
+    VerifiedTaskRequest,
 )
 from app.core.config import settings
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
@@ -51,6 +54,7 @@ from app.jobs_v22.errors import (
 from app.jobs_v22.models import JobState
 from app.jobs_v22.queue import ArqJobQueue, JobQueue
 from app.jobs_v22.store import DurableJobStore
+from app.jobs_v22.verified_models import VerifiedRequestEnvelope
 
 
 logger = logging.getLogger(__name__)
@@ -106,6 +110,28 @@ class V22JobRuntime:
             idempotency_key=idempotency_key,
             request_payload=envelope.model_dump(mode="json"),
             now=now,
+        )
+        if not registered.replayed:
+            await self.queue.enqueue(job_id, registered.state.run_generation)
+        return TaskCreateResponse(job_id=job_id, status="queued", estimated_seconds=600)
+
+    async def submit_verified(
+        self,
+        *,
+        job_id: UUID,
+        idempotency_key: str,
+        request: VerifiedTaskRequest,
+    ) -> TaskCreateResponse:
+        envelope = VerifiedRequestEnvelope(
+            schema_version="v22_verified_request_envelope_v1",
+            verified_request=request,
+        )
+        registered = await self.store.register_job(
+            job_id=job_id,
+            case_id=request.case_id,
+            idempotency_key=idempotency_key,
+            request_payload=envelope.model_dump(mode="json"),
+            now=datetime.now(timezone.utc),
         )
         if not registered.replayed:
             await self.queue.enqueue(job_id, registered.state.run_generation)
@@ -220,6 +246,38 @@ async def submit_analysis(
         raise _job_error(exc) from exc
     except (RedisError, OSError) as exc:
         logger.warning("v2.2 queue unavailable while submitting job_id=%s", job_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "QUEUE_UNAVAILABLE", "message": "The durable task queue is unavailable."},
+        ) from exc
+
+
+@router.post(
+    "/verified-analyze",
+    response_model=TaskCreateResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def submit_verified_analysis(
+    body: Annotated[VerifiedTaskRequest, Depends(parse_verified_task_request)],
+    job_id: Annotated[UUID, Header(alias="X-SearchTrust-Job-ID")],
+    idempotency_key: Annotated[
+        str,
+        Header(alias="Idempotency-Key", min_length=8, max_length=200, pattern=r"^[A-Za-z0-9._:-]+$"),
+    ],
+    _: Annotated[None, Depends(require_internal_auth)],
+    __: Annotated[None, Depends(require_v22_verified_analysis_enabled)],
+    runtime: Annotated[V22JobRuntime, Depends(get_v22_runtime)],
+) -> TaskCreateResponse:
+    try:
+        return await runtime.submit_verified(
+            job_id=job_id,
+            idempotency_key=idempotency_key,
+            request=body,
+        )
+    except DurableJobError as exc:
+        raise _job_error(exc) from exc
+    except (RedisError, OSError) as exc:
+        logger.warning("v2.2 queue unavailable while submitting verified job_id=%s", job_id)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": "QUEUE_UNAVAILABLE", "message": "The durable task queue is unavailable."},

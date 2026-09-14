@@ -3347,6 +3347,57 @@
       "title": "ValidationMetric",
       "type": "object"
     },
+    "VerifiedTaskRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "ga4_snapshot_id": {
+          "format": "uuid",
+          "title": "Ga4 Snapshot Id",
+          "type": "string"
+        },
+        "gsc_snapshot_id": {
+          "format": "uuid",
+          "title": "Gsc Snapshot Id",
+          "type": "string"
+        },
+        "input_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Input Checksum",
+          "type": "string"
+        },
+        "parent_report_id": {
+          "format": "uuid",
+          "title": "Parent Report Id",
+          "type": "string"
+        },
+        "public_gbp_snapshot_id": {
+          "format": "uuid",
+          "title": "Public Gbp Snapshot Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "v22_verified_task_request_v1",
+          "default": "v22_verified_task_request_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "parent_report_id",
+        "gsc_snapshot_id",
+        "ga4_snapshot_id",
+        "public_gbp_snapshot_id",
+        "input_checksum"
+      ],
+      "title": "VerifiedTaskRequest",
+      "type": "object"
+    },
     "VersionDiff": {
       "additionalProperties": false,
       "properties": {
@@ -3470,6 +3521,9 @@
     },
     "task_status_response": {
       "$ref": "#/$defs/TaskStatusResponse"
+    },
+    "verified_task_request": {
+      "$ref": "#/$defs/VerifiedTaskRequest"
     }
   },
   "required": [
@@ -3477,6 +3531,7 @@
     "preflight_request",
     "preflight_response",
     "analyze_request",
+    "verified_task_request",
     "task_create_response",
     "task_status_response",
     "retry_task_response"

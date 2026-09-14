@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     # Empty connection/auth values leave public liveness available while the
     # optional durable runtime stays disabled.
     V22_ANALYZE_ENABLED: bool = False
+    V22_VERIFIED_ANALYSIS_ENABLED: bool = False
     V22_GSC_SYNC_ENABLED: bool = False
     V22_GA4_SYNC_ENABLED: bool = False
     V22_GBP_SYNC_ENABLED: bool = False

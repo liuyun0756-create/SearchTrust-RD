@@ -9,6 +9,7 @@ from pydantic import AwareDatetime, Field, HttpUrl, model_validator
 
 from app.report_v22.contract_version import ContractVersion
 from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
+from app.jobs_v22.verified_models import VerifiedTaskRequest
 from app.report_v22.models import (
     BusinessIdentity,
     CompetitorId,
@@ -300,6 +301,7 @@ class ApiV2ContractBundle(StrictModel):
     preflight_request: PreflightRequest
     preflight_response: PreflightResponse
     analyze_request: AnalyzeRequest
+    verified_task_request: VerifiedTaskRequest
     task_create_response: TaskCreateResponse
     task_status_response: TaskStatusResponse
     retry_task_response: RetryTaskResponse

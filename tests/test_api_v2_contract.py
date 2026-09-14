@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+from itertools import combinations
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -195,6 +199,7 @@ def test_api_schema_contains_all_endpoint_models_and_no_token_fields() -> None:
         "PreflightRequest",
         "PreflightResponse",
         "AnalyzeRequest",
+        "VerifiedTaskRequest",
         "TaskCreateResponse",
         "TaskStatusResponse",
         "RetryTaskResponse",
@@ -203,3 +208,91 @@ def test_api_schema_contains_all_endpoint_models_and_no_token_fields() -> None:
     serialized = json.dumps(schema)
     assert "refresh_token" not in serialized
     assert "access_token" not in serialized
+
+
+def verified_task_payload() -> dict:
+    return {
+        "schema_version": "v22_verified_task_request_v1",
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "parent_report_id": "22222222-2222-4222-8222-222222222222",
+        "gsc_snapshot_id": "33333333-3333-4333-8333-333333333333",
+        "ga4_snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "public_gbp_snapshot_id": "66666666-6666-4666-8666-666666666666",
+        "input_checksum": "sha256:" + "a" * 64,
+    }
+
+
+def verified_request_model():
+    from app.api.v2 import models
+
+    model = getattr(models, "VerifiedTaskRequest", None)
+    assert model is not None, "VerifiedTaskRequest must be exported by API v2 models"
+    return model
+
+
+def test_verified_task_request_accepts_only_bound_source_references() -> None:
+    model = verified_request_model()
+    payload = verified_task_payload()
+    request = model.model_validate_json(json.dumps(payload))
+
+    assert request.model_dump(mode="json") == payload
+    assert request.case_id == UUID(payload["case_id"])
+    payload.pop("schema_version")
+    assert model.model_validate_json(json.dumps(payload)).schema_version == "v22_verified_task_request_v1"
+    with pytest.raises(ValidationError, match="instance of UUID"):
+        model.model_validate(payload)
+
+
+@pytest.mark.parametrize("left,right", list(combinations([
+    "parent_report_id", "gsc_snapshot_id", "ga4_snapshot_id", "public_gbp_snapshot_id",
+], 2)))
+def test_verified_task_request_rejects_duplicate_source_identities(left: str, right: str) -> None:
+    model = verified_request_model()
+    payload = verified_task_payload()
+    payload[right] = payload[left]
+    with pytest.raises(ValidationError, match="distinct"):
+        model.model_validate_json(json.dumps(payload))
+
+
+@pytest.mark.parametrize("checksum", ["a" * 64, "sha256:" + "A" * 64, "sha256:" + "a" * 63, "md5:abcd", 123])
+def test_verified_task_request_rejects_invalid_checksums(checksum) -> None:
+    model = verified_request_model()
+    payload = {**verified_task_payload(), "input_checksum": checksum}
+    with pytest.raises(ValidationError):
+        model.model_validate_json(json.dumps(payload))
+
+
+@pytest.mark.parametrize("field", ["job_id", "parent_report", "first_party_snapshots", "access_token"])
+def test_verified_task_request_rejects_extra_fields(field: str) -> None:
+    model = verified_request_model()
+    payload = {**verified_task_payload(), field: "untrusted"}
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        model.model_validate_json(json.dumps(payload))
+
+
+@pytest.mark.parametrize("field", ["case_id", "parent_report_id", "gsc_snapshot_id", "ga4_snapshot_id", "public_gbp_snapshot_id", "input_checksum"])
+def test_verified_task_request_requires_all_bindings(field: str) -> None:
+    model = verified_request_model()
+    payload = verified_task_payload()
+    payload.pop(field)
+    with pytest.raises(ValidationError, match="Field required"):
+        model.model_validate_json(json.dumps(payload))
+
+
+def test_verified_task_request_rejects_wrong_schema_version() -> None:
+    model = verified_request_model()
+    payload = {**verified_task_payload(), "schema_version": "v21_verified_task_request_v1"}
+    with pytest.raises(ValidationError):
+        model.model_validate_json(json.dumps(payload))
+
+
+@pytest.mark.parametrize("first_import", ["app.api.v2.models", "app.jobs_v22.verified_models", "app.jobs_v22.models"])
+def test_verified_models_import_without_package_cycles(first_import: str) -> None:
+    result = subprocess.run(
+        [sys.executable, "-c", f"import {first_import}; "
+         "from app.jobs_v22 import JobState, JobErrorState; "
+         "from app.jobs_v22.models import JobState as DirectJobState, JobErrorState as DirectJobErrorState; "
+         "assert JobState is DirectJobState; assert JobErrorState is DirectJobErrorState"],
+        cwd=CONTRACT_DIR.parents[1], capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr

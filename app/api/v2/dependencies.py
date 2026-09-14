@@ -10,7 +10,7 @@ from pydantic import SecretStr
 from pydantic import ValidationError
 
 from app.api.v2.competitor_models import CompetitorDiscoveryRequest
-from app.api.v2.models import AnalyzeRequest, PreflightRequest
+from app.api.v2.models import AnalyzeRequest, PreflightRequest, VerifiedTaskRequest
 from app.core.config import settings
 
 
@@ -39,6 +39,17 @@ async def require_v22_analyze_enabled() -> None:
             detail={
                 "code": "V22_ANALYSIS_NOT_READY",
                 "message": "SearchTrust v2.2 analysis is not available yet.",
+            },
+        )
+
+
+async def require_v22_verified_analysis_enabled() -> None:
+    if not settings.V22_VERIFIED_ANALYSIS_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "V22_VERIFIED_ANALYSIS_NOT_READY",
+                "message": "SearchTrust v2.2 verified analysis is not available yet.",
             },
         )
 
@@ -94,6 +105,18 @@ async def parse_analyze_request(request: Request) -> AnalyzeRequest:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "VALIDATION_ERROR", "message": "The analysis request is invalid."},
+        ) from exc
+
+
+async def parse_verified_task_request(request: Request) -> VerifiedTaskRequest:
+    """Validate raw JSON to preserve strict UUID semantics and safe errors."""
+
+    try:
+        return VerifiedTaskRequest.model_validate_json(await request.body())
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "VALIDATION_ERROR", "message": "The verified analysis request is invalid."},
         ) from exc
 
 
