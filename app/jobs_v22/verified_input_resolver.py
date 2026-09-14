@@ -3,17 +3,46 @@ from __future__ import annotations
 
 import json
 import asyncio
+from dataclasses import dataclass
 from urllib.parse import urlsplit
 from uuid import UUID
+from weakref import WeakKeyDictionary
 
 import httpx
 
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
-from app.jobs_v22.digest import verified_request_digest
+from app.jobs_v22.digest import request_digest, verified_request_digest
 from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequest
 
 MAX_RESPONSE_BYTES = 25_000_000
 TOTAL_TIMEOUT_SECONDS = 20
+
+
+@dataclass(frozen=True, eq=False, slots=True, weakref_slot=True)
+class TrustedVerifiedInput:
+    """Resolver capability; only the exact registered instance may be persisted.
+
+    Read the validated transport model through ``payload`` or its forwarded
+    properties. Dumping/copying/revalidating the payload never transfers trust;
+    the expected parent digest is held separately in the resolver's registry.
+    """
+
+    payload: VerifiedResolvedInput
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, "payload"), name)
+
+
+_TRUSTED_INPUT_SEALS: WeakKeyDictionary[TrustedVerifiedInput, str] = WeakKeyDictionary()
+
+
+def require_trusted_verified_input(value: TrustedVerifiedInput) -> VerifiedResolvedInput:
+    if type(value) is not TrustedVerifiedInput:
+        raise ValueError("input was not returned by the trusted resolver")
+    expected = _TRUSTED_INPUT_SEALS.get(value)
+    if expected is None or request_digest(value.parent_report) != expected:
+        raise ValueError("input provenance is missing or the parent was mutated")
+    return value.payload
 
 
 class VerifiedRpcClient:
@@ -77,7 +106,7 @@ class SupabaseVerifiedInputResolver:
         self.rpc = VerifiedRpcClient(url=url, service_role_key=service_role_key, http_client=http_client,
             max_response_bytes=MAX_RESPONSE_BYTES, prefix="V22_VERIFIED_INPUT")
 
-    async def resolve(self, *, job_id: UUID, request: VerifiedTaskRequest, run_generation: int) -> VerifiedResolvedInput:
+    async def resolve(self, *, job_id: UUID, request: VerifiedTaskRequest, run_generation: int) -> TrustedVerifiedInput:
         if type(run_generation) is not int or run_generation < 1:
             raise DeterministicJobError("V22_VERIFIED_INPUT_INVALID", "Invalid Verified task generation.") from None
         raw = await self.rpc.post("resolve_v22_verified_analysis_input", {
@@ -89,6 +118,11 @@ class SupabaseVerifiedInputResolver:
                 raise ValueError("parent payload checksum mismatch")
             result = VerifiedResolvedInput.model_validate_json(json.dumps(raw))
             result.validate_request(job_id=job_id, request=request)
-            return result
+            trusted = TrustedVerifiedInput(result)
+            # This is the only registration site: the raw frontend checksum and
+            # complete payload graph have succeeded. No model constructor, dump,
+            # copy, private attribute or post-init hook can re-establish trust.
+            _TRUSTED_INPUT_SEALS[trusted] = request_digest(result.parent_report)
+            return trusted
         except (ValueError, TypeError, RecursionError, OverflowError):
             raise DeterministicJobError("V22_VERIFIED_INPUT_INVALID", "Verified report storage returned inconsistent inputs.") from None

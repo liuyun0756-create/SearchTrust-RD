@@ -6,7 +6,9 @@ from uuid import UUID
 import httpx
 
 from app.jobs_v22.errors import DeterministicJobError
-from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
+from app.jobs_v22.verified_input_resolver import (
+    TrustedVerifiedInput, VerifiedRpcClient, require_trusted_verified_input,
+)
 from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequest, validate_public_gbp
 from app.report_v22.models import ReportV22
 from app.report_v22.version_diff_identity import finding_fingerprint
@@ -19,15 +21,15 @@ class SupabaseVerifiedResultPersister:
             max_response_bytes=max_response_bytes, prefix="V22_VERIFIED_RESULT_PERSISTENCE", invalid_retryable=True)
 
     async def persist(self, *, job_id: UUID, case_id: UUID, run_generation: int,
-                      request: VerifiedTaskRequest, resolved_input: VerifiedResolvedInput, report: ReportV22) -> None:
+                      request: VerifiedTaskRequest, resolved_input: TrustedVerifiedInput, report: ReportV22) -> None:
         try:
             # Dump to Python values to force full validation even for model_construct
             # or mutated instances (model_validate(instance) can otherwise skip it).
             report = ReportV22.model_validate(report.model_dump(mode="python") if isinstance(report, ReportV22) else report)
-            # Check the original private seal before a fresh validation could seal
-            # the current model contents as if they were the resolver's input.
-            resolved_input.validate_parent_integrity()
-            resolved_input = VerifiedResolvedInput.model_validate(resolved_input.model_dump(mode="python"))
+            # Provenance belongs to the resolver-created capability, never to
+            # Pydantic state that could be copied or reconstructed by a caller.
+            payload = require_trusted_verified_input(resolved_input)
+            resolved_input = VerifiedResolvedInput.model_validate(payload.model_dump(mode="python"))
             resolved_input.validate_request(job_id=job_id, request=request)
             parent = resolved_input.parent_report
             if (type(run_generation) is not int or run_generation < 1 or case_id != request.case_id

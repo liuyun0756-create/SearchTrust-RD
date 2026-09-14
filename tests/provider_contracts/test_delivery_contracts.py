@@ -20,7 +20,7 @@ async def test_verified_service_role_rpc_delivery_contracts():
 
     payload = resolved_payload()
     _, resolve_calls = await resolve_response(httpx.Response(200, json=payload), payload=payload)
-    values = persistence_inputs()
+    values = await persistence_inputs()
     persist_calls = await persist_response(httpx.Response(200, json=[{
         "report_id": str(values[1].job_id), "idempotent": False}]), values=values)
     manifest = json.loads((Path(__file__).parents[1] / "fixtures/provider_contracts/manifest.json").read_text())

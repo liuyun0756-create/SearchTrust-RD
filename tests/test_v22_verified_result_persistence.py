@@ -1,6 +1,6 @@
 import json
 import gzip
-from copy import deepcopy
+from copy import copy, deepcopy
 
 import httpx
 import pytest
@@ -10,7 +10,7 @@ from app.jobs_v22.verified_result_persistence import SupabaseVerifiedResultPersi
 from app.jobs_v22.verified_models import VerifiedResolvedInput
 from app.report_v22.models import ReportV22
 from test_v22_verified_input_resolver import (JOB_ID, OTHER_ID, PUBLIC_ID, SECRET, FIXTURES,
-    resolved_payload, binding_request, CountedStream)
+    resolved_payload, binding_request, CountedStream, resolve_response)
 
 
 @pytest.fixture
@@ -18,9 +18,9 @@ def anyio_backend():
     return "asyncio"
 
 
-def persistence_inputs():
+async def persistence_inputs():
     payload = resolved_payload()
-    bound = VerifiedResolvedInput.model_validate_json(json.dumps(payload))
+    bound, _ = await resolve_response(httpx.Response(200, json=payload), payload=payload)
     report = json.loads((FIXTURES / "verified.json").read_text())
     report["report_version"]["report_id"] = str(JOB_ID)
     report["identity"] = deepcopy(payload["parent_report"]["identity"])
@@ -32,7 +32,7 @@ def persistence_inputs():
 
 
 async def persist_response(response, *, values=None, handler=None):
-    request, bound, report = values or persistence_inputs()
+    request, bound, report = values or await persistence_inputs()
     calls = []
     def respond(sent):
         calls.append(sent)
@@ -50,7 +50,7 @@ async def persist_response(response, *, values=None, handler=None):
 @pytest.mark.anyio
 @pytest.mark.parametrize("idempotent", [False, True])
 async def test_persister_validates_and_sends_only_exact_verified_rpc(idempotent):
-    values = persistence_inputs()
+    values = await persistence_inputs()
     calls = await persist_response(httpx.Response(200, json=[{"report_id": str(JOB_ID), "idempotent": idempotent}]), values=values)
     assert len(calls) == 1
     sent = calls[0]
@@ -66,7 +66,7 @@ async def test_persister_validates_and_sends_only_exact_verified_rpc(idempotent)
 @pytest.mark.parametrize("change", ["schema", "job", "case", "parent", "version", "gsc", "ga4", "gbp",
     "evidence", "source_swap", "coverage", "coverage_missing", "public_url", "constructed", "request", "bound", "bound_checksum"])
 async def test_persister_rejects_invalid_or_unbound_reports_before_network(change):
-    request, bound, report = persistence_inputs()
+    request, bound, report = await persistence_inputs()
     if change == "schema": report.top_actions = []
     if change == "job": report.report_version.report_id = __import__("uuid").UUID(OTHER_ID)
     if change == "case": report.identity.case_id = __import__("uuid").UUID(OTHER_ID)
@@ -81,7 +81,7 @@ async def test_persister_rejects_invalid_or_unbound_reports_before_network(chang
     if change == "public_url": report.evidence_index[-1].source_locator.url = "https://wrong.test/"
     if change == "constructed": report = ReportV22.model_construct()
     if change == "request": request = request.model_copy(update={"input_checksum": "sha256:" + "f" * 64})
-    if change == "bound": bound.case_id = __import__("uuid").UUID(OTHER_ID)
+    if change == "bound": bound.payload.case_id = __import__("uuid").UUID(OTHER_ID)
     if change == "bound_checksum": bound.site_snapshot.payload_checksum = "sha256:" + "f" * 64
     def unexpected(_): pytest.fail("invalid report reached network")
     with pytest.raises(DeterministicJobError):
@@ -151,7 +151,7 @@ async def test_persister_binds_every_previous_finding_to_frozen_parent(change):
     from app.report_v22.models import PreviousFindingReference
     from app.report_v22.version_diff_identity import finding_fingerprint
 
-    request, bound, report = persistence_inputs()
+    request, bound, report = await persistence_inputs()
     finding = bound.parent_report.findings[0]
     entry = report.version_diff.entries[0]
     entry.change_type = "confirmed"
@@ -172,7 +172,7 @@ async def test_persister_accepts_exact_previous_reference():
     from app.report_v22.models import PreviousFindingReference
     from app.report_v22.version_diff_identity import finding_fingerprint
 
-    request, bound, report = persistence_inputs()
+    request, bound, report = await persistence_inputs()
     finding = bound.parent_report.findings[0]
     report.version_diff.entries[0].change_type = "confirmed"
     report.version_diff.entries[0].previous_finding = PreviousFindingReference(report_id=request.parent_report_id,
@@ -185,7 +185,7 @@ async def test_persister_accepts_exact_previous_reference():
 @pytest.mark.anyio
 @pytest.mark.parametrize("change", ["statement", "valid_model_copy", "reseal_rpc"])
 async def test_persister_rejects_valid_shaped_parent_mutation(change):
-    request, bound, report = persistence_inputs()
+    request, bound, report = await persistence_inputs()
     if change == "reseal_rpc":
         payload = resolved_payload()
         payload["_parent_integrity_seal"] = "sha256:" + "f" * 64
@@ -199,11 +199,14 @@ async def test_persister_rejects_valid_shaped_parent_mutation(change):
         await persist_response(None, values=(request, bound, report), handler=unexpected)
 
 
-def test_parent_seal_cannot_be_silently_reset_by_reinitializing_private_state():
-    _, bound, _ = persistence_inputs()
+@pytest.mark.anyio
+async def test_model_post_init_cannot_recertify_the_resolver_capability():
+    request, bound, report = await persistence_inputs()
     bound.parent_report.findings[0].statement = "A different parent statement"
-    with pytest.raises(ValueError):
-        bound.model_post_init(None)
+    bound.model_post_init(None)
+    def unexpected(_): pytest.fail("post-init recertified a mutated parent")
+    with pytest.raises(DeterministicJobError):
+        await persist_response(None, values=(request, bound, report), handler=unexpected)
 
 
 @pytest.mark.anyio
@@ -217,7 +220,44 @@ async def test_resolver_seal_is_separate_from_raw_frontend_hash_during_persisten
     payload["parent_payload_checksum"] = verified_request_digest(payload["parent_report"])
     bound, _ = await resolve_response(httpx.Response(200, json=payload), payload=payload)
     assert verified_request_digest(bound.parent_report.model_dump(mode="json")) != bound.parent_payload_checksum
-    request, _, report = persistence_inputs()
+    request, _, report = await persistence_inputs()
     calls = await persist_response(httpx.Response(200, json=[{"report_id": str(JOB_ID), "idempotent": False}]),
         values=(request, bound, report))
     assert len(calls) == 1
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("probe", ["copy_update_seal", "dump_revalidate", "clear_then_post_init"])
+async def test_normal_model_apis_cannot_recertify_a_mutated_parent(probe):
+    from app.jobs_v22.digest import request_digest
+
+    request, original, report = await persistence_inputs()
+    forged = original.model_copy(deep=True)
+    forged.parent_report.findings[0].statement = "A changed but valid parent Finding"
+    if probe == "copy_update_seal":
+        forged = forged.model_copy(update={"_parent_integrity_seal": request_digest(forged.parent_report)})
+    if probe == "dump_revalidate":
+        forged = VerifiedResolvedInput.model_validate(forged.model_dump(mode="python"))
+    if probe == "clear_then_post_init":
+        forged.__pydantic_private__ = {"_parent_integrity_seal": None}
+        forged.model_post_init(None)
+    def unexpected(_): pytest.fail("forged provenance reached persistence HTTP")
+    with pytest.raises(DeterministicJobError):
+        await persist_response(None, values=(request, forged, report), handler=unexpected)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("copy_kind", ["copy", "deepcopy", "model_copy", "model_validate", "wrapper_construct", "dataclass_replace"])
+async def test_only_the_exact_resolver_instance_is_trusted_even_without_mutation(copy_kind):
+    request, original, report = await persistence_inputs()
+    if copy_kind == "copy": forged = copy(original)
+    if copy_kind == "deepcopy": forged = deepcopy(original)
+    if copy_kind == "model_copy": forged = original.model_copy(deep=True)
+    if copy_kind == "model_validate": forged = VerifiedResolvedInput.model_validate(original.model_dump(mode="python"))
+    if copy_kind == "wrapper_construct": forged = type(original)(original.payload)
+    if copy_kind == "dataclass_replace":
+        from dataclasses import replace
+        forged = replace(original)
+    def unexpected(_): pytest.fail("unregistered copy reached persistence HTTP")
+    with pytest.raises(DeterministicJobError):
+        await persist_response(None, values=(request, forged, report), handler=unexpected)

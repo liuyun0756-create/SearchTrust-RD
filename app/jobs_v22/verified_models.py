@@ -6,7 +6,7 @@ import json
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, PrivateAttr, model_validator
+from pydantic import AwareDatetime, Field, model_validator
 
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.collectors.serp_market_models import SerpMarketSnapshot
@@ -93,19 +93,6 @@ class VerifiedResolvedInput(StrictModel):
     serp_snapshot: VerifiedSnapshotRow[SerpMarketSnapshot]
     competitor_snapshot: VerifiedSnapshotRow[CompetitorCollectionSnapshot]
     first_party_snapshots: list[TrustedFirstPartySnapshot] = Field(min_length=2, max_length=2)
-    _parent_integrity_seal: str | None = PrivateAttr(default=None)
-
-    def model_post_init(self, __context) -> None:
-        # Separate from the frontend raw checksum: defaults and normalization have
-        # now been applied. Private state is neither accepted nor emitted as JSON.
-        if self._parent_integrity_seal is not None:
-            self.validate_parent_integrity()
-        elif hasattr(self, "parent_report"):
-            self._parent_integrity_seal = request_digest(self.parent_report)
-
-    def validate_parent_integrity(self) -> None:
-        if self._parent_integrity_seal is None or request_digest(self.parent_report) != self._parent_integrity_seal:
-            raise ValueError("validated parent report was mutated")
 
     @classmethod
     def model_rebuild(cls, **kwargs):
