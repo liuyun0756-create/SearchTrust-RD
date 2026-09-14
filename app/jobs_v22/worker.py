@@ -602,7 +602,13 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     else:
         prospect_executor = UnavailableV22Executor()
 
-    if settings.V22_VERIFIED_ANALYSIS_ENABLED:
+    callback_url = settings.V22_CALLBACK_URL
+    callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
+    if (
+        settings.V22_VERIFIED_ANALYSIS_ENABLED
+        and callback_url
+        and callback_secret
+    ):
         verified_http_client = httpx.AsyncClient(
             timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
             follow_redirects=False,
@@ -634,8 +640,6 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         prospect_executor=prospect_executor,
         verified_executor=verified_executor,
     )
-    callback_url = settings.V22_CALLBACK_URL
-    callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
     if callback_url and callback_secret:
         http_client = httpx.AsyncClient(timeout=settings.V22_CALLBACK_TIMEOUT_SECONDS)
         ctx["callback_http_client"] = http_client

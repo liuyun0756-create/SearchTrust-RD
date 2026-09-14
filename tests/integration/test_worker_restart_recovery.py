@@ -110,6 +110,8 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
     assert completed.run_generation == 2
     assert completed.attempt_count == 2
     assert completed.report is not None
+    assert completed.report.report_version.report_type == "verified_execution"
+    assert completed.report.report_version.report_id == JOB_ID
     assert await store.get_request(JOB_ID) == request_payload
     before_stale_write = completed.model_copy(deep=True)
     with pytest.raises(JobLeaseLost):

@@ -5,15 +5,17 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import fakeredis.aioredis
+import httpx
 import pytest
 
 from app.api.v2.models import AnalyzeRequest
 from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.jobs_v22.checkpoints import JobCheckpoints
-from app.jobs_v22.errors import DeterministicJobError
+from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.verified_executor import VerifiedV22Executor, V22ExecutorRouter
 from app.jobs_v22.verified_models import VerifiedRequestEnvelope
 from app.jobs_v22.verified_report_pipeline import VerifiedReportPipeline
+from app.jobs_v22.verified_result_persistence import SupabaseVerifiedResultPersister
 from test_api_v2_jobs import prospect_analyze_payload
 from verified_pipeline_helpers import JOB_ID, VERIFIED_AT, resolve_fixture
 
@@ -218,6 +220,71 @@ async def test_verified_executor_re_resolves_on_restart_instead_of_reconstructin
     assert pipeline.build.await_args_list[1].kwargs["resolved_input"] is second
     assert persister.persist.await_args_list[0].kwargs["resolved_input"] is first
     assert persister.persist.await_args_list[1].kwargs["resolved_input"] is second
+
+
+@pytest.mark.anyio
+async def test_verified_executor_retries_the_same_atomic_persist_after_response_loss() -> None:
+    first, request = await resolve_fixture()
+    second, _ = await resolve_fixture()
+    resolver = AsyncMock()
+    resolver.resolve.side_effect = [first, second]
+    sent_payloads: list[dict] = []
+
+    async def respond(http_request: httpx.Request) -> httpx.Response:
+        sent_payloads.append(json.loads(http_request.content))
+        if len(sent_payloads) == 1:
+            # The database transaction may already have committed; only its HTTP
+            # acknowledgement was lost. Retrying must address that same paid job.
+            raise httpx.ReadTimeout("response lost after commit", request=http_request)
+        return httpx.Response(
+            200,
+            json=[{"report_id": str(JOB_ID), "idempotent": True}],
+            request=http_request,
+        )
+
+    redis = fakeredis.aioredis.FakeRedis()
+    checkpoints = JobCheckpoints(
+        redis,
+        prefix="test:verified:atomic-response-loss",
+        ttl_seconds=3600,
+        run_generation=3,
+    )
+    envelope = VerifiedRequestEnvelope(
+        schema_version="v22_verified_request_envelope_v1",
+        verified_request=request,
+    ).model_dump(mode="json")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        executor = VerifiedV22Executor(
+            resolver=resolver,
+            pipeline=VerifiedReportPipeline(clock=lambda: VERIFIED_AT),
+            persister=SupabaseVerifiedResultPersister(
+                url="https://project.supabase.co",
+                service_role_key="fake-service",
+                http_client=client,
+            ),
+        )
+        with pytest.raises(
+            TransientJobError, match="V22_VERIFIED_RESULT_PERSISTENCE_UNAVAILABLE"
+        ):
+            await executor.execute(
+                job_id=JOB_ID,
+                request=envelope,
+                submitted_at=VERIFIED_AT,
+                checkpoints=checkpoints,
+            )
+        report = await executor.execute(
+            job_id=JOB_ID,
+            request=envelope,
+            submitted_at=VERIFIED_AT,
+            checkpoints=checkpoints,
+        )
+
+    assert report.report_version.report_type == "verified_execution"
+    assert resolver.resolve.await_count == 2
+    assert len(sent_payloads) == 2
+    assert sent_payloads[0] == sent_payloads[1]
+    assert sent_payloads[0]["p_job_id"] == str(JOB_ID)
+    assert sent_payloads[0]["p_run_generation"] == 3
 
 
 @pytest.mark.anyio

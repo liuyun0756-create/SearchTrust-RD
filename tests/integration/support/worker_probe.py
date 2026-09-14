@@ -43,11 +43,18 @@ def resumed_signal_key(prefix: str, job_id: UUID, generation: int) -> str:
     return f"{prefix}probe:resumed:{job_id}:{generation}"
 
 
-def probe_report() -> ReportV22:
-    return ReportV22.model_validate_json(
-        (ROOT / "contracts" / "v2.2" / "fixtures" / "prospect.json").read_text(
+def probe_report(job_id: UUID) -> ReportV22:
+    fixture = ReportV22.model_validate_json(
+        (ROOT / "contracts" / "v2.2" / "fixtures" / "verified.json").read_text(
             encoding="utf-8"
         )
+    )
+    return fixture.model_copy(
+        update={
+            "report_version": fixture.report_version.model_copy(
+                update={"report_id": job_id}
+            )
+        }
     )
 
 
@@ -134,7 +141,7 @@ async def execute_probe_job(ctx: dict, job_id_value: str, run_generation: int) -
         progress=100,
         message="Probe recovery complete.",
         now=utc_now(),
-        report=probe_report(),
+        report=probe_report(job_id),
         expected_generation=run_generation,
     )
     if completed.applied:

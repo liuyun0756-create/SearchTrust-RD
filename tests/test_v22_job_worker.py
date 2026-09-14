@@ -444,6 +444,8 @@ async def test_worker_wires_verified_independently_with_its_own_bounded_storage_
     monkeypatch.setattr(
         settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
     )
+    monkeypatch.setattr(settings, "V22_CALLBACK_URL", "https://app.example.com/callback")
+    monkeypatch.setattr(settings, "V22_CALLBACK_SECRET", SecretStr("fake-callback"))
     ctx = {"redis": redis}
 
     await on_startup(ctx)
@@ -481,6 +483,8 @@ async def test_worker_can_enable_verified_while_prospect_stays_unavailable(
     monkeypatch.setattr(
         settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
     )
+    monkeypatch.setattr(settings, "V22_CALLBACK_URL", "https://app.example.com/callback")
+    monkeypatch.setattr(settings, "V22_CALLBACK_SECRET", SecretStr("fake-callback"))
     ctx = {"redis": redis}
 
     await on_startup(ctx)
@@ -491,6 +495,42 @@ async def test_worker_can_enable_verified_while_prospect_stays_unavailable(
         assert "result_http_client" not in ctx
     finally:
         await on_shutdown(ctx)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("callback_url", "callback_secret"),
+    [
+        ("", "fake-callback"),
+        ("https://app.example.com/callback", ""),
+        ("", ""),
+    ],
+)
+async def test_verified_executor_fails_closed_without_complete_callback_configuration(
+    monkeypatch, callback_url: str, callback_secret: str
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", True)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setattr(
+        settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
+    )
+    monkeypatch.setattr(settings, "V22_CALLBACK_URL", callback_url)
+    monkeypatch.setattr(settings, "V22_CALLBACK_SECRET", SecretStr(callback_secret))
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    try:
+        assert isinstance(ctx["executor"].verified_executor, UnavailableV22Executor)
+        assert "verified_http_client" not in ctx
+        assert "verified_orphan_reconciler" in ctx
+        assert "verified_reconciler_http_client" in ctx
+    finally:
+        reconciler_client = ctx["verified_reconciler_http_client"]
+        await on_shutdown(ctx)
+
+    assert reconciler_client.is_closed
 
 
 @pytest.mark.anyio
