@@ -91,13 +91,15 @@ def frozen_public_fixture():
     return payload, public_input, public_result, public_plan
 
 
-async def resolve_fixture():
+async def resolve_fixture(*, reverse_first_party: bool = False):
     import httpx
 
     from app.jobs_v22.verified_input_resolver import SupabaseVerifiedInputResolver
     from app.jobs_v22.verified_models import VerifiedTaskRequest
 
     payload, _, _, _ = frozen_public_fixture()
+    if reverse_first_party:
+        payload["first_party_snapshots"].reverse()
     public_id = payload["public_gbp_snapshot"]["snapshot_id"]
     sources = {item["source_type"]: item["snapshot_id"] for item in payload["first_party_snapshots"]}
     identity = dict(case_id=payload["case_id"], job_id=str(JOB_ID), parent_report_id=str(PARENT_ID),

@@ -144,11 +144,17 @@ class VerifiedReportPipeline:
             planning_date=parent.report_version.generated_at.date(),
         ))
 
+        # Resolver order is a transport detail. Freeze the semantic source order at
+        # the pipeline boundary so every nested V22-071…074 checkpoint is stable.
+        first_party_snapshots = sorted(
+            resolved.first_party_snapshots,
+            key=lambda snapshot: (snapshot.source_type, str(snapshot.snapshot_id)),
+        )
         first_input = FirstPartyFindingsInput(
             case_id=resolved.case_id,
             parent_report_id=parent.report_version.report_id,
             evaluated_at=evaluated_at,
-            snapshots=resolved.first_party_snapshots,
+            snapshots=first_party_snapshots,
         )
         first_result = await self.first_party_stage.build(
             job_id=job_id, request=first_input, checkpoints=checkpoints)

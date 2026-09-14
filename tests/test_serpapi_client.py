@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote, quote_plus
 
+import httpx
 import pytest
 
 from app.integrations.serpapi import (
@@ -120,3 +122,59 @@ async def test_execute_serpapi_get_all_keys_unavailable_is_secret_safe() -> None
 
     assert len(client.requests) == 3
     assert all(secret not in str(raised.value) for secret in secrets)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("level", [logging.INFO, logging.DEBUG])
+async def test_http_client_logs_redact_all_key_variants_on_success_and_failure(
+    caplog: pytest.LogCaptureFixture, level: int,
+) -> None:
+    secrets = ["first-secret", "second secret/+", "third%secret"]
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            return httpx.Response(429, json={"error": f"api_key={secrets[calls - 1]} exhausted"})
+        return httpx.Response(200, json={"search_metadata": {"status": "Success"}})
+
+    caplog.set_level(level, logger="httpx")
+    caplog.set_level(level, logger="httpcore")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        result = await execute_serpapi_get(
+            client, {"engine": "google_maps", "q": "plumber"}, keys=secrets,
+            base_url="https://serpapi.example/search",
+        )
+
+    assert result.metadata.attempt_count == 3
+    rendered = "\n".join(record.getMessage() for record in caplog.records)
+    for secret in secrets:
+        assert secret not in rendered
+        assert quote(secret, safe="") not in rendered
+        assert quote_plus(secret) not in rendered
+    assert "api_key=[REDACTED]" in rendered
+
+
+def test_serpapi_log_safety_does_not_change_unrelated_application_logs(caplog) -> None:
+    from app.integrations.serpapi import install_serpapi_log_safety
+
+    install_serpapi_log_safety()
+    caplog.set_level(logging.INFO, logger="tests.unrelated")
+    logging.getLogger("tests.unrelated").info("api_key=ordinary-application-value")
+    assert "api_key=ordinary-application-value" in caplog.text
+
+
+def test_serpapi_log_safety_redacts_payload_and_httpcore_exception(caplog) -> None:
+    from app.integrations.serpapi import install_serpapi_log_safety
+
+    install_serpapi_log_safety()
+    caplog.set_level(logging.DEBUG, logger="httpcore.connection")
+    try:
+        raise RuntimeError("api_key=exception-secret")
+    except RuntimeError:
+        logging.getLogger("httpcore.connection").exception(
+            'payload={"api_key": "payload-secret"}')
+    assert "exception-secret" not in caplog.text
+    assert "payload-secret" not in caplog.text
+    assert '"api_key": "[REDACTED]"' in caplog.text

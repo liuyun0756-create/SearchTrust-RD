@@ -110,6 +110,31 @@ async def test_restart_hits_every_stage_checkpoint_and_preserves_canonical_repor
 
 
 @pytest.mark.anyio
+async def test_reversed_first_party_resolver_order_preserves_all_stage_checkpoint_keys():
+    from verified_pipeline_helpers import resolve_fixture
+
+    normal, request = await resolve_fixture()
+    reversed_input, reversed_request = await resolve_fixture(reverse_first_party=True)
+    normal_redis = fakeredis.aioredis.FakeRedis()
+    reversed_redis = fakeredis.aioredis.FakeRedis()
+    normal_checkpoints = JobCheckpoints(normal_redis, prefix="test:semantic-order", ttl_seconds=604800)
+    reversed_checkpoints = JobCheckpoints(reversed_redis, prefix="test:semantic-order", ttl_seconds=604800)
+
+    first = await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
+        job_id=JOB_ID, request=request, resolved_input=normal, checkpoints=normal_checkpoints)
+    second = await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
+        job_id=JOB_ID, request=reversed_request, resolved_input=reversed_input,
+        checkpoints=reversed_checkpoints)
+
+    normal_keys = {key.decode() async for key in normal_redis.scan_iter()}
+    reversed_keys = {key.decode() async for key in reversed_redis.scan_iter()}
+    assert normal_keys == reversed_keys
+    # Six stage results plus the separately checkpointed evaluation timestamp.
+    assert len(normal_keys) == 7
+    assert canonical_json_bytes(first) == canonical_json_bytes(second)
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize("change", ["parent", "public_row", "public_reference", "resigned_public",
     "source", "snapshot", "checksum", "copy"])
 async def test_tampering_fails_before_any_stage_checkpoint_or_report(change):

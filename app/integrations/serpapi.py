@@ -13,6 +13,66 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 
+_SERPAPI_QUERY_SECRET = re.compile(
+    r"(?i)(api(?:_|%5f)key(?:=|%3d))(.*?)(?=&|%26|\s|[\"'<>]|$)"
+)
+_SERPAPI_JSON_SECRET = re.compile(
+    r'(?i)((?:"|\')?api_key(?:"|\')?\s*:\s*(?:"|\'))(.*?)(?=(?:"|\'))'
+)
+
+
+def redact_serpapi_log_value(value: str) -> str:
+    """Redact SerpAPI credentials structurally, without knowing configured keys."""
+    redacted = _SERPAPI_QUERY_SECRET.sub(r"\1[REDACTED]", value)
+    return _SERPAPI_JSON_SECRET.sub(r"\1[REDACTED]", redacted)
+
+
+def _redact_log_arg(value: Any) -> Any:
+    if isinstance(value, str):
+        return redact_serpapi_log_value(value)
+    if isinstance(value, tuple):
+        return tuple(_redact_log_arg(item) for item in value)
+    if isinstance(value, list):
+        return [_redact_log_arg(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _redact_log_arg(item) for key, item in value.items()}
+    rendered = str(value)
+    redacted = redact_serpapi_log_value(rendered)
+    return redacted if redacted != rendered else value
+
+
+class SerpApiHttpLogFilter(logging.Filter):
+    """Sanitize only HTTP client records that can contain SerpAPI request URLs."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.name == "httpx" or record.name.startswith("httpcore"):
+            record.msg = _redact_log_arg(record.msg)
+            record.args = _redact_log_arg(record.args)
+            if record.exc_text:
+                record.exc_text = redact_serpapi_log_value(record.exc_text)
+            # Exception traceback formatting happens after filters run and cannot
+            # be structurally redacted. HTTP-client tracebacks are therefore
+            # omitted; application loggers retain their normal exception output.
+            record.exc_info = None
+        return True
+
+
+def install_serpapi_log_safety() -> None:
+    """Install process-wide, idempotent sanitization scoped to HTTP client records."""
+    current = logging.getLogRecordFactory()
+    if getattr(current, "_searchtrust_serpapi_safe", False):
+        return
+    sanitizer = SerpApiHttpLogFilter()
+
+    def safe_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
+        record = current(*args, **kwargs)
+        sanitizer.filter(record)
+        return record
+
+    setattr(safe_factory, "_searchtrust_serpapi_safe", True)
+    logging.setLogRecordFactory(safe_factory)
+
+
 class HttpClient(Protocol):
     async def get(self, url: str, **kwargs: Any) -> Any: ...
 
@@ -153,6 +213,7 @@ async def execute_serpapi_get(
     logger: logging.Logger | None = None,
 ) -> SerpApiResponse:
     """Execute one logical request with bounded, secret-safe key failover."""
+    install_serpapi_log_safety()
     configured = configured_serpapi_keys(*keys)
     if not configured:
         raise SerpApiKeysUnavailable("No SerpAPI key is configured.")
