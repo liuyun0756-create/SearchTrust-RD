@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from app.api.v2.competitor_models import CompetitorDiscoveryRequest
 from app.api.v2.models import AnalyzeRequest, PreflightRequest, VerifiedTaskRequest
-from app.core.config import settings
+from app.core.config import settings, v22_verified_execution_ready
 
 
 def _secret_value(value: SecretStr | str) -> str:
@@ -44,7 +44,7 @@ async def require_v22_analyze_enabled() -> None:
 
 
 async def require_v22_verified_analysis_enabled() -> None:
-    if not settings.V22_VERIFIED_ANALYSIS_ENABLED:
+    if not v22_verified_execution_ready(settings):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={

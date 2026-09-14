@@ -1,4 +1,6 @@
-from app.core.config import Settings
+import pytest
+
+from app.core.config import Settings, v22_verified_execution_ready
 
 
 def test_v22_durable_job_defaults_are_safe() -> None:
@@ -34,3 +36,24 @@ def test_verified_analysis_flag_is_independent_of_prospect() -> None:
     configured = Settings(_env_file=None, V22_ANALYZE_ENABLED=False, V22_VERIFIED_ANALYSIS_ENABLED=True)
     assert configured.V22_VERIFIED_ANALYSIS_ENABLED is True
     assert configured.V22_ANALYZE_ENABLED is False
+
+
+@pytest.mark.parametrize(
+    ("enabled", "callback_url", "callback_secret", "expected"),
+    [
+        (False, "https://app.example.com/callback", "secret", False),
+        (True, "", "secret", False),
+        (True, "https://app.example.com/callback", "", False),
+        (True, "https://app.example.com/callback", "secret", True),
+    ],
+)
+def test_verified_execution_readiness_requires_flag_and_complete_callback(
+    enabled: bool, callback_url: str, callback_secret: str, expected: bool
+) -> None:
+    configured = Settings(
+        _env_file=None,
+        V22_VERIFIED_ANALYSIS_ENABLED=enabled,
+        V22_CALLBACK_URL=callback_url,
+        V22_CALLBACK_SECRET=callback_secret,
+    )
+    assert v22_verified_execution_ready(configured) is expected

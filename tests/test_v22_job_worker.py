@@ -14,6 +14,9 @@ from pydantic import SecretStr
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
 from app.jobs_v22.verified_executor import VerifiedV22Executor, V22ExecutorRouter
+from app.jobs_v22.verified_input_resolver import SupabaseVerifiedInputResolver
+from app.jobs_v22.verified_report_pipeline import VerifiedReportPipeline
+from app.jobs_v22.verified_result_persistence import SupabaseVerifiedResultPersister
 from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.worker import execute_v22_job, on_shutdown, on_startup
@@ -23,6 +26,7 @@ from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequest
 from app.api.v2.models import AnalyzeRequest
 from app.report_v22.models import ReportV22
 from test_api_v2_jobs import prospect_analyze_payload, verified_task_payload
+from verified_pipeline_helpers import frozen_public_fixture, resolve_fixture
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -372,6 +376,133 @@ async def test_verified_terminal_failure_callback_is_emitted_once_for_db_compens
     await execute_v22_job(ctx, str(JOB_ID), 1)
 
     assert synchronizer.statuses.count("failed") == 1
+
+
+@pytest.mark.anyio
+async def test_verified_worker_recovers_after_atomic_persist_commit_ack_is_lost() -> None:
+    frozen_payload, _, _, _ = frozen_public_fixture()
+    _, verified_request = await resolve_fixture()
+    envelope = {
+        "schema_version": "v22_verified_request_envelope_v1",
+        "verified_request": verified_request.model_dump(mode="json"),
+    }
+    database = {
+        "status": "queued",
+        "report_id": None,
+        "charge_state": "reserved",
+        "debit_count": 1,
+    }
+    persisted_payloads: list[dict] = []
+
+    async def database_rpc(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        body = json.loads(request.content)
+        if path.endswith("/resolve_v22_verified_analysis_input"):
+            active = database["status"] in {"queued", "running"}
+            exact_replay = (
+                database["status"] == "succeeded"
+                and database["report_id"] == str(JOB_ID)
+                and database["charge_state"] == "consumed"
+            )
+            return httpx.Response(
+                200 if active or exact_replay else 409,
+                json=frozen_payload if active or exact_replay else {"code": "invalid"},
+                request=request,
+            )
+        if path.endswith("/persist_v22_verified_result"):
+            persisted_payloads.append(body)
+            if database["status"] in {"queued", "running"}:
+                database.update(
+                    status="succeeded",
+                    report_id=str(JOB_ID),
+                    charge_state="consumed",
+                )
+                # PostgreSQL committed all three rows; only the acknowledgement
+                # disappeared on the service-role HTTP connection.
+                raise httpx.ReadTimeout("ack lost after commit", request=request)
+            assert database == {
+                "status": "succeeded",
+                "report_id": str(JOB_ID),
+                "charge_state": "consumed",
+                "debit_count": 1,
+            }
+            return httpx.Response(
+                200,
+                json=[{"report_id": str(JOB_ID), "idempotent": True}],
+                request=request,
+            )
+        raise AssertionError(f"unexpected RPC path: {path}")
+
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    store = DurableJobStore(
+        redis, prefix="test:v22:verified-commit-loss", state_ttl_seconds=604800
+    )
+    await store.register_job(
+        job_id=JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="verified-commit-ack-loss",
+        request_payload=envelope,
+        now=NOW,
+    )
+
+    class DatabaseCallback:
+        async def sync(self, job_id):
+            redis_state = await store.require_state(job_id)
+            if database["status"] != "succeeded":
+                database["status"] = redis_state.status
+            return True
+
+    outbox = RecordingCostOutbox()
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(database_rpc)
+    ) as storage_client:
+        executor = V22ExecutorRouter(
+            prospect_executor=UnavailableV22Executor(),
+            verified_executor=VerifiedV22Executor(
+                resolver=SupabaseVerifiedInputResolver(
+                    url="https://project.supabase.co",
+                    service_role_key="fake-service",
+                    http_client=storage_client,
+                ),
+                pipeline=VerifiedReportPipeline(clock=lambda: NOW),
+                persister=SupabaseVerifiedResultPersister(
+                    url="https://project.supabase.co",
+                    service_role_key="fake-service",
+                    http_client=storage_client,
+                ),
+            ),
+        )
+        ctx = {
+            "store": store,
+            "executor": executor,
+            "callback_synchronizer": DatabaseCallback(),
+            "cost_summary_outbox": outbox,
+            "max_attempts": 3,
+            "state_ttl_seconds": 604800,
+            "redis": redis,
+        }
+        with pytest.raises(Retry):
+            await execute_v22_job(ctx, str(JOB_ID), 1)
+        await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    state = await store.require_state(JOB_ID)
+    assert state.status == "succeeded"
+    assert state.attempt_count == 2
+    assert state.report is not None
+    assert state.report.report_version.report_type == "verified_execution"
+    assert database == {
+        "status": "succeeded",
+        "report_id": str(JOB_ID),
+        "charge_state": "consumed",
+        "debit_count": 1,
+    }
+    assert len(persisted_payloads) == 2
+    assert persisted_payloads[0] == persisted_payloads[1]
+    assert len(outbox.summaries) == 1
+    assert outbox.summaries[0].job_kind == "verified_report"
+    assert outbox.summaries[0].status == "succeeded"
+    assert outbox.summaries[0].attempt_count == 2
+    assert outbox.summaries[0].cost_counters.root["job_attempts"] == 2
 
 
 @pytest.mark.anyio

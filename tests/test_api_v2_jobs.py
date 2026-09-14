@@ -6,6 +6,7 @@ from uuid import UUID
 import fakeredis.aioredis
 import httpx
 import pytest
+from pydantic import SecretStr
 from redis.exceptions import RedisError
 
 from app.api.v2.runtime import V22JobRuntime
@@ -277,6 +278,8 @@ def verified_task_payload() -> dict:
 
 def build_verified_app(monkeypatch: pytest.MonkeyPatch, *, enabled: bool = True):
     monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", enabled)
+    monkeypatch.setattr(settings, "V22_CALLBACK_URL", "https://app.example.com/callback")
+    monkeypatch.setattr(settings, "V22_CALLBACK_SECRET", SecretStr("callback-secret"))
     app, runtime, store, queue = build_app(monkeypatch, enabled=False)
 
     class ForbiddenDiscoveryVerifier:
@@ -299,6 +302,47 @@ async def test_verified_feature_flag_blocks_before_redis_write(monkeypatch: pyte
     assert response.json()["detail"]["code"] == "V22_VERIFIED_ANALYSIS_NOT_READY"
     assert await store.get_state(VERIFIED_JOB_ID) is None
     assert queue.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("callback_url", "callback_secret"),
+    [("", "callback-secret"), ("https://app.example.com/callback", ""), ("", "")],
+)
+async def test_verified_incomplete_callback_blocks_before_redis_write(
+    monkeypatch: pytest.MonkeyPatch, callback_url: str, callback_secret: str
+) -> None:
+    app, _, store, queue = build_verified_app(monkeypatch)
+    monkeypatch.setattr(settings, "V22_CALLBACK_URL", callback_url)
+    monkeypatch.setattr(settings, "V22_CALLBACK_SECRET", SecretStr(callback_secret))
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/api/v2/verified-analyze",
+            headers=VERIFIED_HEADERS,
+            json=verified_task_payload(),
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "V22_VERIFIED_ANALYSIS_NOT_READY"
+    assert await store.get_state(VERIFIED_JOB_ID) is None
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+async def test_verified_readiness_uses_the_same_acceptance_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, _, _, _ = build_verified_app(monkeypatch)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        ready = await client.head(
+            "/api/v2/verified-analyze",
+            headers={"Authorization": VERIFIED_HEADERS["Authorization"]},
+        )
+    assert ready.status_code == 204
 
 
 @pytest.mark.anyio

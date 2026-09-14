@@ -17,7 +17,7 @@ from arq.worker import func
 import httpx
 from pydantic import SecretStr
 
-from app.core.config import settings
+from app.core.config import settings, v22_verified_execution_ready
 from app.google_connections_v22.gsc import GscProvider
 from app.google_connections_v22.ga4 import Ga4Provider
 from app.google_connections_v22.gbp import GbpProvider
@@ -604,11 +604,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
     callback_url = settings.V22_CALLBACK_URL
     callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
-    if (
-        settings.V22_VERIFIED_ANALYSIS_ENABLED
-        and callback_url
-        and callback_secret
-    ):
+    if v22_verified_execution_ready(settings):
         verified_http_client = httpx.AsyncClient(
             timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
             follow_redirects=False,

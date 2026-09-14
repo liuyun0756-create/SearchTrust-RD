@@ -13,7 +13,7 @@ from uuid import UUID
 
 from arq import create_pool
 from arq.connections import RedisSettings
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import SecretStr
 from redis.exceptions import RedisError
@@ -216,6 +216,14 @@ def _job_error(exc: DurableJobError) -> HTTPException:
         status_code=status_code,
         detail={"code": exc.error_code, "message": exc.user_message},
     )
+
+
+@router.head("/verified-analyze", status_code=status.HTTP_204_NO_CONTENT)
+async def verified_analysis_readiness(
+    _: Annotated[None, Depends(require_internal_auth)],
+    __: Annotated[None, Depends(require_v22_verified_analysis_enabled)],
+) -> Response:
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(

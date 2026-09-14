@@ -170,6 +170,22 @@ class Settings(BaseSettings):
         return str(v).rstrip("/")
 
 
+def v22_verified_execution_ready(configured: Settings) -> bool:
+    """One acceptance predicate shared by the API and Verified Worker."""
+
+    callback_secret = configured.V22_CALLBACK_SECRET
+    secret = (
+        callback_secret.get_secret_value()
+        if isinstance(callback_secret, SecretStr)
+        else str(callback_secret)
+    )
+    return bool(
+        configured.V22_VERIFIED_ANALYSIS_ENABLED
+        and configured.V22_CALLBACK_URL
+        and secret
+    )
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
