@@ -210,6 +210,22 @@ async def test_model_post_init_cannot_recertify_the_resolver_capability():
 
 
 @pytest.mark.anyio
+async def test_capability_seal_rejects_gsc_mutation_even_after_internal_resign():
+    from app.jobs_v22.digest import request_digest
+
+    request, bound, report = await persistence_inputs()
+    gsc = next(item for item in bound.first_party_snapshots if item.source_type == "gsc")
+    gsc.normalized_payload["current"]["totals"]["clicks"] = 999
+    gsc.payload_checksum = request_digest(gsc.normalized_payload)
+
+    def unexpected(_):
+        pytest.fail("re-signed nested mutation reached persistence network")
+
+    with pytest.raises(DeterministicJobError):
+        await persist_response(None, values=(request, bound, report), handler=unexpected)
+
+
+@pytest.mark.anyio
 async def test_resolver_seal_is_separate_from_raw_frontend_hash_during_persistence():
     from test_v22_verified_input_resolver import resolve_response
     from app.jobs_v22.digest import verified_request_digest

@@ -11,7 +11,8 @@ from app.api.v2.models import AnalyzeRequest
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.jobs_v22.digest import request_digest
-from app.jobs_v22.errors import DeterministicJobError, TransientJobError
+from app.jobs_v22.errors import DeterministicJobError
+from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
 from app.report_v22.models import ReportV22
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
@@ -33,10 +34,17 @@ class SupabaseResultPersister:
         http_client: httpx.AsyncClient,
         max_response_bytes: int = 65_536,
     ) -> None:
-        self.url = url.rstrip("/")
-        self.service_role_key = service_role_key
-        self.http_client = http_client
-        self.max_response_bytes = max_response_bytes
+        # Keep worker startup independent of optional storage configuration;
+        # validation still happens before the first persistence request.
+        self._rpc_args = dict(url=url, service_role_key=service_role_key,
+            http_client=http_client, max_response_bytes=max_response_bytes,
+            prefix="V22_RESULT_PERSISTENCE", invalid_retryable=True)
+        self.rpc: VerifiedRpcClient | None = None
+
+    def _rpc(self) -> VerifiedRpcClient:
+        if self.rpc is None:
+            self.rpc = VerifiedRpcClient(**self._rpc_args)
+        return self.rpc
 
     async def persist(
         self,
@@ -51,12 +59,6 @@ class SupabaseResultPersister:
         public_gbp_snapshot: CustomerPublicGbpSnapshot,
         public_gbp_reference: CustomerPublicGbpReference,
     ) -> None:
-        if not self.url or not self.service_role_key:
-            raise DeterministicJobError(
-                "V22_RESULT_PERSISTENCE_NOT_CONFIGURED",
-                "Report storage is not configured for this analysis service.",
-            )
-
         site_checksum = request_digest(site_inventory)
         competitor_checksum = request_digest(competitor_collection)
         claimed_public_gbp = any(
@@ -100,46 +102,9 @@ class SupabaseResultPersister:
             "p_public_gbp_expires_at": public_gbp_snapshot.expires_at.isoformat(),
             "p_public_gbp_reference": public_gbp_reference.model_dump(mode="json"),
         })
-        try:
-            response = await self.http_client.post(
-                f"{self.url}/rest/v1/rpc/persist_v22_prospect_result",
-                headers={
-                    "apikey": self.service_role_key,
-                    "authorization": f"Bearer {self.service_role_key}",
-                    "content-type": "application/json",
-                },
-                json=payload,
-            )
-        except (httpx.TimeoutException, httpx.NetworkError) as exc:
-            raise TransientJobError(
-                "V22_RESULT_PERSISTENCE_UNAVAILABLE",
-                "Report storage is temporarily unavailable. The task will retry automatically.",
-            ) from exc
-
-        if response.status_code >= 500 or response.status_code == 429:
-            raise TransientJobError(
-                "V22_RESULT_PERSISTENCE_UNAVAILABLE",
-                "Report storage is temporarily unavailable. The task will retry automatically.",
-            )
-        if response.status_code >= 400:
-            raise DeterministicJobError(
-                "V22_RESULT_PERSISTENCE_REJECTED",
-                "The completed report could not be saved safely.",
-            )
-
-        if len(response.content) > self.max_response_bytes:
-            raise TransientJobError(
-                "V22_RESULT_PERSISTENCE_INVALID_RESPONSE",
-                "Report storage returned an invalid response. The task will retry automatically.",
-            )
-
-        try:
-            rows = response.json()
-            row = rows[0] if isinstance(rows, list) and rows else rows
-            if not isinstance(row, dict) or row.get("report_id") != str(job_id):
-                raise ValueError("unexpected persistence response")
-        except (TypeError, ValueError) as exc:
-            raise TransientJobError(
-                "V22_RESULT_PERSISTENCE_INVALID_RESPONSE",
-                "Report storage returned an invalid response. The task will retry automatically.",
-            ) from exc
+        rpc = self._rpc()
+        rows = await rpc.post("persist_v22_prospect_result", payload)
+        row = rows[0] if isinstance(rows, list) and len(rows) == 1 else rows
+        if (not isinstance(row, dict) or set(row) != {"report_id", "idempotent"}
+                or row["report_id"] != str(job_id) or type(row["idempotent"]) is not bool):
+            raise rpc.invalid() from None

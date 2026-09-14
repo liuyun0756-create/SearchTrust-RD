@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 import logging
 from uuid import UUID
 
@@ -42,6 +44,14 @@ def payload(*, cid="123", website="https://example.test/"):
     }
 
 
+def provider_response(value, *, raw=None):
+    from app.jobs_v22.customer_public_gbp_stage import CustomerPublicGbpProviderResponse
+
+    body = raw if raw is not None else json.dumps(value, separators=(",", ":")).encode()
+    return CustomerPublicGbpProviderResponse(
+        payload=value, response_checksum="sha256:" + hashlib.sha256(body).hexdigest())
+
+
 def ledger(redis):
     prices = empty_request_prices()
     prices["serpapi"] = 100
@@ -56,12 +66,13 @@ async def test_collection_rotates_three_keys_accounts_attempts_and_restarts_from
         CheckpointedCustomerPublicGbpStage, SerpApiCustomerPublicGbpProvider)
 
     calls = []
+    success_body = json.dumps(payload(), indent=2).encode()
     def handler(call: httpx.Request):
         calls.append(call)
         key = call.url.params["api_key"]
         if key == "first-secret":
             return httpx.Response(429, json={"error": "rate limited"})
-        return httpx.Response(200, json=payload())
+        return httpx.Response(200, content=success_body)
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     provider = SerpApiCustomerPublicGbpProvider(keys=["first-secret", "second-secret", "third-secret"],
         base_url="https://serpapi.example/search", connect_timeout=1, read_timeout=1,
@@ -82,6 +93,8 @@ async def test_collection_rotates_three_keys_accounts_attempts_and_restarts_from
     assert first.snapshot.health_status == "healthy"
     assert first.snapshot.identity_match_status == "matched"
     assert first.snapshot.expires_at == NOW + timedelta(days=30)
+    assert first.snapshot.response_checksum == "sha256:" + hashlib.sha256(success_body).hexdigest()
+    assert first.snapshot.record.observed_public_gbp_url is None
     assert first.reference.entity_keys[0].kind == "cid"
     assert first.reference.entity_keys[0].value == "123"
     assert len(calls) == 2
@@ -130,7 +143,7 @@ async def test_malformed_or_identity_mismatched_result_fails_closed(response):
         async def request(self, params, *, before_attempt, after_attempt):
             await before_attempt(1, "fingerprint")
             await after_attempt(1, "fingerprint", None)
-            return response
+            return provider_response(response)
     with pytest.raises(DeterministicJobError) as raised:
         await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
             job_id=JOB_ID, request=request(), submitted_at=NOW,
@@ -149,7 +162,7 @@ async def test_provider_strong_ids_with_padding_are_rejected_without_normalizati
 
     class Provider:
         async def request(self, params, *, before_attempt, after_attempt):
-            return response
+            return provider_response(response)
 
     with pytest.raises(DeterministicJobError) as raised:
         await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
@@ -167,7 +180,7 @@ async def test_provider_strong_id_comparison_is_exact_not_numeric_equivalence():
 
     class Provider:
         async def request(self, params, *, before_attempt, after_attempt):
-            return response
+            return provider_response(response)
 
     with pytest.raises(DeterministicJobError) as raised:
         await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
@@ -175,6 +188,76 @@ async def test_provider_strong_id_comparison_is_exact_not_numeric_equivalence():
             checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
                 prefix="test:v22", ttl_seconds=3600))
     assert raised.value.error_code == "V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID"
+
+
+@pytest.mark.anyio
+async def test_provider_observation_text_and_real_google_url_are_preserved_exactly():
+    from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
+
+    response = payload()
+    response["place_results"]["address"] = " 123 Fixture Street, Austin, TX "
+    response["place_results"]["place_url"] = "https://www.google.com/maps?cid=123"
+
+    class Provider:
+        async def request(self, params, *, before_attempt, after_attempt):
+            return provider_response(response)
+
+    result = await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
+        job_id=JOB_ID, request=request(), submitted_at=NOW,
+        checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+            prefix="test:v22", ttl_seconds=3600))
+    assert result.snapshot.record.fields.address.value == " 123 Fixture Street, Austin, TX "
+    assert str(result.snapshot.record.observed_public_gbp_url) == "https://www.google.com/maps?cid=123"
+
+
+@pytest.mark.anyio
+async def test_provider_non_google_observed_url_fails_closed():
+    from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
+
+    response = payload()
+    response["place_results"]["link"] = "https://attacker.example/maps?cid=123"
+
+    class Provider:
+        async def request(self, params, *, before_attempt, after_attempt):
+            return provider_response(response)
+
+    with pytest.raises(DeterministicJobError):
+        await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
+            job_id=JOB_ID, request=request(), submitted_at=NOW,
+            checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+                prefix="test:v22", ttl_seconds=3600))
+
+
+@pytest.mark.anyio
+async def test_collection_checkpoint_envelope_rejects_nested_forgery():
+    from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
+
+    response = payload()
+
+    class Provider:
+        async def request(self, params, *, before_attempt, after_attempt):
+            return provider_response(response)
+
+    redis = fakeredis.aioredis.FakeRedis()
+    checkpoints = JobCheckpoints(redis, prefix="test:v22:checkpoint", ttl_seconds=3600)
+    await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
+        job_id=JOB_ID, request=request(), submitted_at=NOW, checkpoints=checkpoints)
+    keys = [key async for key in redis.scan_iter()]
+    assert len(keys) == 1
+    envelope = json.loads(await redis.get(keys[0]))
+    assert set(envelope) == {"schema_version", "stage_version", "job_id", "input_digest",
+        "result_checksum", "result"}
+    envelope["result"]["snapshot"]["record"]["fields"]["business_name"]["value"] = "Forged"
+    await redis.set(keys[0], json.dumps(envelope))
+
+    class ForbiddenProvider:
+        async def request(self, *args, **kwargs):
+            raise AssertionError("forged checkpoint must fail before provider")
+
+    with pytest.raises(DeterministicJobError) as raised:
+        await CheckpointedCustomerPublicGbpStage(ForbiddenProvider(), clock=lambda: NOW).collect(
+            job_id=JOB_ID, request=request(), submitted_at=NOW, checkpoints=checkpoints)
+    assert raised.value.error_code == "V22_CUSTOMER_PUBLIC_GBP_CHECKPOINT_INVALID"
 
 
 @pytest.mark.anyio

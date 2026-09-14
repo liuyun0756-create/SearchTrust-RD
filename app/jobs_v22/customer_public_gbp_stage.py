@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from time import monotonic
 from typing import Any, Literal, Protocol
@@ -11,7 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 from uuid import UUID
 
 import httpx
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
 from app.api.v2.models import AnalyzeRequest
 from app.core.config import Settings
@@ -47,7 +48,13 @@ MAX_PROVIDER_ATTEMPTS = 3
 
 
 class CustomerPublicGbpProvider(Protocol):
-    async def request(self, params: dict[str, str], *, before_attempt, after_attempt) -> dict[str, Any]: ...
+    async def request(self, params: dict[str, str], *, before_attempt, after_attempt) -> "CustomerPublicGbpProviderResponse": ...
+
+
+@dataclass(frozen=True)
+class CustomerPublicGbpProviderResponse:
+    payload: dict[str, Any]
+    response_checksum: str
 
 
 class _BoundedRawClient:
@@ -91,7 +98,7 @@ class SerpApiCustomerPublicGbpProvider:
             write=read_timeout, pool=connect_timeout)
         self.client_factory = client_factory
 
-    async def request(self, params: dict[str, str], *, before_attempt, after_attempt) -> dict[str, Any]:
+    async def request(self, params: dict[str, str], *, before_attempt, after_attempt) -> CustomerPublicGbpProviderResponse:
         client = self.client_factory() if self.client_factory else httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=False, trust_env=False)
         should_close = self.client_factory is None
@@ -101,7 +108,12 @@ class SerpApiCustomerPublicGbpProvider:
                 keys=self.keys, base_url=self.base_url, state=self.state,
                 before_attempt=before_attempt, after_attempt=after_attempt,
             ), timeout=self.total_timeout)
-            return response.payload
+            if response.raw_response_checksum is None:
+                raise SerpApiInvalidResponse("SerpAPI response provenance is unavailable.")
+            return CustomerPublicGbpProviderResponse(
+                payload=response.payload,
+                response_checksum=response.raw_response_checksum,
+            )
         finally:
             if should_close:
                 await client.aclose()
@@ -111,6 +123,15 @@ class CustomerPublicGbpCollection(StrictModel):
     schema_version: Literal["customer_public_gbp_checkpoint_v1"] = CHECKPOINT_VERSION
     reference: CustomerPublicGbpReference
     snapshot: CustomerPublicGbpSnapshot
+
+
+class _CustomerPublicGbpCheckpoint(StrictModel):
+    schema_version: Literal["customer_public_gbp_checkpoint_v1"] = CHECKPOINT_VERSION
+    stage_version: Literal["v22_customer_public_gbp_collection_v1"] = STAGE_VERSION
+    job_id: UUID
+    input_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    result_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    result: CustomerPublicGbpCollection
 
 
 def _reference(request: AnalyzeRequest, confirmed_at: datetime) -> CustomerPublicGbpReference:
@@ -155,8 +176,13 @@ def _params(reference: CustomerPublicGbpReference) -> dict[str, str]:
 
 
 def _text(value: Any, maximum: int) -> str | None:
-    text = str(value or "").strip()
-    return text if text and len(text) <= maximum else None
+    """Validate provider observation text without rewriting it."""
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str) or not value.strip() or len(value) > maximum:
+        raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
+            "The public Google Business Profile response could not be verified.")
+    return value
 
 
 def _opaque_id(value: Any, maximum: int = 480) -> str | None:
@@ -208,7 +234,7 @@ def _field(raw: dict[str, Any], key: str, *, empty: Any = None) -> dict[str, Any
 
 def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
               started_at: datetime, completed_at: datetime,
-              request_record_id: str) -> CustomerPublicGbpSnapshot:
+              request_record_id: str, response_checksum: str) -> CustomerPublicGbpSnapshot:
     raw = payload.get("place_results")
     if not isinstance(raw, dict) or not (_text(raw.get("title") or raw.get("name"), 240)):
         raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
@@ -231,6 +257,18 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
         "service_areas": _field(raw, "service_areas", empty=[]),
         "service_area_business": _field(raw, "service_area_business"),
     }
+    observed_url = raw.get("place_url")
+    if observed_url is None:
+        observed_url = raw.get("link")
+    if observed_url is not None:
+        if not isinstance(observed_url, str) or not observed_url.strip():
+            raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
+                "The public Google Business Profile response could not be verified.")
+        try:
+            validate_gbp_url(observed_url)
+        except (TypeError, ValueError):
+            raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
+                "The public Google Business Profile response could not be verified.") from None
     try:
         result = build_customer_public_gbp_snapshot(CustomerPublicGbpSnapshotInput(
             reference=reference,
@@ -238,10 +276,10 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
                 "entity_keys": reference.entity_keys},
             started_at=started_at, completed_at=completed_at,
             expires_at=completed_at + timedelta(days=30), provider="serpapi_public",
-            request_record_id=request_record_id, response_checksum=request_digest(payload),
+            request_record_id=request_record_id, response_checksum=response_checksum,
             collection_status="succeeded", failure_code=None,
             record={"observed_entity_keys": observed,
-                "observed_public_gbp_url": reference.public_gbp_url, "fields": fields},
+                "observed_public_gbp_url": observed_url, "fields": fields},
         ))
     except (PublicGbpError, ValidationError, TypeError, ValueError):
         raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
@@ -262,13 +300,17 @@ class CheckpointedCustomerPublicGbpStage:
                       cost_ledger: JobCostLedger | None = None) -> CustomerPublicGbpCollection:
         reference = _reference(request, submitted_at)
         params = _params(reference)
-        key = f"{STAGE_VERSION}:result:{request_digest(reference)[7:]}"
+        input_digest = request_digest(reference)
+        key = f"{STAGE_VERSION}:result:{input_digest[7:]}"
         saved = await checkpoints.get(job_id, key)
         if saved is not None:
             try:
-                checked = CustomerPublicGbpCollection.model_validate_json(canonical_json_bytes(saved))
-                if (checked.reference != reference
-                        or checked.snapshot.subject_reference_checksum != request_digest(reference)
+                envelope = _CustomerPublicGbpCheckpoint.model_validate_json(canonical_json_bytes(saved))
+                checked = envelope.result
+                if (envelope.job_id != job_id or envelope.input_digest != input_digest
+                        or envelope.result_checksum != request_digest(checked)
+                        or checked.reference != reference
+                        or checked.snapshot.subject_reference_checksum != input_digest
                         or checked.snapshot.health_status != "healthy"
                         or checked.snapshot.identity_match_status != "matched"):
                     raise ValueError
@@ -304,17 +346,21 @@ class CheckpointedCustomerPublicGbpStage:
 
         try:
             try:
-                raw = await self.provider.request(params, before_attempt=before_attempt,
+                provider_response = await self.provider.request(params, before_attempt=before_attempt,
                     after_attempt=after_attempt)
             except BaseException:
                 await fail_active_claims()
                 raise
-            payload = _sanitize(raw)
+            if type(provider_response) is not CustomerPublicGbpProviderResponse:
+                raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
+                    "The public Google Business Profile response could not be verified.")
+            payload = _sanitize(provider_response.payload)
             completed_at = self.clock()
             collection = CustomerPublicGbpCollection(reference=reference,
                 snapshot=_snapshot(reference=reference, payload=payload,
                     started_at=started_at, completed_at=completed_at,
-                    request_record_id=f"req_{request_digest(params)[7:31]}"))
+                    request_record_id=f"req_{request_digest(params)[7:31]}",
+                    response_checksum=provider_response.response_checksum))
         except asyncio.CancelledError:
             raise
         except CostLedgerError:
@@ -334,12 +380,21 @@ class CheckpointedCustomerPublicGbpStage:
             raise TransientJobError("V22_CUSTOMER_PUBLIC_GBP_UNAVAILABLE",
                 "Public Google Business Profile data is temporarily unavailable.") from None
 
-        saved_value = collection.model_dump(mode="json")
+        saved_value = _CustomerPublicGbpCheckpoint(
+            job_id=job_id,
+            input_digest=input_digest,
+            result_checksum=request_digest(collection),
+            result=collection,
+        ).model_dump(mode="json")
         await checkpoints.save(job_id, key, saved_value)
         persisted = await checkpoints.get(job_id, key)
         try:
-            return CustomerPublicGbpCollection.model_validate_json(
+            envelope = _CustomerPublicGbpCheckpoint.model_validate_json(
                 canonical_json_bytes(persisted or saved_value))
+            if (envelope.job_id != job_id or envelope.input_digest != input_digest
+                    or envelope.result_checksum != request_digest(envelope.result)):
+                raise ValueError
+            return envelope.result
         except (TypeError, ValueError, ValidationError):
             raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_CHECKPOINT_INVALID",
                 "The saved public GBP checkpoint could not be validated.") from None

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
+import gzip
+import json
 from types import SimpleNamespace
 from uuid import UUID
 
@@ -60,6 +63,29 @@ def inputs():
 def public_values():
     raw = sample_input()
     return public_source(raw).payload, CustomerPublicGbpReference.model_validate(raw["reference"])
+
+
+class CountedStream(httpx.AsyncByteStream):
+    def __init__(self, chunks, *, delay=0):
+        self.chunks = chunks
+        self.delay = delay
+        self.reads = 0
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            await asyncio.sleep(self.delay)
+            self.reads += 1
+            yield chunk
+
+
+async def persist_with_client(client, *, max_response_bytes=65_536):
+    request, site, shared, competitor, report = inputs()
+    public, reference = public_values()
+    await SupabaseResultPersister(url="https://project.supabase.co", service_role_key="secret",
+        http_client=client, max_response_bytes=max_response_bytes).persist(
+            job_id=JOB_ID, request=request, site_inventory=site, shared_market=shared,
+            competitor_collection=competitor, report=report,
+            public_gbp_snapshot=public, public_gbp_reference=reference)
 
 
 @pytest.mark.anyio
@@ -162,3 +188,52 @@ async def test_persister_classifies_storage_outages_as_retryable() -> None:
         await run(503)
     with pytest.raises(DeterministicJobError):
         await run(400)
+
+
+@pytest.mark.anyio
+async def test_persister_rejects_compressed_response_before_reading():
+    stream = CountedStream([gzip.compress(b" " * 1_000_000)])
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, headers={"content-encoding": "gzip"}, stream=stream)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True) as client:
+        with pytest.raises(TransientJobError):
+            await persist_with_client(client)
+    assert stream.reads == 0
+    assert calls[0].headers["accept-encoding"] == "identity"
+    assert calls[0].extensions["timeout"]["read"] == 20
+
+
+@pytest.mark.anyio
+async def test_persister_total_deadline_stops_trickled_body(monkeypatch):
+    monkeypatch.setattr("app.jobs_v22.verified_input_resolver.TOTAL_TIMEOUT_SECONDS", .02)
+    body = json.dumps([{"report_id": str(JOB_ID), "idempotent": False}]).encode()
+    stream = CountedStream([b" "] * 10 + [body], delay=.01)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, stream=stream))) as client:
+        with pytest.raises(TransientJobError):
+            await persist_with_client(client)
+    assert stream.reads < len(stream.chunks)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("response", [
+    httpx.Response(200, content=b"{}", headers={"content-length": "65537"}),
+    httpx.Response(200, content=b"x" * 65_537, headers={"content-length": "2"}),
+    httpx.Response(200, content=b"not-json"),
+])
+async def test_persister_rejects_predeclared_streaming_and_malformed_boundaries(response):
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: response)) as client:
+        with pytest.raises(TransientJobError) as raised:
+            await persist_with_client(client)
+    assert raised.value.error_code == "V22_RESULT_PERSISTENCE_INVALID_RESPONSE"
+
+
+@pytest.mark.anyio
+async def test_persister_accepts_strict_idempotent_replay_ack():
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(
+            200, json=[{"report_id": str(JOB_ID), "idempotent": True}]))) as client:
+        await persist_with_client(client)

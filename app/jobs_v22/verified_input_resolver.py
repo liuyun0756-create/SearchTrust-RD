@@ -33,15 +33,22 @@ class TrustedVerifiedInput:
         return getattr(object.__getattribute__(self, "payload"), name)
 
 
-_TRUSTED_INPUT_SEALS: WeakKeyDictionary[TrustedVerifiedInput, str] = WeakKeyDictionary()
+@dataclass(frozen=True)
+class _TrustedInputSeal:
+    graph_digest: str
+    raw_parent_verified_digest: str
+
+
+_TRUSTED_INPUT_SEALS: WeakKeyDictionary[TrustedVerifiedInput, _TrustedInputSeal] = WeakKeyDictionary()
 
 
 def require_trusted_verified_input(value: TrustedVerifiedInput) -> VerifiedResolvedInput:
     if type(value) is not TrustedVerifiedInput:
         raise ValueError("input was not returned by the trusted resolver")
-    expected = _TRUSTED_INPUT_SEALS.get(value)
-    if expected is None or request_digest(value.parent_report) != expected:
-        raise ValueError("input provenance is missing or the parent was mutated")
+    seal = _TRUSTED_INPUT_SEALS.get(value)
+    if (seal is None or request_digest(value.payload) != seal.graph_digest
+            or value.parent_payload_checksum != seal.raw_parent_verified_digest):
+        raise ValueError("input provenance is missing or the resolved graph was mutated")
     return value.payload
 
 
@@ -87,7 +94,11 @@ class VerifiedRpcClient:
                     raw = bytearray()
                     # Never instantiate a decoder: compressed payloads were rejected
                     # above, so these are also the bounded uncompressed JSON bytes.
-                    async for chunk in response.aiter_raw():
+                    if response.is_stream_consumed:
+                        chunks = (response.content,)
+                    else:
+                        chunks = response.aiter_raw()
+                    async for chunk in _async_chunks(chunks):
                         if len(raw) + len(chunk) > self.limit:
                             raise self.invalid() from None
                         raw.extend(chunk)
@@ -99,6 +110,15 @@ class VerifiedRpcClient:
             return json.loads(raw)
         except (ValueError, TypeError, RecursionError):
             raise self.invalid() from None
+
+
+async def _async_chunks(chunks):
+    if hasattr(chunks, "__aiter__"):
+        async for chunk in chunks:
+            yield chunk
+    else:
+        for chunk in chunks:
+            yield chunk
 
 
 class SupabaseVerifiedInputResolver:
@@ -122,7 +142,10 @@ class SupabaseVerifiedInputResolver:
             # This is the only registration site: the raw frontend checksum and
             # complete payload graph have succeeded. No model constructor, dump,
             # copy, private attribute or post-init hook can re-establish trust.
-            _TRUSTED_INPUT_SEALS[trusted] = request_digest(result.parent_report)
+            _TRUSTED_INPUT_SEALS[trusted] = _TrustedInputSeal(
+                graph_digest=request_digest(result),
+                raw_parent_verified_digest=result.parent_payload_checksum,
+            )
             return trusted
         except (ValueError, TypeError, RecursionError, OverflowError):
             raise DeterministicJobError("V22_VERIFIED_INPUT_INVALID", "Verified report storage returned inconsistent inputs.") from None

@@ -15,7 +15,10 @@ from typing import Any, Protocol
 
 
 _SERPAPI_QUERY_SECRET = re.compile(
-    r"(?i)(api(?:_|%5f)key(?:=|%3d))(.*?)(?=&|%26|\s|[\"'<>]|$)"
+    # Literal '&' separates ordinary query parameters. Encoded '%26' may be
+    # part of either a key value or a fully encoded nested URL, so deliberately
+    # over-redact through it rather than risk exposing a partial secret.
+    r"(?i)(api(?:_|%5f)key(?:=|%3d))(.*?)(?=&|\s|[\"'<>]|$)"
 )
 _SERPAPI_JSON_SECRET = re.compile(
     r'(?i)((?:"|\')?api_key(?:"|\')?\s*:\s*(?:"|\'))(.*?)(?=(?:"|\'))'
@@ -173,6 +176,7 @@ class SerpApiCallMetadata:
 class SerpApiResponse:
     payload: dict[str, Any]
     metadata: SerpApiCallMetadata
+    raw_response_checksum: str | None = None
 
 
 def configured_serpapi_keys(*values: str | None) -> list[str]:
@@ -343,6 +347,10 @@ async def execute_serpapi_get(
                 attempt_count=attempt_count,
                 key_slot=slot + 1,
                 key_fingerprint=fingerprint,
+            ),
+            raw_response_checksum=(
+                "sha256:" + hashlib.sha256(bytes(response.content)).hexdigest()
+                if isinstance(getattr(response, "content", None), bytes) else None
             ),
         )
 

@@ -165,6 +165,19 @@ def test_serpapi_log_safety_does_not_change_unrelated_application_logs(caplog) -
     assert "api_key=ordinary-application-value" in caplog.text
 
 
+@pytest.mark.parametrize("value", [
+    "https://serpapi.example/search?api_key=raw%26special%2Fkey&q=x",
+    "https%3A%2F%2Fserpapi.example%2Fsearch%3Fapi%5Fkey%3Dencoded%2526key%26q%3Dx",
+])
+def test_serpapi_redaction_never_stops_at_encoded_ampersand(value) -> None:
+    from app.integrations.serpapi import redact_serpapi_log_value
+
+    redacted = redact_serpapi_log_value(value)
+    assert "raw%26special%2Fkey" not in redacted
+    assert "encoded%2526key" not in redacted
+    assert "[REDACTED]" in redacted
+
+
 @pytest.mark.parametrize("logger_name", ["httpx", "httpcore.connection"])
 def test_serpapi_log_safety_preserves_unrelated_http_traceback(caplog, logger_name) -> None:
     from app.integrations.serpapi import install_serpapi_log_safety

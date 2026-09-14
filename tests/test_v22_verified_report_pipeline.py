@@ -164,3 +164,19 @@ async def test_tampering_fails_before_any_stage_checkpoint_or_report(change):
         await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
             job_id=JOB_ID, request=request, resolved_input=resolved, checkpoints=checkpoints)
     assert await checkpoints.redis.dbsize() == 0
+
+
+@pytest.mark.anyio
+async def test_pipeline_capability_seal_rejects_resigned_nested_gsc_mutation():
+    from verified_pipeline_helpers import resolve_fixture
+
+    resolved, request = await resolve_fixture()
+    gsc = next(item for item in resolved.first_party_snapshots if item.source_type == "gsc")
+    gsc.normalized_payload["current"]["totals"]["clicks"] = 999
+    gsc.payload_checksum = request_digest(gsc.normalized_payload)
+    checkpoints = JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+        prefix="test:verified:sealed", ttl_seconds=604800)
+    with pytest.raises(DeterministicJobError):
+        await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
+            job_id=JOB_ID, request=request, resolved_input=resolved, checkpoints=checkpoints)
+    assert await checkpoints.redis.dbsize() == 0
