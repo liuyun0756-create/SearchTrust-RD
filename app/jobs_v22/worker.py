@@ -37,7 +37,6 @@ from app.competitors_v22.reconciler import reconcile_v22_competitor_discoveries
 from app.competitors_v22.site_stage import CheckpointedCompetitorSiteStage
 from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.competitors_v22.worker import execute_v22_competitor_discovery
-from app.competitors_v22.selection import AnalysisRequestEnvelope
 from app.competitors_v22.supplements import SupplementalHomepageValidator
 from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
@@ -47,7 +46,6 @@ from app.jobs_v22.customer_public_gbp_stage import build_customer_public_gbp_sta
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.cost_models import CostSummaryRecord, pricing_catalog_from_settings
 from app.jobs_v22.cost_persistence import CostSummaryOutbox, CostSummaryPersister
-from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import (
     DeterministicJobError,
     JobDeadlineExceeded,
@@ -55,6 +53,14 @@ from app.jobs_v22.errors import (
     classify_job_exception,
 )
 from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
+from app.jobs_v22.verified_executor import VerifiedV22Executor, V22ExecutorRouter
+from app.jobs_v22.verified_input_resolver import SupabaseVerifiedInputResolver
+from app.jobs_v22.verified_reconciler import (
+    SupabaseVerifiedOrphanReconciler,
+    reconcile_v22_verified_orphans,
+)
+from app.jobs_v22.verified_report_pipeline import VerifiedReportPipeline
+from app.jobs_v22.verified_result_persistence import SupabaseVerifiedResultPersister
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.reconciler import reconcile_v22_jobs
 from app.jobs_v22.prospect_report_pipeline import PublicProspectReportPipeline
@@ -200,6 +206,13 @@ async def _execute_with_lease(
     )
     await ledger.ensure()
 
+    request = await store.get_request(job_id)
+    job_kind = (
+        "verified_report"
+        if request is not None
+        and request.get("schema_version") == "v22_verified_request_envelope_v1"
+        else "prospect_report"
+    )
     now = utc_now()
     if now >= state.deadline_at:
         await _finish_failure(
@@ -208,10 +221,10 @@ async def _execute_with_lease(
             JobDeadlineExceeded(),
             run_generation=run_generation,
             cost_counters=(await ledger.snapshot()).root,
+            job_kind=job_kind,
         )
         return
 
-    request = await store.get_request(job_id)
     if request is None:
         exc: BaseException = DeterministicJobError(
             "JOB_REQUEST_MISSING",
@@ -223,6 +236,7 @@ async def _execute_with_lease(
             exc,
             run_generation=run_generation,
             cost_counters=(await ledger.snapshot()).root,
+            job_kind=job_kind,
         )
         return
 
@@ -252,15 +266,11 @@ async def _execute_with_lease(
     executor = ctx["executor"]
     attempt_started = monotonic()
     try:
-        executor_request = request
-        if request.get("schema_version") == "v22_analysis_request_envelope_v1":
-            envelope = AnalysisRequestEnvelope.model_validate_json(canonical_json_bytes(request))
-            executor_request = envelope
         remaining = max((state.deadline_at - utc_now()).total_seconds(), 0.001)
         report = await asyncio.wait_for(
             executor.execute(
                 job_id=job_id,
-                request=executor_request,
+                request=request,
                 submitted_at=state.created_at,
                 checkpoints=checkpoints,
                 cost_ledger=ledger,
@@ -279,6 +289,7 @@ async def _execute_with_lease(
             JobDeadlineExceeded(),
             run_generation=run_generation,
             cost_counters=(await ledger.snapshot()).root,
+            job_kind=job_kind,
         )
         return
     except asyncio.CancelledError:
@@ -297,6 +308,7 @@ async def _execute_with_lease(
             exc,
             run_generation=run_generation,
             cost_counters=(await ledger.snapshot()).root,
+            job_kind=job_kind,
         )
         return
 
@@ -317,7 +329,7 @@ async def _execute_with_lease(
     )
     if completed.applied:
         await _notify_state(ctx, job_id)
-        await _enqueue_cost_summary(ctx, completed.state, job_kind="prospect_report")
+        await _enqueue_cost_summary(ctx, completed.state, job_kind=job_kind)
 
 
 async def _finish_failure(
@@ -327,6 +339,7 @@ async def _finish_failure(
     *,
     run_generation: int,
     cost_counters: dict[str, int] | None = None,
+    job_kind: str = "prospect_report",
 ) -> None:
     store: DurableJobStore = ctx["store"]
     failure = classify_job_exception(exc)
@@ -379,7 +392,7 @@ async def _finish_failure(
     )
     if failed.applied:
         await _notify_state(ctx, state.job_id)
-        await _enqueue_cost_summary(ctx, failed.state, job_kind="prospect_report")
+        await _enqueue_cost_summary(ctx, failed.state, job_kind=job_kind)
 
 
 async def _enqueue_cost_summary(ctx: dict[str, Any], state, *, job_kind: str) -> None:
@@ -552,7 +565,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS
         )
         ctx["result_http_client"] = result_http_client
-        ctx["executor"] = ProspectV22Executor(
+        prospect_executor = ProspectV22Executor(
             discovery_store=discovery_store,
             market_store=market_store,
             site_stage=site_stage,
@@ -577,7 +590,54 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             ),
         )
     else:
-        ctx["executor"] = UnavailableV22Executor()
+        prospect_executor = UnavailableV22Executor()
+
+    if settings.V22_VERIFIED_ANALYSIS_ENABLED:
+        verified_http_client = httpx.AsyncClient(
+            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+        verified_reconciler_http_client = httpx.AsyncClient(
+            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+        try:
+            resolver = SupabaseVerifiedInputResolver(
+                url=settings.V22_SUPABASE_URL,
+                service_role_key=storage_key,
+                http_client=verified_http_client,
+            )
+            persister = SupabaseVerifiedResultPersister(
+                url=settings.V22_SUPABASE_URL,
+                service_role_key=storage_key,
+                http_client=verified_http_client,
+            )
+            verified_executor = VerifiedV22Executor(
+                resolver=resolver,
+                pipeline=VerifiedReportPipeline(),
+                persister=persister,
+            )
+            verified_orphan_reconciler = SupabaseVerifiedOrphanReconciler(
+                url=settings.V22_SUPABASE_URL,
+                service_role_key=storage_key,
+                http_client=verified_reconciler_http_client,
+            )
+        except BaseException:
+            await asyncio.gather(
+                verified_http_client.aclose(),
+                verified_reconciler_http_client.aclose(),
+            )
+            raise
+        ctx["verified_http_client"] = verified_http_client
+        ctx["verified_reconciler_http_client"] = verified_reconciler_http_client
+        ctx["verified_orphan_reconciler"] = verified_orphan_reconciler
+    else:
+        verified_executor = UnavailableV22Executor()
+
+    ctx["executor"] = V22ExecutorRouter(
+        prospect_executor=prospect_executor,
+        verified_executor=verified_executor,
+    )
     callback_url = settings.V22_CALLBACK_URL
     callback_secret = _secret_value(settings.V22_CALLBACK_SECRET)
     if callback_url and callback_secret:
@@ -611,6 +671,14 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
     result_http_client: httpx.AsyncClient | None = ctx.get("result_http_client")
     if result_http_client is not None:
         await result_http_client.aclose()
+    verified_http_client: httpx.AsyncClient | None = ctx.get("verified_http_client")
+    if verified_http_client is not None:
+        await verified_http_client.aclose()
+    verified_reconciler_http_client: httpx.AsyncClient | None = ctx.get(
+        "verified_reconciler_http_client"
+    )
+    if verified_reconciler_http_client is not None:
+        await verified_reconciler_http_client.aclose()
 
 
 def _redis_settings() -> RedisSettings:
@@ -655,6 +723,14 @@ class WorkerSettings:
             reconcile_v22_jobs,
             name="reconcile_v22_jobs",
             second={0, 30},
+            unique=True,
+            max_tries=1,
+        ),
+        cron(
+            reconcile_v22_verified_orphans,
+            name="reconcile_v22_verified_orphans",
+            minute=set(range(60)),
+            second=50,
             unique=True,
             max_tries=1,
         ),

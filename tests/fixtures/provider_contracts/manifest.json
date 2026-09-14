@@ -26,6 +26,18 @@
       "max_response_bytes": 65536
     },
     {
+      "id": "delivery.verified_orphan_rpc", "provider": "delivery",
+      "adapter": "app.jobs_v22.verified_reconciler.SupabaseVerifiedOrphanReconciler",
+      "method": "POST", "path": "/rest/v1/rpc/expire_v22_stale_verified_jobs",
+      "auth": {"role": "service_role", "headers": ["authorization", "apikey"]},
+      "request_contract": "Exactly the trusted UTC reconciliation time and a fixed maximum of 100 jobs; no Case, report payload or OAuth token fields",
+      "request_fields": ["p_now", "p_limit"],
+      "response_contract": "At most 100 unique rows containing only a Verified job UUID; malformed or unavailable responses are deferred safely",
+      "oauth_token_fields": [], "fixtures": [],
+      "error_mapping": {"timeout_429_5xx": "defer_to_next_cron", "3xx_4xx": "defer_to_next_cron", "malformed_oversized": "defer_to_next_cron"},
+      "max_response_bytes": 65536
+    },
+    {
       "id": "serpapi.search", "provider": "serpapi",
       "adapter": "app.integrations.serpapi.execute_serpapi_get",
       "request_contract": "GET with bounded public params and one rotated api_key",

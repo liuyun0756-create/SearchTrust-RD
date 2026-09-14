@@ -15,6 +15,9 @@ pytestmark = pytest.mark.contract
 
 @pytest.mark.anyio
 async def test_verified_service_role_rpc_delivery_contracts():
+    from datetime import datetime, timezone
+
+    from app.jobs_v22.verified_reconciler import SupabaseVerifiedOrphanReconciler
     from test_v22_verified_input_resolver import resolve_response, resolved_payload
     from test_v22_verified_result_persistence import persist_response, persistence_inputs
 
@@ -23,11 +26,24 @@ async def test_verified_service_role_rpc_delivery_contracts():
     values = await persistence_inputs()
     persist_calls = await persist_response(httpx.Response(200, json=[{
         "report_id": str(values[1].job_id), "idempotent": False}]), values=values)
+    orphan_calls = []
+
+    def orphan_response(request):
+        orphan_calls.append(request)
+        return httpx.Response(200, json=[])
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(orphan_response)) as client:
+        await SupabaseVerifiedOrphanReconciler(
+            url="https://storage.example",
+            service_role_key="service-secret",
+            http_client=client,
+        ).expire(now=datetime(2026, 9, 14, tzinfo=timezone.utc))
     manifest = json.loads((Path(__file__).parents[1] / "fixtures/provider_contracts/manifest.json").read_text())
     entries = {entry["id"]: entry for entry in manifest["operations"]}
     for operation, calls, fields, limit in [
         ("delivery.verified_input_rpc", resolve_calls, ["p_job_id", "p_case_id", "p_run_generation"], 25_000_000),
         ("delivery.verified_result_rpc", persist_calls, ["p_job_id", "p_case_id", "p_report_payload", "p_run_generation"], 65_536),
+        ("delivery.verified_orphan_rpc", orphan_calls, ["p_now", "p_limit"], 65_536),
     ]:
         entry = entries[operation]
         assert entry["method"] == calls[0].method == "POST"

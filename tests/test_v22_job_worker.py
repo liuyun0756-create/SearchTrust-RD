@@ -12,6 +12,7 @@ from pydantic import SecretStr
 
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.executor import ProspectV22Executor, UnavailableV22Executor
+from app.jobs_v22.verified_executor import VerifiedV22Executor, V22ExecutorRouter
 from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.worker import execute_v22_job, on_shutdown, on_startup
@@ -19,7 +20,7 @@ from app.core.config import settings
 from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.api.v2.models import AnalyzeRequest
 from app.report_v22.models import ReportV22
-from test_api_v2_jobs import prospect_analyze_payload
+from test_api_v2_jobs import prospect_analyze_payload, verified_task_payload
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -48,6 +49,19 @@ class RecordingExecutor:
         return outcome
 
 
+class RecordingCostOutbox:
+    def __init__(self) -> None:
+        self.summaries = []
+        self.synced = []
+
+    async def enqueue(self, summary) -> None:
+        self.summaries.append(summary)
+
+    async def sync(self, job_id) -> bool:
+        self.synced.append(job_id)
+        return True
+
+
 async def build_context(executor: object, *, max_attempts: int = 3):
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     store = DurableJobStore(redis, prefix="test:v22", state_ttl_seconds=604800)
@@ -71,6 +85,18 @@ async def build_context(executor: object, *, max_attempts: int = 3):
 def prospect_report() -> ReportV22:
     payload = (CONTRACT_DIR / "fixtures" / "prospect.json").read_text(encoding="utf-8")
     return ReportV22.model_validate_json(payload)
+
+
+def verified_report() -> ReportV22:
+    payload = (CONTRACT_DIR / "fixtures" / "verified.json").read_text(encoding="utf-8")
+    return ReportV22.model_validate_json(payload)
+
+
+def verified_envelope() -> dict:
+    return {
+        "schema_version": "v22_verified_request_envelope_v1",
+        "verified_request": verified_task_payload(),
+    }
 
 
 @pytest.mark.anyio
@@ -230,7 +256,120 @@ async def test_worker_preserves_internal_discovery_envelope_for_executor() -> No
     await execute_v22_job(ctx, str(JOB_ID), 1)
 
     assert executor.calls == 1
-    assert executor.last_request == envelope
+    assert executor.last_request == envelope.model_dump(mode="json")
+
+
+@pytest.mark.anyio
+async def test_verified_success_persists_verified_report_cost_kind() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    store = DurableJobStore(redis, prefix="test:v22:verified", state_ttl_seconds=604800)
+    payload = verified_envelope()
+    await store.register_job(
+        job_id=JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="verified-paid-attempt",
+        request_payload=payload,
+        now=NOW,
+    )
+    outbox = RecordingCostOutbox()
+    executor = RecordingExecutor([verified_report()])
+    ctx = {
+        "store": store,
+        "executor": executor,
+        "cost_summary_outbox": outbox,
+        "max_attempts": 3,
+        "state_ttl_seconds": 604800,
+        "redis": redis,
+    }
+
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    assert executor.last_request == payload
+    assert len(outbox.summaries) == 1
+    assert outbox.summaries[0].job_kind == "verified_report"
+    assert outbox.summaries[0].status == "succeeded"
+    assert outbox.synced == [JOB_ID]
+
+
+@pytest.mark.anyio
+async def test_verified_automatic_retries_reuse_same_paid_attempt_and_settle_once() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    store = DurableJobStore(redis, prefix="test:v22:retry", state_ttl_seconds=604800)
+    payload = verified_envelope()
+    await store.register_job(
+        job_id=JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="one-paid-verified-attempt",
+        request_payload=payload,
+        now=NOW,
+    )
+    outbox = RecordingCostOutbox()
+    executor = RecordingExecutor(
+        [TransientJobError("PROVIDER_UNAVAILABLE", "Temporarily unavailable")]
+    )
+    ctx = {
+        "store": store,
+        "executor": executor,
+        "cost_summary_outbox": outbox,
+        "max_attempts": 3,
+        "state_ttl_seconds": 604800,
+        "redis": redis,
+    }
+
+    with pytest.raises(Retry):
+        await execute_v22_job(ctx, str(JOB_ID), 1)
+    with pytest.raises(Retry):
+        await execute_v22_job(ctx, str(JOB_ID), 1)
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    state = await store.require_state(JOB_ID)
+    assert state.status == "failed"
+    assert state.attempt_count == 3
+    assert executor.calls == 3
+    assert executor.last_request == payload
+    assert len(outbox.summaries) == 1
+    assert outbox.summaries[0].job_id == JOB_ID
+    assert outbox.summaries[0].job_kind == "verified_report"
+    assert outbox.summaries[0].status == "failed"
+
+
+@pytest.mark.anyio
+async def test_verified_terminal_failure_callback_is_emitted_once_for_db_compensation() -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    store = DurableJobStore(redis, prefix="test:v22:callback", state_ttl_seconds=604800)
+    await store.register_job(
+        job_id=JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="verified-terminal-callback",
+        request_payload=verified_envelope(),
+        now=NOW,
+    )
+
+    class RecordingSynchronizer:
+        def __init__(self):
+            self.statuses = []
+
+        async def sync(self, job_id):
+            self.statuses.append((await store.require_state(job_id)).status)
+            return True
+
+    synchronizer = RecordingSynchronizer()
+    ctx = {
+        "store": store,
+        "executor": RecordingExecutor(
+            [DeterministicJobError("V22_VERIFIED_RESULT_INVALID", "Invalid result")]
+        ),
+        "callback_synchronizer": synchronizer,
+        "max_attempts": 3,
+        "state_ttl_seconds": 604800,
+        "redis": redis,
+    }
+
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+    await execute_v22_job(ctx, str(JOB_ID), 1)
+
+    assert synchronizer.statuses.count("failed") == 1
 
 
 @pytest.mark.anyio
@@ -258,8 +397,10 @@ async def test_worker_builds_real_isolated_executor_only_when_analyze_is_enabled
 
     await on_startup(ctx)
     try:
-        assert isinstance(ctx["executor"], ProspectV22Executor)
-        assert ctx["executor"].customer_public_gbp_stage.__class__.__name__ == (
+        assert isinstance(ctx["executor"], V22ExecutorRouter)
+        assert isinstance(ctx["executor"].prospect_executor, ProspectV22Executor)
+        assert isinstance(ctx["executor"].verified_executor, UnavailableV22Executor)
+        assert ctx["executor"].prospect_executor.customer_public_gbp_stage.__class__.__name__ == (
             "CheckpointedCustomerPublicGbpStage")
         assert "app.tasks.pipeline" not in inspect.getsource(
             ProspectV22Executor.execute
@@ -288,3 +429,63 @@ async def test_gbp_sync_stays_off_while_expired_content_cleanup_remains_availabl
         await on_shutdown(ctx)
 
     assert ctx["gbp_cleanup_http_client"].is_closed
+
+
+@pytest.mark.anyio
+async def test_worker_wires_verified_independently_with_its_own_bounded_storage_client(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", True)
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", True)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setattr(
+        settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
+    )
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    verified_client = ctx["verified_http_client"]
+    reconciler_client = ctx["verified_reconciler_http_client"]
+    prospect_client = ctx["result_http_client"]
+    try:
+        router = ctx["executor"]
+        assert isinstance(router, V22ExecutorRouter)
+        assert isinstance(router.prospect_executor, ProspectV22Executor)
+        assert isinstance(router.verified_executor, VerifiedV22Executor)
+        assert verified_client is not prospect_client
+        assert router.verified_executor.resolver.rpc.client is verified_client
+        assert router.verified_executor.persister.rpc.client is verified_client
+        assert reconciler_client is not verified_client
+        assert ctx["verified_orphan_reconciler"].rpc.client is reconciler_client
+        assert "site_stage" not in vars(router.verified_executor)
+        assert "copy_provider" not in vars(router.verified_executor)
+    finally:
+        await on_shutdown(ctx)
+
+    assert verified_client.is_closed
+    assert reconciler_client.is_closed
+    assert prospect_client.is_closed
+
+
+@pytest.mark.anyio
+async def test_worker_can_enable_verified_while_prospect_stays_unavailable(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", True)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setattr(
+        settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
+    )
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    try:
+        assert isinstance(ctx["executor"].prospect_executor, UnavailableV22Executor)
+        assert isinstance(ctx["executor"].verified_executor, VerifiedV22Executor)
+        assert "copy_http_client" not in ctx
+        assert "result_http_client" not in ctx
+    finally:
+        await on_shutdown(ctx)

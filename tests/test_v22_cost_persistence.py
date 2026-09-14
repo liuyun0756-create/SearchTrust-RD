@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -14,7 +15,7 @@ CASE_ID = UUID("11111111-1111-4111-8111-111111111111")
 NOW = datetime(2026, 9, 10, 8, 0, tzinfo=timezone.utc)
 
 
-def summary(*, revision: int = 3) -> CostSummaryRecord:
+def summary(*, revision: int = 3, job_kind: str = "competitor_discovery") -> CostSummaryRecord:
     counters = {key: 0 for key in ALLOWED_COUNTER_KEYS}
     counters.update(
         {
@@ -26,7 +27,7 @@ def summary(*, revision: int = 3) -> CostSummaryRecord:
     return CostSummaryRecord(
         job_id=JOB_ID,
         case_id=CASE_ID,
-        job_kind="competitor_discovery",
+        job_kind=job_kind,
         status="succeeded",
         attempt_count=1,
         ledger_revision=revision,
@@ -115,3 +116,22 @@ def test_summary_revision_must_match_flat_counters() -> None:
         CostSummaryRecord.model_validate(
             {**value.model_dump(mode="python"), "ledger_revision": 4}
         )
+
+
+@pytest.mark.anyio
+async def test_verified_report_kind_is_preserved_by_cost_persistence() -> None:
+    captured = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json=json.loads(request.content))
+        return httpx.Response(200, json={"job_id": str(JOB_ID)})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        persisted = await CostSummaryPersister(
+            url="https://project.supabase.co",
+            service_role_key="service-secret",
+            http_client=client,
+        ).persist(summary(job_kind="verified_report"))
+
+    assert persisted is True
+    assert captured["json"]["p_job_kind"] == "verified_report"

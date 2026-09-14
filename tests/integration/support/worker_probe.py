@@ -16,6 +16,8 @@ from arq.connections import ArqRedis, RedisSettings
 from arq.worker import func
 
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.digest import canonical_json_bytes, request_digest
+from app.jobs_v22.verified_models import VerifiedRequestEnvelope
 from app.jobs_v22.queue import JobQueue
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.models import utc_now
@@ -98,12 +100,19 @@ async def execute_probe_job(ctx: dict, job_id_value: str, run_generation: int) -
         ttl_seconds=120,
         run_generation=run_generation,
     )
+    request = await store.get_request(job_id)
+    envelope = VerifiedRequestEnvelope.model_validate_json(canonical_json_bytes(request))
+    envelope_digest = request_digest(envelope)
     existing = await checkpoints.get(job_id, CHECKPOINT_NAME)
     if existing is None:
         saved = await checkpoints.save(
             job_id,
             CHECKPOINT_NAME,
-            {"job_id": str(job_id), "created_by_generation": run_generation},
+            {
+                "job_id": str(job_id),
+                "created_by_generation": run_generation,
+                "request_digest": envelope_digest,
+            },
         )
         if not saved:
             raise RuntimeError("probe checkpoint was not persisted")
@@ -114,6 +123,9 @@ async def execute_probe_job(ctx: dict, job_id_value: str, run_generation: int) -
         )
         await asyncio.Event().wait()
         return
+
+    if existing.get("request_digest") != envelope_digest:
+        raise RuntimeError("probe restart did not recover the exact Verified envelope")
 
     completed = await store.transition(
         job_id,

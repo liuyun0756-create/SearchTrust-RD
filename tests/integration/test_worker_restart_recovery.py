@@ -11,8 +11,11 @@ from redis.asyncio import Redis
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.errors import JobLeaseLost
 from app.jobs_v22.models import utc_now
+from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.reconciler import reconcile_once
 from app.jobs_v22.store import DurableJobStore
+from app.jobs_v22.verified_models import VerifiedRequestEnvelope
+from test_api_v2_jobs import verified_task_payload
 from tests.integration.support.worker_probe import (
     CHECKPOINT_NAME,
     ProbeQueue,
@@ -42,11 +45,15 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
         job_timeout_seconds=1200,
     )
     started = utc_now()
+    request_payload = {
+        "schema_version": "v22_verified_request_envelope_v1",
+        "verified_request": verified_task_payload(),
+    }
     await store.register_job(
         job_id=JOB_ID,
         case_id=CASE_ID,
         idempotency_key="restart-probe",
-        request_payload={"case_id": str(CASE_ID), "report_type": "prospect"},
+        request_payload=request_payload,
         now=started,
     )
     queue = ProbeQueue(arq_pool, prefix=run_prefix)
@@ -69,7 +76,13 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
     ).get(JOB_ID, CHECKPOINT_NAME)
     assert interrupted.status == "running"
     assert interrupted.run_generation == 1
-    assert checkpoint == {"job_id": str(JOB_ID), "created_by_generation": 1}
+    assert checkpoint == {
+        "job_id": str(JOB_ID),
+        "created_by_generation": 1,
+        "request_digest": request_digest(
+            VerifiedRequestEnvelope.model_validate_json(canonical_json_bytes(request_payload))
+        ),
+    }
 
     await reconcile_once(
         store=store,
@@ -97,6 +110,7 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
     assert completed.run_generation == 2
     assert completed.attempt_count == 2
     assert completed.report is not None
+    assert await store.get_request(JOB_ID) == request_payload
     before_stale_write = completed.model_copy(deep=True)
     with pytest.raises(JobLeaseLost):
         await store.transition(

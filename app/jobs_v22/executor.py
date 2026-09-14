@@ -18,11 +18,12 @@ from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.customer_public_gbp_stage import CustomerPublicGbpCollection
+from app.jobs_v22.verified_models import VerifiedRequestEnvelope
 from app.report_v22.models import ReportV22
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
 
-ExecutorRequest = dict[str, Any] | AnalysisRequestEnvelope
+ExecutorRequest = dict[str, Any] | AnalysisRequestEnvelope | VerifiedRequestEnvelope
 
 
 class V22JobExecutor(Protocol):
