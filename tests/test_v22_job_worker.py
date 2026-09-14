@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 import fakeredis.aioredis
+import httpx
 import pytest
 from arq.worker import Retry
 from pydantic import SecretStr
@@ -16,6 +17,7 @@ from app.jobs_v22.verified_executor import VerifiedV22Executor, V22ExecutorRoute
 from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.worker import execute_v22_job, on_shutdown, on_startup
+from app.jobs_v22.verified_reconciler import reconcile_v22_verified_orphans
 from app.core.config import settings
 from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.api.v2.models import AnalyzeRequest
@@ -487,5 +489,62 @@ async def test_worker_can_enable_verified_while_prospect_stays_unavailable(
         assert isinstance(ctx["executor"].verified_executor, VerifiedV22Executor)
         assert "copy_http_client" not in ctx
         assert "result_http_client" not in ctx
+    finally:
+        await on_shutdown(ctx)
+
+
+@pytest.mark.anyio
+async def test_verified_switch_off_still_reconciles_previously_paid_orphans(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setattr(
+        settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr("fake-service")
+    )
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(200, json=[])
+
+    try:
+        assert isinstance(ctx["executor"].verified_executor, UnavailableV22Executor)
+        reconciler = ctx["verified_orphan_reconciler"]
+        original_client = reconciler.rpc.client
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            reconciler.rpc.client = client
+            await reconcile_v22_verified_orphans(ctx)
+        reconciler.rpc.client = original_client
+        assert len(requests) == 1
+        assert requests[0].url.path == "/rest/v1/rpc/expire_v22_stale_verified_jobs"
+    finally:
+        reconciler_client = ctx["verified_reconciler_http_client"]
+        await on_shutdown(ctx)
+
+    assert reconciler_client.is_closed
+
+
+@pytest.mark.anyio
+async def test_missing_service_role_keeps_disabled_verified_reconciliation_a_safe_noop(
+    monkeypatch,
+) -> None:
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    monkeypatch.setattr(settings, "V22_ANALYZE_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_VERIFIED_ANALYSIS_ENABLED", False)
+    monkeypatch.setattr(settings, "V22_SUPABASE_URL", "")
+    monkeypatch.setattr(settings, "V22_SUPABASE_SERVICE_ROLE_KEY", SecretStr(""))
+    ctx = {"redis": redis}
+
+    await on_startup(ctx)
+    try:
+        assert "verified_orphan_reconciler" not in ctx
+        assert "verified_reconciler_http_client" not in ctx
+        await reconcile_v22_verified_orphans(ctx)
     finally:
         await on_shutdown(ctx)

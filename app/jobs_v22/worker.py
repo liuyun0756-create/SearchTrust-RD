@@ -512,6 +512,16 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                 http_client=cost_http_client,
             ),
         )
+        verified_reconciler_http_client = httpx.AsyncClient(
+            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+        ctx["verified_reconciler_http_client"] = verified_reconciler_http_client
+        ctx["verified_orphan_reconciler"] = SupabaseVerifiedOrphanReconciler(
+            url=settings.V22_SUPABASE_URL,
+            service_role_key=storage_key,
+            http_client=verified_reconciler_http_client,
+        )
     ctx["store"] = DurableJobStore(
         pool,
         prefix=settings.V22_REDIS_PREFIX,
@@ -597,10 +607,6 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
             follow_redirects=False,
         )
-        verified_reconciler_http_client = httpx.AsyncClient(
-            timeout=settings.V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS,
-            follow_redirects=False,
-        )
         try:
             resolver = SupabaseVerifiedInputResolver(
                 url=settings.V22_SUPABASE_URL,
@@ -617,20 +623,10 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                 pipeline=VerifiedReportPipeline(),
                 persister=persister,
             )
-            verified_orphan_reconciler = SupabaseVerifiedOrphanReconciler(
-                url=settings.V22_SUPABASE_URL,
-                service_role_key=storage_key,
-                http_client=verified_reconciler_http_client,
-            )
         except BaseException:
-            await asyncio.gather(
-                verified_http_client.aclose(),
-                verified_reconciler_http_client.aclose(),
-            )
+            await verified_http_client.aclose()
             raise
         ctx["verified_http_client"] = verified_http_client
-        ctx["verified_reconciler_http_client"] = verified_reconciler_http_client
-        ctx["verified_orphan_reconciler"] = verified_orphan_reconciler
     else:
         verified_executor = UnavailableV22Executor()
 
