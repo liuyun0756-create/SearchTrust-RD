@@ -228,6 +228,14 @@ async def test_stale_takeover_fences_old_generation(store: DurableJobStore) -> N
 
     assert takeover.applied is True
     assert takeover.state.run_generation == 2
+    assert await store.pending_recovery_generation(JOB_ID) == 2
+    repeated = await store.take_over_stale(
+        JOB_ID,
+        expected_generation=2,
+        now=NOW + timedelta(minutes=8),
+    )
+    assert repeated.applied is False
+    assert repeated.state.run_generation == 2
     with pytest.raises(Exception, match="JOB_LEASE_LOST"):
         await store.transition(
             JOB_ID,

@@ -237,6 +237,7 @@ class DurableJobStore:
                     pipe.expire(self.keys.request(job_id), self.state_ttl_seconds)
                     if next_state.terminal:
                         pipe.zrem(self.keys.active, str(job_id))
+                        pipe.zrem(self.keys.recovery_pending, str(job_id))
                     else:
                         pipe.zadd(self.keys.active, {str(job_id): now.timestamp()})
                     pipe.zadd(self.keys.sync_pending, {str(job_id): next_state.revision})
@@ -282,11 +283,16 @@ class DurableJobStore:
         async with self.redis.pipeline(transaction=True) as pipe:
             while True:
                 try:
-                    await pipe.watch(state_key)
+                    await pipe.watch(state_key, self.keys.recovery_pending)
                     current = await self.get_state(job_id, client=pipe)
                     if current is None:
                         raise JobNotFound()
                     if current.terminal or current.run_generation != expected_generation:
+                        return TransitionResult(current, applied=False)
+                    pending_generation = await pipe.zscore(
+                        self.keys.recovery_pending, str(job_id)
+                    )
+                    if pending_generation is not None:
                         return TransitionResult(current, applied=False)
                     next_state = current.model_copy(
                         update={
@@ -305,6 +311,10 @@ class DurableJobStore:
                     pipe.delete(self.keys.lease(job_id))
                     pipe.zadd(self.keys.active, {str(job_id): now.timestamp()})
                     pipe.zadd(self.keys.sync_pending, {str(job_id): next_state.revision})
+                    pipe.zadd(
+                        self.keys.recovery_pending,
+                        {str(job_id): next_state.run_generation},
+                    )
                     await pipe.execute()
                     break
                 except WatchError:
@@ -452,3 +462,56 @@ class DurableJobStore:
     async def list_pending_callbacks(self, *, limit: int = 100) -> list[UUID]:
         values = await self.redis.zrange(self.keys.sync_pending, 0, limit - 1)
         return [UUID(value.decode() if isinstance(value, bytes) else value) for value in values]
+
+    async def list_pending_recoveries(self, *, limit: int = 100) -> list[tuple[UUID, int]]:
+        values = await self.redis.zrange(
+            self.keys.recovery_pending, 0, limit - 1, withscores=True
+        )
+        return [
+            (
+                UUID(value.decode() if isinstance(value, bytes) else value),
+                int(generation),
+            )
+            for value, generation in values
+        ]
+
+    async def pending_recovery_generation(self, job_id: UUID) -> int | None:
+        generation = await self.redis.zscore(self.keys.recovery_pending, str(job_id))
+        return None if generation is None else int(generation)
+
+    async def mark_recovery_enqueued(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+        now: datetime,
+    ) -> bool:
+        """Close one sync-before-enqueue recovery without changing job revision."""
+
+        state_key = self.keys.state(job_id)
+        pending_key = self.keys.recovery_pending
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(state_key, pending_key)
+                    current = await self.get_state(job_id, client=pipe)
+                    if current is None:
+                        raise JobNotFound()
+                    pending_generation = await pipe.zscore(pending_key, str(job_id))
+                    if (
+                        pending_generation is None
+                        or int(pending_generation) != generation
+                        or current.run_generation != generation
+                    ):
+                        return False
+                    pipe.multi()
+                    pipe.zrem(pending_key, str(job_id))
+                    if not current.terminal:
+                        # A recovery may have waited longer than the stale cutoff
+                        # for its database callback. Do not immediately fence the
+                        # physical run that has only just become safe to enqueue.
+                        pipe.zadd(self.keys.active, {str(job_id): now.timestamp()})
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue

@@ -15,7 +15,9 @@ def physical_job_id(job_id: UUID, run_generation: int) -> str:
 
 
 class JobQueue(Protocol):
-    async def enqueue(self, job_id: UUID, run_generation: int) -> bool: ...
+    async def enqueue(self, job_id: UUID, run_generation: int) -> bool:
+        """Idempotently enqueue job+generation; return False if it exists."""
+        ...
 
 
 class ArqJobQueue:

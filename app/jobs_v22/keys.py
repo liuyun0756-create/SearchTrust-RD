@@ -60,6 +60,10 @@ class JobRedisKeys:
         return f"{self.prefix}:sync-pending"
 
     @property
+    def recovery_pending(self) -> str:
+        return f"{self.prefix}:recovery-pending"
+
+    @property
     def cost_sync_pending(self) -> str:
         return f"{self.prefix}:cost-sync-pending"
 

@@ -98,10 +98,19 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
         ),
     }
 
+    synced_generations: list[int] = []
+
+    class StoreSynchronizer:
+        async def sync(self, job_id: UUID) -> bool:
+            state = await store.require_state(job_id)
+            synced_generations.append(state.run_generation)
+            await store.mark_callback_synced(job_id, state.revision)
+            return True
+
     await reconcile_once(
         store=store,
         queue=queue,
-        synchronizer=None,
+        synchronizer=StoreSynchronizer(),
         now=utc_now() + timedelta(minutes=4),
         stale_seconds=180,
         max_attempts=3,
@@ -109,6 +118,7 @@ async def test_worker_interruption_retains_checkpoint_and_recovers_higher_genera
     recovered = await store.require_state(JOB_ID)
     assert recovered.status == "queued"
     assert recovered.run_generation == 2
+    assert synced_generations == [1, 2]
 
     with ProbeWorkerProcess(os.environ) as replacement_worker:
         await wait_for_signal(

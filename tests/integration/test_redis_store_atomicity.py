@@ -132,6 +132,7 @@ async def test_concurrent_takeover_fences_the_stale_generation(
     current = await real_store.require_state(JOB_ID)
     assert current.run_generation == 2
     assert current.revision == 2
+    assert await real_store.list_pending_recoveries() == [(JOB_ID, 2)]
 
     with pytest.raises(JobLeaseLost):
         await real_store.transition(

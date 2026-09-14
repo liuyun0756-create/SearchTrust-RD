@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Protocol
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from app.core.config import settings
 from app.jobs_v22.callbacks import CallbackSynchronizer
@@ -21,6 +21,52 @@ class StateSynchronizer(Protocol):
     async def sync(self, job_id) -> bool: ...
 
 
+async def _finish_pending_recovery(
+    *,
+    store: DurableJobStore,
+    queue: JobQueue,
+    synchronizer: StateSynchronizer | None,
+    job_id: UUID,
+    generation: int,
+    now: datetime,
+) -> None:
+    """Synchronize one takeover generation before exposing it to workers."""
+
+    state = await store.require_state(job_id)
+    if state.run_generation != generation:
+        return
+    if state.terminal:
+        await store.mark_recovery_enqueued(
+            job_id, generation=generation, now=now
+        )
+        return
+    if synchronizer is None:
+        return
+    if state.callback_synced_revision < state.revision:
+        try:
+            if not await synchronizer.sync(job_id):
+                return
+        except Exception as exc:
+            logger.warning(
+                "v2.2 recovery callback deferred job_id_suffix=%s error=%s",
+                str(job_id)[-8:],
+                type(exc).__name__,
+            )
+            return
+    try:
+        # Queue implementations must deduplicate the physical job ID formed
+        # from job_id + generation. False therefore means it already exists.
+        await queue.enqueue(job_id, generation)
+    except Exception as exc:
+        logger.warning(
+            "v2.2 recovery enqueue deferred job_id_suffix=%s error=%s",
+            str(job_id)[-8:],
+            type(exc).__name__,
+        )
+        return
+    await store.mark_recovery_enqueued(job_id, generation=generation, now=now)
+
+
 async def reconcile_once(
     *,
     store: DurableJobStore,
@@ -30,8 +76,26 @@ async def reconcile_once(
     stale_seconds: int,
     max_attempts: int,
 ) -> None:
+    # A prior reconciler may have exited after Redis fenced the stale owner,
+    # after the database callback, or after the idempotent physical enqueue.
+    # Resume that exact generation before considering any new takeover.
+    pending_recoveries = await store.list_pending_recoveries(limit=100)
+    recovery_job_ids = {job_id for job_id, _ in pending_recoveries}
+    for job_id, generation in pending_recoveries:
+        await _finish_pending_recovery(
+            store=store,
+            queue=queue,
+            synchronizer=synchronizer,
+            job_id=job_id,
+            generation=generation,
+            now=now,
+        )
+
     if synchronizer is not None:
         for job_id in await store.list_pending_callbacks(limit=100):
+            if job_id in recovery_job_ids:
+                # The recovery barrier made this cycle's one callback attempt.
+                continue
             try:
                 await synchronizer.sync(job_id)
             except Exception as exc:
@@ -45,6 +109,11 @@ async def reconcile_once(
     for job_id in await store.list_stale_jobs(cutoff, limit=100):
         state = await store.require_state(job_id)
         if state.terminal:
+            continue
+        pending_generation = await store.pending_recovery_generation(job_id)
+        if pending_generation is not None:
+            # Never increment a generation that has not yet crossed the
+            # database-sync-before-enqueue barrier.
             continue
         deadline_exceeded = now >= state.deadline_at
         if deadline_exceeded or (state.status == "running" and state.attempt_count >= max_attempts):
@@ -75,9 +144,17 @@ async def reconcile_once(
                 expected_generation=state.run_generation,
                 now=now,
             )
-            if updated.applied:
-                await queue.enqueue(job_id, updated.state.run_generation)
-        if synchronizer is not None and updated.applied:
+            recovery_generation = await store.pending_recovery_generation(job_id)
+            if recovery_generation is not None:
+                await _finish_pending_recovery(
+                    store=store,
+                    queue=queue,
+                    synchronizer=synchronizer,
+                    job_id=job_id,
+                    generation=recovery_generation,
+                    now=now,
+                )
+        if synchronizer is not None and updated.applied and updated.state.terminal:
             try:
                 await synchronizer.sync(job_id)
             except Exception as exc:

@@ -27,6 +27,18 @@ class RecordingQueue:
         return True
 
 
+class StoreSynchronizer:
+    def __init__(self, store: DurableJobStore) -> None:
+        self.store = store
+        self.generations: list[int] = []
+
+    async def sync(self, job_id: UUID) -> bool:
+        state = await self.store.require_state(job_id)
+        self.generations.append(state.run_generation)
+        await self.store.mark_callback_synced(job_id, state.revision)
+        return True
+
+
 async def _register(store: DurableJobStore, job_id: UUID, now) -> None:
     await store.register_job(
         job_id=job_id,
@@ -53,12 +65,13 @@ async def test_reconciliation_requeues_one_generation_only_once(
         attempt_count=1,
     )
     queue = RecordingQueue()
+    synchronizer = StoreSynchronizer(real_store)
     reconciliation_time = started + timedelta(minutes=4)
 
     await reconcile_once(
         store=real_store,
         queue=queue,
-        synchronizer=None,
+        synchronizer=synchronizer,
         now=reconciliation_time,
         stale_seconds=180,
         max_attempts=3,
@@ -66,7 +79,7 @@ async def test_reconciliation_requeues_one_generation_only_once(
     await reconcile_once(
         store=real_store,
         queue=queue,
-        synchronizer=None,
+        synchronizer=synchronizer,
         now=reconciliation_time,
         stale_seconds=180,
         max_attempts=3,
@@ -76,6 +89,7 @@ async def test_reconciliation_requeues_one_generation_only_once(
     assert state.status == "queued"
     assert state.run_generation == 2
     assert queue.calls == [(job_id, 2)]
+    assert synchronizer.generations == [1, 2]
 
 
 @pytest.mark.parametrize(
