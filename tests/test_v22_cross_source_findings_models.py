@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.jobs_v22.digest import request_digest
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.cross_source_findings_models import (
     CrossSourceFindingsInput,
     CrossSourcePairAssessment,
@@ -18,7 +19,7 @@ def cross_input():
     return CrossSourceFindingsInput(
         case_id=CASE_ID, parent_report_id=PARENT_ID, evaluated_at=NOW + timedelta(hours=1),
         normalized_domain="example.test", first_party_input=source, first_party_result=result,
-        first_party_input_checksum=request_digest(source), first_party_result_checksum=request_digest(result),
+        first_party_input_checksum=semantic_first_party_input_checksum(source), first_party_result_checksum=request_digest(result),
     )
 
 
@@ -28,6 +29,16 @@ def test_input_binds_exact_first_party_input_and_result() -> None:
         CrossSourceFindingsInput.model_validate(value.model_dump(mode="python") | {
             "first_party_result_checksum": f"sha256:{'0' * 64}"
         })
+
+
+def test_input_checksum_is_semantic_for_reversed_gsc_ga4_order() -> None:
+    value = cross_input()
+    reversed_input = value.first_party_input.model_copy(
+        update={"snapshots": list(reversed(value.first_party_input.snapshots))})
+    rebuilt = CrossSourceFindingsInput.model_validate(value.model_dump(mode="python") | {
+        "first_party_input": reversed_input,
+    })
+    assert rebuilt.first_party_input_checksum == value.first_party_input_checksum
     with pytest.raises(ValidationError):
         CrossSourceFindingsInput.model_validate(value.model_dump(mode="python") | {
             "normalized_domain": "Example.test"

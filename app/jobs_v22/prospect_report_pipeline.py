@@ -254,35 +254,24 @@ class PublicProspectReportPipeline:
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
-        public_gbp_snapshot: CustomerPublicGbpSnapshot | None = None,
-        public_gbp_reference: CustomerPublicGbpReference | None = None,
+        public_gbp_snapshot: CustomerPublicGbpSnapshot,
+        public_gbp_reference: CustomerPublicGbpReference,
     ) -> ReportV22:
         del discovery  # Its immutable identities were checked by the executor and collection stage.
         generated_at = self.clock()
-        if (public_gbp_snapshot is None) != (public_gbp_reference is None):
+        try:
+            public_input = build_persisted_public_findings_input(
+                request=request, site_inventory=site_inventory,
+                site_snapshot_id=result_snapshot_id("site", request.case_id, request_digest(site_inventory)),
+                shared_market=shared_market, competitor_collection=competitor_collection,
+                competitor_snapshot_id=result_snapshot_id("competitor", request.case_id,
+                    request_digest(competitor_collection)), public_gbp_snapshot=public_gbp_snapshot,
+                public_gbp_snapshot_id=result_snapshot_id("public_gbp", request.case_id,
+                    request_digest(public_gbp_snapshot)), public_gbp_reference=public_gbp_reference,
+                evaluated_at=generated_at)
+        except (TypeError, ValueError):
             raise DeterministicJobError("V22_PUBLIC_GBP_INPUT_INVALID",
-                "The public GBP snapshot and reference must be provided together.")
-        if public_gbp_snapshot is None:
-            evidence_input = build_prospect_evidence_input(
-                request=request, site_inventory=site_inventory, shared_market=shared_market,
-                competitor_collection=competitor_collection, evaluated_at=generated_at,
-                confirmed_at=submitted_at)
-            public_input = PublicFindingsInput(evidence_input=evidence_input,
-                business_identity=request.business_identity)
-        else:
-            try:
-                public_input = build_persisted_public_findings_input(
-                    request=request, site_inventory=site_inventory,
-                    site_snapshot_id=result_snapshot_id("site", request.case_id, request_digest(site_inventory)),
-                    shared_market=shared_market, competitor_collection=competitor_collection,
-                    competitor_snapshot_id=result_snapshot_id("competitor", request.case_id,
-                        request_digest(competitor_collection)), public_gbp_snapshot=public_gbp_snapshot,
-                    public_gbp_snapshot_id=result_snapshot_id("public_gbp", request.case_id,
-                        request_digest(public_gbp_snapshot)), public_gbp_reference=public_gbp_reference,
-                    evaluated_at=generated_at)
-            except (TypeError, ValueError):
-                raise DeterministicJobError("V22_PUBLIC_GBP_INPUT_INVALID",
-                    "The public GBP snapshot could not be bound to this Case.") from None
+                "The public GBP snapshot could not be bound to this Case.") from None
         findings = await self.findings_stage.build(
             job_id=job_id,
             request=public_input,

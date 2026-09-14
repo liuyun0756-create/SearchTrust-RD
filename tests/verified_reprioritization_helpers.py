@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from app.jobs_v22.digest import request_digest
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.action_models import PublicActionPlanInput
 from app.report_v22.actions import build_public_action_plan, canonical_public_findings
 from app.report_v22.cross_source_findings import build_cross_source_findings
@@ -49,7 +50,7 @@ def verified_request(*, gsc=None, ga4=None, gbp=None):
         snapshots=snapshots,
     )
     first_result = build_first_party_findings(first_input)
-    first_input_checksum = request_digest(first_input)
+    first_input_checksum = semantic_first_party_input_checksum(first_input)
     first_result_checksum = request_digest(first_result)
     cross_input = CrossSourceFindingsInput(
         case_id=CASE,

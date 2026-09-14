@@ -6,6 +6,7 @@ import pytest
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.digest import request_digest
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.jobs_v22.verified_reprioritization_stage import (
     CheckpointedVerifiedReprioritizationStage,
     VerifiedReprioritizationCheckpointError,
@@ -80,6 +81,6 @@ def test_stage_key_is_stable_when_first_party_snapshots_are_reordered() -> None:
     })
     reordered = value.model_copy(update={
         "first_party_input": reordered_input,
-        "first_party_input_checksum": request_digest(reordered_input),
+        "first_party_input_checksum": semantic_first_party_input_checksum(reordered_input),
     })
     assert stage.checkpoint_key(value) == stage.checkpoint_key(reordered)

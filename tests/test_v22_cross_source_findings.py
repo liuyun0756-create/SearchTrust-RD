@@ -4,6 +4,7 @@ from datetime import timedelta
 import pytest
 
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.cross_source_findings import (
     GA4_GBP_TREND, GSC_GBP_TREND, PAGE_CONFLICT, PAGE_OPPORTUNITY, PAGE_TREND,
     WEEKLY_MOVEMENT, build_cross_source_findings,
@@ -35,7 +36,7 @@ def cross_request(gsc=None, ga4=None, gbp=None):
     return CrossSourceFindingsInput(
         case_id=CASE_ID, parent_report_id=PARENT_ID, evaluated_at=NOW + timedelta(hours=1),
         normalized_domain="example.test", first_party_input=source, first_party_result=first_party,
-        first_party_input_checksum=request_digest(source), first_party_result_checksum=request_digest(first_party),
+        first_party_input_checksum=semantic_first_party_input_checksum(source), first_party_result_checksum=request_digest(first_party),
     )
 
 
@@ -105,7 +106,7 @@ def test_snapshot_order_does_not_change_output() -> None:
     reversed_first_party = build_first_party_findings(reversed_input)
     reordered = value.model_copy(update={
         "first_party_input": reversed_input, "first_party_result": reversed_first_party,
-        "first_party_input_checksum": request_digest(reversed_input),
+        "first_party_input_checksum": semantic_first_party_input_checksum(reversed_input),
         "first_party_result_checksum": request_digest(reversed_first_party),
     })
     assert canonical_json_bytes(build_cross_source_findings(value)) == canonical_json_bytes(build_cross_source_findings(reordered))

@@ -110,6 +110,11 @@ GSC、GA4 均为 Verified Core，缺一不可。启动时必须验证：
 缺失或不再能绑定当前 Case 时，启动在扣费前失败并要求用户修复，不能
 通过关闭覆盖率提示继续生成。官方 GBP snapshot 即使不存在，也不影响本阶段资格。
 
+Prospect 的这份公开 GBP 来源由后端 checkpointed SerpAPI 阶段采集，只读公开数据，
+不使用官方 GBP OAuth。阶段从用户确认的规范 Google Maps URL 提取强身份 ID，
+并要求 provider 观测到相同 ID 且网站域名一致。三个后端 SerpAPI 密钥按已有轮换逻辑使用，
+该客户 GBP 操作单独限制 3 次 provider attempt，不占用竞品的 15 次额度。
+
 ## 7. 数据库与安全边界
 
 通过正向 migration 增加 Verified 产品化合同，不修改已应用 migration。

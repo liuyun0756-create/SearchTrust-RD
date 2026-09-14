@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, model_validator
 
 from app.jobs_v22.digest import request_digest
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.evidence_models import EvidenceBuildResult, reject_nonfinite
 from app.report_v22.first_party_findings_models import FirstPartyFindingsInput, FirstPartyFindingsResult
 from app.report_v22.models import EvidenceId, Finding, FindingId, StrictModel
@@ -61,7 +62,7 @@ class CrossSourceFindingsInput(StrictModel):
             or self.first_party_input.evaluated_at != self.evaluated_at
         ):
             raise ValueError("first-party input binding mismatch")
-        if request_digest(self.first_party_input) != self.first_party_input_checksum:
+        if semantic_first_party_input_checksum(self.first_party_input) != self.first_party_input_checksum:
             raise ValueError("first-party input checksum mismatch")
         if request_digest(self.first_party_result) != self.first_party_result_checksum:
             raise ValueError("first-party result checksum mismatch")

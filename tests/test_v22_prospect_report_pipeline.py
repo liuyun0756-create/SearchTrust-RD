@@ -14,6 +14,8 @@ from findings_helpers import collection, market, site
 from test_v22_competitor_collection_stage import discovery, request
 from test_v22_competitor_models import NOW
 from v22_copy_helpers import valid_response
+from public_gbp_helpers import public_source, sample_input
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
@@ -57,6 +59,8 @@ async def test_pipeline_builds_and_checkpoints_a_complete_prospect_report() -> N
         longitude=market_source.payload.target_point.longitude,
     )
     analyze.business_identity.primary_location = analyze.target_market
+    raw_public = sample_input()
+    analyze.business_identity.public_gbp_url = raw_public["reference"]["public_gbp_url"]
     analyze.queries = market_source.payload.queries
     analyze.competitors = [item.competitor for item in competitor_source.payload.competitors]
     analyze.generation_limits.competitor_count = len(analyze.competitors)
@@ -85,6 +89,8 @@ async def test_pipeline_builds_and_checkpoints_a_complete_prospect_report() -> N
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     checkpoints = JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800)
     result = discovery(shared)
+    public = public_source(raw_public)
+    reference = CustomerPublicGbpReference.model_validate(raw_public["reference"])
 
     report = await pipeline.build(
         job_id=JOB_ID,
@@ -95,6 +101,8 @@ async def test_pipeline_builds_and_checkpoints_a_complete_prospect_report() -> N
         competitor_collection=competitor_source.payload,
         submitted_at=NOW,
         checkpoints=checkpoints,
+        public_gbp_snapshot=public.payload,
+        public_gbp_reference=reference,
     )
     repeated = await pipeline.build(
         job_id=JOB_ID,
@@ -105,9 +113,13 @@ async def test_pipeline_builds_and_checkpoints_a_complete_prospect_report() -> N
         competitor_collection=competitor_source.payload,
         submitted_at=NOW,
         checkpoints=checkpoints,
+        public_gbp_snapshot=public.payload,
+        public_gbp_reference=reference,
     )
 
     assert report == repeated
     assert report.report_version.report_id == JOB_ID
     assert report.report_version.copy_model_version == provider.model_version
     assert provider.calls == 1
+    assert any(item.source_type == "gbp" and item.health_status == "healthy"
+        for item in report.data_coverage.sources)

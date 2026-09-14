@@ -34,6 +34,16 @@
       "max_response_bytes": 2000000
     },
     {
+      "id": "serpapi.customer_public_gbp", "provider": "serpapi",
+      "adapter": "app.jobs_v22.customer_public_gbp_stage.SerpApiCustomerPublicGbpProvider",
+      "request_contract": "GET one confirmed canonical public Google Maps place using public data only, Accept-Encoding identity, raw byte and total-time limits, and at most three rotated backend keys",
+      "fixtures": [],
+      "error_mapping": {"timeout_429_5xx_keys": "V22_CUSTOMER_PUBLIC_GBP_UNAVAILABLE", "4xx": "V22_CUSTOMER_PUBLIC_GBP_REJECTED", "malformed_identity_mismatch_no_strong_id": "V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID"},
+      "max_response_bytes": 2000000,
+      "provider_attempt_limit": 3,
+      "oauth_token_fields": []
+    },
+    {
       "id": "firecrawl.map", "provider": "firecrawl",
       "adapter": "app.collectors.site_inventory_firecrawl.FirecrawlMapAdapter",
       "request_contract": "POST /map with url and limit<=500",

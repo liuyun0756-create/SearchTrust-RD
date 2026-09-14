@@ -7,7 +7,7 @@ from app.jobs_v22.result_persistence import SupabaseResultPersister
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.callbacks import SignedCallbackClient
 from test_v22_job_callbacks import build_store
-from test_v22_result_persistence import JOB_ID, inputs
+from test_v22_result_persistence import JOB_ID, inputs, public_values
 
 
 pytestmark = pytest.mark.contract
@@ -58,6 +58,7 @@ async def test_supabase_ack_fixture_matches_result_delivery_contract(provider_fi
             http_client=client,
         )
         request, site, shared, competitor, report = inputs()
+        public, reference = public_values()
         await persister.persist(
             job_id=JOB_ID,
             request=request,
@@ -65,6 +66,8 @@ async def test_supabase_ack_fixture_matches_result_delivery_contract(provider_fi
             shared_market=shared,
             competitor_collection=competitor,
             report=report,
+            public_gbp_snapshot=public,
+            public_gbp_reference=reference,
         )
 
     assert requests[0].url.path == "/rest/v1/rpc/persist_v22_prospect_result"
@@ -94,6 +97,7 @@ async def test_result_delivery_errors_are_stable_and_secret_safe(
             http_client=client,
         )
         request, site, shared, competitor, report = inputs()
+        public, reference = public_values()
         with pytest.raises(error_type) as raised:
             await persister.persist(
                 job_id=JOB_ID,
@@ -102,6 +106,8 @@ async def test_result_delivery_errors_are_stable_and_secret_safe(
                 shared_market=shared,
                 competitor_collection=competitor,
                 report=report,
+                public_gbp_snapshot=public,
+                public_gbp_reference=reference,
             )
     assert raised.value.error_code == error_code
     assert "fixture-key-value" not in str(raised.value)

@@ -70,6 +70,19 @@ async def test_concurrent_claims_never_exceed_operation_limit(ledger) -> None:
 
 
 @pytest.mark.anyio
+async def test_customer_public_gbp_has_three_attempts_separate_from_competitor_budget(ledger) -> None:
+    for _ in range(15):
+        await ledger.claim("serpapi_public_profile")
+    for _ in range(3):
+        await ledger.claim("serpapi_customer_public_gbp")
+    with pytest.raises(CostLimitExceeded):
+        await ledger.claim("serpapi_customer_public_gbp")
+    state = await ledger.state()
+    assert sum(item.operation == "serpapi_public_profile" for item in state.claims) == 15
+    assert sum(item.operation == "serpapi_customer_public_gbp" for item in state.claims) == 3
+
+
+@pytest.mark.anyio
 async def test_disabled_operation_fails_closed_without_provider_attempt(ledger) -> None:
     with pytest.raises(CostLimitExceeded):
         await ledger.claim("jina_fetch")

@@ -25,6 +25,7 @@ from app.report_v22.findings import build_public_findings
 from app.report_v22.cross_source_findings_models import CrossSourceFindingsInput
 from app.report_v22.execution_plan_models import ExecutionPlanBuildInput
 from app.report_v22.first_party_findings_models import FirstPartyFindingsInput
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.models import ReportV22
 from app.report_v22.verified_reprioritization_models import VerifiedReprioritizationInput
 from app.report_v22.version_diff_models import VersionDiffBuildInput
@@ -151,7 +152,7 @@ class VerifiedReportPipeline:
         )
         first_result = await self.first_party_stage.build(
             job_id=job_id, request=first_input, checkpoints=checkpoints)
-        first_checksum = request_digest(first_input)
+        first_checksum = semantic_first_party_input_checksum(first_input)
         cross_input = CrossSourceFindingsInput(
             case_id=resolved.case_id,
             parent_report_id=parent.report_version.report_id,

@@ -259,6 +259,8 @@ async def test_worker_builds_real_isolated_executor_only_when_analyze_is_enabled
     await on_startup(ctx)
     try:
         assert isinstance(ctx["executor"], ProspectV22Executor)
+        assert ctx["executor"].customer_public_gbp_stage.__class__.__name__ == (
+            "CheckpointedCustomerPublicGbpStage")
         assert "app.tasks.pipeline" not in inspect.getsource(
             ProspectV22Executor.execute
         )

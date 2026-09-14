@@ -48,8 +48,8 @@ class SupabaseResultPersister:
         competitor_collection: CompetitorCollectionSnapshot,
         report: ReportV22,
         run_generation: int | None = None,
-        public_gbp_snapshot: CustomerPublicGbpSnapshot | None = None,
-        public_gbp_reference: CustomerPublicGbpReference | None = None,
+        public_gbp_snapshot: CustomerPublicGbpSnapshot,
+        public_gbp_reference: CustomerPublicGbpReference,
     ) -> None:
         if not self.url or not self.service_role_key:
             raise DeterministicJobError(
@@ -59,16 +59,13 @@ class SupabaseResultPersister:
 
         site_checksum = request_digest(site_inventory)
         competitor_checksum = request_digest(competitor_collection)
-        if (public_gbp_snapshot is None) != (public_gbp_reference is None):
-            raise DeterministicJobError("V22_RESULT_PUBLIC_GBP_INVALID",
-                "The public GBP snapshot and its confirmed reference must be saved together.")
         claimed_public_gbp = any(
             item.source_type == "gbp" and item.health_status == "healthy"
             for item in getattr(getattr(report, "data_coverage", None), "sources", [])
         )
-        if claimed_public_gbp and public_gbp_snapshot is None:
+        if not claimed_public_gbp:
             raise DeterministicJobError("V22_RESULT_PUBLIC_GBP_INVALID",
-                "A report cannot claim public GBP evidence without its persisted source.")
+                "A Prospect report must contain its healthy public GBP evidence.")
         payload: dict[str, Any] = {
             "p_job_id": str(job_id),
             "p_case_id": str(request.case_id),
@@ -88,22 +85,21 @@ class SupabaseResultPersister:
         }
         if run_generation is not None:
             payload["p_run_generation"] = run_generation
-        if public_gbp_snapshot is not None and public_gbp_reference is not None:
-            if (public_gbp_snapshot.health_status != "healthy"
-                    or public_gbp_snapshot.identity_match_status != "matched"
-                    or public_gbp_snapshot.subject_reference_checksum != request_digest(public_gbp_reference)
-                    or public_gbp_reference.case_id != request.case_id):
-                raise DeterministicJobError("V22_RESULT_PUBLIC_GBP_INVALID",
-                    "The public GBP snapshot is not safely bound to this Case.")
-            public_checksum = request_digest(public_gbp_snapshot)
-            payload.update({
-                "p_public_gbp_snapshot_id": str(result_snapshot_id(
-                    "public_gbp", request.case_id, public_checksum)),
-                "p_public_gbp_payload": public_gbp_snapshot.model_dump(mode="json"),
-                "p_public_gbp_checksum": public_checksum,
-                "p_public_gbp_expires_at": public_gbp_snapshot.expires_at.isoformat(),
-                "p_public_gbp_reference": public_gbp_reference.model_dump(mode="json"),
-            })
+        if (public_gbp_snapshot.health_status != "healthy"
+                or public_gbp_snapshot.identity_match_status != "matched"
+                or public_gbp_snapshot.subject_reference_checksum != request_digest(public_gbp_reference)
+                or public_gbp_reference.case_id != request.case_id):
+            raise DeterministicJobError("V22_RESULT_PUBLIC_GBP_INVALID",
+                "The public GBP snapshot is not safely bound to this Case.")
+        public_checksum = request_digest(public_gbp_snapshot)
+        payload.update({
+            "p_public_gbp_snapshot_id": str(result_snapshot_id(
+                "public_gbp", request.case_id, public_checksum)),
+            "p_public_gbp_payload": public_gbp_snapshot.model_dump(mode="json"),
+            "p_public_gbp_checksum": public_checksum,
+            "p_public_gbp_expires_at": public_gbp_snapshot.expires_at.isoformat(),
+            "p_public_gbp_reference": public_gbp_reference.model_dump(mode="json"),
+        })
         try:
             response = await self.http_client.post(
                 f"{self.url}/rest/v1/rpc/persist_v22_prospect_result",

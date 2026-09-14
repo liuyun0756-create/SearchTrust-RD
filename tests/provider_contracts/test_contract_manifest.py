@@ -38,6 +38,11 @@ def test_manifest_covers_every_external_provider_boundary() -> None:
             assert entry["max_response_bytes"] == 25_000_000
         else:
             assert 0 <= entry["max_response_bytes"] <= 2_000_000
+    customer_gbp = next(entry for entry in entries
+        if entry["id"] == "serpapi.customer_public_gbp")
+    assert customer_gbp["provider_attempt_limit"] == 3
+    assert customer_gbp["oauth_token_fields"] == []
+    assert "public data only" in customer_gbp["request_contract"]
 
 
 def test_manifested_fixtures_are_json_sanitized_and_offline_only() -> None:

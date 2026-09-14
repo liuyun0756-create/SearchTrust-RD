@@ -11,7 +11,10 @@ from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequest
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.executor import ProspectV22Executor
+from app.jobs_v22.customer_public_gbp_stage import CustomerPublicGbpCollection
 from app.report_v22.models import ReportV22
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference
+from public_gbp_helpers import public_source, sample_input
 from test_v22_competitor_collection_stage import discovery, request, shared_market
 from test_v22_competitor_models import NOW
 
@@ -69,6 +72,19 @@ class CompetitorStage:
         return "competitor-snapshot"
 
 
+class CustomerPublicGbpStage:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def collect(self, **kwargs):
+        self.calls += 1
+        raw = sample_input()
+        return CustomerPublicGbpCollection(
+            reference=CustomerPublicGbpReference.model_validate(raw["reference"]),
+            snapshot=public_source(raw).payload,
+        )
+
+
 class ReportPipeline:
     def __init__(self, report) -> None:
         self.report = report
@@ -106,6 +122,7 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
     result = discovery(shared)
     site_stage = SiteStage()
     competitor_stage = CompetitorStage()
+    public_gbp_stage = CustomerPublicGbpStage()
     report_pipeline = ReportPipeline(prospect_report())
     result_persister = ResultPersister()
     market_store = MarketStore(shared)
@@ -113,6 +130,7 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
         discovery_store=DiscoveryStore(result),
         market_store=market_store,
         site_stage=site_stage,
+        customer_public_gbp_stage=public_gbp_stage,
         competitor_stage=competitor_stage,
         report_pipeline=report_pipeline,
         result_persister=result_persister,
@@ -132,13 +150,16 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
     assert market_store.input_digest == result.input_digest
     assert site_stage.calls == 1
     assert competitor_stage.calls == 1
+    assert public_gbp_stage.calls == 1
     assert competitor_stage.kwargs["discovery"] == result
     assert competitor_stage.kwargs["shared_market"] == shared
     assert report_pipeline.kwargs["site_inventory"] == "site-snapshot"
     assert report_pipeline.kwargs["competitor_collection"] == "competitor-snapshot"
+    assert report_pipeline.kwargs["public_gbp_snapshot"].health_status == "healthy"
     assert result_persister.kwargs["report"] == report
     assert result_persister.kwargs["site_inventory"] == "site-snapshot"
     assert result_persister.kwargs["shared_market"] == shared
+    assert result_persister.kwargs["public_gbp_reference"].case_id == request().case_id
 
 
 @pytest.mark.anyio
@@ -150,6 +171,7 @@ async def test_executor_rejects_discovery_link_that_no_longer_matches_result() -
         discovery_store=DiscoveryStore(result),
         market_store=MarketStore(shared),
         site_stage=site_stage,
+        customer_public_gbp_stage=CustomerPublicGbpStage(),
         competitor_stage=CompetitorStage(),
         report_pipeline=ReportPipeline(prospect_report()),
         clock=lambda: NOW,

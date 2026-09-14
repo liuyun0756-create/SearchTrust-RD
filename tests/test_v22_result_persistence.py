@@ -23,6 +23,16 @@ class Payload(BaseModel):
     schema_version: str
     completed_at: datetime
     limitations: list[str] = []
+    data_coverage: object | None = None
+
+
+class CoverageSource(BaseModel):
+    source_type: str
+    health_status: str
+
+
+class Coverage(BaseModel):
+    sources: list[CoverageSource]
 
 
 @pytest.fixture
@@ -41,8 +51,15 @@ def inputs():
         snapshot_checksum="sha256:" + "b" * 64,
         expires_at=NOW + timedelta(hours=1),
     )
-    report = Payload(schema_version="report_v2_2", completed_at=NOW)
+    report = Payload(schema_version="report_v2_2", completed_at=NOW,
+        data_coverage=Coverage(sources=[CoverageSource(
+            source_type="gbp", health_status="healthy")]))
     return request, site, shared, competitor, report
+
+
+def public_values():
+    raw = sample_input()
+    return public_source(raw).payload, CustomerPublicGbpReference.model_validate(raw["reference"])
 
 
 @pytest.mark.anyio
@@ -60,6 +77,7 @@ async def test_persister_sends_exact_sources_to_one_service_role_rpc() -> None:
             http_client=client,
         )
         request, site, shared, competitor, report = inputs()
+        public, reference = public_values()
         await persister.persist(
             job_id=JOB_ID,
             request=request,
@@ -67,6 +85,8 @@ async def test_persister_sends_exact_sources_to_one_service_role_rpc() -> None:
             shared_market=shared,
             competitor_collection=competitor,
             report=report,
+            public_gbp_snapshot=public,
+            public_gbp_reference=reference,
         )
 
     sent = captured["request"]
@@ -103,16 +123,15 @@ async def test_persister_sends_public_gbp_snapshot_and_exact_reference_atomicall
 
 
 @pytest.mark.anyio
-async def test_persister_rejects_report_claiming_healthy_gbp_without_source() -> None:
+async def test_persister_requires_public_gbp_source_arguments() -> None:
     request, site, shared, competitor, _ = inputs()
     report = SimpleNamespace(data_coverage=SimpleNamespace(sources=[
         SimpleNamespace(source_type="gbp", health_status="healthy")]))
     async with httpx.AsyncClient() as client:
-        with pytest.raises(DeterministicJobError) as raised:
+        with pytest.raises(TypeError):
             await SupabaseResultPersister(url="https://project.supabase.co", service_role_key="secret",
                 http_client=client).persist(job_id=JOB_ID, request=request, site_inventory=site,
                     shared_market=shared, competitor_collection=competitor, report=report)
-    assert raised.value.error_code == "V22_RESULT_PUBLIC_GBP_INVALID"
 
 
 @pytest.mark.anyio
@@ -127,6 +146,7 @@ async def test_persister_classifies_storage_outages_as_retryable() -> None:
                 http_client=client,
             )
             request, site, shared, competitor, report = inputs()
+            public, reference = public_values()
             await persister.persist(
                 job_id=JOB_ID,
                 request=request,
@@ -134,6 +154,8 @@ async def test_persister_classifies_storage_outages_as_retryable() -> None:
                 shared_market=shared,
                 competitor_collection=competitor,
                 report=report,
+                public_gbp_snapshot=public,
+                public_gbp_reference=reference,
             )
 
     with pytest.raises(TransientJobError):

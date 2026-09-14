@@ -17,7 +17,9 @@ from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes
 from app.jobs_v22.errors import DeterministicJobError
+from app.jobs_v22.customer_public_gbp_stage import CustomerPublicGbpCollection
 from app.report_v22.models import ReportV22
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
 
 ExecutorRequest = dict[str, Any] | AnalysisRequestEnvelope
@@ -72,6 +74,18 @@ class CompetitorStage(Protocol):
     ) -> CompetitorCollectionSnapshot: ...
 
 
+class CustomerPublicGbpStage(Protocol):
+    async def collect(
+        self,
+        *,
+        job_id: UUID,
+        request: AnalyzeRequest,
+        submitted_at: datetime,
+        checkpoints: JobCheckpoints,
+        cost_ledger: JobCostLedger | None = None,
+    ) -> CustomerPublicGbpCollection: ...
+
+
 class ProspectReportPipeline(Protocol):
     async def build(
         self,
@@ -82,6 +96,8 @@ class ProspectReportPipeline(Protocol):
         discovery: CompetitorDiscoveryResult,
         shared_market: SharedMarketSnapshot,
         competitor_collection: CompetitorCollectionSnapshot,
+        public_gbp_snapshot: CustomerPublicGbpSnapshot,
+        public_gbp_reference: CustomerPublicGbpReference,
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
@@ -97,6 +113,8 @@ class ResultPersister(Protocol):
         site_inventory: SiteInventorySnapshot,
         shared_market: SharedMarketSnapshot,
         competitor_collection: CompetitorCollectionSnapshot,
+        public_gbp_snapshot: CustomerPublicGbpSnapshot,
+        public_gbp_reference: CustomerPublicGbpReference,
         report: ReportV22,
         run_generation: int | None = None,
     ) -> None: ...
@@ -111,6 +129,7 @@ class ProspectV22Executor:
         discovery_store: DiscoveryStore,
         market_store: MarketStore,
         site_stage: SiteStage,
+        customer_public_gbp_stage: CustomerPublicGbpStage,
         competitor_stage: CompetitorStage,
         report_pipeline: ProspectReportPipeline,
         result_persister: ResultPersister | None = None,
@@ -119,6 +138,7 @@ class ProspectV22Executor:
         self.discovery_store = discovery_store
         self.market_store = market_store
         self.site_stage = site_stage
+        self.customer_public_gbp_stage = customer_public_gbp_stage
         self.competitor_stage = competitor_stage
         self.report_pipeline = report_pipeline
         self.result_persister = result_persister
@@ -199,6 +219,13 @@ class ProspectV22Executor:
             checkpoints=checkpoints,
             cost_ledger=cost_ledger,
         )
+        customer_public_gbp = await self.customer_public_gbp_stage.collect(
+            job_id=job_id,
+            request=analyze,
+            submitted_at=submitted_at,
+            checkpoints=checkpoints,
+            cost_ledger=cost_ledger,
+        )
         competitor_collection = await self.competitor_stage.collect(
             job_id=job_id,
             request=analyze,
@@ -214,6 +241,8 @@ class ProspectV22Executor:
             discovery=discovery,
             shared_market=shared_market,
             competitor_collection=competitor_collection,
+            public_gbp_snapshot=customer_public_gbp.snapshot,
+            public_gbp_reference=customer_public_gbp.reference,
             submitted_at=submitted_at,
             checkpoints=checkpoints,
             cost_ledger=cost_ledger,
@@ -232,6 +261,8 @@ class ProspectV22Executor:
                 site_inventory=site_inventory,
                 shared_market=shared_market,
                 competitor_collection=competitor_collection,
+                public_gbp_snapshot=customer_public_gbp.snapshot,
+                public_gbp_reference=customer_public_gbp.reference,
                 report=validated,
                 run_generation=checkpoints.run_generation,
             )

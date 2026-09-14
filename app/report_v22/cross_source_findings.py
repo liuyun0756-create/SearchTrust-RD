@@ -28,6 +28,7 @@ from app.report_v22.cross_source_pages import (
 from app.report_v22.cross_source_time import complete_week_pairs, spearman, windows_compatible
 from app.report_v22.first_party_findings import _validate_snapshot, build_first_party_findings
 from app.report_v22.first_party_findings_common import bounded_target_key, relative_change
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 
 
 PAGE_TREND = "V22.CROSS_SOURCE.GSC_GA4.PAGE_TREND"
@@ -50,13 +51,6 @@ RULE_ORDER = {
     GA4_GBP_CONFLICT: 14,
 }
 SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-
-
-def semantic_first_party_input_checksum(value) -> str:
-    """Bind the same source set independent of caller traversal order."""
-    payload = value.model_dump(mode="json")
-    payload["snapshots"] = sorted(payload["snapshots"], key=lambda item: item["source_type"])
-    return request_digest(payload)
 
 
 def _domain(value: str) -> str:

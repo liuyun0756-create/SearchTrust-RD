@@ -651,12 +651,22 @@ git commit -m "feat(v2.2): resolve and persist verified inputs"
 
 ### Task 6: 串联 V22-070～074 为独立 Verified pipeline
 
+> 规格审查修正：Task 6 同时补齐 Prospect 生产链的客户公开 GBP 先决条件。
+> Prospect Worker 必须通过独立 checkpointed SerpAPI 阶段（三密钥轮换、最多 3 次尝试、
+> 30 天过期）生成且原子传递 `CustomerPublicGbpSnapshot` 与原始
+> `CustomerPublicGbpReference`；缺失、无强身份 ID 或不匹配均 fail closed。
+> 该修正只使 Prospect 父报告的四来源图可到达，不表示 Task 7 Verified executor 已完成。
+
 **Files:**
 
 - Create: `app/jobs_v22/verified_report_pipeline.py`
+- Create: `app/jobs_v22/customer_public_gbp_stage.py`
 - Create: `tests/verified_pipeline_helpers.py`
 - Create: `tests/test_v22_verified_report_pipeline.py`
 - Modify: `app/jobs_v22/prospect_report_pipeline.py`
+- Modify: `app/jobs_v22/executor.py`
+- Modify: `app/jobs_v22/result_persistence.py`
+- Modify: `app/jobs_v22/worker.py`
 
 - [ ] **Step 1: 写失败的完整 pipeline 测试**
 

@@ -38,6 +38,7 @@ def test_approved_operation_limits_are_fixed() -> None:
         "serpapi_location": 1,
         "serpapi_market_search": 30,
         "serpapi_public_profile": 15,
+        "serpapi_customer_public_gbp": 3,
         "firecrawl_map": 4,
         "jina_fetch": 0,
         "pagespeed_analysis": 5,

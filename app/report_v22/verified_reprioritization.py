@@ -29,6 +29,7 @@ from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_errors import FindingsError
 from app.report_v22.first_party_findings import build_first_party_findings
 from app.report_v22.first_party_findings_errors import FirstPartyFindingsError
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.verified_reprioritization_errors import VerifiedReprioritizationError
 from app.report_v22.verified_reprioritization_identity import measurement_action_id, relation_id
 from app.report_v22.verified_reprioritization_mapping import (
@@ -81,11 +82,14 @@ def _validate_checksums(request: VerifiedReprioritizationInput) -> None:
         (request.public_findings_input, request.public_findings_input_checksum),
         (canonical_public_findings(request.public_findings_result), request.public_findings_result_checksum),
         (request.public_action_plan, request.public_action_plan_checksum),
-        (request.first_party_input, request.first_party_input_checksum),
         (request.first_party_result, request.first_party_result_checksum),
         (request.cross_source_result, request.cross_source_result_checksum),
     )
     if any(request_digest(value) != checksum for value, checksum in pairs):
+        raise VerifiedReprioritizationError("CHECKSUM_MISMATCH")
+    if semantic_first_party_input_checksum(
+        request.first_party_input
+    ) != request.first_party_input_checksum:
         raise VerifiedReprioritizationError("CHECKSUM_MISMATCH")
 
 

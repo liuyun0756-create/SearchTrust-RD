@@ -13,7 +13,7 @@ from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.actions import canonical_public_findings
-from app.report_v22.cross_source_findings import semantic_first_party_input_checksum
+from app.report_v22.first_party_checksum import semantic_first_party_input_checksum
 from app.report_v22.models import StrictModel
 from app.report_v22.verified_reprioritization import build_verified_reprioritization
 from app.report_v22.verified_reprioritization_errors import VerifiedReprioritizationError

@@ -39,6 +39,29 @@ async def test_complete_pipeline_preserves_parent_and_bound_first_party_identiti
     assert all(current_evidence[key] == value for key, value in parent_evidence.items())
 
 
+@pytest.mark.anyio
+async def test_verified_pipeline_has_no_network_collection_or_copy_generation(monkeypatch):
+    from verified_pipeline_helpers import resolve_fixture
+    from app.competitors_v22.collection_stage import CheckpointedCompetitorCollectionStage
+    from app.jobs_v22.copy_provider import DifyControlledCopyProvider
+    from app.jobs_v22.customer_public_gbp_stage import SerpApiCustomerPublicGbpProvider
+    from app.jobs_v22.site_inventory_stage import CheckpointedSiteInventoryStage
+
+    async def forbidden(*args, **kwargs):
+        pytest.fail("Verified pipeline attempted a Prospect collection or copy provider")
+
+    monkeypatch.setattr(CheckpointedSiteInventoryStage, "collect", forbidden)
+    monkeypatch.setattr(SerpApiCustomerPublicGbpProvider, "request", forbidden)
+    monkeypatch.setattr(CheckpointedCompetitorCollectionStage, "collect", forbidden)
+    monkeypatch.setattr(DifyControlledCopyProvider, "generate", forbidden)
+    resolved, request = await resolve_fixture()
+    report = await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
+        job_id=JOB_ID, request=request, resolved_input=resolved,
+        checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+            prefix="test:verified:no-network", ttl_seconds=604800))
+    assert report.report_version.report_type == "verified_execution"
+
+
 def test_parent_fixture_uses_real_public_findings_and_action_plan():
     payload, _, public_result, public_plan = frozen_public_fixture()
     parent = payload["parent_report"]

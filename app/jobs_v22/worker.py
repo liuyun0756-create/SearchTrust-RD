@@ -43,6 +43,7 @@ from app.jobs_v22.callbacks import CallbackSynchronizer, SignedCallbackClient
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.circuit_breaker import RedisCircuitBreaker
 from app.jobs_v22.copy_provider import DifyControlledCopyProvider
+from app.jobs_v22.customer_public_gbp_stage import build_customer_public_gbp_stage
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.cost_models import CostSummaryRecord, pricing_catalog_from_settings
 from app.jobs_v22.cost_persistence import CostSummaryOutbox, CostSummaryPersister
@@ -555,6 +556,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             discovery_store=discovery_store,
             market_store=market_store,
             site_stage=site_stage,
+            customer_public_gbp_stage=build_customer_public_gbp_stage(settings),
             competitor_stage=CheckpointedCompetitorCollectionStage(
                 site_stage=CheckpointedCompetitorSiteStage(site_stage),
                 profile_stage=build_public_profile_stage(settings),
