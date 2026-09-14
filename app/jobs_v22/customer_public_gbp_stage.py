@@ -159,6 +159,16 @@ def _text(value: Any, maximum: int) -> str | None:
     return text if text and len(text) <= maximum else None
 
 
+def _opaque_id(value: Any, maximum: int = 480) -> str | None:
+    """Accept provider identity bytes exactly; never normalize opaque IDs."""
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str) or value != value.strip() or len(value) > maximum:
+        raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
+            "The public Google Business Profile response could not be verified.")
+    return value
+
+
 def _sanitize(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
@@ -167,10 +177,13 @@ def _sanitize(payload: Any) -> dict[str, Any]:
         return {}
     clean: dict[str, Any] = {}
     for key, limit in (("title", 240), ("name", 240), ("website", 2083),
-                       ("address", 500), ("phone", 120), ("place_id", 480),
-                       ("data_id", 480), ("cid", 480), ("place_url", 2083),
+                       ("address", 500), ("phone", 120), ("place_url", 2083),
                        ("link", 2083)):
         value = _text(raw.get(key), limit)
+        if value is not None:
+            clean[key] = value
+    for key in ("place_id", "data_id", "cid"):
+        value = _opaque_id(raw.get(key))
         if value is not None:
             clean[key] = value
     areas = raw.get("service_area") or raw.get("service_areas")
@@ -201,9 +214,9 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
         raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
             "The public Google Business Profile response could not be verified.")
     observed: list[PublicGbpEntityKey] = []
-    place_id = _text(raw.get("place_id"), 480)
-    data_id = _text(raw.get("data_id"), 480)
-    cid = _text(raw.get("cid"), 480) or data_cid(data_id)
+    place_id = _opaque_id(raw.get("place_id"))
+    data_id = _opaque_id(raw.get("data_id"))
+    cid = _opaque_id(raw.get("cid")) or data_cid(data_id)
     if place_id:
         observed.append(PublicGbpEntityKey(kind="place_id", value=place_id))
     if data_id:

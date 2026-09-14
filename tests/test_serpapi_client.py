@@ -165,16 +165,41 @@ def test_serpapi_log_safety_does_not_change_unrelated_application_logs(caplog) -
     assert "api_key=ordinary-application-value" in caplog.text
 
 
-def test_serpapi_log_safety_redacts_payload_and_httpcore_exception(caplog) -> None:
+@pytest.mark.parametrize("logger_name", ["httpx", "httpcore.connection"])
+def test_serpapi_log_safety_preserves_unrelated_http_traceback(caplog, logger_name) -> None:
     from app.integrations.serpapi import install_serpapi_log_safety
+
+    install_serpapi_log_safety()
+    caplog.set_level(logging.DEBUG, logger=logger_name)
+    try:
+        raise RuntimeError("diagnostic-only")
+    except RuntimeError:
+        logging.getLogger(logger_name).exception("connection failed")
+    assert "Traceback" in caplog.text
+    assert "RuntimeError: diagnostic-only" in caplog.text
+    assert "test_serpapi_log_safety_preserves_unrelated_http_traceback" in caplog.text
+    assert caplog.records[-1].exc_info is not None
+    assert caplog.records[-1].exc_info[1].args == ("diagnostic-only",)
+
+
+def test_serpapi_log_safety_redacts_exception_but_preserves_traceback_context(caplog) -> None:
+    from app.integrations.serpapi import install_serpapi_log_safety
+
+    def raise_sensitive_transport_error() -> None:
+        raise RuntimeError("https://serpapi.example/search?api_key=exception-secret&q=x")
 
     install_serpapi_log_safety()
     caplog.set_level(logging.DEBUG, logger="httpcore.connection")
     try:
-        raise RuntimeError("api_key=exception-secret")
+        raise_sensitive_transport_error()
     except RuntimeError:
         logging.getLogger("httpcore.connection").exception(
             'payload={"api_key": "payload-secret"}')
     assert "exception-secret" not in caplog.text
     assert "payload-secret" not in caplog.text
     assert '"api_key": "[REDACTED]"' in caplog.text
+    assert "Traceback" in caplog.text
+    assert "RuntimeError:" in caplog.text
+    assert "raise_sensitive_transport_error" in caplog.text
+    assert caplog.records[-1].exc_info is not None
+    assert "exception-secret" not in str(caplog.records[-1].exc_info[1].args)

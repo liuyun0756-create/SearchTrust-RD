@@ -8,6 +8,7 @@ import logging
 import re
 import time
 import unicodedata
+from copy import copy
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -41,19 +42,72 @@ def _redact_log_arg(value: Any) -> Any:
     return redacted if redacted != rendered else value
 
 
+def _contains_serpapi_secret(value: Any, seen: set[int] | None = None) -> bool:
+    seen = seen or set()
+    if id(value) in seen:
+        return False
+    seen.add(id(value))
+    if isinstance(value, BaseException):
+        return (
+            redact_serpapi_log_value(str(value)) != str(value)
+            or _contains_serpapi_secret(value.args, seen)
+            or _contains_serpapi_secret(vars(value), seen)
+            or (value.__cause__ is not None and _contains_serpapi_secret(value.__cause__, seen))
+            or (value.__context__ is not None and _contains_serpapi_secret(value.__context__, seen))
+        )
+    if isinstance(value, dict):
+        return any(_contains_serpapi_secret(item, seen) for item in value.values())
+    if isinstance(value, (tuple, list)):
+        return any(_contains_serpapi_secret(item, seen) for item in value)
+    rendered = str(value)
+    return redact_serpapi_log_value(rendered) != rendered
+
+
+def _redact_exception(value: BaseException, seen: set[int] | None = None) -> BaseException:
+    seen = seen or set()
+    if id(value) in seen:
+        return value
+    seen.add(id(value))
+    try:
+        redacted = copy(value)
+        redacted.args = tuple(_redact_log_arg(item) for item in value.args)
+        for key, item in vars(value).items():
+            setattr(redacted, key, _redact_log_arg(item))
+        if value.__cause__ is not None:
+            redacted.__cause__ = _redact_exception(value.__cause__, seen)
+        if value.__context__ is not None:
+            redacted.__context__ = _redact_exception(value.__context__, seen)
+        return redacted
+    except Exception:  # pragma: no cover - defensive for exotic provider errors
+        return RuntimeError(redact_serpapi_log_value(str(value)))
+
+
 class SerpApiHttpLogFilter(logging.Filter):
     """Sanitize only HTTP client records that can contain SerpAPI request URLs."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         if record.name == "httpx" or record.name.startswith("httpcore"):
+            exception = record.exc_info[1] if record.exc_info else None
+            contains_secret = (
+                _contains_serpapi_secret(record.msg)
+                or _contains_serpapi_secret(record.args)
+                or (exception is not None and _contains_serpapi_secret(exception))
+                or (record.exc_text is not None
+                    and _contains_serpapi_secret(record.exc_text))
+            )
+            if not contains_secret:
+                return True
             record.msg = _redact_log_arg(record.msg)
             record.args = _redact_log_arg(record.args)
             if record.exc_text:
                 record.exc_text = redact_serpapi_log_value(record.exc_text)
-            # Exception traceback formatting happens after filters run and cannot
-            # be structurally redacted. HTTP-client tracebacks are therefore
-            # omitted; application loggers retain their normal exception output.
-            record.exc_info = None
+            if record.exc_info:
+                exc_type, exc_value, traceback = record.exc_info
+                # Formatter traceback output also includes source-code lines, so
+                # render then structurally redact the complete sensitive trace.
+                record.exc_text = redact_serpapi_log_value(
+                    logging.Formatter().formatException(record.exc_info))
+                record.exc_info = (exc_type, _redact_exception(exc_value), traceback)
         return True
 
 

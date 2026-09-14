@@ -139,6 +139,45 @@ async def test_malformed_or_identity_mismatched_result_fails_closed(response):
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("key", ["place_id", "data_id", "cid"])
+@pytest.mark.parametrize("padding", [" ", "\t"])
+async def test_provider_strong_ids_with_padding_are_rejected_without_normalization(key, padding):
+    from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
+
+    response = payload()
+    response["place_results"][key] = padding + response["place_results"][key]
+
+    class Provider:
+        async def request(self, params, *, before_attempt, after_attempt):
+            return response
+
+    with pytest.raises(DeterministicJobError) as raised:
+        await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
+            job_id=JOB_ID, request=request(), submitted_at=NOW,
+            checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+                prefix="test:v22", ttl_seconds=3600))
+    assert raised.value.error_code == "V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID"
+
+
+@pytest.mark.anyio
+async def test_provider_strong_id_comparison_is_exact_not_numeric_equivalence():
+    from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
+
+    response = payload(cid="0123")
+
+    class Provider:
+        async def request(self, params, *, before_attempt, after_attempt):
+            return response
+
+    with pytest.raises(DeterministicJobError) as raised:
+        await CheckpointedCustomerPublicGbpStage(Provider(), clock=lambda: NOW).collect(
+            job_id=JOB_ID, request=request(), submitted_at=NOW,
+            checkpoints=JobCheckpoints(fakeredis.aioredis.FakeRedis(),
+                prefix="test:v22", ttl_seconds=3600))
+    assert raised.value.error_code == "V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID"
+
+
+@pytest.mark.anyio
 async def test_missing_confirmed_strong_id_fails_before_provider_and_logs_no_secret(caplog):
     from app.jobs_v22.customer_public_gbp_stage import CheckpointedCustomerPublicGbpStage
     analyze = request()
