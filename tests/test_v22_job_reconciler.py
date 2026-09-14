@@ -348,6 +348,121 @@ async def test_missing_recovery_state_is_removed_without_blocking_the_next_job()
 
 
 @pytest.mark.anyio
+async def test_orphaned_active_page_does_not_starve_the_next_valid_job() -> None:
+    store = await build_store()
+    await store.mark_callback_synced(JOB_ID, 1)
+    orphan_ids = [UUID(int=index + 1000) for index in range(100)]
+    await store.redis.zadd(
+        store.keys.active,
+        {str(job_id): NOW.timestamp() - 1 for job_id in orphan_ids},
+    )
+    queue = RecordingQueue()
+    synchronizer = ControlledSynchronizer(store, [True])
+
+    await reconcile_once(
+        store=store,
+        queue=queue,
+        synchronizer=synchronizer,
+        now=NOW + timedelta(minutes=10),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+    assert queue.calls == []
+
+    await reconcile_once(
+        store=store,
+        queue=queue,
+        synchronizer=synchronizer,
+        now=NOW + timedelta(minutes=10, seconds=1),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+    assert queue.calls == [(JOB_ID, 2)]
+    assert await store.active_count() == 1
+
+
+@pytest.mark.anyio
+async def test_orphaned_callback_page_does_not_starve_the_next_valid_job() -> None:
+    store = await build_store()
+    orphan_ids = [UUID(int=index + 1000) for index in range(100)]
+    await store.redis.zadd(
+        store.keys.sync_pending,
+        {str(job_id): 0 for job_id in orphan_ids},
+    )
+    synchronizer = ControlledSynchronizer(store, [True])
+
+    await reconcile_once(
+        store=store,
+        queue=RecordingQueue(),
+        synchronizer=synchronizer,
+        now=NOW + timedelta(seconds=1),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+    assert synchronizer.calls == []
+
+    await reconcile_once(
+        store=store,
+        queue=RecordingQueue(),
+        synchronizer=synchronizer,
+        now=NOW + timedelta(seconds=2),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+    assert synchronizer.calls == [(JOB_ID, 1)]
+    assert await store.pending_callback_count() == 0
+
+
+@pytest.mark.anyio
+async def test_corrupt_active_and_callback_members_do_not_abort_reconciliation() -> None:
+    store = await build_store()
+    await store.redis.zadd(
+        store.keys.active,
+        {
+            "not-a-job-id": NOW.timestamp() - 1000,
+            "00000000000000000000000000000000": NOW.timestamp() - 1000,
+            b"\xff": NOW.timestamp() - 1000,
+        },
+    )
+    await store.redis.zadd(
+        store.keys.sync_pending,
+        {
+            "not-a-job-id": 0,
+            "00000000000000000000000000000000": 0,
+            b"\xff": 0,
+        },
+    )
+    synchronizer = ControlledSynchronizer(store, [True])
+
+    await reconcile_once(
+        store=store,
+        queue=RecordingQueue(),
+        synchronizer=synchronizer,
+        now=NOW + timedelta(seconds=1),
+        stale_seconds=180,
+        max_attempts=3,
+    )
+
+    assert synchronizer.calls == [(JOB_ID, 1)]
+    assert await store.redis.zscore(store.keys.active, "not-a-job-id") is None
+    assert (
+        await store.redis.zscore(
+            store.keys.active, "00000000000000000000000000000000"
+        )
+        is None
+    )
+    assert await store.redis.zscore(store.keys.sync_pending, "not-a-job-id") is None
+    assert (
+        await store.redis.zscore(
+            store.keys.sync_pending, "00000000000000000000000000000000"
+        )
+        is None
+    )
+    assert await store.redis.zscore(store.keys.active, b"\xff") is None
+    assert await store.redis.zscore(store.keys.sync_pending, b"\xff") is None
+
+
+@pytest.mark.anyio
 async def test_terminal_and_generation_mismatch_recovery_markers_are_cleaned() -> None:
     store = await build_store()
     await store.redis.zadd(store.keys.recovery_pending, {str(JOB_ID): 2})

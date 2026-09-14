@@ -53,6 +53,17 @@ def _decode_json(raw: bytes | str) -> Any:
     return json.loads(raw)
 
 
+def _canonical_job_id(value: bytes | str) -> UUID | None:
+    try:
+        decoded = value.decode("utf-8") if isinstance(value, bytes) else value
+        if not isinstance(decoded, str):
+            return None
+        job_id = UUID(decoded)
+    except (UnicodeDecodeError, TypeError, ValueError, AttributeError):
+        return None
+    return job_id if decoded == str(job_id) else None
+
+
 class DurableJobStore:
     """Atomic durable state operations shared by Web and Worker processes."""
 
@@ -451,18 +462,45 @@ class DurableJobStore:
         return int(await self.redis.zcard(self.keys.sync_pending))
 
     async def list_stale_jobs(self, cutoff: datetime, *, limit: int = 100) -> list[UUID]:
+        bounded_limit = min(max(int(limit), 0), 100)
+        if bounded_limit == 0:
+            return []
         values = await self.redis.zrangebyscore(
             self.keys.active,
             min="-inf",
             max=cutoff.timestamp(),
             start=0,
-            num=limit,
+            num=bounded_limit,
+            withscores=True,
         )
-        return [UUID(value.decode() if isinstance(value, bytes) else value) for value in values]
+        jobs: list[UUID] = []
+        for value, score in values:
+            job_id = _canonical_job_id(value)
+            if job_id is None:
+                await self._discard_index_member(
+                    self.keys.active, value, expected_score=float(score)
+                )
+                continue
+            jobs.append(job_id)
+        return jobs
 
     async def list_pending_callbacks(self, *, limit: int = 100) -> list[UUID]:
-        values = await self.redis.zrange(self.keys.sync_pending, 0, limit - 1)
-        return [UUID(value.decode() if isinstance(value, bytes) else value) for value in values]
+        bounded_limit = min(max(int(limit), 0), 100)
+        if bounded_limit == 0:
+            return []
+        values = await self.redis.zrange(
+            self.keys.sync_pending, 0, bounded_limit - 1, withscores=True
+        )
+        jobs: list[UUID] = []
+        for value, score in values:
+            job_id = _canonical_job_id(value)
+            if job_id is None:
+                await self._discard_index_member(
+                    self.keys.sync_pending, value, expected_score=float(score)
+                )
+                continue
+            jobs.append(job_id)
+        return jobs
 
     async def list_pending_recoveries(self, *, limit: int = 100) -> list[tuple[UUID, int]]:
         bounded_limit = min(max(int(limit), 0), 100)
@@ -474,20 +512,18 @@ class DurableJobStore:
         recoveries: list[tuple[UUID, int]] = []
         for value, generation in values:
             try:
-                decoded = value.decode("utf-8") if isinstance(value, bytes) else value
                 numeric_generation = float(generation)
                 if (
-                    not isinstance(decoded, str)
-                    or not math.isfinite(numeric_generation)
+                    not math.isfinite(numeric_generation)
                     or not numeric_generation.is_integer()
                     or numeric_generation < 1
                 ):
                     raise ValueError
-                job_id = UUID(decoded)
-                if decoded != str(job_id):
+                job_id = _canonical_job_id(value)
+                if job_id is None:
                     raise ValueError
                 recoveries.append((job_id, int(numeric_generation)))
-            except (UnicodeDecodeError, TypeError, ValueError, OverflowError):
+            except (TypeError, ValueError, OverflowError):
                 await self._discard_pending_recovery_member(
                     value, expected_score=float(generation)
                 )
@@ -515,16 +551,54 @@ class DurableJobStore:
         *,
         expected_score: float,
     ) -> bool:
-        pending_key = self.keys.recovery_pending
+        return await self._discard_index_member(
+            self.keys.recovery_pending,
+            member,
+            expected_score=expected_score,
+        )
+
+    async def _discard_index_member(
+        self,
+        index_key: str,
+        member: bytes | str,
+        *,
+        expected_score: float,
+    ) -> bool:
+        """CAS-remove exactly the malformed index observation."""
+
         async with self.redis.pipeline(transaction=True) as pipe:
             while True:
                 try:
-                    await pipe.watch(pending_key)
-                    current_score = await pipe.zscore(pending_key, member)
+                    await pipe.watch(index_key)
+                    current_score = await pipe.zscore(index_key, member)
                     if current_score is None or float(current_score) != expected_score:
                         return False
                     pipe.multi()
-                    pipe.zrem(pending_key, member)
+                    pipe.zrem(index_key, member)
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue
+
+    async def discard_missing_job_indexes(self, job_id: UUID) -> bool:
+        """Purge global indexes only while the job state is still absent."""
+
+        state_key = self.keys.state(job_id)
+        index_keys = (
+            self.keys.active,
+            self.keys.sync_pending,
+            self.keys.recovery_pending,
+        )
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(state_key, *index_keys)
+                    if await pipe.exists(state_key):
+                        return False
+                    pipe.multi()
+                    for index_key in index_keys:
+                        pipe.zrem(index_key, str(job_id))
+                    pipe.delete(self.keys.lease(job_id))
                     await pipe.execute()
                     return True
                 except WatchError:
@@ -565,6 +639,7 @@ class DurableJobStore:
                     pipe.zrem(pending_key, str(job_id))
                     pipe.zrem(self.keys.active, str(job_id))
                     pipe.zrem(self.keys.sync_pending, str(job_id))
+                    pipe.delete(self.keys.lease(job_id))
                     await pipe.execute()
                     return True
                 except WatchError:

@@ -275,6 +275,70 @@ async def test_missing_state_cleanup_never_removes_a_newer_recovery_marker(
 
 
 @pytest.mark.anyio
+async def test_missing_state_index_cleanup_does_not_remove_a_recreated_job(
+    store: DurableJobStore,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await register(store)
+    state_key = store.keys.state(JOB_ID)
+    original_state = await store.require_state(JOB_ID)
+    recreated_state = original_state.model_copy(
+        update={"run_generation": 2, "revision": 2}
+    )
+    await store.redis.delete(state_key)
+
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    real_pipeline = store.redis.pipeline
+
+    class PausingPipeline:
+        def __init__(self):
+            self.delegate = real_pipeline(transaction=True)
+            self.paused = False
+
+        async def __aenter__(self):
+            await self.delegate.__aenter__()
+            return self
+
+        async def __aexit__(self, *args):
+            return await self.delegate.__aexit__(*args)
+
+        def __getattr__(self, name: str):
+            return getattr(self.delegate, name)
+
+        async def exists(self, key: str):
+            result = await self.delegate.exists(key)
+            if key == state_key and not self.paused:
+                self.paused = True
+                entered.set()
+                await release.wait()
+            return result
+
+    monkeypatch.setattr(
+        store.redis,
+        "pipeline",
+        lambda transaction=True: PausingPipeline(),
+    )
+    cleanup = asyncio.create_task(store.discard_missing_job_indexes(JOB_ID))
+    await entered.wait()
+    await store.redis.set(
+        state_key,
+        recreated_state.model_dump_json(),
+        ex=store.state_ttl_seconds,
+    )
+    await store.redis.zadd(store.keys.active, {str(JOB_ID): NOW.timestamp() + 1})
+    await store.redis.zadd(store.keys.sync_pending, {str(JOB_ID): 2})
+    await store.redis.zadd(store.keys.recovery_pending, {str(JOB_ID): 2})
+    release.set()
+
+    assert await cleanup is False
+    assert await store.redis.exists(state_key)
+    assert await store.redis.zscore(store.keys.active, str(JOB_ID)) is not None
+    assert await store.redis.zscore(store.keys.sync_pending, str(JOB_ID)) == 2
+    assert await store.pending_recovery_generation(JOB_ID) == 2
+
+
+@pytest.mark.anyio
 async def test_lease_refresh_and_release_require_same_token(store: DurableJobStore) -> None:
     await register(store)
     assert await store.acquire_lease(JOB_ID, generation=1, token="owner", ttl_seconds=180)

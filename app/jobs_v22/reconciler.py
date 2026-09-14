@@ -133,7 +133,14 @@ async def reconcile_once(
                 # The recovery barrier made this cycle's one callback attempt.
                 continue
             try:
+                await store.require_state(job_id)
                 await synchronizer.sync(job_id)
+            except JobNotFound:
+                if await store.discard_missing_job_indexes(job_id):
+                    logger.warning(
+                        "v2.2 orphan job indexes removed job_id_suffix=%s error=JOB_NOT_FOUND",
+                        str(job_id)[-8:],
+                    )
             except Exception as exc:
                 logger.warning(
                     "v2.2 callback reconciliation deferred job_id_suffix=%s error=%s",
@@ -146,8 +153,11 @@ async def reconcile_once(
         try:
             state = await store.require_state(job_id)
         except JobNotFound:
-            # Missing recovery states are normally purged above. An orphan
-            # active index without a marker must not abort the cron either.
+            if await store.discard_missing_job_indexes(job_id):
+                logger.warning(
+                    "v2.2 orphan job indexes removed job_id_suffix=%s error=JOB_NOT_FOUND",
+                    str(job_id)[-8:],
+                )
             continue
         if state.terminal:
             continue

@@ -92,6 +92,54 @@ async def test_reconciliation_requeues_one_generation_only_once(
     assert synchronizer.generations == [1, 2]
 
 
+async def test_real_redis_orphan_and_corrupt_indexes_cannot_starve_valid_work(
+    real_store: DurableJobStore,
+) -> None:
+    job_id = UUID("55555555-5555-4555-8555-555555555552")
+    started = utc_now()
+    await _register(real_store, job_id, started)
+    await real_store.mark_callback_synced(job_id, 1)
+    orphan_ids = [UUID(int=index + 2000) for index in range(100)]
+    await real_store.redis.zadd(
+        real_store.keys.active,
+        {
+            **{
+                str(orphan_id): started.timestamp() - 1
+                for orphan_id in orphan_ids
+            },
+            "not-a-job-id": started.timestamp() - 2,
+        },
+    )
+    await real_store.redis.zadd(
+        real_store.keys.sync_pending,
+        {
+            **{str(orphan_id): 0 for orphan_id in orphan_ids},
+            "not-a-job-id": 0,
+        },
+    )
+    queue = RecordingQueue()
+    synchronizer = StoreSynchronizer(real_store)
+
+    for offset in range(3):
+        await reconcile_once(
+            store=real_store,
+            queue=queue,
+            synchronizer=synchronizer,
+            now=started + timedelta(minutes=10, seconds=offset),
+            stale_seconds=180,
+            max_attempts=3,
+        )
+
+    assert queue.calls == [(job_id, 2)]
+    assert await real_store.redis.zscore(
+        real_store.keys.active, "not-a-job-id"
+    ) is None
+    assert await real_store.redis.zscore(
+        real_store.keys.sync_pending, "not-a-job-id"
+    ) is None
+    assert await real_store.active_count() == 1
+
+
 @pytest.mark.parametrize(
     ("job_id", "deadline_minutes", "attempt_count", "error_code"),
     [
