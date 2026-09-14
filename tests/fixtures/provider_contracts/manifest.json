@@ -76,7 +76,7 @@
     {
       "id": "delivery.result_rpc", "provider": "delivery",
       "adapter": "app.jobs_v22.result_persistence.SupabaseResultPersister",
-      "request_contract": "POST persist_v22_prospect_result with exact source snapshots",
+      "request_contract": "POST persist_v22_prospect_result with exact site, SERP, competitor, and public GBP snapshots plus the original customer GBP reference",
       "fixtures": ["delivery/supabase_ack.json"],
       "error_mapping": {"timeout_429_5xx": "V22_RESULT_PERSISTENCE_UNAVAILABLE", "4xx": "V22_RESULT_PERSISTENCE_REJECTED", "malformed": "V22_RESULT_PERSISTENCE_INVALID_RESPONSE"},
       "max_response_bytes": 65536

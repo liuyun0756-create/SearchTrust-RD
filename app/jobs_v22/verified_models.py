@@ -12,6 +12,7 @@ from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.jobs_v22.digest import request_digest, verified_request_digest
 from app.report_v22.models import ReportV22, StrictModel
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
 if TYPE_CHECKING:
     from app.api.v2.models import AnalyzeRequest
@@ -77,6 +78,39 @@ class VerifiedSnapshotRow(StrictModel, Generic[SnapshotPayload]):
         return self
 
 
+class VerifiedPublicGbpSnapshotRow(StrictModel):
+    snapshot_id: UUID
+    case_id: UUID
+    source_type: Literal["gbp"]
+    schema_version: Literal["customer_public_gbp_snapshot_v1"]
+    normalized_payload: CustomerPublicGbpSnapshot
+    payload_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    created_at: AwareDatetime
+    fetched_at: AwareDatetime
+    expires_at: AwareDatetime
+    reference: CustomerPublicGbpReference
+
+    @model_validator(mode="after")
+    def validate_source(self) -> "VerifiedPublicGbpSnapshotRow":
+        payload = self.normalized_payload
+        if (
+            request_digest(payload) != self.payload_checksum
+            or self.fetched_at != payload.completed_at
+            or self.expires_at != payload.expires_at
+            or self.fetched_at > self.created_at
+            or self.expires_at <= self.created_at
+            or payload.health_status != "healthy"
+            or payload.identity_match_status != "matched"
+            or request_digest(self.reference) != payload.subject_reference_checksum
+            or self.reference.confirmed_at > payload.started_at
+            or self.reference.case_id != self.case_id
+            or payload.request_target.public_gbp_url != self.reference.public_gbp_url
+            or payload.request_target.entity_keys != self.reference.entity_keys
+        ):
+            raise ValueError("public GBP snapshot integrity mismatch")
+        return self
+
+
 class VerifiedResolvedInput(StrictModel):
     """Frozen RPC graph, with lazy linking to avoid API import cycles.
 
@@ -92,6 +126,7 @@ class VerifiedResolvedInput(StrictModel):
     site_snapshot: VerifiedSnapshotRow[SiteInventorySnapshot]
     serp_snapshot: VerifiedSnapshotRow[SerpMarketSnapshot]
     competitor_snapshot: VerifiedSnapshotRow[CompetitorCollectionSnapshot]
+    public_gbp_snapshot: VerifiedPublicGbpSnapshotRow
     first_party_snapshots: list[TrustedFirstPartySnapshot] = Field(min_length=2, max_length=2)
 
     @classmethod
@@ -115,9 +150,9 @@ class VerifiedResolvedInput(StrictModel):
         rows = [self.site_snapshot, self.serp_snapshot, self.competitor_snapshot]
         if [row.source_type for row in rows] != ["site", "serp", "competitor"]:
             raise ValueError("public source mismatch")
-        if any(row.case_id != self.case_id for row in rows + self.first_party_snapshots):
+        if any(row.case_id != self.case_id for row in rows + [self.public_gbp_snapshot] + self.first_party_snapshots):
             raise ValueError("snapshot Case mismatch")
-        all_ids = [row.snapshot_id for row in rows + self.first_party_snapshots]
+        all_ids = [row.snapshot_id for row in rows + [self.public_gbp_snapshot] + self.first_party_snapshots]
         if len(set(all_ids)) != len(all_ids):
             raise ValueError("snapshot identities must be unique")
         sources = {snapshot.source_type for snapshot in self.first_party_snapshots}
@@ -174,7 +209,13 @@ class VerifiedResolvedInput(StrictModel):
                 or self.serp_snapshot.normalized_payload.queries != parent.case_context.queries):
             raise ValueError("public source context mismatch")
         public_id = self.public_gbp_snapshot_id
-        if public_id in set(all_ids) | {self.job_id, parent.report_version.report_id}:
+        if public_id != self.public_gbp_snapshot.snapshot_id:
+            raise ValueError("public GBP parent binding mismatch")
+        reference = self.public_gbp_snapshot.reference
+        if (str(reference.site_url) != str(parent.identity.business.site_url)
+                or reference.public_gbp_url != parent.identity.business.public_gbp_url):
+            raise ValueError("public GBP reference context mismatch")
+        if public_id in {self.job_id, parent.report_version.report_id}:
             raise ValueError("public GBP identity must be distinct")
         return self
 

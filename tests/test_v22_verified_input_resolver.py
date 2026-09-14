@@ -19,6 +19,8 @@ from app.competitors_v22.selection import analysis_discovery_input_digest
 from app.report_v22.models import ReportV22
 from findings_helpers import collection, market, site
 from test_v22_first_party_findings import trusted, gsc_value, ga4_value
+from public_gbp_helpers import public_source, sample_input
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
 OTHER_ID = "99999999-9999-4999-8999-999999999999"
@@ -44,10 +46,10 @@ def binding_request(payload):
 
 def resolved_payload():
     parent = json.loads((FIXTURES / "prospect.json").read_text())
-    parent["identity"]["business"]["public_gbp_url"] = "https://maps.google.com/?cid=123"
+    parent["identity"]["business"]["public_gbp_url"] = "https://maps.google.com/?cid=12345"
     evidence = deepcopy(parent["evidence_index"][0])
     evidence.update(evidence_id="ev_public_gbp", source_type="gbp", snapshot_id=PUBLIC_ID,
-        health_status="healthy", source_locator={"url": "https://maps.google.com/?cid=123", "field_path": "profile.name"})
+        health_status="healthy", source_locator={"url": "https://maps.google.com/?cid=12345", "field_path": "profile.name"})
     parent["evidence_index"].append(evidence)
     for coverage in parent["data_coverage"]["sources"]:
         if coverage["source_type"] == "gbp":
@@ -70,9 +72,21 @@ def resolved_payload():
         trusted("ga4", ga4_value(), 951).model_dump(mode="json")]
     for snapshot in first_party:
         snapshot["case_id"] = parent["identity"]["case_id"]
+    public_raw = sample_input()
+    public_raw["reference"]["case_id"] = UUID(parent["identity"]["case_id"])
+    public_raw["reference"]["public_gbp_url"] = parent["identity"]["business"]["public_gbp_url"]
+    public_raw["request_target"]["public_gbp_url"] = parent["identity"]["business"]["public_gbp_url"]
+    public_raw["record"]["observed_public_gbp_url"] = parent["identity"]["business"]["public_gbp_url"]
+    public = public_source(public_raw, 49)
+    public_row = dict(snapshot_id=PUBLIC_ID, case_id=parent["identity"]["case_id"], source_type="gbp",
+        schema_version=public.payload.schema_version, normalized_payload=public.payload.model_dump(mode="json"),
+        payload_checksum=request_digest(public.payload), created_at=public.binding.fetched_at.isoformat(),
+        fetched_at=public.binding.fetched_at.isoformat(), expires_at=public.binding.expires_at.isoformat(),
+        reference=CustomerPublicGbpReference.model_validate(public_raw["reference"]).model_dump(mode="json"))
     return dict(schema_version="v22_verified_resolved_input_v1", job_id=str(JOB_ID),
         case_id=parent["identity"]["case_id"], parent_report=parent,
-        parent_payload_checksum=verified_request_digest(parent), first_party_snapshots=first_party, **rows)
+        parent_payload_checksum=verified_request_digest(parent), first_party_snapshots=first_party,
+        public_gbp_snapshot=public_row, **rows)
 
 
 async def resolve_response(response, *, payload=None, request=None, handler=None, **options):
@@ -137,6 +151,15 @@ async def test_parent_hash_is_computed_before_defaults_or_whitespace_are_normali
     (("serp_snapshot", "payload_checksum"), "sha256:" + "0" * 64),
     (("serp_snapshot", "expires_at"), "2020-01-01T00:00:00Z"),
     (("competitor_snapshot", "snapshot_id"), OTHER_ID),
+    (("public_gbp_snapshot", "payload_checksum"), "sha256:" + "0" * 64),
+    (("public_gbp_snapshot", "case_id"), OTHER_ID),
+    (("public_gbp_snapshot", "source_type"), "site"),
+    (("public_gbp_snapshot", "schema_version"), "unknown"),
+    (("public_gbp_snapshot", "fetched_at"), "2026-08-29T20:00:00Z"),
+    (("public_gbp_snapshot", "expires_at"), "2026-09-30T20:00:00Z"),
+    (("public_gbp_snapshot", "reference", "entity_keys", 0, "value"), "tampered"),
+    (("public_gbp_snapshot", "reference", "case_id"), OTHER_ID),
+    (("public_gbp_snapshot", "reference", "site_url"), "https://wrong.test/"),
     (("first_party_snapshots", 0, "snapshot_id"), OTHER_ID),
     (("first_party_snapshots", 0, "case_id"), OTHER_ID),
     (("first_party_snapshots", 0, "source_type"), "ga4"),
@@ -222,7 +245,9 @@ def test_resolved_model_can_build_its_schema_without_importing_adapter_first():
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("change", ["payload_schema", "resource", "coverage", "oauth", "competitor_market"])
+@pytest.mark.parametrize("change", ["payload_schema", "resource", "coverage", "oauth", "competitor_market",
+    "public_health", "public_identity", "public_subject", "public_target", "public_completed", "public_expiry",
+    "public_confirmed_after_start"])
 async def test_resolver_rejects_inconsistent_nested_payload_even_after_resigning(change):
     payload = resolved_payload()
     snapshot = payload["first_party_snapshots"][0]
@@ -233,6 +258,18 @@ async def test_resolver_rejects_inconsistent_nested_payload_even_after_resigning
     if change == "competitor_market":
         snapshot = payload["competitor_snapshot"]
         snapshot["normalized_payload"]["market_snapshot_id"] = OTHER_ID
+    if change.startswith("public_"):
+        snapshot = payload["public_gbp_snapshot"]
+        public = snapshot["normalized_payload"]
+        if change == "public_health": public["health_status"] = "unavailable"
+        if change == "public_identity": public["identity_match_status"] = "mismatch"
+        if change == "public_subject": public["subject_reference_checksum"] = "sha256:" + "f" * 64
+        if change == "public_target": public["request_target"]["entity_keys"][0]["value"] = "wrong"
+        if change == "public_completed": public["completed_at"] = "2026-08-29T20:00:00Z"
+        if change == "public_expiry": public["expires_at"] = "2026-09-30T20:00:00Z"
+        if change == "public_confirmed_after_start":
+            snapshot["reference"]["confirmed_at"] = "2026-08-30T00:00:00Z"
+            public["subject_reference_checksum"] = request_digest(snapshot["reference"])
     snapshot["payload_checksum"] = request_digest(snapshot["normalized_payload"])
     with pytest.raises(DeterministicJobError):
         await resolve_response(httpx.Response(200, json=payload), payload=payload)

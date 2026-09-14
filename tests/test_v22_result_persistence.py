@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.result_persistence import SupabaseResultPersister, result_snapshot_id
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference
+from public_gbp_helpers import public_source, sample_input
 
 
 CASE_ID = UUID("11111111-1111-4111-8111-111111111111")
@@ -77,6 +79,40 @@ async def test_persister_sends_exact_sources_to_one_service_role_rpc() -> None:
     assert body["p_site_snapshot_id"] == str(
         result_snapshot_id("site", CASE_ID, body["p_site_checksum"])
     )
+
+
+@pytest.mark.anyio
+async def test_persister_sends_public_gbp_snapshot_and_exact_reference_atomically() -> None:
+    captured = {}
+    raw = sample_input()
+    public = public_source(raw)
+    reference = CustomerPublicGbpReference.model_validate(raw["reference"])
+    async with httpx.AsyncClient(transport=httpx.MockTransport(
+            lambda request: (captured.setdefault("request", request),
+                httpx.Response(200, json=[{"report_id": str(JOB_ID), "idempotent": False}]))[1])) as client:
+        request, site, shared, competitor, report = inputs()
+        await SupabaseResultPersister(url="https://project.supabase.co", service_role_key="secret",
+            http_client=client).persist(job_id=JOB_ID, request=request, site_inventory=site,
+                shared_market=shared, competitor_collection=competitor, report=report,
+                public_gbp_snapshot=public.payload, public_gbp_reference=reference)
+    body = __import__("json").loads(captured["request"].content)
+    assert body["p_public_gbp_payload"] == public.payload.model_dump(mode="json")
+    assert body["p_public_gbp_reference"] == reference.model_dump(mode="json")
+    assert body["p_public_gbp_snapshot_id"] == str(result_snapshot_id(
+        "public_gbp", CASE_ID, body["p_public_gbp_checksum"]))
+
+
+@pytest.mark.anyio
+async def test_persister_rejects_report_claiming_healthy_gbp_without_source() -> None:
+    request, site, shared, competitor, _ = inputs()
+    report = SimpleNamespace(data_coverage=SimpleNamespace(sources=[
+        SimpleNamespace(source_type="gbp", health_status="healthy")]))
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(DeterministicJobError) as raised:
+            await SupabaseResultPersister(url="https://project.supabase.co", service_role_key="secret",
+                http_client=client).persist(job_id=JOB_ID, request=request, site_inventory=site,
+                    shared_market=shared, competitor_collection=competitor, report=report)
+    assert raised.value.error_code == "V22_RESULT_PUBLIC_GBP_INVALID"
 
 
 @pytest.mark.anyio

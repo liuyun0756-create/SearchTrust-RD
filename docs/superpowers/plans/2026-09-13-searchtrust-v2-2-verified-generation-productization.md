@@ -192,7 +192,7 @@ values (p_user_id, p_case_id, p_job_id, 'attempt_debit', -1, resulting_balance);
 
 - [ ] **Step 5: 实现 job-bound 输入解析、结果持久化与孤儿补偿 RPC**
 
-新增 `resolve_v22_verified_analysis_input(p_job_id uuid, p_case_id uuid, p_run_generation integer) returns jsonb`，只从 `verified_analysis_inputs` 绑定读取：冻结 parent、parent 的 `site/serp/competitor` 三份 `data_snapshots`、GSC、GA4。输出固定字段：
+新增 `resolve_v22_verified_analysis_input(p_job_id uuid, p_case_id uuid, p_run_generation integer) returns jsonb`，只从 `verified_analysis_inputs` 绑定读取：冻结 parent、parent 的 `site/serp/competitor/public GBP` 四份 `data_snapshots`、公开 GBP 快照当时的原始 `CustomerPublicGbpReference`、GSC、GA4。输出固定字段：
 
 ```json
 {
@@ -617,7 +617,7 @@ Expected: FAIL，imports 不存在。
 
 `VerifiedResolvedInput` 必须包含：`job_id`、`case_id`、完整 `ReportV22 parent_report`、
 `parent_payload_checksum`、`SiteInventorySnapshot`、`SerpMarketSnapshot` 数据行及 expires/checksum、
-`CompetitorCollectionSnapshot` 和恰好两份 `TrustedFirstPartySnapshot`（GSC、GA4）。验证：所有 Case、snapshot identity、source type、schema、checksum、parent report、public GBP Evidence 与小型 request 完全匹配。
+`CompetitorCollectionSnapshot`、`CustomerPublicGbpSnapshot`、该公开 GBP 快照当时的 `CustomerPublicGbpReference` 和恰好两份 `TrustedFirstPartySnapshot`（GSC、GA4）。验证：所有 Case、snapshot identity、source type、schema、checksum、timestamp、health、identity、reference checksum、parent report、public GBP Evidence 与小型 request 完全匹配。
 
 Task 5 校验 `parent_payload_checksum` 和小型 request 的 `input_checksum` 时必须使用 Task 3 配套增加的 `verified_request_digest`；parent 摘要针对数据库返回的原始 JSON 值，在模型重序列化前计算。`input_checksum` 使用与 Next.js 相同的六个稳定身份字段。已有来源 snapshot、流水线 stage/checkpoint 的摘要仍使用原来的 `request_digest`，不得全面替换。
 

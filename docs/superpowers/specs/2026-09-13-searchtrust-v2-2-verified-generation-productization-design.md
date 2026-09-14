@@ -105,7 +105,9 @@ GSC、GA4 均为 Verified Core，缺一不可。启动时必须验证：
 资料 Evidence。若一侧存在而另一侧不存在，结论为不匹配；若两侧均无 GBP 信息，同样视为
 错误，因为 GBP 信息是该产品排名建议的必要依据。
 
-公共 GBP Evidence 缺失或不再能绑定当前 Case 时，启动在扣费前失败并要求用户修复，不能
+公共 GBP Evidence 必须绑定一份与 Prospect 同时原子持久化的 `CustomerPublicGbpSnapshot` 及其原始
+`CustomerPublicGbpReference`；Verified 不得从 Report Evidence 反推或重建这两份原始输入。公共 GBP Evidence
+缺失或不再能绑定当前 Case 时，启动在扣费前失败并要求用户修复，不能
 通过关闭覆盖率提示继续生成。官方 GBP snapshot 即使不存在，也不影响本阶段资格。
 
 ## 7. 数据库与安全边界

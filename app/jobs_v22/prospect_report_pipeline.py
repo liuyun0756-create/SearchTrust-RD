@@ -13,6 +13,7 @@ from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarke
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import request_digest
+from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.public_findings_stage import CheckpointedPublicFindingsStage
 from app.jobs_v22.result_persistence import result_snapshot_id
 from app.report_v22.action_models import PublicActionPlanInput
@@ -25,6 +26,7 @@ from app.report_v22.evidence_models import (
     EvidenceBuildContext,
     EvidenceBuildInput,
     MissingEvidenceSource,
+    PublicGbpEvidenceSource,
     SerpEvidenceSource,
     SiteEvidenceSource,
     SnapshotBinding,
@@ -32,6 +34,7 @@ from app.report_v22.evidence_models import (
 from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.models import ReportV22
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference
+from app.report_v22.public_gbp_models import CustomerPublicGbpSnapshot
 
 
 class ControlledCopyProvider(Protocol):
@@ -159,6 +162,74 @@ def build_prospect_evidence_input(
     return EvidenceBuildInput(context=context, sources=sources, missing_sources=missing)
 
 
+def build_persisted_public_findings_input(
+    *,
+    request: AnalyzeRequest,
+    site_inventory: SiteInventorySnapshot,
+    site_snapshot_id: UUID,
+    shared_market: SharedMarketSnapshot,
+    competitor_collection: CompetitorCollectionSnapshot,
+    competitor_snapshot_id: UUID,
+    public_gbp_snapshot: CustomerPublicGbpSnapshot,
+    public_gbp_snapshot_id: UUID,
+    public_gbp_reference: CustomerPublicGbpReference,
+    evaluated_at: datetime,
+) -> PublicFindingsInput:
+    """Rebuild public Findings solely from the exact persisted source graph."""
+
+    if (
+        public_gbp_reference.case_id != request.case_id
+        or str(public_gbp_reference.site_url) != str(request.business_identity.site_url)
+        or public_gbp_reference.public_gbp_url != request.business_identity.public_gbp_url
+        or request_digest(public_gbp_reference) != public_gbp_snapshot.subject_reference_checksum
+        or public_gbp_snapshot.request_target.public_gbp_url != public_gbp_reference.public_gbp_url
+        or public_gbp_snapshot.request_target.entity_keys != public_gbp_reference.entity_keys
+        or public_gbp_snapshot.health_status != "healthy"
+        or public_gbp_snapshot.identity_match_status != "matched"
+    ):
+        raise ValueError("public GBP source does not match the persisted Case reference")
+    context = EvidenceBuildContext(
+        case_id=request.case_id,
+        report_type="prospect",
+        site_url=request.business_identity.site_url,
+        primary_service=request.primary_service,
+        target_market=request.target_market,
+        queries=request.queries,
+        search_language=shared_market.snapshot.language,
+        search_device=shared_market.snapshot.device,
+        competitors=request.competitors,
+        evaluated_at=evaluated_at,
+        customer_public_gbp=public_gbp_reference,
+    )
+    site_checksum = request_digest(site_inventory)
+    competitor_checksum = request_digest(competitor_collection)
+    gbp_checksum = request_digest(public_gbp_snapshot)
+    sources = [
+        SiteEvidenceSource(binding=_binding(snapshot_id=site_snapshot_id, case_id=request.case_id,
+            source_type="site", schema_version=site_inventory.schema_version, checksum=site_checksum,
+            fetched_at=site_inventory.completed_at), payload=site_inventory),
+        SerpEvidenceSource(binding=_binding(snapshot_id=shared_market.snapshot_id, case_id=request.case_id,
+            source_type="serp", schema_version=shared_market.snapshot.schema_version,
+            checksum=shared_market.snapshot_checksum, fetched_at=shared_market.snapshot.completed_at,
+            expires_at=shared_market.expires_at), payload=shared_market.snapshot, shared_snapshot=shared_market),
+        CompetitorEvidenceSource(binding=_binding(snapshot_id=competitor_snapshot_id, case_id=request.case_id,
+            source_type="competitor", schema_version=competitor_collection.schema_version,
+            checksum=competitor_checksum, fetched_at=competitor_collection.completed_at),
+            payload=competitor_collection),
+        PublicGbpEvidenceSource(binding=_binding(snapshot_id=public_gbp_snapshot_id, case_id=request.case_id,
+            source_type="gbp", schema_version=public_gbp_snapshot.schema_version, checksum=gbp_checksum,
+            fetched_at=public_gbp_snapshot.completed_at, expires_at=public_gbp_snapshot.expires_at),
+            payload=public_gbp_snapshot),
+    ]
+    missing = [
+        MissingEvidenceSource(source_type="gsc", reason="not_connected"),
+        MissingEvidenceSource(source_type="gbp", gbp_origin="first_party", reason="not_connected"),
+        MissingEvidenceSource(source_type="ga4", reason="not_connected"),
+    ]
+    return PublicFindingsInput(evidence_input=EvidenceBuildInput(context=context, sources=sources,
+        missing_sources=missing), business_identity=request.business_identity)
+
+
 class PublicProspectReportPipeline:
     def __init__(
         self,
@@ -183,23 +254,38 @@ class PublicProspectReportPipeline:
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
+        public_gbp_snapshot: CustomerPublicGbpSnapshot | None = None,
+        public_gbp_reference: CustomerPublicGbpReference | None = None,
     ) -> ReportV22:
         del discovery  # Its immutable identities were checked by the executor and collection stage.
         generated_at = self.clock()
-        evidence_input = build_prospect_evidence_input(
-            request=request,
-            site_inventory=site_inventory,
-            shared_market=shared_market,
-            competitor_collection=competitor_collection,
-            evaluated_at=generated_at,
-            confirmed_at=submitted_at,
-        )
+        if (public_gbp_snapshot is None) != (public_gbp_reference is None):
+            raise DeterministicJobError("V22_PUBLIC_GBP_INPUT_INVALID",
+                "The public GBP snapshot and reference must be provided together.")
+        if public_gbp_snapshot is None:
+            evidence_input = build_prospect_evidence_input(
+                request=request, site_inventory=site_inventory, shared_market=shared_market,
+                competitor_collection=competitor_collection, evaluated_at=generated_at,
+                confirmed_at=submitted_at)
+            public_input = PublicFindingsInput(evidence_input=evidence_input,
+                business_identity=request.business_identity)
+        else:
+            try:
+                public_input = build_persisted_public_findings_input(
+                    request=request, site_inventory=site_inventory,
+                    site_snapshot_id=result_snapshot_id("site", request.case_id, request_digest(site_inventory)),
+                    shared_market=shared_market, competitor_collection=competitor_collection,
+                    competitor_snapshot_id=result_snapshot_id("competitor", request.case_id,
+                        request_digest(competitor_collection)), public_gbp_snapshot=public_gbp_snapshot,
+                    public_gbp_snapshot_id=result_snapshot_id("public_gbp", request.case_id,
+                        request_digest(public_gbp_snapshot)), public_gbp_reference=public_gbp_reference,
+                    evaluated_at=generated_at)
+            except (TypeError, ValueError):
+                raise DeterministicJobError("V22_PUBLIC_GBP_INPUT_INVALID",
+                    "The public GBP snapshot could not be bound to this Case.") from None
         findings = await self.findings_stage.build(
             job_id=job_id,
-            request=PublicFindingsInput(
-                evidence_input=evidence_input,
-                business_identity=request.business_identity,
-            ),
+            request=public_input,
             checkpoints=checkpoints,
         )
         action_plan = build_public_action_plan(
