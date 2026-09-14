@@ -75,3 +75,11 @@ async def test_stage_version_change_uses_a_new_checkpoint(monkeypatch) -> None:
     monkeypatch.setattr(first_party_findings_stage, "STAGE_VERSION", "v22_first_party_findings_stage_v2")
     await stage.build(job_id=JOB_ID, request=value, checkpoints=store)
     assert builder.calls == 2
+
+
+def test_stage_key_is_stable_when_gsc_ga4_snapshots_are_reversed() -> None:
+    stage = CheckpointedFirstPartyFindingsStage()
+    value = request(trusted("gsc", gsc_value(), 801), trusted("ga4", ga4_value(), 802))
+    reversed_value = value.model_copy(
+        update={"snapshots": list(reversed(value.snapshots))})
+    assert stage.checkpoint_key(value) == stage.checkpoint_key(reversed_value)

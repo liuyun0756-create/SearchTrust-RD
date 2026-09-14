@@ -57,10 +57,13 @@ def _request(value: FirstPartyFindingsRequest) -> FirstPartyFindingsInput:
 
 
 def _digest(value: FirstPartyFindingsInput) -> str:
+    payload = value.model_dump(mode="json")
+    payload["snapshots"] = sorted(
+        payload["snapshots"], key=lambda item: item["source_type"])
     return request_digest({
         "stage_version": STAGE_VERSION,
         "ruleset_version": RULESET_VERSION,
-        "request": value.model_dump(mode="json"),
+        "request": payload,
     })
 
 
