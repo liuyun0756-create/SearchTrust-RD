@@ -91,7 +91,7 @@ def frozen_public_fixture():
     return payload, public_input, public_result, public_plan
 
 
-async def resolve_fixture(*, reverse_first_party: bool = False):
+async def resolve_fixture(*, reverse_first_party: bool = False, run_generation: int = 1):
     import httpx
 
     from app.jobs_v22.verified_input_resolver import SupabaseVerifiedInputResolver
@@ -111,5 +111,7 @@ async def resolve_fixture(*, reverse_first_party: bool = False):
     async with httpx.AsyncClient(transport=httpx.MockTransport(
             lambda _: httpx.Response(200, stream=httpx.ByteStream(encoded)))) as client:
         resolved = await SupabaseVerifiedInputResolver(url="https://storage.example", service_role_key="secret",
-            http_client=client).resolve(job_id=JOB_ID, request=request, run_generation=1)
+            http_client=client).resolve(
+                job_id=JOB_ID, request=request, run_generation=run_generation
+            )
     return resolved, request

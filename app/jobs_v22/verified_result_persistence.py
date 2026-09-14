@@ -28,7 +28,9 @@ class SupabaseVerifiedResultPersister:
             report = ReportV22.model_validate(report.model_dump(mode="python") if isinstance(report, ReportV22) else report)
             # Provenance belongs to the resolver-created capability, never to
             # Pydantic state that could be copied or reconstructed by a caller.
-            payload = require_trusted_verified_input(resolved_input)
+            payload = require_trusted_verified_input(
+                resolved_input, run_generation=run_generation
+            )
             resolved_input = VerifiedResolvedInput.model_validate(payload.model_dump(mode="python"))
             resolved_input.validate_request(job_id=job_id, request=request)
             parent = resolved_input.parent_report

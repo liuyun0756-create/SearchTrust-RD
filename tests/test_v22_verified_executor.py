@@ -108,7 +108,7 @@ async def test_router_fails_closed_for_unknown_or_malformed_envelopes(payload) -
 
 @pytest.mark.anyio
 async def test_verified_executor_preserves_trusted_capability_and_order() -> None:
-    resolved, request = await resolve_fixture()
+    resolved, request = await resolve_fixture(run_generation=7)
     report = await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
         job_id=JOB_ID,
         request=request,
@@ -117,6 +117,7 @@ async def test_verified_executor_preserves_trusted_capability_and_order() -> Non
             fakeredis.aioredis.FakeRedis(),
             prefix="test:verified:fixture",
             ttl_seconds=3600,
+            run_generation=7,
         ),
     )
     calls: list[str] = []
@@ -171,8 +172,8 @@ async def test_verified_executor_preserves_trusted_capability_and_order() -> Non
 
 @pytest.mark.anyio
 async def test_verified_executor_re_resolves_on_restart_instead_of_reconstructing_trust() -> None:
-    first, request = await resolve_fixture()
-    second, _ = await resolve_fixture()
+    first, request = await resolve_fixture(run_generation=2)
+    second, _ = await resolve_fixture(run_generation=2)
     report = await VerifiedReportPipeline(clock=lambda: VERIFIED_AT).build(
         job_id=JOB_ID,
         request=request,
@@ -181,6 +182,7 @@ async def test_verified_executor_re_resolves_on_restart_instead_of_reconstructin
             fakeredis.aioredis.FakeRedis(),
             prefix="test:verified:restart:fixture",
             ttl_seconds=3600,
+            run_generation=2,
         ),
     )
     resolver = AsyncMock()
@@ -223,9 +225,41 @@ async def test_verified_executor_re_resolves_on_restart_instead_of_reconstructin
 
 
 @pytest.mark.anyio
+async def test_verified_executor_rejects_a_capability_sealed_for_an_older_generation() -> None:
+    resolved, request = await resolve_fixture(run_generation=1)
+    pipeline = AsyncMock()
+    persister = AsyncMock()
+    executor = VerifiedV22Executor(
+        resolver=AsyncMock(resolve=AsyncMock(return_value=resolved)),
+        pipeline=pipeline,
+        persister=persister,
+    )
+    envelope = VerifiedRequestEnvelope(
+        schema_version="v22_verified_request_envelope_v1",
+        verified_request=request,
+    ).model_dump(mode="json")
+
+    with pytest.raises(DeterministicJobError, match="V22_VERIFIED_INPUT_INVALID"):
+        await executor.execute(
+            job_id=JOB_ID,
+            request=envelope,
+            submitted_at=VERIFIED_AT,
+            checkpoints=JobCheckpoints(
+                fakeredis.aioredis.FakeRedis(),
+                prefix="test:verified:stale-capability",
+                ttl_seconds=3600,
+                run_generation=2,
+            ),
+        )
+
+    pipeline.build.assert_not_awaited()
+    persister.persist.assert_not_awaited()
+
+
+@pytest.mark.anyio
 async def test_verified_executor_retries_the_same_atomic_persist_after_response_loss() -> None:
-    first, request = await resolve_fixture()
-    second, _ = await resolve_fixture()
+    first, request = await resolve_fixture(run_generation=3)
+    second, _ = await resolve_fixture(run_generation=3)
     resolver = AsyncMock()
     resolver.resolve.side_effect = [first, second]
     sent_payloads: list[dict] = []

@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -391,41 +391,52 @@ async def test_verified_worker_recovers_after_atomic_persist_commit_ack_is_lost(
         "report_id": None,
         "charge_state": "reserved",
         "debit_count": 1,
+        "stored_generation": 1,
+        "report_payload": None,
     }
     persisted_payloads: list[dict] = []
+    resolved_generations: list[int] = []
+    persisted_generations: list[int] = []
 
     async def database_rpc(request: httpx.Request) -> httpx.Response:
         path = request.url.path
         body = json.loads(request.content)
         if path.endswith("/resolve_v22_verified_analysis_input"):
-            active = database["status"] in {"queued", "running"}
-            exact_replay = (
+            requested_generation = body["p_run_generation"]
+            resolved_generations.append(requested_generation)
+            active = (
+                database["status"] in {"queued", "running"}
+                and requested_generation == database["stored_generation"]
+            )
+            settled_takeover_replay = (
                 database["status"] == "succeeded"
                 and database["report_id"] == str(JOB_ID)
                 and database["charge_state"] == "consumed"
+                and database["report_payload"] is not None
+                and requested_generation >= database["stored_generation"]
             )
             return httpx.Response(
-                200 if active or exact_replay else 409,
-                json=frozen_payload if active or exact_replay else {"code": "invalid"},
+                200 if active or settled_takeover_replay else 409,
+                json=(frozen_payload if active or settled_takeover_replay
+                      else {"code": "invalid"}),
                 request=request,
             )
         if path.endswith("/persist_v22_verified_result"):
             persisted_payloads.append(body)
+            persisted_generations.append(body["p_run_generation"])
             if database["status"] in {"queued", "running"}:
+                assert body["p_run_generation"] == database["stored_generation"] == 1
                 database.update(
                     status="succeeded",
                     report_id=str(JOB_ID),
                     charge_state="consumed",
+                    report_payload=body["p_report_payload"],
                 )
                 # PostgreSQL committed all three rows; only the acknowledgement
-                # disappeared on the service-role HTTP connection.
-                raise httpx.ReadTimeout("ack lost after commit", request=request)
-            assert database == {
-                "status": "succeeded",
-                "report_id": str(JOB_ID),
-                "charge_state": "consumed",
-                "debit_count": 1,
-            }
+                # disappeared because the worker process exited.
+                raise asyncio.CancelledError
+            assert body["p_run_generation"] > database["stored_generation"]
+            assert body["p_report_payload"] == database["report_payload"]
             return httpx.Response(
                 200,
                 json=[{"report_id": str(JOB_ID), "idempotent": True}],
@@ -481,12 +492,25 @@ async def test_verified_worker_recovers_after_atomic_persist_commit_ack_is_lost(
             "state_ttl_seconds": 604800,
             "redis": redis,
         }
-        with pytest.raises(Retry):
+        with pytest.raises(asyncio.CancelledError):
             await execute_v22_job(ctx, str(JOB_ID), 1)
-        await execute_v22_job(ctx, str(JOB_ID), 1)
+        abandoned = await store.require_state(JOB_ID)
+        assert abandoned.status == "running"
+        assert abandoned.run_generation == 1
+
+        takeover = await store.take_over_stale(
+            JOB_ID,
+            expected_generation=1,
+            now=NOW + timedelta(minutes=4),
+        )
+        assert takeover.applied is True
+        assert takeover.state.status == "queued"
+        assert takeover.state.run_generation == 2
+        await execute_v22_job(ctx, str(JOB_ID), 2)
 
     state = await store.require_state(JOB_ID)
     assert state.status == "succeeded"
+    assert state.run_generation == 2
     assert state.attempt_count == 2
     assert state.report is not None
     assert state.report.report_version.report_type == "verified_execution"
@@ -495,9 +519,13 @@ async def test_verified_worker_recovers_after_atomic_persist_commit_ack_is_lost(
         "report_id": str(JOB_ID),
         "charge_state": "consumed",
         "debit_count": 1,
+        "stored_generation": 1,
+        "report_payload": persisted_payloads[0]["p_report_payload"],
     }
     assert len(persisted_payloads) == 2
-    assert persisted_payloads[0] == persisted_payloads[1]
+    assert persisted_payloads[0]["p_report_payload"] == persisted_payloads[1]["p_report_payload"]
+    assert resolved_generations == [1, 2]
+    assert persisted_generations == [1, 2]
     assert len(outbox.summaries) == 1
     assert outbox.summaries[0].job_kind == "verified_report"
     assert outbox.summaries[0].status == "succeeded"

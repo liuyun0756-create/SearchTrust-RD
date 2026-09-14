@@ -127,7 +127,9 @@ class VerifiedV22Executor:
             run_generation=checkpoints.run_generation,
         )
         try:
-            trusted_payload = require_trusted_verified_input(resolved)
+            trusted_payload = require_trusted_verified_input(
+                resolved, run_generation=checkpoints.run_generation
+            )
             trusted_payload.validate_request(job_id=job_id, request=verified_request)
         except (TypeError, ValueError, ValidationError, RecursionError, OverflowError):
             raise DeterministicJobError(

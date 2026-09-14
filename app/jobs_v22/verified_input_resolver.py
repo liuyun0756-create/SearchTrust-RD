@@ -37,16 +37,20 @@ class TrustedVerifiedInput:
 class _TrustedInputSeal:
     graph_digest: str
     raw_parent_verified_digest: str
+    run_generation: int
 
 
 _TRUSTED_INPUT_SEALS: WeakKeyDictionary[TrustedVerifiedInput, _TrustedInputSeal] = WeakKeyDictionary()
 
 
-def require_trusted_verified_input(value: TrustedVerifiedInput) -> VerifiedResolvedInput:
+def require_trusted_verified_input(
+    value: TrustedVerifiedInput, *, run_generation: int
+) -> VerifiedResolvedInput:
     if type(value) is not TrustedVerifiedInput:
         raise ValueError("input was not returned by the trusted resolver")
     seal = _TRUSTED_INPUT_SEALS.get(value)
-    if (seal is None or request_digest(value.payload) != seal.graph_digest
+    if (seal is None or seal.run_generation != run_generation
+            or request_digest(value.payload) != seal.graph_digest
             or value.parent_payload_checksum != seal.raw_parent_verified_digest):
         raise ValueError("input provenance is missing or the resolved graph was mutated")
     return value.payload
@@ -145,6 +149,7 @@ class SupabaseVerifiedInputResolver:
             _TRUSTED_INPUT_SEALS[trusted] = _TrustedInputSeal(
                 graph_digest=request_digest(result),
                 raw_parent_verified_digest=result.parent_payload_checksum,
+                run_generation=run_generation,
             )
             return trusted
         except (ValueError, TypeError, RecursionError, OverflowError):

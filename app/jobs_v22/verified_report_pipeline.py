@@ -43,9 +43,12 @@ class VerifiedReportPipeline:
 
     @staticmethod
     def _validated(*, job_id: UUID, request: VerifiedTaskRequest,
-                   resolved_input: TrustedVerifiedInput) -> VerifiedResolvedInput:
+                   resolved_input: TrustedVerifiedInput,
+                   run_generation: int) -> VerifiedResolvedInput:
         try:
-            raw = require_trusted_verified_input(resolved_input)
+            raw = require_trusted_verified_input(
+                resolved_input, run_generation=run_generation
+            )
             checked = VerifiedResolvedInput.model_validate_json(canonical_json_bytes(raw))
             checked.validate_request(job_id=job_id, request=request)
             return checked
@@ -98,7 +101,16 @@ class VerifiedReportPipeline:
 
     async def build(self, *, job_id: UUID, request: VerifiedTaskRequest,
                     resolved_input: TrustedVerifiedInput, checkpoints: JobCheckpoints) -> ReportV22:
-        resolved = self._validated(job_id=job_id, request=request, resolved_input=resolved_input)
+        resolved = self._validated(
+            job_id=job_id,
+            request=request,
+            resolved_input=resolved_input,
+            run_generation=(
+                checkpoints.run_generation
+                if checkpoints.run_generation is not None
+                else 1
+            ),
+        )
         parent = resolved.parent_report
 
         public_input = build_persisted_public_findings_input(
