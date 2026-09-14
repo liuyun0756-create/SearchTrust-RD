@@ -56,7 +56,7 @@ report-version comparison”对应的开放步骤。
 3. 服务端计算 Verified Core：父报告存在，GSC 与 GA4 均健康、匹配、未过期，公共 GBP
    Evidence 可用，前后端双开关同时开启。
 4. 用户有 credit 时明确确认“Generate Verified Action Plan · uses 1 credit”。
-5. 新数据库原子入口校验所有绑定，扣除 1 credit，创建 `verified_report` job、attempt 和
+5. 服务端先验证上游配置，再把实际被摘要的 Prospect ID 与 checksum 一并传入新数据库原子入口；入口在 Case 锁内比对 exact parent，校验所有绑定后扣除 1 credit，创建 `verified_report` job、attempt 和
    charge，然后才允许将不可变请求信封放入现有队列。
 6. Worker 按 `job_type=verified_report` 路由到独立 Verified pipeline，不重新抓取网站或
    竞品，不重跑 Prospect 市场发现。
@@ -132,14 +132,16 @@ GSC、GA4 均为 Verified Core，缺一不可。启动时必须验证：
 新增 service-role-only 原子入口，负责：
 
 1. 验证调用用户、Case 所有权和 Case 状态；
-2. 验证唯一、不可变的 parent Prospect；
+2. 验证唯一、不可变的 parent Prospect，并在 Case 锁内比较服务端传入的 `p_expected_parent_report_id` 与该 parent；该 ID 必须是生成 `p_parent_payload_checksum` 时实际读取的报告，缺失或不符在任何扣费/job/input 创建前失败；
 3. 解析并验证当前合格的 GSC/GA4 与公共 GBP Evidence；
 4. 验证 `users.audit_credits >= 1`；
 5. 原子扣减 1 credit；
 6. 创建 `verified_report` job、attempt、charge、credit ledger 和输入绑定；
-7. 对相同幂等键返回同一个 job，不重复扣费。
+7. 对相同幂等键验证被冻结的 expected parent ID 和 checksum 等身份后返回同一个 job，不重复扣费。
 
 身份、来源、父报告、开关或余额问题必须在扣费前返回稳定错误。
+
+Verified parent 与请求身份摘要采用递归 UTF-16 key 排序、保留数组顺序、ECMAScript `JSON.stringify` 原始值与有限 IEEE-754 binary64 数字语义（例如 `1.0→1`、`-0→0`、指数边界统一）。后端使用独立的 `verified_canonical_json_bytes` / `verified_request_digest` 与 Next.js 对齐；已有来源及 checkpoint 的 orjson 摘要函数保持不变。parent 必须摘要数据库加载的完整原始 JSON，避免模型补默认值或类型转换改变字节。
 
 ### 7.3 `persist_v22_verified_result`
 

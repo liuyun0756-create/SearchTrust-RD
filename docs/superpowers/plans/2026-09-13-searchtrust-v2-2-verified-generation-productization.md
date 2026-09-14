@@ -75,8 +75,8 @@ const started = await db.query<{
   parent_report_id: string; gsc_snapshot_id: string; ga4_snapshot_id: string;
   public_gbp_snapshot_id: string; audit_credits: number;
 }>(
-  `select * from public.start_v22_verified_analysis($1,$2,$3,$4,$5,null)`,
-  [ownerId, caseId, verifiedJobId, "verified:case:attempt:1", parentChecksum],
+  `select * from public.start_v22_verified_analysis($1,$2,$3,$4,$5,$6,null)`,
+  [ownerId, caseId, verifiedJobId, "verified:case:attempt:1", parentChecksum, prospectReportId],
 );
 expect(started.rows[0]).toMatchObject({
   job_id: verifiedJobId,
@@ -135,7 +135,7 @@ grant select, insert, update, delete on public.verified_analysis_inputs to servi
 revoke all on public.verified_analysis_inputs from public, anon, authenticated;
 ```
 
-`parent_payload_checksum` 由服务端传入且必须与完整 `ReportV22` 的 canonical SHA-256 相同；RPC 把已锁定的 exact `report_v2_2` 复制进输入表，结果持久化时同时比较 JSONB 与 checksum，防止后续 report row 变化。
+`parent_payload_checksum` 由服务端传入且必须与完整 `ReportV22` 的 canonical SHA-256 相同。服务端同时传入实际被摘要的 `p_expected_parent_report_id`；RPC 在 Case 锁内解析 parent 后必须比较该 ID，缺失或不符在扣费、创建 job/input 前返回 `V22_VERIFIED_PARENT_CHANGED`。幂等重放也必须比较被冻结的 parent ID 与 checksum，不符返回身份冲突。RPC 把已锁定的 exact `report_v2_2` 复制进输入表，结果持久化时同时比较 JSONB 与 checksum，防止后续 report row 变化。增加初次调用及重放 parent 不符的无新增扣费/无新增 job 回归测试。
 
 新增 `validate_v22_case_latest_verified_report()` constraint trigger，要求
 `latest_verified_report_id` 指向同 user、同 Case、`report_type='verified_execution'` 的报告；
@@ -152,6 +152,7 @@ create function public.start_v22_verified_analysis(
   p_job_id uuid,
   p_idempotency_key text,
   p_parent_payload_checksum text,
+  p_expected_parent_report_id uuid,
   p_previous_job_id uuid default null
 ) returns table (
   job_id uuid, created boolean, idempotent boolean,
@@ -214,9 +215,9 @@ values (p_user_id, p_case_id, p_job_id, 'attempt_debit', -1, resulting_balance);
 对三个新 RPC 执行：
 
 ```sql
-revoke all on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)
+revoke all on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)
   from public, anon, authenticated;
-grant execute on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)
+grant execute on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)
   to service_role;
 ```
 
@@ -421,15 +422,15 @@ export interface VerifiedTaskRequest {
 }
 ```
 
-`digest.ts` 使用 `node:crypto.createHash("sha256")`，对象 key 递归排序、数组保持顺序、原始值用
-`JSON.stringify`，输出 `sha256:<64 hex>`。测试使用后端 `request_digest` 已知 fixture 锁定跨语言
-parity。
+`digest.ts` 使用 `node:crypto.createHash("sha256")`，对象 key 按 UTF-16 递归排序、数组保持顺序、原始值用 `JSON.stringify`，输出 `sha256:<64 hex>`。数字统一采用有限 IEEE-754 binary64 的 ECMAScript 语义：`-0→0`、`1.0→1`、`1e-6→0.000001`、`1e-7→1e-7`、`1e20` 使用定点、`1e21` 使用指数；非法或非纯 JSON 值拒绝。
 
-`SupabaseVerifiedAnalysisRepository.start()` 先读取 Case 的 `latest_report_id`；如果 latest 是 Verified，就沿它的 `parent_report_id` 读取原始 Prospect，否则直接读取 latest Prospect。使用该 canonical digest 计算 parent checksum，再调用 `start_v22_verified_analysis`；对 RPC 返回值中的全部 IDs 计算 `input_checksum`。不得接收调用方传入 parent/snapshot ID。
+后端 `app/jobs_v22/digest.py` 增加 Verified 专用 `verified_canonical_json_bytes` / `verified_request_digest`，用于该边界的 parent 与 stable identity checksum。测试锁定相同数字边界、精度、完整 schema-valid Prospect 改写 fixture 的字节/摘要；现有 `canonical_json_bytes` / `request_digest` 的 orjson 编码保持不变，避免更改已有 checkpoint/source snapshot 身份。
+
+`SupabaseVerifiedAnalysisRepository.start()` 先读取 Case 的 `latest_report_id`；如果 latest 是 Verified，就沿它的 `parent_report_id` 读取原始 Prospect，否则直接读取 latest Prospect。使用该 canonical digest 计算完整原始 JSON 的 parent checksum，再将服务端解析的 exact parent ID 作为 `p_expected_parent_report_id` 一并调用 `start_v22_verified_analysis`；对稳定身份 `{case_id, job_id, parent_report_id, gsc_snapshot_id, ga4_snapshot_id, public_gbp_snapshot_id}` 计算 `input_checksum`，绑定 ID 仅取经严格校验的 RPC 返回值。不得接收浏览器传入 parent/snapshot ID；不得将可变的 created/idempotent/audit_credits 纳入摘要。
 
 - [ ] **Step 4: 实现 submit handler 与路由**
 
-handler 的依赖注入与 `analysis-v22/handlers.ts` 保持相同超时、安全错误和内部 bearer header。处理顺序为 user→flag→Case ID/header→空 body→RPC start→Railway `/api/v2/verified-analyze`。若数据库已扣费但 Railway 立即不可达，不直接修改余额；让 durable database job 通过 Task 7 的 reconciliation 进入失败事件并补偿一次，避免 handler 级重复退款。
+handler 的依赖注入与 `analysis-v22/handlers.ts` 保持相同超时、安全错误和内部 bearer header。处理顺序为 user→flag→Case ID/header→空 body→验证上游 base URL/token→RPC start→Railway `/api/v2/verified-analyze`；配置缺失或无效时返回 503，且零 start、零 fetch。超时覆盖收到 headers 后读取 response body 的阶段，AbortError 返回 504、网络读取错误保留服务不可用语义，仅 JSON 语法/合同错误返回 502。若数据库已扣费但 Railway 立即不可达，不直接修改余额；让 durable database job 通过 Task 7 的 reconciliation 进入失败事件并补偿一次，避免 handler 级重复退款。
 
 `server.ts` 自己加载 `V22_API_BASE_URL` 与 `V22_INTERNAL_API_TOKEN`，构造并导出
 `submitVerifiedAnalysis`。Route 固定 fail closed：
@@ -617,6 +618,8 @@ Expected: FAIL，imports 不存在。
 `VerifiedResolvedInput` 必须包含：`job_id`、`case_id`、完整 `ReportV22 parent_report`、
 `parent_payload_checksum`、`SiteInventorySnapshot`、`SerpMarketSnapshot` 数据行及 expires/checksum、
 `CompetitorCollectionSnapshot` 和恰好两份 `TrustedFirstPartySnapshot`（GSC、GA4）。验证：所有 Case、snapshot identity、source type、schema、checksum、parent report、public GBP Evidence 与小型 request 完全匹配。
+
+Task 5 校验 `parent_payload_checksum` 和小型 request 的 `input_checksum` 时必须使用 Task 3 配套增加的 `verified_request_digest`；parent 摘要针对数据库返回的原始 JSON 值，在模型重序列化前计算。`input_checksum` 使用与 Next.js 相同的六个稳定身份字段。已有来源 snapshot、流水线 stage/checkpoint 的摘要仍使用原来的 `request_digest`，不得全面替换。
 
 从持久化 SERP row 重建 `SharedMarketSnapshot` 时，`snapshot_id/checksum/created_at/expires_at`
 来自该 row，`source_job_id` 来自 `SerpMarketSnapshot.job_id`，`input_digest` 使用从 parent report
