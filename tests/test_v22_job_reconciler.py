@@ -6,10 +6,12 @@ import fakeredis.aioredis
 import pytest
 
 from app.jobs_v22.reconciler import reconcile_once
+from app.jobs_v22.models import JobErrorState
 from app.jobs_v22.store import DurableJobStore
 
 
 JOB_ID = UUID("55555555-5555-4555-8555-555555555555")
+SECOND_JOB_ID = UUID("66666666-6666-4666-8666-666666666666")
 CASE_ID = UUID("11111111-1111-4111-8111-111111111111")
 NOW = datetime(2026, 8, 27, 8, 0, tzinfo=timezone.utc)
 
@@ -49,10 +51,12 @@ class ControlledSynchronizer:
         self.store = store
         self.outcomes = outcomes
         self.calls: list[tuple[UUID, int]] = []
+        self.statuses: list[str] = []
 
     async def sync(self, job_id: UUID) -> bool:
         state = await self.store.require_state(job_id)
         self.calls.append((job_id, state.run_generation))
+        self.statuses.append(state.status)
         outcome = self.outcomes[min(len(self.calls) - 1, len(self.outcomes) - 1)]
         if isinstance(outcome, BaseException):
             raise outcome
@@ -310,6 +314,121 @@ async def test_recovery_queue_dedup_closes_enqueue_then_crash_window() -> None:
     )
     assert (await store.require_state(JOB_ID)).run_generation == 2
     assert queue.calls == [(JOB_ID, 2)]
+
+
+@pytest.mark.anyio
+async def test_missing_recovery_state_is_removed_without_blocking_the_next_job() -> None:
+    store = await build_store()
+    await store.take_over_stale(
+        JOB_ID, expected_generation=1, now=NOW + timedelta(minutes=4)
+    )
+    await store.register_job(
+        job_id=SECOND_JOB_ID,
+        case_id=CASE_ID,
+        idempotency_key="intent-2",
+        request_payload={"case_id": str(CASE_ID), "sequence": 2},
+        now=NOW,
+    )
+    await store.mark_callback_synced(SECOND_JOB_ID, 1)
+    await store.take_over_stale(
+        SECOND_JOB_ID, expected_generation=1, now=NOW + timedelta(minutes=4)
+    )
+    await store.redis.delete(store.keys.state(JOB_ID))
+    queue = RecordingQueue()
+    synchronizer = ControlledSynchronizer(store, [True])
+
+    await reconcile_once(
+        store=store, queue=queue, synchronizer=synchronizer,
+        now=NOW + timedelta(minutes=4, seconds=1), stale_seconds=180, max_attempts=3,
+    )
+
+    assert await store.pending_recovery_generation(JOB_ID) is None
+    assert queue.calls == [(SECOND_JOB_ID, 2)]
+    assert await store.list_pending_recoveries() == []
+
+
+@pytest.mark.anyio
+async def test_terminal_and_generation_mismatch_recovery_markers_are_cleaned() -> None:
+    store = await build_store()
+    await store.redis.zadd(store.keys.recovery_pending, {str(JOB_ID): 2})
+    queue = RecordingQueue()
+    synchronizer = RecordingSynchronizer()
+
+    await reconcile_once(
+        store=store, queue=queue, synchronizer=synchronizer,
+        now=NOW + timedelta(seconds=1), stale_seconds=180, max_attempts=3,
+    )
+    assert await store.list_pending_recoveries() == []
+    assert (await store.require_state(JOB_ID)).run_generation == 1
+    assert queue.calls == []
+
+    error = JobErrorState(
+        error_code="JOB_RETRY_EXHAUSTED",
+        user_message="Failed",
+        retryable=True,
+        stage="failed",
+        diagnostic_id=UUID("77777777-7777-4777-8777-777777777777"),
+    )
+    await store.transition(
+        JOB_ID, status="failed", stage="failed", progress=0, message="Failed",
+        now=NOW + timedelta(seconds=2), error=error,
+    )
+    await store.redis.zadd(store.keys.recovery_pending, {str(JOB_ID): 1})
+    await reconcile_once(
+        store=store, queue=queue, synchronizer=synchronizer,
+        now=NOW + timedelta(seconds=3), stale_seconds=180, max_attempts=3,
+    )
+    assert await store.list_pending_recoveries() == []
+    assert queue.calls == []
+
+
+@pytest.mark.anyio
+async def test_corrupt_and_over_limit_pending_members_are_bounded_and_do_not_block() -> None:
+    store = await build_store()
+    await store.redis.delete(store.keys.recovery_pending)
+    members = {
+        **{str(UUID(int=index + 1000)): 2 for index in range(101)},
+        "not-a-job-id": 2,
+        "00000000000000000000000000000000": 2,
+        str(UUID(int=999)): 0,
+    }
+    await store.redis.zadd(store.keys.recovery_pending, members)
+
+    await reconcile_once(
+        store=store, queue=RecordingQueue(), synchronizer=RecordingSynchronizer(),
+        now=NOW, stale_seconds=180, max_attempts=3,
+    )
+    assert 1 <= await store.redis.zcard(store.keys.recovery_pending) <= 5
+    await reconcile_once(
+        store=store, queue=RecordingQueue(), synchronizer=RecordingSynchronizer(),
+        now=NOW + timedelta(seconds=1), stale_seconds=180, max_attempts=3,
+    )
+    assert await store.redis.zcard(store.keys.recovery_pending) == 0
+
+
+@pytest.mark.anyio
+async def test_pending_recovery_crossing_deadline_fails_and_uses_callback_path() -> None:
+    store = await build_store()
+    await store.mark_callback_synced(JOB_ID, 1)
+    queue = RecordingQueue()
+    synchronizer = ControlledSynchronizer(store, [False, False])
+
+    await reconcile_once(
+        store=store, queue=queue, synchronizer=synchronizer,
+        now=NOW + timedelta(minutes=10), stale_seconds=180, max_attempts=3,
+    )
+    assert await store.pending_recovery_generation(JOB_ID) == 2
+
+    await reconcile_once(
+        store=store, queue=queue, synchronizer=synchronizer,
+        now=NOW + timedelta(minutes=21), stale_seconds=180, max_attempts=3,
+    )
+    state = await store.require_state(JOB_ID)
+    assert state.status == "failed"
+    assert state.error is not None and state.error.error_code == "JOB_DEADLINE_EXCEEDED"
+    assert await store.pending_recovery_generation(JOB_ID) is None
+    assert queue.calls == []
+    assert synchronizer.statuses == ["queued", "failed"]
 
 
 @pytest.mark.anyio

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Mapping
@@ -464,20 +465,110 @@ class DurableJobStore:
         return [UUID(value.decode() if isinstance(value, bytes) else value) for value in values]
 
     async def list_pending_recoveries(self, *, limit: int = 100) -> list[tuple[UUID, int]]:
+        bounded_limit = min(max(int(limit), 0), 100)
+        if bounded_limit == 0:
+            return []
         values = await self.redis.zrange(
-            self.keys.recovery_pending, 0, limit - 1, withscores=True
+            self.keys.recovery_pending, 0, bounded_limit - 1, withscores=True
         )
-        return [
-            (
-                UUID(value.decode() if isinstance(value, bytes) else value),
-                int(generation),
-            )
-            for value, generation in values
-        ]
+        recoveries: list[tuple[UUID, int]] = []
+        for value, generation in values:
+            try:
+                decoded = value.decode("utf-8") if isinstance(value, bytes) else value
+                numeric_generation = float(generation)
+                if (
+                    not isinstance(decoded, str)
+                    or not math.isfinite(numeric_generation)
+                    or not numeric_generation.is_integer()
+                    or numeric_generation < 1
+                ):
+                    raise ValueError
+                job_id = UUID(decoded)
+                if decoded != str(job_id):
+                    raise ValueError
+                recoveries.append((job_id, int(numeric_generation)))
+            except (UnicodeDecodeError, TypeError, ValueError, OverflowError):
+                await self._discard_pending_recovery_member(
+                    value, expected_score=float(generation)
+                )
+        return recoveries
 
     async def pending_recovery_generation(self, job_id: UUID) -> int | None:
         generation = await self.redis.zscore(self.keys.recovery_pending, str(job_id))
-        return None if generation is None else int(generation)
+        if generation is None:
+            return None
+        numeric_generation = float(generation)
+        if (
+            not math.isfinite(numeric_generation)
+            or not numeric_generation.is_integer()
+            or numeric_generation < 1
+        ):
+            await self._discard_pending_recovery_member(
+                str(job_id), expected_score=numeric_generation
+            )
+            return None
+        return int(numeric_generation)
+
+    async def _discard_pending_recovery_member(
+        self,
+        member: bytes | str,
+        *,
+        expected_score: float,
+    ) -> bool:
+        pending_key = self.keys.recovery_pending
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(pending_key)
+                    current_score = await pipe.zscore(pending_key, member)
+                    if current_score is None or float(current_score) != expected_score:
+                        return False
+                    pipe.multi()
+                    pipe.zrem(pending_key, member)
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue
+
+    async def discard_pending_recovery(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+    ) -> bool:
+        """Remove only the exact observed recovery generation."""
+
+        return await self._discard_pending_recovery_member(
+            str(job_id), expected_score=float(generation)
+        )
+
+    async def discard_missing_job_recovery(
+        self,
+        job_id: UUID,
+        *,
+        generation: int,
+    ) -> bool:
+        """Atomically purge orphan indexes without racing a recreated marker."""
+
+        state_key = self.keys.state(job_id)
+        pending_key = self.keys.recovery_pending
+        async with self.redis.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    await pipe.watch(state_key, pending_key)
+                    if await pipe.exists(state_key):
+                        return False
+                    current_score = await pipe.zscore(pending_key, str(job_id))
+                    if current_score is None or float(current_score) != float(generation):
+                        return False
+                    pipe.multi()
+                    pipe.zrem(pending_key, str(job_id))
+                    pipe.zrem(self.keys.active, str(job_id))
+                    pipe.zrem(self.keys.sync_pending, str(job_id))
+                    await pipe.execute()
+                    return True
+                except WatchError:
+                    continue
 
     async def mark_recovery_enqueued(
         self,

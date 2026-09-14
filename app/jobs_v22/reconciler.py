@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from app.core.config import settings
 from app.jobs_v22.callbacks import CallbackSynchronizer
+from app.jobs_v22.errors import JobNotFound
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.queue import ArqJobQueue, JobQueue
 from app.jobs_v22.store import DurableJobStore
@@ -32,13 +33,48 @@ async def _finish_pending_recovery(
 ) -> None:
     """Synchronize one takeover generation before exposing it to workers."""
 
-    state = await store.require_state(job_id)
+    try:
+        state = await store.require_state(job_id)
+    except JobNotFound:
+        if await store.discard_missing_job_recovery(job_id, generation=generation):
+            logger.warning(
+                "v2.2 orphan recovery marker removed job_id_suffix=%s error=JOB_NOT_FOUND",
+                str(job_id)[-8:],
+            )
+        return
     if state.run_generation != generation:
+        await store.discard_pending_recovery(job_id, generation=generation)
         return
     if state.terminal:
-        await store.mark_recovery_enqueued(
-            job_id, generation=generation, now=now
+        await store.discard_pending_recovery(job_id, generation=generation)
+        return
+    if now >= state.deadline_at:
+        error = JobErrorState(
+            error_code="JOB_DEADLINE_EXCEEDED",
+            user_message="The analysis exceeded its processing deadline.",
+            retryable=False,
+            stage="failed",
+            diagnostic_id=uuid4(),
         )
+        updated = await store.transition(
+            job_id,
+            status="failed",
+            stage="failed",
+            progress=state.progress,
+            message=error.user_message,
+            now=now,
+            error=error,
+            expected_generation=generation,
+        )
+        if synchronizer is not None and updated.applied:
+            try:
+                await synchronizer.sync(job_id)
+            except Exception as exc:
+                logger.warning(
+                    "v2.2 recovered state callback deferred job_id_suffix=%s error=%s",
+                    str(job_id)[-8:],
+                    type(exc).__name__,
+                )
         return
     if synchronizer is None:
         return
@@ -107,15 +143,28 @@ async def reconcile_once(
 
     cutoff = now - timedelta(seconds=stale_seconds)
     for job_id in await store.list_stale_jobs(cutoff, limit=100):
-        state = await store.require_state(job_id)
+        try:
+            state = await store.require_state(job_id)
+        except JobNotFound:
+            # Missing recovery states are normally purged above. An orphan
+            # active index without a marker must not abort the cron either.
+            continue
         if state.terminal:
             continue
         pending_generation = await store.pending_recovery_generation(job_id)
-        if pending_generation is not None:
+        deadline_exceeded = now >= state.deadline_at
+        if (
+            pending_generation is not None
+            and pending_generation != state.run_generation
+        ):
+            await store.discard_pending_recovery(
+                job_id, generation=pending_generation
+            )
+            pending_generation = None
+        if pending_generation is not None and not deadline_exceeded:
             # Never increment a generation that has not yet crossed the
             # database-sync-before-enqueue barrier.
             continue
-        deadline_exceeded = now >= state.deadline_at
         if deadline_exceeded or (state.status == "running" and state.attempt_count >= max_attempts):
             error = JobErrorState(
                 error_code=("JOB_DEADLINE_EXCEEDED" if deadline_exceeded else "JOB_RETRY_EXHAUSTED"),

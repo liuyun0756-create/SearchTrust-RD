@@ -236,6 +236,8 @@ async def test_stale_takeover_fences_old_generation(store: DurableJobStore) -> N
     )
     assert repeated.applied is False
     assert repeated.state.run_generation == 2
+    assert await store.discard_pending_recovery(JOB_ID, generation=1) is False
+    assert await store.pending_recovery_generation(JOB_ID) == 2
     with pytest.raises(Exception, match="JOB_LEASE_LOST"):
         await store.transition(
             JOB_ID,
@@ -246,6 +248,30 @@ async def test_stale_takeover_fences_old_generation(store: DurableJobStore) -> N
             now=NOW + timedelta(minutes=4, seconds=1),
             expected_generation=1,
         )
+
+
+@pytest.mark.anyio
+async def test_missing_state_cleanup_never_removes_a_newer_recovery_marker(
+    store: DurableJobStore,
+) -> None:
+    await register(store)
+    await store.take_over_stale(
+        JOB_ID,
+        expected_generation=1,
+        now=NOW + timedelta(minutes=4),
+    )
+    await store.redis.delete(store.keys.state(JOB_ID))
+
+    assert await store.discard_missing_job_recovery(
+        JOB_ID, generation=1
+    ) is False
+    assert await store.pending_recovery_generation(JOB_ID) == 2
+    assert await store.discard_missing_job_recovery(
+        JOB_ID, generation=2
+    ) is True
+    assert await store.pending_recovery_generation(JOB_ID) is None
+    assert JOB_ID not in await store.list_stale_jobs(NOW + timedelta(days=1))
+    assert JOB_ID not in await store.list_pending_callbacks()
 
 
 @pytest.mark.anyio
