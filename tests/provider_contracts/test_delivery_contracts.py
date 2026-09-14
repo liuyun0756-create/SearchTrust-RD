@@ -1,5 +1,7 @@
 import httpx
 import pytest
+import json
+from pathlib import Path
 
 from app.jobs_v22.result_persistence import SupabaseResultPersister
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
@@ -9,6 +11,35 @@ from test_v22_result_persistence import JOB_ID, inputs
 
 
 pytestmark = pytest.mark.contract
+
+
+@pytest.mark.anyio
+async def test_verified_service_role_rpc_delivery_contracts():
+    from test_v22_verified_input_resolver import resolve_response, resolved_payload
+    from test_v22_verified_result_persistence import persist_response, persistence_inputs
+
+    payload = resolved_payload()
+    _, resolve_calls = await resolve_response(httpx.Response(200, json=payload), payload=payload)
+    values = persistence_inputs()
+    persist_calls = await persist_response(httpx.Response(200, json=[{
+        "report_id": str(values[1].job_id), "idempotent": False}]), values=values)
+    manifest = json.loads((Path(__file__).parents[1] / "fixtures/provider_contracts/manifest.json").read_text())
+    entries = {entry["id"]: entry for entry in manifest["operations"]}
+    for operation, calls, fields, limit in [
+        ("delivery.verified_input_rpc", resolve_calls, ["p_job_id", "p_case_id", "p_run_generation"], 25_000_000),
+        ("delivery.verified_result_rpc", persist_calls, ["p_job_id", "p_case_id", "p_report_payload", "p_run_generation"], 65_536),
+    ]:
+        entry = entries[operation]
+        assert entry["method"] == calls[0].method == "POST"
+        assert entry["path"] == calls[0].url.path
+        assert entry["auth"] == {"role": "service_role", "headers": ["authorization", "apikey"]}
+        assert entry["request_fields"] == fields
+        assert set(json.loads(calls[0].content)) == set(fields)
+        assert entry["max_response_bytes"] == limit
+        assert entry["oauth_token_fields"] == []
+        assert entry["response_contract"]
+        assert "access_token" not in calls[0].content.decode()
+        assert "refresh_token" not in calls[0].content.decode()
 
 
 @pytest.mark.anyio

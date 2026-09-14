@@ -33,7 +33,11 @@ def test_manifest_covers_every_external_provider_boundary() -> None:
     assert all(entry["adapter"].startswith("app.") for entry in entries)
     assert all(entry["request_contract"] for entry in entries)
     assert all(entry["error_mapping"] for entry in entries)
-    assert all(0 <= entry["max_response_bytes"] <= 2_000_000 for entry in entries)
+    for entry in entries:
+        if entry["id"] == "delivery.verified_input_rpc":
+            assert entry["max_response_bytes"] == 25_000_000
+        else:
+            assert 0 <= entry["max_response_bytes"] <= 2_000_000
 
 
 def test_manifested_fixtures_are_json_sanitized_and_offline_only() -> None:

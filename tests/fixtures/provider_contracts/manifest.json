@@ -2,6 +2,30 @@
   "schema_version": "v22_provider_contract_manifest_v1",
   "operations": [
     {
+      "id": "delivery.verified_input_rpc", "provider": "delivery",
+      "adapter": "app.jobs_v22.verified_input_resolver.SupabaseVerifiedInputResolver",
+      "method": "POST", "path": "/rest/v1/rpc/resolve_v22_verified_analysis_input",
+      "auth": {"role": "service_role", "headers": ["authorization", "apikey"]},
+      "request_contract": "Exactly job ID, Case ID and active run generation; no OAuth token fields",
+      "request_fields": ["p_job_id", "p_case_id", "p_run_generation"],
+      "response_contract": "v22_verified_resolved_input_v1: job_id, case_id, raw parent_report with parent_payload_checksum, site_snapshot, serp_snapshot, competitor_snapshot (snapshot_id, case_id, source_type, schema_version, normalized_payload, payload_checksum, created_at, fetched_at, expires_at), exactly two trusted GSC/GA4 first_party_snapshots; no OAuth token fields",
+      "oauth_token_fields": [], "fixtures": [],
+      "error_mapping": {"timeout_429_5xx": "V22_VERIFIED_INPUT_UNAVAILABLE", "3xx_4xx": "V22_VERIFIED_INPUT_REJECTED", "malformed_oversized": "V22_VERIFIED_INPUT_INVALID_RESPONSE", "schema_identity_checksum": "V22_VERIFIED_INPUT_INVALID"},
+      "max_response_bytes": 25000000
+    },
+    {
+      "id": "delivery.verified_result_rpc", "provider": "delivery",
+      "adapter": "app.jobs_v22.verified_result_persistence.SupabaseVerifiedResultPersister",
+      "method": "POST", "path": "/rest/v1/rpc/persist_v22_verified_result",
+      "auth": {"role": "service_role", "headers": ["authorization", "apikey"]},
+      "request_contract": "Exactly job ID, Case ID, locally validated bound ReportV22 and active run generation; no snapshots created and no OAuth token fields",
+      "request_fields": ["p_job_id", "p_case_id", "p_report_payload", "p_run_generation"],
+      "response_contract": "One row with report_id matching job ID and boolean idempotent; no OAuth token fields",
+      "oauth_token_fields": [], "fixtures": [],
+      "error_mapping": {"timeout_429_5xx": "V22_VERIFIED_RESULT_PERSISTENCE_UNAVAILABLE", "3xx_4xx": "V22_VERIFIED_RESULT_PERSISTENCE_REJECTED", "malformed_oversized_identity": "V22_VERIFIED_RESULT_PERSISTENCE_INVALID_RESPONSE", "local_report_binding": "V22_VERIFIED_RESULT_INVALID"},
+      "max_response_bytes": 65536
+    },
+    {
       "id": "serpapi.search", "provider": "serpapi",
       "adapter": "app.integrations.serpapi.execute_serpapi_get",
       "request_contract": "GET with bounded public params and one rotated api_key",
