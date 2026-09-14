@@ -1,5 +1,7 @@
 """Offline tests of the complete frozen RPC graph and its trust boundary."""
 import json
+import asyncio
+import gzip
 import subprocess
 import sys
 from copy import deepcopy
@@ -56,6 +58,8 @@ def resolved_payload():
         {"status_code": 200, "title": "Shared"}]), source_market, collection(source_market)]
     rows = {}
     for source in sources:
+        if source.binding.source_type == "competitor":
+            source.payload.job_id = UUID(parent["report_version"]["report_id"])
         rows[source.binding.source_type + "_snapshot"] = dict(
             snapshot_id=str(source.binding.snapshot_id), case_id=parent["identity"]["case_id"],
             source_type=source.binding.source_type, schema_version=source.payload.schema_version,
@@ -77,7 +81,10 @@ async def resolve_response(response, *, payload=None, request=None, handler=None
     calls = []
     def respond(sent):
         calls.append(sent)
-        return handler(sent) if handler else response
+        result = handler(sent) if handler else response
+        if result.is_stream_consumed:
+            return httpx.Response(result.status_code, headers=result.headers, stream=httpx.ByteStream(result.content))
+        return result
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond), follow_redirects=True) as client:
         result = await SupabaseVerifiedInputResolver(url="https://storage.example/", service_role_key="service-secret",
             http_client=client, **options).resolve(job_id=JOB_ID, request=request, run_generation=1)
@@ -227,5 +234,105 @@ async def test_resolver_rejects_inconsistent_nested_payload_even_after_resigning
         snapshot = payload["competitor_snapshot"]
         snapshot["normalized_payload"]["market_snapshot_id"] = OTHER_ID
     snapshot["payload_checksum"] = request_digest(snapshot["normalized_payload"])
+    with pytest.raises(DeterministicJobError):
+        await resolve_response(httpx.Response(200, json=payload), payload=payload)
+
+
+class CountedStream(httpx.AsyncByteStream):
+    def __init__(self, chunks, *, delay=0):
+        self.chunks = chunks
+        self.delay = delay
+        self.reads = 0
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            await asyncio.sleep(self.delay)
+            self.reads += 1
+            yield chunk
+
+
+@pytest.mark.anyio
+async def test_resolver_rejects_compression_before_reading_or_decoding(caplog):
+    stream = CountedStream([gzip.compress(b" " * 1_000_000)])
+    calls = []
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, headers={"content-encoding": "gzip"}, stream=stream)
+    with pytest.raises(DeterministicJobError):
+        await resolve_response(None, handler=handler)
+    assert stream.reads == 0
+    assert calls[0].headers["accept-encoding"] == "identity"
+    assert SECRET not in caplog.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", ["trickle", "stall", "headers"])
+async def test_resolver_has_total_deadline_for_entire_response(mode, monkeypatch):
+    monkeypatch.setattr("app.jobs_v22.verified_input_resolver.TOTAL_TIMEOUT_SECONDS", .02, raising=False)
+    payload = resolved_payload()
+    stream = CountedStream([b" "] * 10 + [json.dumps(payload).encode()], delay=.01 if mode == "trickle" else .08)
+    if mode == "headers":
+        async def respond(request):
+            await asyncio.sleep(.08)
+            return httpx.Response(200, json=payload)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            with pytest.raises(TransientJobError):
+                await SupabaseVerifiedInputResolver(url="https://storage.example", service_role_key="secret", http_client=client).resolve(
+                    job_id=JOB_ID, request=binding_request(payload), run_generation=1)
+    else:
+        with pytest.raises(TransientJobError):
+            await resolve_response(httpx.Response(200, stream=stream), payload=payload)
+        assert stream.reads < len(stream.chunks)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("path", [(), ("current",), ("previous",), ("current", "totals"),
+    ("previous", "queries"), ("current", "totals", "rows", 0)])
+async def test_gsc_rejects_all_unknown_nested_fields_before_conversion(path):
+    payload = resolved_payload()
+    snapshot = payload["first_party_snapshots"][0]
+    node = snapshot["normalized_payload"]
+    for key in path:
+        node = node[key]
+    node["arbitrary_unknown_field"] = {"secret": SECRET}
+    snapshot["payload_checksum"] = request_digest(snapshot["normalized_payload"])
+    with pytest.raises(DeterministicJobError):
+        await resolve_response(httpx.Response(200, json=payload), payload=payload)
+
+
+def test_ga4_and_all_public_payload_model_hierarchies_forbid_extra_fields():
+    from app.google_connections_v22.ga4 import Ga4Snapshot
+    from app.collectors.site_inventory_models import SiteInventorySnapshot
+    from app.collectors.serp_market_models import SerpMarketSnapshot
+    from app.competitors_v22.models import CompetitorCollectionSnapshot
+
+    for model in (Ga4Snapshot, SiteInventorySnapshot, SerpMarketSnapshot, CompetitorCollectionSnapshot):
+        schema = model.model_json_schema()
+        for definition in [schema, *schema.get("$defs", {}).values()]:
+            if definition.get("type") == "object":
+                assert definition.get("additionalProperties") is False, definition.get("title")
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("change", ["device", "language", "country", "latitude", "longitude", "label",
+    "competitor_job", "competitor_id", "competitor_domain", "competitor_name"])
+async def test_resolver_binds_public_context_and_competitors(change):
+    payload = resolved_payload()
+    parent = payload["parent_report"]
+    context = parent["case_context"]
+    if change in ("device", "language"):
+        context["search_" + change] = "desktop" if change == "device" else "fr"
+    if change in ("country", "latitude", "longitude", "label"):
+        key = {"country": "country_code", "latitude": "latitude", "longitude": "longitude", "label": "display_name"}[change]
+        value = {"country": "CA", "latitude": 44.0, "longitude": -80.0, "label": "Toronto"}[change]
+        context["target_market"][key] = value
+        parent["market_snapshot"]["target_market"][key] = value
+    competitor = payload["competitor_snapshot"]["normalized_payload"]
+    if change == "competitor_job": competitor["job_id"] = OTHER_ID
+    if change == "competitor_id": competitor["competitors"][0]["competitor"]["competitor_id"] = "cp_unrelated"
+    if change == "competitor_domain": competitor["competitors"][0]["competitor"]["website_url"] = "https://unrelated.test/"
+    if change == "competitor_name": competitor["competitors"][0]["competitor"]["business_name"] = "Unrelated"
+    payload["competitor_snapshot"]["payload_checksum"] = request_digest(competitor)
+    payload["parent_payload_checksum"] = verified_request_digest(parent)
     with pytest.raises(DeterministicJobError):
         await resolve_response(httpx.Response(200, json=payload), payload=payload)

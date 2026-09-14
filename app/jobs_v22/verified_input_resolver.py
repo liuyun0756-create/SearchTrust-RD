@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from app.jobs_v22.digest import verified_request_digest
 from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequest
 
 MAX_RESPONSE_BYTES = 25_000_000
+TOTAL_TIMEOUT_SECONDS = 20
 
 
 class VerifiedRpcClient:
@@ -36,23 +38,31 @@ class VerifiedRpcClient:
 
     async def post(self, rpc: str, payload: dict):
         try:
-            async with self.client.stream("POST", f"{self.url}/rest/v1/rpc/{rpc}",
-                headers={"apikey": self.key, "authorization": f"Bearer {self.key}", "content-type": "application/json"},
-                json=payload, timeout=20, follow_redirects=False) as response:
-                if response.status_code == 429 or response.status_code >= 500:
-                    raise TransientJobError(self.prefix + "_UNAVAILABLE", "Verified report storage is temporarily unavailable.") from None
-                if not 200 <= response.status_code < 300:
-                    raise DeterministicJobError(self.prefix + "_REJECTED", "The Verified report request could not be completed safely.") from None
-                length = response.headers.get("content-length")
-                if length is not None and (not length.isascii() or not length.isdecimal() or len(length) > 10
-                        or int(length) > self.limit):
-                    raise self.invalid() from None
-                raw = bytearray()
-                async for chunk in response.aiter_bytes():
-                    if len(raw) + len(chunk) > self.limit:
+            # HTTPX read timeouts measure inactivity; this bounds the entire RPC,
+            # including connection/header delays and a continuously trickled body.
+            async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
+                async with self.client.stream("POST", f"{self.url}/rest/v1/rpc/{rpc}",
+                    headers={"apikey": self.key, "authorization": f"Bearer {self.key}",
+                        "content-type": "application/json", "accept-encoding": "identity"},
+                    json=payload, timeout=20, follow_redirects=False) as response:
+                    if response.status_code == 429 or response.status_code >= 500:
+                        raise TransientJobError(self.prefix + "_UNAVAILABLE", "Verified report storage is temporarily unavailable.") from None
+                    if not 200 <= response.status_code < 300:
+                        raise DeterministicJobError(self.prefix + "_REJECTED", "The Verified report request could not be completed safely.") from None
+                    if response.headers.get("content-encoding", "identity").strip().lower() != "identity":
                         raise self.invalid() from None
-                    raw.extend(chunk)
-        except (httpx.TimeoutException, httpx.NetworkError):
+                    length = response.headers.get("content-length")
+                    if length is not None and (not length.isascii() or not length.isdecimal() or len(length) > 10
+                            or int(length) > self.limit):
+                        raise self.invalid() from None
+                    raw = bytearray()
+                    # Never instantiate a decoder: compressed payloads were rejected
+                    # above, so these are also the bounded uncompressed JSON bytes.
+                    async for chunk in response.aiter_raw():
+                        if len(raw) + len(chunk) > self.limit:
+                            raise self.invalid() from None
+                        raw.extend(chunk)
+        except (TimeoutError, httpx.TimeoutException, httpx.NetworkError):
             raise TransientJobError(self.prefix + "_UNAVAILABLE", "Verified report storage is temporarily unavailable.") from None
         except (httpx.DecodingError, httpx.RemoteProtocolError):
             raise self.invalid() from None

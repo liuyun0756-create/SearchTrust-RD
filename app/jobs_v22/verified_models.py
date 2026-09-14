@@ -6,7 +6,7 @@ import json
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, model_validator
+from pydantic import AwareDatetime, Field, PrivateAttr, model_validator
 
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.collectors.serp_market_models import SerpMarketSnapshot
@@ -93,6 +93,19 @@ class VerifiedResolvedInput(StrictModel):
     serp_snapshot: VerifiedSnapshotRow[SerpMarketSnapshot]
     competitor_snapshot: VerifiedSnapshotRow[CompetitorCollectionSnapshot]
     first_party_snapshots: list[TrustedFirstPartySnapshot] = Field(min_length=2, max_length=2)
+    _parent_integrity_seal: str | None = PrivateAttr(default=None)
+
+    def model_post_init(self, __context) -> None:
+        # Separate from the frontend raw checksum: defaults and normalization have
+        # now been applied. Private state is neither accepted nor emitted as JSON.
+        if self._parent_integrity_seal is not None:
+            self.validate_parent_integrity()
+        elif hasattr(self, "parent_report"):
+            self._parent_integrity_seal = request_digest(self.parent_report)
+
+    def validate_parent_integrity(self) -> None:
+        if self._parent_integrity_seal is None or request_digest(self.parent_report) != self._parent_integrity_seal:
+            raise ValueError("validated parent report was mutated")
 
     @classmethod
     def model_rebuild(cls, **kwargs):
@@ -134,6 +147,8 @@ class VerifiedResolvedInput(StrictModel):
             from app.google_connections_v22.ga4 import Ga4Snapshot
 
             payload_type = GscSnapshot if snapshot.source_type == "gsc" else Ga4Snapshot
+            if snapshot.source_type == "gsc":
+                validate_exact_gsc_fields(snapshot.normalized_payload)
             payload = payload_type.model_validate_json(json.dumps(snapshot.normalized_payload), strict=True)
             if (set(snapshot.normalized_payload) - set(payload_type.model_fields)
                     or payload.schema_version != snapshot.schema_version
@@ -141,15 +156,6 @@ class VerifiedResolvedInput(StrictModel):
                     or payload.previous.start_date != snapshot.coverage_start
                     or payload.current.end_date != snapshot.coverage_end):
                 raise ValueError("first-party payload binding mismatch")
-            pending = [snapshot.normalized_payload]
-            while pending:
-                node = pending.pop()
-                if isinstance(node, dict):
-                    if {"access_token", "refresh_token", "id_token", "client_secret"} & node.keys():
-                        raise ValueError("OAuth fields are not snapshot inputs")
-                    pending.extend(node.values())
-                elif isinstance(node, list):
-                    pending.extend(node)
         coverage = {item.source_type: item for item in parent.data_coverage.sources}
         for row in rows:
             if row.source_type not in coverage or coverage[row.source_type].snapshot_ids != [row.snapshot_id]:
@@ -158,8 +164,24 @@ class VerifiedResolvedInput(StrictModel):
                 raise ValueError("parent evidence snapshot mismatch")
         competitor = self.competitor_snapshot.normalized_payload
         if (competitor.market_snapshot_id != self.serp_snapshot.snapshot_id
-                or competitor.market_snapshot_checksum != self.serp_snapshot.payload_checksum):
+                or competitor.market_snapshot_checksum != self.serp_snapshot.payload_checksum
+                or competitor.job_id != parent.report_version.report_id):
             raise ValueError("competitor market binding mismatch")
+        analyze = self.analyze_request
+        expected_competitors = {item.competitor_id: item for item in analyze.competitors}
+        if {item.competitor.competitor_id for item in competitor.competitors} != set(expected_competitors):
+            raise ValueError("competitor selection mismatch")
+        for item in competitor.competitors:
+            if item.competitor != expected_competitors[item.competitor.competitor_id]:
+                raise ValueError("competitor identity mismatch")
+        serp = self.serp_snapshot.normalized_payload
+        target = analyze.target_market
+        if (serp.queries != analyze.queries or serp.device != parent.case_context.search_device
+                or serp.language != parent.case_context.search_language or serp.country_code != target.country_code
+                or serp.target_point.requested_label != target.display_name
+                or any(getattr(target, key) is not None and getattr(target, key) != getattr(serp.target_point, key)
+                    for key in ("latitude", "longitude"))):
+            raise ValueError("SERP context mismatch")
         if (str(self.site_snapshot.normalized_payload.root_url) != str(parent.identity.business.site_url)
                 or self.site_snapshot.normalized_payload.canonical_host != parent.identity.business.normalized_domain
                 or self.serp_snapshot.normalized_payload.queries != parent.case_context.queries):
@@ -224,3 +246,30 @@ def validate_public_gbp(report: ReportV22) -> UUID:
     if len(ids) != 1 or set(coverage.snapshot_ids) != ids:
         raise ValueError("unique public GBP binding required")
     return next(iter(ids))
+
+
+def validate_exact_gsc_fields(payload: dict) -> None:
+    """GSC provider models ignore extras at some levels; reject them before parsing.
+
+    Every structured GSC object is visited. GA4 and public source hierarchies
+    already use extra=forbid, checked recursively by the boundary contract tests.
+    """
+    from app.google_connections_v22.gsc import GscSnapshot, Period, View, MetricRow
+
+    def exact(value, model):
+        if not isinstance(value, dict) or set(value) - set(model.model_fields):
+            raise ValueError("unexpected GSC object fields")
+
+    exact(payload, GscSnapshot)
+    for period_name in ("current", "previous"):
+        period = payload.get(period_name)
+        exact(period, Period)
+        for name, field in Period.model_fields.items():
+            if field.annotation is not View:
+                continue
+            view = period.get(name)
+            exact(view, View)
+            if not isinstance(view.get("rows"), list):
+                raise ValueError("invalid GSC rows")
+            for row in view["rows"]:
+                exact(row, MetricRow)

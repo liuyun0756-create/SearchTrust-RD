@@ -9,6 +9,7 @@ from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
 from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequest, validate_public_gbp
 from app.report_v22.models import ReportV22
+from app.report_v22.version_diff_identity import finding_fingerprint
 
 
 class SupabaseVerifiedResultPersister:
@@ -23,6 +24,9 @@ class SupabaseVerifiedResultPersister:
             # Dump to Python values to force full validation even for model_construct
             # or mutated instances (model_validate(instance) can otherwise skip it).
             report = ReportV22.model_validate(report.model_dump(mode="python") if isinstance(report, ReportV22) else report)
+            # Check the original private seal before a fresh validation could seal
+            # the current model contents as if they were the resolver's input.
+            resolved_input.validate_parent_integrity()
             resolved_input = VerifiedResolvedInput.model_validate(resolved_input.model_dump(mode="python"))
             resolved_input.validate_request(job_id=job_id, request=request)
             parent = resolved_input.parent_report
@@ -36,6 +40,18 @@ class SupabaseVerifiedResultPersister:
                     or report.first_party_performance.gbp.snapshot_id is not None
                     or validate_public_gbp(report) != request.public_gbp_snapshot_id):
                 raise ValueError("Verified result binding mismatch")
+            parent_findings = {finding.finding_id: finding for finding in parent.findings}
+            referenced_previous: set[str] = set()
+            for entry in report.version_diff.entries:
+                if entry.change_type == "new":
+                    continue
+                previous = entry.previous_finding
+                finding = parent_findings.get(previous.finding_id)
+                if (previous.report_id != request.parent_report_id or finding is None
+                        or previous.finding_id in referenced_previous or previous.statement != finding.statement
+                        or previous.fingerprint != finding_fingerprint(finding)):
+                    raise ValueError("previous Finding does not match the frozen parent")
+                referenced_previous.add(previous.finding_id)
             allowed = {row.source_type: {row.snapshot_id} for row in
                 [resolved_input.site_snapshot, resolved_input.serp_snapshot, resolved_input.competitor_snapshot]}
             allowed.update(gbp={request.public_gbp_snapshot_id}, gsc={request.gsc_snapshot_id}, ga4={request.ga4_snapshot_id})
