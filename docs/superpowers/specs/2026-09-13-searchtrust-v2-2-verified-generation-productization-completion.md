@@ -4,7 +4,7 @@
 
 里程碑：V22-093 直接正式发布前置
 
-状态：代码、离线 E2E 与本地发布门禁完成；生产执行待独立复核
+状态：代码、门禁、生产迁移与关闭开关部署完成；真实验收仍被外部配置阻塞
 
 ## 1. 交付结果
 
@@ -78,16 +78,64 @@ report 原子持久化、受控失败后精确返还，以及用户显式发起�
 kind、冻结输入与报告系谱，以及购买、重放、成功生成、失败返还和新 job
 重试的回滚内事务验收。
 
-## 4. 生产边界
+## 4. 生产执行回执
 
-本记录只完成产品化与发布准备，不是生产发布回执。截至本记录：
+2026-09-15 的独立生产执行已完成 Step 9，并完成 Step 10 中的迁移、
+关闭开关部署与基础设施健康核对：
+
+- 前端 `origin/main` 与审查后候选提交均为
+  `47476a07088cace350192d705a4d5347f716a550`；
+- Vercel 正式部署 `dpl_2c7AEnRyeGo7cgVZHAvvLoget9P8` 来自上述精确提交，
+  实例 URL 为 `https://search-trust-32059gtb5-liuyuns-projects-9eb2d9a4.vercel.app`，
+  `https://trysearchtrust.com` 已指向该 `READY` 部署并返回 HTTP 200；
+- 后端应用发布提交为 `bd028729e6f7e083954d6956c41d236686811bfc`，
+  Railway 正式 Web 与 Worker 均达到 `SUCCESS`/`RUNNING`，Web health 返回
+  HTTP 200 与 `ok`；
+- 前后端 GitHub `main` quality workflow 均为 passing；
+- Vercel 最近一小时 error-level 日志为 0；Railway Web、Worker error-level
+  日志各为 0，Web 5xx 为 0；
+- 生产 Supabase 从 `20260912100000` 基线按审批顺序应用全部 9 条
+  migration，现与本地完整 29 条一致，最后一条为 `20260914160000`；
+- 生产 rollback-only release validation 47 项全部通过，residue 复核为 0；
+- 三个 SerpAPI 账户使用不计入额度的 Account API 核对，均返回 HTTP 200、
+  Active 且有可用容量；
+- Web↔Worker callback 使用签名的无效合成 payload 做无写入握手，返回预期
+  `400 INVALID_CALLBACK`，证明现行 callback URL/secret 配对正确。
+
+已安全写入但等待最终统一重部署的配置名包括：
+
+- Vercel：`GOOGLE_TOKEN_BROKER_SECRET`、`GOOGLE_OAUTH_COOKIE_SECRET`、
+  `GOOGLE_OAUTH_REDIRECT_URI`、`GOOGLE_TOKEN_ENCRYPTION_KEYS`、
+  `GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION`；
+- Railway Worker：`V22_GOOGLE_BROKER_SECRET`、`V22_GOOGLE_BROKER_ORIGIN`。
+
+两端 broker secret 在同一安全操作中产生并分别写入，本记录不包含其值。
+当前四个开关仍均为默认关闭：
 
 - `GOOGLE_VERIFIED_ANALYSIS_ENABLED=false`；
 - `V22_VERIFIED_ANALYSIS_ENABLED=false`；
-- 未写入 Vercel/Railway 正式配置；
-- 未推送、未部署、未应用生产 migration，未进行生产验收；
-- 未创建真实付款或 provider checkout；
-- 未记录 secret value、OAuth token、payment payload 或客户数据。
+- `GOOGLE_GBP_SYNC_ENABLED=false`；
+- `V22_GBP_SYNC_ENABLED=false`。
 
-后续 V22-093 按直接正式发布执行，不做灰度；但必须经过独立复核，严格按
-“先迁移、后发布、关闭开关验证健康、最后显式开启”执行。
+## 5. 未完成的真实验收
+
+本记录**不声明 Verified Generation 已对用户开放**。Step 10 还被以下精确条件
+阻塞：
+
+- `DODO_VERIFIED_CREDIT_PRODUCT_ID` 缺失。现有 `DODO_API_KEY` 是 Vercel 不可导出
+  Secret，本机没有可用副本，因此未绕过平台策略读取 product 列表，也未
+  臆测复用旧 product；
+- `GOOGLE_OAUTH_CLIENT_ID` 与 `GOOGLE_OAUTH_CLIENT_SECRET` 在批准的 Vercel
+  production/preview/development、Railway production/staging 及本地配置中均无可复用值；
+- 生产聚合就绪性核对为：1 个 active Case，0 个 Prospect report，0 个
+  healthy/matched GSC，0 个 healthy/matched GA4，0 个 healthy 且未过期的
+  customer-public-GBP snapshot，因而没有符合条件的真实 Case。
+
+本次没有创建 provider checkout、没有付款、没有运行真实 Verified job，也没有
+执行失败返还或重试验收。只有在正式 Dodo product、Google OAuth 客户端凭据与
+符合 GSC/GA4/公开 GBP 条件的 Case 齐备，且真实购买、到账不自动生成、成功生成、
+受控失败精确返还和新 job 重试全部验证后，才能同时打开两个 Verified
+开关。官方 GBP 两个开关继续保持关闭，不作为此阶段阻塞。
+
+发布回执文档提交自身无法在正文中自引用；它会在交接回执中记录。
+本文未记录 secret value、OAuth token、payment payload、客户 ID 或客户内容。

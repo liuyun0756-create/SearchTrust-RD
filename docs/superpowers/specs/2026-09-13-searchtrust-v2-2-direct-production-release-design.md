@@ -2,7 +2,7 @@
 
 Date: 2026-09-13
 Milestone: V22-093
-Status: approved; offline release preparation passed, production execution pending independent review
+Status: approved; Step 9 complete, Step 10 infrastructure complete and real acceptance blocked on external configuration
 
 ## 1. Decision
 
@@ -18,22 +18,38 @@ Direct release changes traffic policy, not safety policy. GitHub quality gates,
 Vercel/Railway wait-for-CI controls, cost limits, failure-credit refunds, durable jobs,
 provider circuit breakers and the non-destructive new-intake pause remain mandatory.
 
-## 2. Current state before production execution
+## 2. Current production state
 
-- The repository release candidates contain the complete Verified Generation product,
-  including payment, durable generation, exact-once failure compensation, retry and
-  persisted report lineage. They have not been pushed or deployed by the preparation
-  task.
-- The local release database applies exactly 29 ordered migrations through
-  `20260914160000`. The nine migrations after the V22-092 production baseline have not
-  been applied to production by this task.
+- The complete frontend release commit
+  `47476a07088cace350192d705a4d5347f716a550` is on `origin/main` and is the exact
+  commit behind Vercel production deployment `dpl_2c7AEnRyeGo7cgVZHAvvLoget9P8`.
+  `https://trysearchtrust.com` resolves to that Ready deployment and returned HTTP 200.
+- The complete backend application release commit
+  `bd028729e6f7e083954d6956c41d236686811bfc` is on `origin/main` and deployed to both
+  Railway production Web and Worker. Both deployments reached `SUCCESS`/`RUNNING`;
+  `https://searchtrust-rd-production.up.railway.app/api/v1/health` returned HTTP 200
+  with status `ok`.
+- The production Supabase project `searchtrust-production` now applies exactly 29
+  ordered migrations through `20260914160000`. All nine migrations after the
+  `20260912100000` baseline were applied in the approved order. Rollback-only release
+  validation passed all 47 assertions and the residue validation found zero synthetic
+  rows.
 - Executable V2.1 routes, persistence adapters, report rendering and compatibility paths
   are retired and remain deletion invariants.
-- `GOOGLE_VERIFIED_ANALYSIS_ENABLED` and `V22_VERIFIED_ANALYSIS_ENABLED` remain closed.
-  No formal production configuration inventory or write has been performed yet.
-- Production health, deployed commit equality, configuration scope and current switch
-  values must be freshly verified during the independent production-execution review;
-  this document does not infer them from the successful offline gates.
+- `GOOGLE_VERIFIED_ANALYSIS_ENABLED` and `V22_VERIFIED_ANALYSIS_ENABLED` remain closed
+  by their default-false configuration. `GOOGLE_GBP_SYNC_ENABLED` and
+  `V22_GBP_SYNC_ENABLED` also remain closed.
+- Production configuration now contains generated broker, OAuth-cookie and token-vault
+  secrets plus the exact production broker origin and OAuth redirect URI. These writes
+  are intentionally pending the single final redeploy after the remaining external
+  values are supplied. No secret value is recorded here.
+- `DODO_VERIFIED_CREDIT_PRODUCT_ID`, `GOOGLE_OAUTH_CLIENT_ID` and
+  `GOOGLE_OAUTH_CLIENT_SECRET` are not present in any approved reusable production,
+  preview, staging or local configuration. They remain release blockers.
+- The production readiness inventory contains one active Case, but zero Prospect
+  reports, zero healthy/matched GSC bindings, zero healthy/matched GA4 bindings and zero
+  healthy unexpired customer-public-GBP snapshots. No Case is currently eligible for
+  real Verified acceptance.
 
 ## 3. Public capability boundary
 
@@ -105,6 +121,21 @@ safe equality/format check.
 9. Inspect Vercel, Railway Web and Railway Worker error logs, confirm backend health and
    record bounded evidence.
 
+### 5.1 Execution record, 2026-09-15
+
+Steps 1 through 7 have completed for the repository, database and closed-switch
+infrastructure. Both GitHub `main` quality workflows report passing. Vercel production,
+Railway Web and Railway Worker match the reviewed release commits above. The first-hour
+error-level scan returned zero Vercel errors, zero Railway Web errors, zero Railway
+Worker errors and zero Railway Web 5xx requests.
+
+Step 8 cannot execute the real purchase/generation acceptance yet. The Dodo API key is
+stored as a non-exportable Vercel Secret, so this execution could not safely enumerate
+provider products or select a `$19` product. The named Verified product ID is absent.
+Google OAuth client credentials are also absent, and the current production data has no
+eligible Case. No checkout was created, no payment was submitted, no paid generation
+was started and no Verified or official GBP switch was opened.
+
 The backend is verified before the public frontend is declared released so the browser
 cannot advertise a capability whose server path is still closed.
 
@@ -136,6 +167,10 @@ fine-grained event taxonomy or customer cohort system. Release evidence is opera
 - HTTP/status-only smoke results with no customer payloads.
 
 ## 8. Acceptance criteria
+
+The criteria below remain the definition of full completion. As of the execution record
+above they are **not yet all satisfied**: real Dodo purchase settlement, GSC/GA4-backed
+Verified success, controlled failure/refund and explicit retry remain outstanding.
 
 V22-093 is complete when all of the following are true:
 

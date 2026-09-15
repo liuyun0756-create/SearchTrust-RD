@@ -1112,7 +1112,7 @@ git add docs/superpowers/specs/2026-08-26-searchtrust-v2-2-development-plan.md \
 git commit -m "docs(v2.2): complete verified generation productization"
 ```
 
-- [ ] **Step 9: 推送并等待质量门禁，暂不打开 Verified**
+- [x] **Step 9: 推送并等待质量门禁，暂不打开 Verified**
 
 ```bash
 git push origin main
@@ -1129,6 +1129,12 @@ V22_GBP_SYNC_ENABLED=false
 ```
 
 - [ ] **Step 10: 按已批准正式验收顺序开放**
+
+2026-09-15 部分执行：9 条生产 migration、29 条完整顺序核对、47 项回滚式
+release validation、residue 0、两端精确提交部署及关闭开关健康核对已完成。
+本 Step 仍未勾选：`DODO_VERIFIED_CREDIT_PRODUCT_ID`、Google OAuth client 凭据与符合
+GSC/GA4/公开 GBP 条件的真实 Case 均不完整，因此没有真实 checkout/付款/生成/
+失败返还/重试验收，两个 Verified 开关仍关闭。
 
 从已验证的 `20260912100000` 基线开始，必须按以下顺序应用全部 9 条新增 migration，不得只应用最初的两条：
 
