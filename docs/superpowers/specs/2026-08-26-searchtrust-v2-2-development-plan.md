@@ -1176,7 +1176,8 @@ Generation 正式开关未改变。详见
 `0092c603-e606-4120-bb3b-41ed91fb1845` 与 Worker 部署
 `40822911-92a8-46d1-bd75-dd70515dbb29` 才从等待状态继续，并将同一提交
 `c7a649109b03d9fb10a7eb17c1425a68466db4c7` 发布为 `SUCCESS`；生产健康检查返回
-HTTP 200，初始日志无错误级事件。V22-092 数据迁移和 V22-093 灰度发布边界未改变。
+HTTP 200，初始日志无错误级事件。该完成记录中当时保留的 V22-093
+灰度边界已被 2026-09-13 批准的直接正式发布决策取代。
 详见 `2026-09-11-searchtrust-v2-2-backend-test-infrastructure-completion.md`。
 
 #### V22-092 数据迁移（已完成）
@@ -1197,13 +1198,20 @@ migration、未删除或修改任何既有业务数据。验证前后精确计�
 正式环境 dry-run，未中断正式服务。详见
 `2026-09-12-searchtrust-v2-2-data-migration-release-validation-completion.md`。
 
-#### V22-093 灰度发布
+#### V22-093 直接正式发布（准备中）
 
-1. internal accounts；
-2. 3名受控Local SEO顾问；
-3. 10—15名付费验证用户；
-4. 观察稳定性和商业指标；
-5. 决定扩大流量或回滚入口。
+V2.2 不再使用 internal account、受控顾问、付费验证用户或百分比
+流量的灰度序列。Verified Generation 产品化是直接正式发布的执行前置：
+必须先通过完全离线的付费、生成、失败返还和重试旅程，以及完整数据库
+结构、事务和残留验证。
+
+当前只完成代码与离线发布门禁。生产迁移、精确提交发布、正式配置
+预检、Vercel/Railway 部署与生产验收属于后续独立复核步骤。在这些
+步骤完成前，`GOOGLE_VERIFIED_ANALYSIS_ENABLED` 和
+`V22_VERIFIED_ANALYSIS_ENABLED` 保持关闭，不得因为不做灰度而跳过先迁移、
+后发布、再显式开启的安全顺序。详见
+`2026-09-13-searchtrust-v2-2-direct-production-release-design.md` 与
+`2026-09-13-searchtrust-v2-2-verified-generation-productization-completion.md`。
 
 ## 14. 测试矩阵
 
@@ -1231,7 +1239,7 @@ migration、未删除或修改任何既有业务数据。验证前后精确计�
 20.付款webhook重复；
 21.分享链接撤销；
 22.GBP快照30天到期和清理；
-23.旧v2.1报告继续打开/PDF；
+23.V2.1产品路由、报告渲染和PDF入口保持不可访问；
 24.LLM输出无证据数字被拒绝。
 
 ### 14.2 非功能门槛
@@ -1292,7 +1300,7 @@ migration、未删除或修改任何既有业务数据。验证前后精确计�
 - 轨道A：Case、前端流程、支付、报告UI；
 - 轨道B：站点、SERP、竞品、v2.2证据和决策；
 - 轨道C：OAuth、GSC、GA4、GBP、数据健康；
-- 汇合：Verified report、版本差异、E2E、灰度。
+- 汇合：Verified report、版本差异、E2E、直接正式发布。
 
 ## 17. 发布风险与应对
 
@@ -1307,7 +1315,7 @@ migration、未删除或修改任何既有业务数据。验证前后精确计�
 | 跨源错误因果 | 高 | 只做允许维度关联；所有结论列限制；规则fixtures |
 | Dify幻觉 | 高 | skeleton+ID合同；后端事实校验；无事实fallback |
 | 任务重启丢失 | 高 | Redis/ARQ+analysis_jobs+幂等和退款 |
-| v2.1回归 | 中 | `/v1`隔离、旧合同fixtures、双渲染回归 |
+| v2.1路径回归 | 中 | 删除性不变式；路由、适配器和双渲染不得恢复 |
 | $19成本失控 | 中 | provider budget、成本埋点、限制深度，不提前扩Geo-grid |
 | 报告过长 | 中 | 核心结论/三行动优先，证据和八层折叠，Advisor/Client双视图 |
 
