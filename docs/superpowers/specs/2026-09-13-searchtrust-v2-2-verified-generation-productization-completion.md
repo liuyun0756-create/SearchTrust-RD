@@ -102,7 +102,7 @@ kind、冻结输入与报告系谱，以及购买、重放、成功生成、失�
 - Web↔Worker callback 使用签名的无效合成 payload 做无写入握手，返回预期
   `400 INVALID_CALLBACK`，证明现行 callback URL/secret 配对正确。
 
-已安全写入但等待最终统一重部署的配置名包括：
+已安全写入的配置名包括：
 
 - Vercel：`GOOGLE_TOKEN_BROKER_SECRET`、`GOOGLE_OAUTH_COOKIE_SECRET`、
   `GOOGLE_OAUTH_REDIRECT_URI`、`GOOGLE_TOKEN_ENCRYPTION_KEYS`、
@@ -110,6 +110,8 @@ kind、冻结输入与报告系谱，以及购买、重放、成功生成、失�
 - Railway Worker：`V22_GOOGLE_BROKER_SECRET`、`V22_GOOGLE_BROKER_ORIGIN`。
 
 两端 broker secret 在同一安全操作中产生并分别写入，本记录不包含其值。
+发布记录提交触发的 Railway 文档型重部署已使 Worker 两项配置生效；
+Vercel 五项配置仍等待外部必填值齐备后的最终前端重部署。
 当前四个开关仍均为默认关闭：
 
 - `GOOGLE_VERIFIED_ANALYSIS_ENABLED=false`；

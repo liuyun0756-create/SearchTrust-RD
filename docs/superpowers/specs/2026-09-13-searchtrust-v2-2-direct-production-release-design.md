@@ -40,9 +40,10 @@ provider circuit breakers and the non-destructive new-intake pause remain mandat
   by their default-false configuration. `GOOGLE_GBP_SYNC_ENABLED` and
   `V22_GBP_SYNC_ENABLED` also remain closed.
 - Production configuration now contains generated broker, OAuth-cookie and token-vault
-  secrets plus the exact production broker origin and OAuth redirect URI. These writes
-  are intentionally pending the single final redeploy after the remaining external
-  values are supplied. No secret value is recorded here.
+  secrets plus the exact production broker origin and OAuth redirect URI. The Railway
+  broker values are active after the release-record deployment; the Vercel values remain
+  pending the single final frontend redeploy after the remaining external values are
+  supplied. No secret value is recorded here.
 - `DODO_VERIFIED_CREDIT_PRODUCT_ID`, `GOOGLE_OAUTH_CLIENT_ID` and
   `GOOGLE_OAUTH_CLIENT_SECRET` are not present in any approved reusable production,
   preview, staging or local configuration. They remain release blockers.
