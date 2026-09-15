@@ -1024,7 +1024,7 @@ git commit -m "feat(v2.2): enable verified generation journey"
 - Modify: `docs/superpowers/specs/2026-09-13-searchtrust-v2-2-direct-production-release-design.md`
 - Create: `docs/superpowers/specs/2026-09-13-searchtrust-v2-2-verified-generation-productization-completion.md`
 
-- [ ] **Step 1: 写失败的完整浏览器旅程**
+- [x] **Step 1: 写失败的完整浏览器旅程**
 
 `verified-upgrade.spec.ts` 覆盖两条完整离线旅程：
 
@@ -1038,7 +1038,7 @@ await expect(page).toHaveURL(new RegExp(`/cases/${E2E_IDS.caseId}/connections`))
 await expect(page.getByText("Generating your Verified Action Plan")).toHaveCount(0);
 ```
 
-- [ ] **Step 2: 运行 E2E 并确认 fixture/router 尚未支持旅程**
+- [x] **Step 2: 运行 E2E 并确认 fixture/router 尚未支持旅程**
 
 ```bash
 npm run test:e2e -- e2e/verified-upgrade.spec.ts
@@ -1046,20 +1046,20 @@ npm run test:e2e -- e2e/verified-upgrade.spec.ts
 
 Expected: FAIL，verified checkout/analysis local routes 未注册或 CTA 状态不匹配。
 
-- [ ] **Step 3: 实现完全本地的 verified fixture 状态机**
+- [x] **Step 3: 实现完全本地的 verified fixture 状态机**
 
 `LocalApiScenario` 增加 `verifiedBalance`、`verifiedCheckoutPaid`、`verifiedAttempt` 和
 `verifiedFailureCompensated`。所有 verified 路由只返回 `.invalid` identity 与固定 synthetic IDs；
 不得请求 Supabase、Railway、Dodo、Google、PostHog 或其他外网。`playwright.config.ts` 增加
 `GOOGLE_VERIFIED_ANALYSIS_ENABLED=true`，不放任何 secret。
 
-- [ ] **Step 4: 扩展 migration release 验证**
+- [x] **Step 4: 扩展 migration release 验证**
 
 schema/release SQL 断言新表/RPC/RLS/权限、purchase kind、ledger kinds 和 lineage；transaction
 acceptance 执行成功购买、重复 webhook、成功生成、失败返还和重试。residue test 断言所有
 `searchtrust_release_validation_%` fixture 在 rollback 后为 0。
 
-- [ ] **Step 5: 运行前端全量门禁**
+- [x] **Step 5: 运行前端全量门禁**
 
 Run（工作目录 `search-trust`）：
 
@@ -1075,7 +1075,7 @@ npm run test:e2e:paused
 
 Expected: 全部 PASS；浏览器测试无外网、artifact secret scan 无命中。
 
-- [ ] **Step 6: 运行后端全量门禁**
+- [x] **Step 6: 运行后端全量门禁**
 
 Run（工作目录 `SearchTrust-RD`）：
 
@@ -1085,14 +1085,14 @@ Run（工作目录 `SearchTrust-RD`）：
 
 Expected: fast pytest 与 Redis restart integration 全部 PASS；测试数高于既有 1,477。
 
-- [ ] **Step 7: 更新计划依赖和完成记录**
+- [x] **Step 7: 更新计划依赖和完成记录**
 
 开发计划中把 V22-093 从灰度改为直接正式发布，并注明 Verified 产品化是执行前置；直接发布
 设计的 current-state/acceptance 不再声称未接通的能力已存在。completion 文档记录：精确
 commit、测试计数、migration 数、schema/acceptance/residue 数、双开关仍关闭、正式配置仍未
 写入。不得记录 secret value、OAuth token、payment payload 或客户数据。
 
-- [ ] **Step 8: 提交测试与文档**
+- [x] **Step 8: 提交测试与文档**
 
 前端仓库：
 
