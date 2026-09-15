@@ -1130,7 +1130,19 @@ V22_GBP_SYNC_ENABLED=false
 
 - [ ] **Step 10: 按已批准正式验收顺序开放**
 
-先应用两条 migration，再发布后端和前端。配置正式 `DODO_VERIFIED_CREDIT_PRODUCT_ID`，验证
+从已验证的 `20260912100000` 基线开始，必须按以下顺序应用全部 9 条新增 migration，不得只应用最初的两条：
+
+1. `20260913100000_add_v2_2_verified_analysis_jobs.sql`；
+2. `20260913110000_add_v2_2_verified_credit_payments.sql`；
+3. `20260914100000_freeze_v22_public_gbp_source.sql`；
+4. `20260914110000_atomic_v22_verified_settlement.sql`；
+5. `20260914120000_allow_v22_verified_success_replay.sql`；
+6. `20260914130000_fence_v22_verified_takeover_replay.sql`；
+7. `20260914140000_bind_v22_verified_payment_settlement.sql`；
+8. `20260914150000_persist_v22_verified_refund_reviews.sql`；
+9. `20260914160000_coordinate_v22_verified_checkout_initialization.sql`。
+
+应用后先用 release validation 确认数据库为完整 29 条有序 migration，再发布后端和前端。配置正式 `DODO_VERIFIED_CREDIT_PRODUCT_ID`，验证
 GSC/GA4/OAuth broker 与 SerpAPI 公共 GBP。使用真实 Case 完成一次 `$19 / 1 credit` 购买，
 确认只到账不自动生成；随后显式生成、验证新报告；再执行一次受控技术失败和重试。账本、
 order、job、attempt charge、report、parent/snapshot IDs 全部一致后，才把两个 Verified flags

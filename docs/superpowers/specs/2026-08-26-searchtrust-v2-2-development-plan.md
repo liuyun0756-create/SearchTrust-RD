@@ -1,6 +1,6 @@
 # SearchTrust v2.2 完整开发计划
 
-状态：实施中（V22-090 前端测试基础设施已完成）
+状态：Verified Generation 产品化与离线发布准备已完成；V22-093 生产执行待独立复核
 
 日期：2026-08-26
 
@@ -14,7 +14,7 @@
 SearchTrust v2.2 将当前“单页信任审计报告”升级为“Local SEO 客户决策与行动系统”。同一个客户项目支持两个连续阶段：
 
 1. **Local SEO 获客报告（Prospect Opportunity Report）**：无需 Google 数据授权，使用全站公开数据、SerpAPI、公开 GBP 和真实竞争对手，帮助顾问向潜在客户证明机会并给出三项行动。
-2. **Local SEO 验证执行计划（Verified Client Action Plan）**：在同一客户项目中连接 GSC、GBP 和 GA4，用第一方数据验证或调整结论，生成三项可执行行动、30/60/90 天路线图和复查基线。
+2. **Local SEO 验证执行计划（Verified Client Action Plan）**：在同一客户项目中连接 GSC 和 GA4，并绑定 SerpAPI 采集的必需公开 GBP 快照，用客户第一方数据验证或调整结论，生成三项可执行行动、30/60/90 天路线图和复查基线。官方 GBP OAuth/Performance 不是 v2.2 条件。
 
 v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Local SEO 顾问是否愿意真实支付 $19、把报告用于客户工作、连接第一方数据并执行建议。
 
@@ -26,20 +26,19 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 - 零授权获客流程；
 - 全站结构检查和重点页面深度分析；
 - SerpAPI Maps、Local Pack、自然搜索和公开 GBP 数据；
-- 三个真实本地竞争对手；
+- 1—3 个真实本地竞争对手；系统找到 0 个时必须要求用户至少提供 1 个，否则阻断后续流程；
 - 完整八层信任结构；
 - 一个核心问题和严格排序的三项行动包；
 - 结论、比较、行动到原始证据的追溯；
 - 顾问版、客户版、PDF 和安全分享链接；
 - GSC OAuth、资源选择、同步和健康检查；
-- GBP OAuth、Location 选择、资料/Performance 同步和健康检查；
 - GA4 OAuth、Property 选择、同步和健康检查；
-- GSC、GBP、GA4 与客户实体的匹配；
-- 跨数据源结论和 Full Evidence Coverage；
+- SerpAPI 公开 GBP 快照必须存在、未过期并与 Case 实体匹配；
+- GSC 和 GA4 与客户实体的匹配与跨源结论；
 - 获客报告升级为验证执行计划；
 - Confirmed、Reprioritized、Refined、Replaced、New 版本差异；
 - 付费失败恢复、任务持久化、成本限制和商业埋点；
-- GBP API 合规、令牌安全、数据删除和30天内容保留策略。
+- OAuth 令牌安全、数据删除和公开 GBP 快照有效期策略。
 
 ## 3. 不进入 v2.2 的范围
 
@@ -51,55 +50,41 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 - CRM 收入归因；
 - 大规模关键词持续监控；
 - 完整月度订阅和行动项目管理；
-- 自动后台同步 GBP；v2.2 的 GBP 同步由用户在产品中主动触发。
+- 官方 GBP OAuth、Account/Location 管理与 Performance 同步；
+  `GOOGLE_GBP_SYNC_ENABLED` 和 `V22_GBP_SYNC_ENABLED` 保持关闭，后续必须作为独立里程碑验收。
 
 ## 4. 当前系统基线
 
-### 4.1 前端现状
+### 4.1 前端当前状态
 
 技术栈：Next.js 16、React 19、TypeScript、Clerk、Supabase、Dodo Payments、PostHog、React PDF。
 
-已有能力：
+已完成：
 
 - Clerk 用户认证；
-- Credits 和 Dodo Payments 支付；
-- 报告创建、SSE 进度、持久化、历史列表、PDF 和邮件发送；
-- `report_v2_1` 标准化读取；
-- 八层报告组件、GBP 对齐、证据展示和客户预览；
-- Supabase `reports`、`users`、`orders` 基础表。
+- Case、公开预检、竞品确认、Prospect 付费与持久任务；
+- GSC/GA4 连接、资源绑定、同步与健康状态，以及公开 GBP 证据确认；
+- $19 购买 1 个 account credit、Case checkout 绑定、Verified 生成、失败返还和显式重试；
+- 不可变 Prospect/Verified 报告版本、真实差异、PDF 和可撤销分享；
+- 完整 TypeScript/Vitest/Playwright、数据库发布与产物安全门禁。
 
-主要缺口：
+V2.1 产品路由、`report_v2_1` 读取/转换、适配器、历史回归和双渲染已全部删除，不做兼容。
 
-- 没有客户项目模型；
-- 当前报告仍以 `page_url` 为核心；
-- 没有报告父子版本和升级差异；
-- 没有 Google 数据连接、资源绑定、令牌存储和数据同步；
-- 没有公开数据预检和商家/竞品确认流程；
-- 没有前端自动化测试体系；
-- 支付仍以审计 Credit 为中心，而不是客户项目交付。
-
-### 4.2 后端现状
+### 4.2 后端当前状态
 
 技术栈：FastAPI、Pydantic、异步任务、Firecrawl/Jina、SerpAPI、Dify。
 
-已有能力：
+已完成：
 
 - 页面和内部页面抓取；
 - GBP 自动发现、公开资料和评论抓取；
-- v2.1 八层规则、证据账本、确定性评分和质量校验；
+- v2.2 八层规则、证据账本、确定性评分和质量校验；
 - Dify 仅生成报告文案、后端绑定证据的基础；
-- SSE 任务进度和失败状态；
-- 完整的 pytest 规则、GBP、证据和报告契约测试。
+- v2.2 Case/SERP/竞品上下文、GSC/GA4 信任输入、公开 GBP 冻结快照、跨源规则与版本差异；
+- Redis/ARQ durable job、重启恢复、幂等结算、成本上限、provider 熔断与失败 credit 返还；
+- 独立 Verified resolver/pipeline/executor/persister/reconciler 与完整 release gate。
 
-主要缺口：
-
-- 当前 API 仍是页面级 `/api/v1/analyze`；
-- 没有客户、目标服务、目标地区、关键词和竞品上下文；
-- 没有完整站点库存与分层深度分析；
-- 没有独立 SERP/竞品采集层；
-- 没有 GSC、GBP Performance、GA4 证据输入；
-- 没有 v2.2 报告契约、跨源规则和版本差异；
-- 当前任务状态存储在单进程内存，重启会丢失，不适合更长的付费 v2.2 流水线。
+仅 `/api/v1/health` 作为 Railway 基础设施探针保留；`/api/v1/analyze`、v2.1 模型、adapter 与历史契约测试已删除。
 
 ## 5. 统筹关系与工程取舍
 
@@ -110,7 +95,7 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 - 获客版付款前零 Google 授权；
 - 顾问拿下客户后进入统一数据连接中心；
 - 使用增量授权，不在首次 Google 同意页一次请求所有权限；
-- 验证执行版必须实现 GSC、GBP、GA4，但允许单个数据源显示不健康并给出修复路径。
+- 验证执行版必须实现 GSC、GA4 和经用户确认的公开 GBP 快照；任一必需源不健康或不匹配都阻断生成并给出修复路径。
 
 失衡预警：付款前出现 OAuth、授权退出率上升、用户无法在没有客户权限时购买。
 
@@ -121,7 +106,7 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 - 事实、数字、匹配、覆盖和优先级由确定性代码负责；
 - LLM 只输出绑定 `finding_id` 和 `evidence_id` 的说明文案；
 - 没有证据的文案校验失败，不允许静默降级成“看起来完整”的报告；
-- 复用 v2.1 证据与规则能力，不重写已经稳定的基础。
+- 保留经验证的确定性规则思路，但不保留任何 v2.1 可执行产品路径或兼容层。
 
 失衡预警：报告出现无法追溯数字、相同输入产生不同前三项行动、LLM 改写原始数据。
 
@@ -132,7 +117,7 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 - 最多发现并做结构检查的客户 URL：500；
 - 最多深度分析的客户页面：50；
 - 每个竞争对手最多深度分析页面：10；
-- 竞争对手数量：3；
+- 竞争对手数量：1—3；0 个时必须请用户提供至少 1 个，不得继续；
 - 核心查询：3—5；
 - 基础报告搜索位置：1个主要目标点；
 - PageSpeed 深度检查页面：最多5个；
@@ -142,29 +127,19 @@ v2.2 的商业验证目标不是“用户觉得报告不错”，而是验证 Lo
 
 失衡预警：P95 报告生成时间超过15分钟、单份公开报告外部 API 成本超过内部预算、抓取失败率持续上升。
 
-### 5.4 新架构 ↔ v2.1 兼容
+### 5.4 v2.2 单一产品边界
 
-当前阶段优先隔离：
+- `/api/v2`、`report_v2_2` 和 Case 数据模型是唯一产品路径；
+- `/api/v1/analyze`、`report_v2_1`、转换 adapter、历史报告读取和双渲染全部删除，不兼容；
+- `/api/v1/health` 只是基础设施探针，不属于 v2.1 产品能力；
+- CI 以删除性不变式防止 v2.1 路由、模型、adapter 或测试夹具回归。
 
-- 保留 `/api/v1` 和 `report_v2_1` 只读兼容；
-- 新增 `/api/v2`、`report_v2_2` 和客户项目数据模型；
-- 不原地改变 v2.1 Pydantic/TypeScript 合同语义；
-- 新报告必须写入 v2.2 字段，旧报告继续由现有适配器读取。
+### 5.5 公开 GBP 证据追溯
 
-失衡预警：v2.2 迁移导致历史报告打不开、PDF 失败或 v2.1 线上流程回归。
-
-### 5.5 证据长期追溯 ↔ GBP 数据政策
-
-当前阶段优先合规：
-
-- GBP API 原始内容设置不超过30个日历日的 TTL；
-- v2.2 不做自动后台 GBP 同步，必须由授权用户主动触发；
-- 官方 GBP API 只用于用户已授权管理的客户 Location；获客预检、潜在客户发现和竞品发现继续使用 SerpAPI 与公开网页，禁止使用 GBP `GoogleLocations` endpoint 做 lead generation；
-- 报告只保留经政策审查允许的必要派生结论、来源元数据和覆盖说明；
-- 到期证据显示“原始 GBP 快照已按政策过期，需要重新同步”，不得伪装成仍可打开；
-- 断开客户关系时立即撤销绑定、删除令牌，并在七个工作日政策要求内完成解除。
-
-失衡预警：原始 GBP 内容超过30天、用户不能自助断开、报告把过期数据显示为当前数据。
+- v2.2 使用现有 SerpAPI 三 Key 轮换链路采集公开 GBP 资料、评论与活跃信号；
+- 公开 GBP 快照是 Verified Core 必需输入，必须未过期、与 Case 匹配并在生成时冻结；
+- 报告必须明确其为公开观察，不得冒充官方 GBP Performance；
+- 官方 GBP OAuth/Performance 不是 v2.2 发布门槛，官方双开关保持关闭。
 
 ## 6. 目标架构
 
@@ -174,7 +149,7 @@ Clerk User
 Next.js Case & OAuth Layer
    ├─ Supabase: cases / bindings / snapshots / report versions
    ├─ Dodo Payments
-   └─ Encrypted Google tokens
+   └─ Encrypted GSC/GA4 tokens
    ↓ bounded, normalized context only
 FastAPI v2 Analysis API
    ├─ Durable Redis/ARQ job queue
@@ -196,10 +171,10 @@ Next.js persistence / advisor view / client view / PDF / share
 - Clerk 继续负责 SearchTrust 登录，不与 Google 数据授权混合。
 - Next.js 负责 Google OAuth、令牌加密、资源选择、数据同步和 Supabase 持久化。
 - Python 后端永远不接收 Google refresh token。
-- Next.js 将经过裁剪和标准化的 GSC/GBP/GA4 快照传给后端分析；原始令牌只存在于 Next.js 服务端。
+- Next.js 将经过裁剪和标准化的 GSC/GA4 快照与冻结公开 GBP 快照传给后端分析；GSC/GA4 原始令牌只存在于 Next.js 服务端。
 - 后端负责公开数据采集、证据归一化、规则、优先级、报告合同和版本差异。
 - Dify 不拥有事实和数字，只负责基于固定 finding/action 输入生成客户可读文案。
-- Redis/ARQ（或团队锁定的等价 Redis 异步队列）替换付费 v2.2 流程的纯内存任务状态；v1 暂时保留旧路径。
+- Redis/ARQ 承载付费 v2.2 durable job；除独立健康探针外不保留 v1 路径。
 
 ## 7. 数据模型计划
 
@@ -275,7 +250,8 @@ Next.js persistence / advisor view / client view / PDF / share
 - `provider_request_context jsonb`；
 - `supersedes_snapshot_id`。
 
-快照不可修改，只能新建。GBP Content 的 `expires_at` 不得超过获取后30天，并由清理任务删除受限原始内容。
+快照不可修改，只能新建。公开 GBP 快照必须写入 `expires_at`；到期后不能作为
+Verified 输入，重新采集时创建新快照并保留既有报告所冻结的证据引用。
 
 ### 7.5 扩展现有 `reports`
 
@@ -294,7 +270,7 @@ Next.js persistence / advisor view / client view / PDF / share
 - `ruleset_version`；
 - `copy_model_version`。
 
-旧报告这些字段为空，继续走 v2.1 渲染路径。v2.2 报告写入后不可 PATCH 修改正文，只允许修改分享、品牌等展示元数据。
+V2.1 报告不回填也不提供兼容渲染。v2.2 报告写入后不可 PATCH 修改正文，只允许修改分享、品牌等展示元数据。
 
 ### 7.6 `analysis_jobs`
 
@@ -312,20 +288,16 @@ Next.js persistence / advisor view / client view / PDF / share
 
 Redis 负责队列和实时状态，Supabase `analysis_jobs` 保存持久审计状态。服务重启后可识别未完成任务并安全重试或标记失败退款。
 
-## 8. Google OAuth 与数据同步
+## 8. GSC/GA4 OAuth 与公开 GBP 证据
 
 2026-09-07 决策更新：v2.2 默认使用现有 SerpAPI 三 Key 轮换链路获取公开 GBP
 资料、评论与公开活跃信号，不将官方 GBP 后台账号作为 Verified Core 的阻塞条件。
-官方 GBP Performance 保留为可选增强；只有 GSC、官方 GBP Performance 和 GA4 全部
-健康且身份匹配时，才允许显示 Full Evidence。
+官方 GBP OAuth/Performance 已移出 v2.2 边界，不影响 Verified Core 或发布。
 
 ### 8.1 OAuth scopes
 
 - GSC：`https://www.googleapis.com/auth/webmasters.readonly`；
 - GA4：`https://www.googleapis.com/auth/analytics.readonly`；
-- GBP：`https://www.googleapis.com/auth/business.manage`。
-
-GBP scope 本身允许管理能力，但 v2.2 代码只实现读取方法，不实现修改、回复、发布和更新接口。
 
 ### 8.2 增量授权流程
 
@@ -334,13 +306,12 @@ GBP scope 本身允许管理能力，但 v2.2 代码只实现读取方法，不�
 3. 选择 GSC Property；
 4. 再解释 GA4 并请求 GA4 scope；
 5. 选择 GA4 Property；
-6. 再解释 GBP 广泛 scope 的原因并请求 GBP scope；
-7. 选择 GBP Account/Location；
-8. 分别检查 granted scopes，任何未授权源保持独立状态；
-9. 用户主动点击 `Sync and verify data`；
-10. 同步完成后计算数据健康和 Full Evidence Coverage。
+6. 分别检查 granted scopes，任何未授权源保持独立状态；
+7. 确认 SerpAPI 公开 GBP 快照与 Case 实体匹配；
+8. 用户主动点击 `Sync and verify data`；
+9. GSC、GA4 和公开 GBP 三个必需源全部健康且匹配后允许生成。
 
-一个 Google 账号可以完成三个来源的连接，但不能假设三个资源都属于同一账号；产品允许分别连接不同 Google 账号。
+GSC 和 GA4 可分别连接不同 Google 账号；公开 GBP 不使用客户 Google OAuth。
 
 ### 8.3 GSC 规范化快照
 
@@ -390,35 +361,22 @@ GBP scope 本身允许管理能力，但 v2.2 代码只实现读取方法，不�
 - 关键事件不是明显全部缺失或异常重复；
 - 转化不健康时，允许行为分析，但禁止确定性转化结论。
 
-### 8.5 GBP 规范化快照
+### 8.5 公开 GBP 规范化快照
 
-读取：
-
-- Account/Location identity；
-- 名称、地址/服务区域、电话、网站；
-- 类别、服务、营业时间和公开资料；
-- Performance 搜索关键词；
-- impressions；
-- calls；
-- direction requests；
-- website clicks；
-- API 能提供的设备和日期维度。
-
-该 connector 只能读取用户已经有权管理并主动绑定到 Case 的 Location，不参与公开商家、潜在客户或竞争对手发现。
+通过 SerpAPI Google Maps 链路采集名称、地址/服务区、网站、类别、服务、营业时间、评分、评论样本和可用的公开活跃信号。保存 provider、采集时间、资源标识和匹配依据，不把公开数据命名为官方 Performance。
 
 健康检查：
 
-- 用户对目标 Location 有权限；
-- Location 与 Case 实体匹配；
-- profile 状态可用；
-- 目标报告期内 Performance 可用；
-- 数据不可用和API限制明确写入 coverage。
+- 公开商家身份与 Case 网站、名称、地址/服务区匹配；
+- 快照未过期且内容可用；
+- 多候选必须由用户确认，找不到时必须要求用户提供链接；
+- 生成 Verified report 时冻结精确快照 ID。
 
-GBP 原始内容保留不超过30天。v2.2 不在后台定时抓取，必须由用户主动同步。
+官方 GBP Account/Location OAuth 和 Performance 是后续非 v2.2 增强，当前不请求 `business.manage` scope，官方双开关保持关闭。
 
 ## 9. v2.2 后端 API 合同
 
-保留 `/api/v1`。新增 `/api/v2`：
+`/api/v2` 是唯一产品 API。`/api/v1` 仅保留无业务语义的 `/api/v1/health` 基础设施探针：
 
 ### 9.1 `POST /api/v2/preflight`
 
@@ -466,7 +424,7 @@ GBP 原始内容保留不超过30天。v2.2 不在后台定时抓取，必须由
 
 ## 10. `report_v2_2` 合同
 
-后端新增 `app/report_v22/`，不直接扩展 v2.1 模型。
+后端使用独立的 `app/report_v22/` 合同与生成路径；v2.1 模型和适配器均已删除。
 
 根结构：
 
@@ -670,12 +628,12 @@ src/components/report/v22/**
 ### 12.2 连接流程
 
 - 一个统一 Connection Center；
-- GSC、GA4、GBP 分别显示 Not connected/Connected/Available/Healthy/Verified；
+- GSC、GA4 显示连接/同步状态，公开 GBP 显示可用性、匹配与快照时间；
 - 每次请求 scope 前解释用途；
 - 资源选择后显示身份匹配证据；
 - 用户主动同步；
 - 不健康数据源显示具体修复方式；
-- 三个源完成后允许生成 Verified Client Action Plan。
+- GSC、GA4 和公开 GBP 三个必需源全部 healthy + matched 后允许生成 Verified Client Action Plan。
 
 ### 12.3 报告阅读
 
@@ -689,25 +647,19 @@ src/components/report/v22/**
 
 以下按依赖顺序执行。每一阶段必须先通过自动化测试和验收，再进入依赖阶段；允许无依赖工作流并行。
 
-### M0：外部审批与合同冻结
+### M0：合同冻结（官方 GBP 审批已移出 v2.2 关键路径）
 
-#### V22-001 GBP API 项目审批
+#### V22-001 官方 GBP API 项目审批（已取消为 v2.2 前置）
 
-- 创建/确认生产 Google Cloud Project；
-- 使用企业域名邮箱申请 GBP API access；
-- 启用 Business Profile Performance、Business Information、Account Management 等所需 API；
-- 记录配额、审批状态和生产账号测试方案；
-- 准备 Google 要求的 live demo account。
-
-验收：生产项目 quota 非0，授权账号可列出真实测试 Location 并读取 Performance。
+v2.2 使用 SerpAPI 公开 GBP 证据，无需官方 GBP 后台账号或 API 准入即可完成发布。若未来获得官方准入，必须另建里程碑完成配额、OAuth、真实 Location 与 Performance 验收；当前不开启官方双开关。
 
 #### V22-002 OAuth 和政策准备
 
 - 配置 OAuth consent screen；
 - 准备隐私政策、数据使用说明、断开/删除说明；
-- 提交敏感 scope 验证；
+- 完成 GSC/GA4 所需 scope 验证；
 - 定义令牌事件审计和泄漏响应；
-- 法务/负责人确认 GBP 30天内容保留和第三方政策。
+- 确认 GSC/GA4 数据使用与 SerpAPI 公开 GBP 证据条款。
 
 验收：OAuth 生产 redirect、domain verification、scope justification 和删除流程完成。
 
@@ -733,9 +685,9 @@ src/components/report/v22/**
 - `analysis_jobs`；
 - `reports` v2.2 扩展；
 - 索引、唯一约束、RLS 和 service_role 权限；
-- GBP raw content TTL 辅助字段。
+- 公开 GBP 快照有效期与冻结引用辅助字段。
 
-测试：SQL lint/本地 Supabase migration、唯一性、外键、删除和旧报告兼容。
+测试：SQL lint/本地 Supabase migration、唯一性、外键、删除与 V2.1 产品路径不得回归。
 
 #### V22-011 Case API
 
@@ -788,7 +740,7 @@ src/components/report/v22/**
 
 - 系统候选；
 - 用户确认；
-- 3个竞品；
+- 用户确认 1—3 个竞品；候选为 0 时必须要求用户至少提供 1 个才能继续；
 - 每个最多10页；
 - 竞品公开 GBP 和评论样本。
 
@@ -808,7 +760,7 @@ src/components/report/v22/**
 
 #### V22-031 证据索引
 
-- 扩展v2.1 evidence ledger；
+- 建立独立的 v2.2 evidence index；
 - 支持 snapshot、query、location、competitor、GSC、GBP、GA4；
 - stable evidence ID；
 - source health 和 limitation。
@@ -897,7 +849,7 @@ src/components/report/v22/**
 
 - GSC sites；
 - GA4 account/property；
-- GBP account/location；
+- 公开 GBP/Google Maps 候选确认（无 OAuth）；
 - 支持不同Google账号；
 - 每个资源显示匹配线索。
 
@@ -905,16 +857,16 @@ src/components/report/v22/**
 
 - GSC domain/url-prefix；
 - GA4 web stream/domain；
-- GBP网站、名称、地址/服务区；
+- 公开 GBP 网站、名称、地址/服务区；
 - 自动匹配只有高置信度才可确认；
 - 中低置信度必须用户确认；
 - 保存确认者和时间。
 
 测试：OAuth拒绝、部分scope、无refresh token、过期、撤销、多个账号、错误Property、跨用户Case。
 
-验收：三个数据源均能连接、选择、绑定、断开，令牌不出现在浏览器或日志。
+验收：GSC/GA4 能连接、选择、绑定和断开，令牌不出现在浏览器或日志；公开 GBP 可以由用户确认并绑定，不请求官方 scope。
 
-### M6：GSC、GA4、GBP同步和健康检查
+### M6：GSC、GA4 同步与公开 GBP 健康检查
 
 #### V22-060 GSC connector
 
@@ -932,27 +884,26 @@ src/components/report/v22/**
 - thresholding/sampling metadata；
 - health evaluator。
 
-#### V22-062 GBP connector
+#### V22-062 公开 GBP connector
 
 - 默认公开路径：SerpAPI Google Maps place details、评论、图片与帖子的有界采集；
 - 用户确认 GBP/Google Maps 身份，找不到时要求提供链接；
 - 公开 GBP 证据支持 Verified Core，但不得冒充官方 Performance；
-- 可选官方路径：account/location、Business Information、Performance、read-only code path、
-  30 天原始 Content TTL、user-triggered sync 和 health evaluator；
-- 官方开关默认关闭，通过 Google GBP API 准入后才启用。
+- 官方 GBP OAuth、Account/Location 与 Performance 不属于 v2.2 产品或发布门槛，
+  相关双开关保持关闭。
 
 #### V22-063 Connection Center
 
 - 三源状态；
 - Sync按钮；
 - 失败修复说明；
-- Full Evidence Coverage gate；
+- Verified Core 三源确定性 gate；
 - 数据同步进度和重试。
 
 完成于 2026-09-07：已交付 `connection_center_v1` 私有只读聚合接口、Case 所有权与
-一致性重读边界、公开 GBP / GSC / GA4 三源确定性门禁、可选官方 GBP 折叠区、唯一
+一致性重读边界、公开 GBP / GSC / GA4 三源确定性门禁、唯一
 下一步动作和统一响应式页面。Verified Core 要求三项必需证据全部 healthy + matched；
-Full Evidence 额外要求未过期且内容可用的官方 GBP Performance。V22-063 不创建验证
+该阶段完成时文档曾保留 Full Evidence 官方 GBP Performance 概念；该概念已被后续决策取消，不是 v2.2 门槛。V22-063 不创建验证
 任务，生成按钮继续锁定到 M7 的双端开关与执行链路完成。无数据库迁移，正式环境
 Google 连接与同步开关继续关闭。详见
 `2026-09-07-searchtrust-v2-2-connection-center-completion.md`。
@@ -960,7 +911,7 @@ Google 连接与同步开关继续关闭。详见
 测试使用fake providers和recorded sanitized fixtures；GBP没有沙箱，不允许CI调用真实商家。
 
 验收：公开 GBP 快照 + GSC/GA4 健康快照可继续生成 Verified Core；错误绑定和
-不健康数据被准确阻止或降级。官方 GBP Performance 未连接时 Full Evidence 必须为 false。
+不健康数据必须准确阻止。
 
 ### M7：验证执行计划和版本升级
 
@@ -968,15 +919,13 @@ Google 连接与同步开关继续关闭。详见
 
 - GSC机会；
 - GA4行为/转化；
-- GBP Performance；
 - 测量配置问题。
 
 完成于 2026-09-08：已交付 `v22_first_party_findings_v1` 确定性单来源规则引擎、三态规则
 评估、严格 Evidence/Trace 引用、可信快照解析客户端与可恢复 checkpoint。GSC/GA4 必需，
-官方 GBP Performance 为可选增强；缺失或不合格来源不会伪造业务事实。正式数据库已部署
+官方 GBP Performance 的内部可选分支已移出 v2.2 产品和发布门槛；缺失不会阻断。正式数据库已部署
 仅 `service_role` 可调用的 Case/parent/binding/current-snapshot 解析 RPC，Railway API 与正式
-Worker 已运行相同最新提交。GBP 精确 Performance 和关键词只在 30 天 Content 保留期内存
-中计算，持久结果仅保存不可逆档位。Verified Generation 与 Google 同步开关继续关闭。
+Worker 已运行相同最新提交。Verified Generation 与 Google 同步开关继续关闭。
 详见 `2026-09-08-searchtrust-v2-2-first-party-findings-completion.md`。
 
 #### V22-071 跨源 Findings
@@ -987,10 +936,10 @@ Worker 已运行相同最新提交。GBP 精确 Performance 和关键词只在 3
 
 完成于 2026-09-08：已交付 `v22_cross_source_findings_v1` 内部确定性规则阶段。
 GSC↔GA4 支持保守的同域页面、聚合 90 天对比和至少 8 个完整 ISO 周相关；
-可选官方 GBP 支持与 GSC 曝光、GA4 sessions 的聚合配对。双源同时健康、
+当时实现的可选官方 GBP 聚合分支已移出 v2.2 发布边界。GSC/GA4 双源同时健康、
 时间窗可比且两侧都达到固定样本与 20% 门槛才能生成业务 Finding；反向只生成
 测量一致性 Finding，不宣称因果。页面匹配不使用标题、重定向、canonical 或模糊匹配，
-无效/不明确身份为 `not_checked`。GBP 精确数值仅在内存中计算，持久结果仅保存档位。
+无效/不明确身份为 `not_checked`。
 阶段已支持摘要绑定、引用校验、独立输出上限和可恢复 checkpoint；未新增数据库、
 前端路由或实时 provider 调用，Verified Generation 仍关闭。详见
 `2026-09-08-searchtrust-v2-2-cross-source-findings-completion.md`。
@@ -1033,12 +982,12 @@ unchanged 审计。新 Finding 已用于解释旧变化后不会重复显示为 
 
 #### V22-074 执行基线和路线图
 
-- Action对应GSC/GBP/GA4指标；
+- Action 对应 GSC/GA4 指标或可追溯公开 GBP 证据；
 - baseline、review date、success condition；
 - 30/60/90依赖排序；
 - 数据缺失时第一行动可为测量修复。
 
-测试：全部健康、GSC无数据、GA4无事件、GBP无Performance、结论确认、结论推翻、低置信度、相同输入幂等。
+测试：全部健康、GSC无数据、GA4无事件、公开 GBP 缺失/过期/不匹配、结论确认、结论推翻、低置信度、相同输入幂等。
 
 验收：真实全覆盖Case从获客报告升级，用户能解释每个结论变化和每项行动的验证方式。
 
@@ -1052,9 +1001,7 @@ GBP 档位保护。
 GSC/GA4 测量修复在需要时强制为第一行动，后两项在通过前不得正式验收；
 普通跨源方向冲突使用“冲突不再触发”指标，不宣称任一来源错误。最终组装
 `verified_execution` ReportV22，保留经验证的公开事实、合并当前 Findings/Evidence，
-原样附加 V22-073 变化差异，并保证父报告字节不变。官方 GBP 缺失不阻断
-Verified Core；只有 GSC、GA4、官方 GBP 均健康且 matched 时才标记 Full Evidence。
-官方 GBP 精确 Performance、keywords 和 raw payload 不进入结果或 checkpoint。新增
+原样附加 V22-073 变化差异，并保证父报告字节不变。本阶段当时保留的官方 GBP/Full Evidence 描述已被后续决策取代；现行 Verified Core 只使用必需公开 GBP 快照与 GSC/GA4。新增
 仅结果 checkpoint、安全错误和资源上限；无数据库、前端、公开 API、provider 或开关变更，
 Google 同步与 Verified Generation 仍保持关闭。详见
 `2026-09-09-searchtrust-v2-2-execution-plan-completion.md`。
@@ -1223,13 +1170,13 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 4. Service Area Business；
 5. 大于500 URL；
 6. SerpAPI部分失败；
-7. 三个Google源全部健康；
+7. GSC、GA4 与公开 GBP 三项必需数据全部健康；
 8. GSC Property错误；
 9. GSC无搜索数据；
 10. GA4有流量但无Key Events；
 11. GA4 Property错误；
-12. GBP Location错误；
-13. GBP Performance为空；
+12. 公开 GBP 身份不匹配；
+13. 公开 GBP 缺失或已过期；
 14. 用户只批准部分scope；
 15. token过期/撤销；
 16. 同一Case重新生成；
@@ -1238,7 +1185,7 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 19.任务期间服务重启；
 20.付款webhook重复；
 21.分享链接撤销；
-22.GBP快照30天到期和清理；
+22.公开 GBP 快照到期、重采集和既有报告冻结引用保持不变；
 23.V2.1产品路由、报告渲染和PDF入口保持不可访问；
 24.LLM输出无证据数字被拒绝。
 
@@ -1251,26 +1198,14 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 - top actions 数量不等于3：0；
 - token/secret日志泄漏：0；
 - 跨用户Case访问：0；
-- v2.1历史报告回归失败：0；
-- GBP受限原始Content超过30天：0。
+- V2.1 产品路由、模型、适配器或历史兼容夹具重新出现：0；
+- 到期公开 GBP 快照被新 Verified job 采用：0。
 
-## 15. 商业验证计划
+## 15. 发布后商业观察
 
-测试对象：10—15名真实 Local SEO 顾问，提交真实潜在客户或已管理客户。
+V22-093 不设置 10—15 名验证用户、顾问名单、邀请码或百分比灰度门槛。直接正式发布后，使用现有 PostHog 粗粒度漏斗和数据库财务事实观察自然流量，不把指定人数或真实付款测试作为上线前置。发布验收本身不创建真实 checkout、不付款。
 
-禁止：免费赠送完整获客报告后询问“是否愿意付费”。必须实际进入 $19 checkout。
-
-最低验证目标：
-
-- 10名合格测试者中至少3名真实付款；
-- 至少70%认为核心结论可信；
-- 至少70%认为客户版可以直接展示；
-- 至少60%认为三项行动无需重新研究；
-- 至少50%实际分享或导出；
-- 购买者中至少30%进入Google数据连接；
-- 成功拿到权限者中至少60%完成三源绑定或明确记录未完成原因；
-- 技术原因退款率低于10%；
-- 至少2名用户愿意继续为复查/监控付费。
+发布后持续观察：预检到付款、报告、分享、GSC/GA4 连接和 Verified 升级的大致转化，以及生成失败、credit 返还与用户显式重试。不新增精细埋点或用户 cohort。
 
 商业北极星：
 
@@ -1282,33 +1217,33 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 
 | 阶段 | 预计工程时间 | 依赖 |
 |---|---:|---|
-| M0 外部审批与合同 | 3—5工程日，审批时间另计 | 无，立即开始 |
+| M0 合同与 GSC/GA4 OAuth | 3—5工程日，审批时间另计 | 无，立即开始 |
 | M1 Case/DB/持久任务 | 6—8工程日 | 合同草案 |
 | M2 公开采集 | 8—12工程日 | M1部分接口 |
 | M3 证据/决策/行动 | 8—12工程日 | M2 fixtures |
 | M4 获客产品 | 8—10工程日 | M1、M2、M3 |
 | M5 OAuth基础 | 6—9工程日 | M0、M1 |
-| M6 三源connector | 10—15工程日 | M5、GBP审批 |
+| M6 三源connector | 10—15工程日 | M5、SerpAPI 公开 GBP |
 | M7 验证报告/版本差异 | 8—12工程日 | M3、M6 |
 | M8 可靠性/安全/成本 | 6—10工程日 | 全流程 |
 | M9 测试/发布 | 6—10工程日 | M4、M7、M8 |
 
-并行执行后，目标日历周期为8—10周；GBP审批和OAuth验证不计入工程日，但位于关键路径。单人开发预计需要16—22周，不应压缩测试和安全阶段来换取日期。
+该排期是 2026-08-26 的初始估算，现已被实际完成记录取代。官方 GBP 审批不在 v2.2 关键路径；GSC/GA4 OAuth 完整性仍必须在开启相应能力前验收。
 
 ### 建议并行轨道
 
 - 轨道A：Case、前端流程、支付、报告UI；
 - 轨道B：站点、SERP、竞品、v2.2证据和决策；
-- 轨道C：OAuth、GSC、GA4、GBP、数据健康；
+- 轨道C：OAuth、GSC、GA4、公开 GBP、数据健康；
 - 汇合：Verified report、版本差异、E2E、直接正式发布。
 
 ## 17. 发布风险与应对
 
 | 风险 | 级别 | 应对 |
 |---|---|---|
-| GBP API审批延迟/拒绝 | 阻塞 | 第一天申请；准备企业域名、合法用途、demo；未获批不得宣称Full Evidence |
+| 官方 GBP API审批延迟/拒绝 | 非 v2.2 阻塞 | 保持官方双开关关闭；v2.2 继续使用 SerpAPI 公开 GBP |
 | OAuth敏感scope验证延迟 | 阻塞 | M0完成材料；增量授权；最小scope；上线前生产验证 |
-| GBP政策与长期证据冲突 | 高 | 原始Content TTL≤30天；到期提示；法务确认保留字段 |
+| 公开 GBP 快照过期或身份错误 | 高 | 有效期、冻结 snapshot ID、用户确认与严格匹配 |
 | 全站抓取过慢/过贵 | 高 | 500/50/10硬上限、预算计数、覆盖降级 |
 |错误商家/竞品 | 高 | 置信度门槛+用户确认+版本记录 |
 | GA4埋点不健康 | 常见 | 健康检查；禁止转化结论；生成测量修复行动 |
@@ -1326,7 +1261,7 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 - 两种入口真实可用；
 - 无授权能购买并生成获客报告；
 - GSC、GA4 健康且公开 GBP 已确认后能升级 Verified Core 执行报告；
-- 三个官方数据源都健康时可升级为 Full Evidence；
+- 官方 GBP OAuth/Performance 缺失不阻断 v2.2，官方双开关保持关闭；
 - 用户能看到版本差异；
 - 客户版可分享/PDF；
 - 三项行动可直接实施和验收。
@@ -1336,14 +1271,14 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 - 每个关键数字有来源和时间；
 - 每条核心Finding有证据；
 - 每个Action反向链接Finding；
-- Full Evidence只在GSC/GBP/GA4健康时显示；
+- Verified Core 只在 GSC、GA4 和必需公开 GBP 均健康且匹配时可生成；
 - 不健康数据不会贡献verified结论；
-- GBP TTL清理已自动化。
+- 公开 GBP 快照过期和冻结系谱验证已自动化。
 
 ### 技术
 
 - 前后端CI通过；
-- v1回归通过；
+- V2.1 产品路由、report、adapter 和历史兼容测试保持删除；
 - 任务重启恢复通过；
 - payment/webhook幂等通过；
 - OAuth安全评审通过；
@@ -1356,24 +1291,23 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 - PostHog事件可形成从预检到付款、报告、分享、连接、升级的漏斗；
 - 技术失败自动恢复或返还权益；
 - 客观 Data-backed Report Guarantee 文案上线；
-- 10—15名付费验证用户名单和访谈脚本准备完成。
+- 不设付费验证用户名单或灰度 cohort，发布后直接观察自然流量。
 
 ## 19. 实施开始顺序
 
 立即执行：
 
-1. V22-001 GBP API审批；
-2. V22-002 OAuth验证与政策材料；
-3. V22-003 report/API/DB合同冻结；
-4. V22-010 Supabase migration；
-5. V22-012 Redis/ARQ持久任务；
-6. V22-020预检与V22-021站点库存；
-7. V22-050 OAuth基础；
-8. 公开采集轨道和三源connector轨道并行；
-9. 在稳定fixtures上实现v2.2决策和报告；
-10. 合并为获客→连接→验证→分享的端到端流程。
+1. V22-002 GSC/GA4 OAuth验证与政策材料；
+2. V22-003 report/API/DB合同冻结；
+3. V22-010 Supabase migration；
+4. V22-012 Redis/ARQ持久任务；
+5. V22-020预检与V22-021站点库存；
+6. V22-050 OAuth基础；
+7. 公开采集轨道和三源connector轨道并行；
+8. 在稳定fixtures上实现v2.2决策和报告；
+9. 合并为获客→连接→验证→分享的端到端流程。
 
-不要先做完整报告UI再补数据合同，也不要等待获客版完成后才申请GBP权限。两个做法都会把关键风险推迟到版本末期。
+不要先做完整报告 UI 再补数据合同。官方 GBP 权限已移出 v2.2 实施和发布路径。
 
 ## 20. 官方技术与政策依据
 
@@ -1392,13 +1326,13 @@ V2.2 不再使用 internal account、受控顾问、付费验证用户或百分�
 v2.2 完成时，Local SEO 顾问应该能够：
 
 1. 在没有客户权限时提交一个真实网站并支付 $19；
-2. 获得包含全站、GBP公开表现、搜索市场、三个竞品、八层信任和三项行动的可追溯获客报告；
+2. 获得包含全站、公开 GBP、搜索市场、1—3 个竞品、八层信任和三项行动的可追溯获客报告；一个竞品都没有时必须补充至少 1 个才能继续；
 3. 将客户版直接分享给潜在客户；
-4. 拿下客户后，在同一 Case 连接 GSC、GA4、GBP；
+4. 拿下客户后，在同一 Case 连接 GSC、GA4 并确认公开 GBP；
 5. 识别错误、无数据或不健康的连接；
 6. 用第一方数据重新生成验证执行计划；
 7. 看清哪些结论被确认、调整或替换；
 8. 按三项行动和30/60/90计划实施；
 9. 用明确的数据基线向客户解释后续复查方式。
 
-只有完整闭环通过真实付费客户验收，SearchTrust v2.2 才算完成。
+完整闭环通过离线发布门禁与生产非破坏验收后，SearchTrust v2.2 即可直接正式发布；真实付费数据只用于发布后商业观察。
