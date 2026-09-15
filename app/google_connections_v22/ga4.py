@@ -191,13 +191,21 @@ def _metadata(payload: dict) -> ReportMetadata:
 
 def _headers(payload: dict, dimensions: list[str], metrics: list[str]) -> None:
     dh, mh = payload.get("dimensionHeaders"), payload.get("metricHeaders")
-    # Protobuf JSON omits an empty repeated field. Totals reports request no
+    # Protobuf JSON omits empty repeated fields. Totals reports request no
     # dimensions, so a real response can legitimately omit dimensionHeaders.
     if dh is None and not dimensions:
         dh = []
-    if not isinstance(dh, list) or not isinstance(mh, list):
+    if not isinstance(dh, list):
         raise ValueError()
     if [item.get("name") if isinstance(item, dict) else None for item in dh] != dimensions:
+        raise ValueError()
+    # A brand-new property can return an entirely empty totals report with only
+    # kind and metadata. In that exact no-row shape Google also omits the
+    # non-empty requested metricHeaders array. Dimensioned reports still return
+    # their headers, and any response that claims rows must remain strict.
+    if mh is None and not dimensions and "rows" not in payload and "rowCount" not in payload:
+        return
+    if not isinstance(mh, list):
         raise ValueError()
     if [item.get("name") if isinstance(item, dict) else None for item in mh] != metrics:
         raise ValueError()

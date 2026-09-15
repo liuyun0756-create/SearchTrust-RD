@@ -221,6 +221,32 @@ def test_totals_accepts_omitted_empty_dimension_headers_only():
         )
 
 
+def test_totals_accepts_google_empty_property_shape_without_metric_headers():
+    payload = valid_payload("totals")
+    payload.pop("dimensionHeaders")
+    payload.pop("metricHeaders")
+    payload.pop("rows")
+    payload.pop("rowCount")
+
+    normalized = normalize_report(
+        payload,
+        view="totals",
+        start=END-timedelta(days=89),
+        end=END,
+    )
+    assert normalized.rows == []
+
+    payload = valid_payload("totals")
+    payload.pop("metricHeaders")
+    with pytest.raises(SyncError, match="SYNC_INVALID_GOOGLE_RESPONSE"):
+        normalize_report(
+            payload,
+            view="totals",
+            start=END-timedelta(days=89),
+            end=END,
+        )
+
+
 @pytest.mark.parametrize("mutation", [
     lambda p: p.update({"dimensionHeaders": [{"name": "pageLocation"}]}),
     lambda p: p["rows"][0]["metricValues"].__setitem__(0, {"value": "-1"}),
