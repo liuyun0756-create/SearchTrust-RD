@@ -9,7 +9,8 @@
 ## 1. 交付结果
 
 Verified Generation 已从内部 pipeline 扩展为完整可持久化产品路径：固定
-$19 购买 1 个 Case 级 credit、绑定 Dodo checkout、幂等确认、单次扣减、
+$19 checkout 绑定到对应 Case，到账后向账户增加恰好 1 个 credit；后续执行包含
+幂等确认、单次扣减、
 durable job、冻结的 GSC/GA4/公开 GBP 输入、原 Prospect 版本系谱、Verified
 report 原子持久化、受控失败后精确返还，以及用户显式发起的新 job 重试。
 
@@ -20,33 +21,42 @@ report 原子持久化、受控失败后精确返还，以及用户显式发起�
 2. 余额 0：本地 Dodo fixture 购买并确认后余额为 1，不自动生成；
    第一次生成受控失败后精确返还，再次生成建立具有前任系谱的新 job。
 
-所有浏览器 identity 和资源标识均为固定合成值或 `.invalid` 域名。Dodo、
-Google、PostHog 及 Verified API 均由本地 router 截取；未匹配的外网请求会使
-测试失败。两条旅程未读取 Supabase/Railway，未创建真实 checkout，未付款。
+所有浏览器 identity 和资源标识均为固定合成值或 `.invalid` 域名。Dodo fixture
+使用同一 loopback origin；Google 与 Verified API 由 BrowserContext 本地 router
+截取。测试环境不配置 PostHog key，任何 HTTP、redirect、beacon、popup 或 WebSocket
+外连（包括 PostHog 与 Dodo 域名）都会被独立守卫记录、终止并使测试失败。两条旅程
+未读取 Supabase/Railway，未创建真实 checkout，未付款。
 
 ## 2. 精确代码快照
 
 - 前端产品实现起点：`45585aafac456babf8b58be1cb39199cbc926246`；
 - 前端 Task 10 离线旅程与发布验证：
   `d7b3ea6ec1eb8af896bdfe478dedfbdcece217ae`；
+- 前端 Task 10 外网隔离与变化真值加固：
+  `47476a07088cace350192d705a4d5347f716a550`；
 - 后端 Verified Worker/pipeline 产品实现快照：
-  `b1ae6cb1c9094dc82f8f3920bb1cf3defb59a168`。
+  `b1ae6cb1c9094dc82f8f3920bb1cf3defb59a168`；
+- 后端开发计划现行决策与完整 migration 顺序校正：
+  `6151ad789b15dc855e24aa984dfe85fb1bab8ae2`。
 
-后端仓库在上述产品实现快照之后只新增本完成记录及两份发布设计/计划
-校正；生产执行时必须以复核后的完整提交链为准，不能只发布上述中间快照。
+本完成记录提交自身不能在正文中自引用；其精确提交以
+`6151ad789b15dc855e24aa984dfe85fb1bab8ae2` 为 parent，并在发布交接回执中记录。
+生产执行时必须以独立复核后的完整提交链为准，不能只发布上述中间快照。
 
 ## 3. 门禁证据
 
 ### 前端
 
 - TypeScript typecheck：PASS；
-- Vitest：96 个文件，976 项 PASS；
+- Vitest：96 个文件，980 项 PASS；
 - contracts check：PASS；
 - production build：PASS；
 - artifact security scan：扫描 38 个文件，0 findings；
-- 常规 Playwright CI：12 PASS，1 项 paused-only 用例按设计 SKIP；
+- 常规 Playwright CI：14 PASS，1 项 paused-only 用例按设计 SKIP；
 - paused 专用 Playwright：1/1 PASS；
-- Verified fixture contract：10/10 PASS，并包含固定合成数据与无脚本付款页保护。
+- Verified fixture contract：12/12 PASS，外网守卫单元测试：13/13 PASS；包含固定
+  合成数据、无脚本付款页保护、Prospect→Verified change 交叉真值，以及注入未变化
+  entry 必须失败的反例。
 
 ### 后端
 
