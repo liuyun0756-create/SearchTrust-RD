@@ -42,22 +42,14 @@ def _normalize(value: str | None) -> str:
 
 
 def build_location_query(market: TargetMarket) -> str:
-    values = [
-        market.postal_code,
-        market.city,
-        market.region,
-        market.display_name,
-        market.country_code,
-    ]
-    parts: list[str] = []
-    seen: set[str] = set()
-    for value in values:
-        text = str(value or "").strip()
-        normalized = _normalize(text)
-        if text and normalized not in seen:
-            seen.add(normalized)
-            parts.append(text)
-    return ", ".join(parts)[:300]
+    postal_code = str(market.postal_code or "").strip()
+    if postal_code:
+        return postal_code[:300]
+    city = str(market.city or "").strip()
+    region = str(market.region or "").strip()
+    if city:
+        return ", ".join(part for part in (city, region) if part)[:300]
+    return str(market.display_name or "").strip()[:300]
 
 
 def _candidate_score(item: dict[str, Any], market: TargetMarket) -> int | None:
@@ -92,6 +84,8 @@ def _candidate_score(item: dict[str, Any], market: TargetMarket) -> int | None:
     display_tokens = set(display.split())
     score += len(display_tokens.intersection(candidate_text.split()))
     target_type = _normalize(str(item.get("target_type") or ""))
+    if target_type == "country":
+        return None
     if postal and "postal" in target_type:
         score += 40
     elif city and target_type == "city":

@@ -55,6 +55,42 @@ def market(**overrides: object) -> TargetMarket:
     return TargetMarket.model_validate(values)
 
 
+def test_location_query_uses_one_provider_friendly_local_identifier() -> None:
+    assert build_location_query(market()) == "Austin, TX"
+    assert build_location_query(market(postal_code="78701")) == "78701"
+    assert build_location_query(market(
+        display_name="Brooklyn, New York",
+        city=None,
+        region=None,
+    )) == "Brooklyn, New York"
+
+
+@pytest.mark.anyio
+async def test_country_level_provider_result_is_not_a_local_search_point() -> None:
+    class CountryProvider:
+        async def search(self, query: str) -> LocationLookupResponse:
+            return LocationLookupResponse(
+                items=({
+                    "id": "country-us",
+                    "name": "United States",
+                    "canonical_name": "United States",
+                    "country_code": "US",
+                    "target_type": "Country",
+                    "gps": [-95.712891, 37.09024],
+                },),
+                response_checksum=f"sha256:{'d' * 64}",
+            )
+
+    with pytest.raises(SerpLocationResolutionError) as raised:
+        await resolve_target_point(
+            market(display_name="United States", city=None, region=None),
+            provider=CountryProvider(),
+            clock=lambda: NOW,
+        )
+
+    assert raised.value.code == "SERP_LOCATION_NOT_FOUND"
+
+
 @pytest.mark.anyio
 async def test_explicit_coordinates_skip_location_provider() -> None:
     point = await resolve_target_point(
