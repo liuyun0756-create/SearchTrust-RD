@@ -133,8 +133,12 @@ def normalize_view(payload: object, *, dimension: str | None, limit: int, start:
         for row in rows:
             if not isinstance(row, dict):
                 raise ValueError()
-            if set(row) != {"keys", "clicks", "impressions", "ctr", "position"}:
+            metric_fields = {"clicks", "impressions", "ctr", "position"}
+            expected_fields = metric_fields | ({"keys"} if dimension or "keys" in row else set())
+            if set(row) != expected_fields:
                 raise ValueError()
+            # Google omits `keys` for an ungrouped totals row because no
+            # dimensions were requested. Grouped rows must still include it.
             keys = row.get("keys", [])
             if not isinstance(keys, list) or len(keys) != (1 if dimension else 0):
                 raise ValueError()

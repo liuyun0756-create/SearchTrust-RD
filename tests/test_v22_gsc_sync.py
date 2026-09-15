@@ -64,6 +64,23 @@ async def test_exact_windows_views_totals_and_private_fixed_endpoint():
 
 
 @pytest.mark.anyio
+async def test_accepts_real_google_totals_rows_without_dimension_keys():
+    def google_shape(request):
+        body = json.loads(request.content)
+        if not body["dimensions"]:
+            total = row()
+            total.pop("keys")
+            return httpx.Response(200, json={"rows": [total], "responseAggregationType": "byProperty"})
+        return handler(request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(google_shape)) as client:
+        result = await GscProvider(client).collect("sc-domain:example.com", "fake-token", END)
+
+    assert result.current.totals.rows[0].key is None
+    assert result.previous.totals.rows[0].key is None
+
+
+@pytest.mark.anyio
 async def test_gsc_cost_ledger_counts_twelve_real_google_requests() -> None:
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
     ledger = JobCostLedger(
