@@ -199,6 +199,28 @@ def valid_payload(view="landing_pages"):
     return report_payload(body)
 
 
+def test_totals_accepts_omitted_empty_dimension_headers_only():
+    payload = valid_payload("totals")
+    payload.pop("dimensionHeaders")
+    normalized = normalize_report(
+        payload,
+        view="totals",
+        start=END-timedelta(days=89),
+        end=END,
+    )
+    assert normalized.rows[0].sessions == 10
+
+    payload = valid_payload("landing_pages")
+    payload.pop("dimensionHeaders")
+    with pytest.raises(SyncError, match="SYNC_INVALID_GOOGLE_RESPONSE"):
+        normalize_report(
+            payload,
+            view="landing_pages",
+            start=END-timedelta(days=89),
+            end=END,
+        )
+
+
 @pytest.mark.parametrize("mutation", [
     lambda p: p.update({"dimensionHeaders": [{"name": "pageLocation"}]}),
     lambda p: p["rows"][0]["metricValues"].__setitem__(0, {"value": "-1"}),

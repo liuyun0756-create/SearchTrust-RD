@@ -191,6 +191,10 @@ def _metadata(payload: dict) -> ReportMetadata:
 
 def _headers(payload: dict, dimensions: list[str], metrics: list[str]) -> None:
     dh, mh = payload.get("dimensionHeaders"), payload.get("metricHeaders")
+    # Protobuf JSON omits an empty repeated field. Totals reports request no
+    # dimensions, so a real response can legitimately omit dimensionHeaders.
+    if dh is None and not dimensions:
+        dh = []
     if not isinstance(dh, list) or not isinstance(mh, list):
         raise ValueError()
     if [item.get("name") if isinstance(item, dict) else None for item in dh] != dimensions:
