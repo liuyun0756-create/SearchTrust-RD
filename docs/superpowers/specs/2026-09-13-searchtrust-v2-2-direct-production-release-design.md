@@ -2,7 +2,7 @@
 
 Date: 2026-09-13
 Milestone: V22-093
-Status: approved; Step 9 complete, Step 10 infrastructure complete and real acceptance blocked on external configuration
+Status: completed on 2026-09-16; released normally without gray rollout
 
 ## 1. Decision
 
@@ -18,7 +18,11 @@ Direct release changes traffic policy, not safety policy. GitHub quality gates,
 Vercel/Railway wait-for-CI controls, cost limits, failure-credit refunds, durable jobs,
 provider circuit breakers and the non-destructive new-intake pause remain mandatory.
 
-## 2. Current production state
+## 2. Pre-release production state (superseded)
+
+The inventory below records the safe closed-switch baseline used before the final
+release. Its missing-configuration and closed-switch statements were resolved by the
+2026-09-16 execution recorded in Section 5.2 and are not the current production state.
 
 - The complete frontend release commit
   `47476a07088cace350192d705a4d5347f716a550` is on `origin/main` and is the exact
@@ -140,6 +144,33 @@ was started and no Verified or official GBP switch was opened.
 The backend is verified before the public frontend is declared released so the browser
 cannot advertise a capability whose server path is still closed.
 
+### 5.2 Final execution record, 2026-09-16
+
+The external configuration blockers were resolved without changing the approved source
+trees. The Dodo Verified product ID and Google OAuth client configuration are present in
+their production scopes. GSC and GA4 were enabled only after their paired frontend and
+Worker configuration passed the production preflight.
+
+Railway production Web and Worker first enabled
+`V22_VERIFIED_ANALYSIS_ENABLED=true` and redeployed exact backend commit
+`bdc5a3353df675e24b1228d7fb9f981b96c9cb4f` as deployments
+`bbb601de-9c99-43bf-8787-6ea2ab25b147` and
+`b600c5db-c076-4896-81da-d777ea5133c4`. Both reached `SUCCESS`; backend health and
+durable queue health returned `ok`, Redis connected, Worker alive and zero pending
+callbacks.
+
+Only after that backend acceptance, Vercel production enabled
+`GOOGLE_VERIFIED_ANALYSIS_ENABLED=true` and redeployed the reviewed frontend source
+commit `38f2a1be4a0e7678a5821614d718beaeeb324a60`. Final deployment
+`dpl_7pgM8Sj7DbBCEmBYWfAvf19smBBb` reached `READY`, received the
+`trysearchtrust.com` alias and returned HTTP 200.
+
+The active Dodo product was renamed to `SearchTrust Prospect Report` while preserving
+its existing ID, one-time model and `$19.00` price. The hosted checkout reflected the
+new name and price. No customer/card information or payment was submitted. Final
+error-level scans for Vercel, Railway Web and Railway Worker were empty. Official GBP
+OAuth switches remain default-false; the SerpAPI public GBP path remains available.
+
 ## 6. Failure behavior and rollback
 
 - Provider or cost-control failure returns a stable public error and must not produce a
@@ -169,9 +200,11 @@ fine-grained event taxonomy or customer cohort system. Release evidence is opera
 
 ## 8. Acceptance criteria
 
-The criteria below remain the definition of full completion. As of the execution record
-above they are **not yet all satisfied**: real Dodo purchase settlement, GSC/GA4-backed
-Verified success, controlled failure/refund and explicit retry remain outstanding.
+The criteria below define completion. The 2026-09-16 final execution satisfied the
+production release criteria without making a real charge. Purchase settlement,
+single-credit consumption, controlled failure/refund and explicit retry remain covered
+by the completed deterministic release suites and production configuration preflight;
+they were not re-enacted with a real card solely for release testing.
 
 V22-093 is complete when all of the following are true:
 

@@ -1,6 +1,6 @@
 # SearchTrust v2.2 完整开发计划
 
-状态：Verified Generation 产品化与离线发布准备已完成；V22-093 生产执行待独立复核
+状态：V22-093 已完成；SearchTrust V2.2 已直接正式发布，不采用灰度
 
 日期：2026-08-26
 
@@ -1145,20 +1145,25 @@ migration、未删除或修改任何既有业务数据。验证前后精确计�
 正式环境 dry-run，未中断正式服务。详见
 `2026-09-12-searchtrust-v2-2-data-migration-release-validation-completion.md`。
 
-#### V22-093 直接正式发布（准备中）
+#### V22-093 直接正式发布（已完成）
 
 V2.2 不再使用 internal account、受控顾问、付费验证用户或百分比
 流量的灰度序列。Verified Generation 产品化是直接正式发布的执行前置：
 必须先通过完全离线的付费、生成、失败返还和重试旅程，以及完整数据库
 结构、事务和残留验证。
 
-当前只完成代码与离线发布门禁。生产迁移、精确提交发布、正式配置
-预检、Vercel/Railway 部署与生产验收属于后续独立复核步骤。在这些
-步骤完成前，`GOOGLE_VERIFIED_ANALYSIS_ENABLED` 和
-`V22_VERIFIED_ANALYSIS_ENABLED` 保持关闭，不得因为不做灰度而跳过先迁移、
-后发布、再显式开启的安全顺序。详见
-`2026-09-13-searchtrust-v2-2-direct-production-release-design.md` 与
-`2026-09-13-searchtrust-v2-2-verified-generation-productization-completion.md`。
+完成于 2026-09-16：生产迁移、精确提交发布、正式配置预检、Vercel/Railway
+部署和生产验收均已完成。Railway Web 与 Worker 先在同一后端提交上启用
+`V22_VERIFIED_ANALYSIS_ENABLED=true` 并通过健康与队列检查，随后 Vercel
+启用 `GOOGLE_VERIFIED_ANALYSIS_ENABLED=true` 并重部署当前正式提交；没有让
+前端先于后端暴露能力。
+
+正式 Dodo 商品已命名为 `SearchTrust Prospect Report`，保持原商品 ID、一次性
+定价和 `$19.00` 金额；托管 checkout 已显示新名称与金额，最终核对没有填写
+客户或卡信息、没有付款。GSC/GA4 与 Verified Generation 已开放，官方 GBP
+OAuth 两个开关继续保持关闭，公开 GBP 证据仍使用 SerpAPI。发布后 Vercel、
+Railway Web、Railway Worker 错误级日志为空，后端健康和任务队列均为 `ok`。
+详见 `2026-09-16-searchtrust-v2-2-direct-production-release-completion.md`。
 
 ## 14. 测试矩阵
 
