@@ -6,7 +6,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Literal
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import parse_qs, urljoin, urlsplit
 
 import httpx
 
@@ -228,13 +228,15 @@ class LimitedGbpLookup:
     ) -> dict[str, str]:
         place_id = extract_google_place_id(gbp_url or "")
         raw_data_id = extract_data_id(gbp_url or "")
-        cid = data_cid(raw_data_id)
+        query = parse_qs(urlsplit(gbp_url or "").query)
+        explicit_cid = str((query.get("cid") or [""])[0]).strip()
+        cid = explicit_cid or data_cid(raw_data_id)
         params = {"engine": "google_maps", "hl": "en"}
         if place_id:
-            params["place_id"] = place_id
+            params.update({"type": "place", "place_id": place_id})
             return params
         if cid:
-            params["data_cid"] = cid
+            params.update({"type": "place", "data_cid": cid})
             return params
 
         domain = (urlsplit(site_url).hostname or "").removeprefix("www.")

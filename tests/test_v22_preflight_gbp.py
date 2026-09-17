@@ -88,7 +88,35 @@ async def test_gbp_lookup_uses_exact_place_id_without_second_request() -> None:
         ),
     )
 
-    assert calls == [{"engine": "google_maps", "hl": "en", "place_id": "ChIJ123456789"}]
+    assert calls == [{
+        "engine": "google_maps",
+        "hl": "en",
+        "type": "place",
+        "place_id": "ChIJ123456789",
+    }]
+    assert result.status == "found"
+
+
+@pytest.mark.anyio
+async def test_gbp_lookup_uses_explicit_cid_as_a_place_request() -> None:
+    calls: list[dict[str, str]] = []
+
+    async def provider(params: dict[str, str]) -> dict[str, Any]:
+        calls.append(params)
+        return {"place_results": {"title": "Acme Plumbing", "website": "https://example.com"}}
+
+    result = await LimitedGbpLookup(provider=provider, configured=True).lookup(
+        site_url="https://example.com/",
+        signals=site_signals(),
+        gbp_url="https://www.google.com/maps?cid=15630978370222314069",
+    )
+
+    assert calls == [{
+        "engine": "google_maps",
+        "hl": "en",
+        "type": "place",
+        "data_cid": "15630978370222314069",
+    }]
     assert result.status == "found"
 
 
@@ -122,6 +150,7 @@ async def test_gbp_lookup_expands_short_url_before_single_provider_request() -> 
     assert provider_calls == [{
         "engine": "google_maps",
         "hl": "en",
+        "type": "place",
         "data_cid": "1311768467294899695",
     }]
     assert result.status == "found"
