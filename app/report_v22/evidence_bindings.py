@@ -11,8 +11,12 @@ from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceSource, r
 from app.report_v22.public_gbp_bindings import conflicts_with_missing, validate_public_binding, validate_reference
 
 
+def normalized_host(value: str) -> str:
+    return value.casefold().rstrip(".").removeprefix("www.")
+
+
 def host(url) -> str:
-    return (urlsplit(str(url)).hostname or "").casefold().removeprefix("www.")
+    return normalized_host(urlsplit(str(url)).hostname or "")
 
 
 def require(condition: bool) -> None:
@@ -92,7 +96,11 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
             if source.kind == "public_gbp":
                 validate_public_binding(source, context)
             elif source.kind == "site":
-                require(host(context.site_url) == p.canonical_host == host(p.root_url))
+                require(
+                    host(context.site_url)
+                    == normalized_host(p.canonical_host)
+                    == host(p.root_url)
+                )
                 require(str(context.site_url) == str(p.root_url))
             elif source.kind == "serp":
                 require(p.queries == context.queries)

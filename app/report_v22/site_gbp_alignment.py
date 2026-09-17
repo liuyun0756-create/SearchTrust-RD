@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.report_v22.evidence_identity import evidence_id, selector_path, stable_key
+from app.report_v22.evidence_bindings import normalized_host
 from app.report_v22.evidence_models import (
     EvidenceBuildContext,
     EvidenceBuildResult,
@@ -56,10 +57,15 @@ def _validate_identity(context: EvidenceBuildContext, identity: BusinessIdentity
                        site_source: SiteEvidenceSource | None,
                        public_source: PublicGbpEvidenceSource | None,
                        facts: SiteBusinessFactsResult) -> None:
+    source_domain = (
+        normalized_host(site_source.payload.canonical_host)
+        if site_source is not None
+        else identity.normalized_domain
+    )
     reference = context.customer_public_gbp
     if (identity.site_url != context.site_url
             or identity.primary_location != context.target_market
-            or identity.normalized_domain != (site_source.payload.canonical_host if site_source else identity.normalized_domain)
+            or normalized_host(identity.normalized_domain) != source_domain
             or facts.case_id != context.case_id
             or facts.site_url != context.site_url):
         raise FindingsError("BINDING_INVALID")

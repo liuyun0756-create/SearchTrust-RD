@@ -43,6 +43,17 @@ def test_confirmed_identity_mismatch_fails_with_fixed_binding_error():
         builder.build_public_findings(value)
 
 
+def test_www_canonical_host_matches_normalized_business_domain():
+    value, _ = findings_input()
+    site = next(source for source in value.evidence_input.sources if source.kind == "site")
+    site.payload.canonical_host = "www.example.test"
+    site.binding.payload_checksum = request_digest(site.payload)
+
+    result = builder.build_public_findings(value)
+
+    assert result.evidence_result.evidence_index
+
+
 def test_opt_in_source_checksum_failure_is_mapped_to_fixed_findings_error():
     value, _ = findings_input()
     site = next(source for source in value.evidence_input.sources if source.kind == "site")

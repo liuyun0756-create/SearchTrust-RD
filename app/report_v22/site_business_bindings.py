@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 from app.collectors.site_inventory_urls import SiteScope
 from app.jobs_v22.digest import request_digest
 from app.security_v22.urls import normalize_site_url
-from app.report_v22.evidence_bindings import host
+from app.report_v22.evidence_bindings import host, normalized_host
 from app.report_v22.site_business_errors import require
 
 
@@ -23,7 +23,10 @@ def validate_binding(request):
         return scope, "no_snapshot"
     b, p = source.binding, source.payload
     require(b.case_id == context.case_id and b.source_type == "site" and b.schema_version == p.schema_version)
-    require(p.root_url == context.site_url and p.canonical_host == host(p.root_url))
+    require(
+        p.root_url == context.site_url
+        and normalized_host(p.canonical_host) == host(p.root_url)
+    )
     require(p.started_at <= p.completed_at == b.fetched_at <= context.evaluated_at)
     require(request_digest(p) == b.payload_checksum, "CHECKSUM_MISMATCH")
     require(len(p.pages) <= request.limits.max_inventory_pages and len(p.selected_pages) <= request.limits.max_deep_pages, "LIMIT_EXCEEDED")
