@@ -212,7 +212,11 @@ class LimitedGbpLookup:
         self.url_expander = url_expander or GoogleMapsUrlExpander().expand
 
     async def _default_provider(self, params: dict[str, str]) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=False) as client:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0),
+            follow_redirects=False,
+            trust_env=False,
+        ) as client:
             return await request_serpapi(client, params)
 
     def _request_params(

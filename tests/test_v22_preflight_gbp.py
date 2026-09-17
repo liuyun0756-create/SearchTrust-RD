@@ -7,6 +7,7 @@ import pytest
 from app.preflight_v22.extractors import extract_site_signals
 import httpx
 
+from app.preflight_v22 import gbp as gbp_module
 from app.preflight_v22.gbp import GoogleMapsUrlExpander, LimitedGbpLookup
 from app.preflight_v22.urls import SafeUrl, UrlSafetyError
 
@@ -165,6 +166,42 @@ async def test_gbp_lookup_degrades_provider_error_without_leaking_detail() -> No
     assert result.status == "unavailable"
     assert result.code == "GBP_LOOKUP_UNAVAILABLE"
     assert "secret" not in result.message
+
+
+@pytest.mark.anyio
+async def test_default_gbp_provider_does_not_inherit_host_proxy_environment(monkeypatch) -> None:
+    client_options: list[dict[str, Any]] = []
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args) -> None:
+            return None
+
+    def client_factory(**kwargs):
+        client_options.append(kwargs)
+        return FakeClient()
+
+    async def request_serpapi(_client, _params):
+        return {
+            "place_results": {
+                "title": "Acme Plumbing",
+                "website": "https://example.com/",
+                "data_id": "0x1:0x2",
+            }
+        }
+
+    monkeypatch.setattr(gbp_module.httpx, "AsyncClient", client_factory)
+    monkeypatch.setattr(gbp_module, "request_serpapi", request_serpapi)
+
+    result = await LimitedGbpLookup(configured=True).lookup(
+        site_url="https://example.com/",
+        signals=site_signals(),
+    )
+
+    assert result.status == "found"
+    assert client_options[0]["trust_env"] is False
 
 
 @pytest.mark.anyio
