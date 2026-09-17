@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+from time import monotonic
 from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
@@ -10,13 +12,14 @@ import httpx
 from app.api.v2.models import AnalyzeRequest
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
-from app.jobs_v22.digest import request_digest
-from app.jobs_v22.errors import DeterministicJobError
+from app.jobs_v22.digest import canonical_json_bytes, request_digest
+from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
 from app.report_v22.models import ReportV22
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
 PERSISTENCE_TIMEOUT_SECONDS = 60
+logger = logging.getLogger(__name__)
 
 
 def result_snapshot_id(kind: str, case_id: UUID, checksum: str) -> UUID:
@@ -106,7 +109,24 @@ class SupabaseResultPersister:
             "p_public_gbp_reference": public_gbp_reference.model_dump(mode="json"),
         })
         rpc = self._rpc()
-        rows = await rpc.post("persist_v22_prospect_result", payload)
+        started = monotonic()
+        logger.info(
+            "Prospect persistence starting job_id_suffix=%s request_bytes=%d evidence_items=%d",
+            str(job_id)[-8:], len(canonical_json_bytes(payload)),
+            len(payload["p_report_payload"].get("evidence_index", [])),
+        )
+        try:
+            rows = await rpc.post("persist_v22_prospect_result", payload)
+        except (DeterministicJobError, TransientJobError) as exc:
+            logger.warning(
+                "Prospect persistence failed job_id_suffix=%s elapsed_ms=%d error_code=%s",
+                str(job_id)[-8:], max(int((monotonic() - started) * 1000), 0), exc.error_code,
+            )
+            raise
+        logger.info(
+            "Prospect persistence completed job_id_suffix=%s elapsed_ms=%d",
+            str(job_id)[-8:], max(int((monotonic() - started) * 1000), 0),
+        )
         row = rows[0] if isinstance(rows, list) and len(rows) == 1 else rows
         if (not isinstance(row, dict) or set(row) != {"report_id", "idempotent"}
                 or row["report_id"] != str(job_id) or type(row["idempotent"]) is not bool):

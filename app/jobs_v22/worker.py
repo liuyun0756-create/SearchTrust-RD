@@ -350,6 +350,10 @@ async def _finish_failure(
         return
 
     if failure.retryable and attempt_count < max_attempts:
+        logger.warning(
+            "v2.2 transient retry job_id_suffix=%s attempt=%d error_code=%s",
+            str(state.job_id)[-8:], attempt_count, failure.error_code,
+        )
         queued = await store.transition(
             state.job_id,
             status="queued",
