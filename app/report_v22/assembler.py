@@ -186,10 +186,12 @@ def _market(
 def _site(
     inventory: SiteInventorySnapshot,
     findings: PublicFindingsResult,
+    retained_ids: set[str],
 ) -> SiteInventorySummary:
     site_ids_by_url: dict[str, list[str]] = defaultdict(list)
     for item in findings.evidence_result.evidence_index:
-        if item.source_type == "site" and item.source_locator.url is not None:
+        if (item.evidence_id in retained_ids and item.source_type == "site"
+                and item.source_locator.url is not None):
             site_ids_by_url[str(item.source_locator.url)].append(item.evidence_id)
     return SiteInventorySummary(
         discovered_url_count=inventory.discovered_url_count,
@@ -217,6 +219,7 @@ def _site(
 def _competitors(
     collection: CompetitorCollectionSnapshot,
     findings: PublicFindingsResult,
+    retained_ids: set[str],
 ) -> CompetitorAnalysis:
     evidence_by_competitor: dict[str, list[str]] = defaultdict(list)
     for trace in findings.evidence_result.source_traces:
@@ -225,6 +228,10 @@ def _competitors(
     competitors = []
     for item in collection.competitors:
         competitor_id = item.competitor.competitor_id
+        available_ids = sorted(set(evidence_by_competitor[competitor_id]))
+        selected_ids = [key for key in available_ids if key in retained_ids]
+        if not selected_ids and available_ids:
+            selected_ids = available_ids[:1]
         strengths = []
         if item.site_status != "unavailable":
             strengths.append("A traceable public website sample was available.")
@@ -246,7 +253,7 @@ def _competitors(
                 analyzed_page_count=item.analyzed_page_count,
                 strengths=strengths,
                 gaps=list(dict.fromkeys(gaps)),
-                evidence_ids=sorted(evidence_by_competitor[competitor_id]),
+                evidence_ids=selected_ids,
             )
         )
     return CompetitorAnalysis(
@@ -284,6 +291,29 @@ def _limitations(
     ]
 
 
+def select_prospect_report_evidence(
+    findings: PublicFindingsResult,
+    referenced_ids: set[str],
+):
+    """Return the compact, deterministic evidence closure stored in a report."""
+
+    evidence_by_id = {
+        item.evidence_id: item for item in findings.evidence_result.evidence_index
+    }
+    retained_ids = set(referenced_ids)
+    for source_type in ("site", "serp", "competitor", "gbp"):
+        representative = next((
+            item.evidence_id
+            for item in findings.evidence_result.evidence_index
+            if item.source_type == source_type and item.health_status == "healthy"
+        ), None)
+        if representative is not None:
+            retained_ids.add(representative)
+    if not retained_ids <= set(evidence_by_id):
+        raise ValueError("report references unknown public evidence")
+    return [evidence_by_id[key] for key in sorted(retained_ids)]
+
+
 def assemble_prospect_report(
     *,
     report_id: UUID,
@@ -310,6 +340,28 @@ def assemble_prospect_report(
         dict.fromkeys(asset for action in top_actions for asset in action.required_client_assets)
     )
 
+    retained_ids = {
+        evidence_id
+        for finding in findings.findings
+        for evidence_id in [*finding.evidence_ids, *finding.comparator_ids]
+    }
+    retained_ids.update(
+        evidence_id for layer in findings.site_rollup.layers for evidence_id in layer.evidence_ids
+    )
+    market_snapshot = _market(request, shared_market, findings)
+    retained_ids.update(result.evidence_id for result in market_snapshot.results)
+    site_summary = _site(site_inventory, findings, retained_ids)
+    retained_ids.update(
+        evidence_id for page in site_summary.selected_pages for evidence_id in page.evidence_ids
+    )
+    competitor_analysis = _competitors(competitor_collection, findings, retained_ids)
+    retained_ids.update(
+        evidence_id
+        for competitor in competitor_analysis.competitors
+        for evidence_id in competitor.evidence_ids
+    )
+    report_evidence = select_prospect_report_evidence(findings, retained_ids)
+
     return ReportV22(
         identity=IdentitySection(case_id=request.case_id, business=request.business_identity),
         case_context={
@@ -330,9 +382,9 @@ def assemble_prospect_report(
             copy_model_version=copy_model_version,
         ),
         data_coverage=_coverage(findings),
-        market_snapshot=_market(request, shared_market, findings),
-        site_inventory_summary=_site(site_inventory, findings),
-        competitor_analysis=_competitors(competitor_collection, findings),
+        market_snapshot=market_snapshot,
+        site_inventory_summary=site_summary,
+        competitor_analysis=competitor_analysis,
         first_party_performance=FirstPartyPerformance(
             gsc=_not_connected("gsc"),
             gbp=_not_connected("gbp"),
@@ -366,7 +418,7 @@ def assemble_prospect_report(
             required_client_assets=all_assets,
             next_review_date=top_actions[0].review_date,
         ),
-        evidence_index=findings.evidence_result.evidence_index,
+        evidence_index=report_evidence,
         version_diff=VersionDiff(kind="initial", parent_report_id=None, entries=[]),
         limitations=_limitations(
             site_inventory,

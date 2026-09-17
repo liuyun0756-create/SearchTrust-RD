@@ -93,3 +93,14 @@ def test_assembler_builds_strict_traceable_prospect_report() -> None:
     assert all(
         item.evidence_ids for item in report.competitor_analysis.competitors
     )
+    retained = {item.evidence_id for item in report.evidence_index}
+    available = {item.evidence_id for item in findings.evidence_result.evidence_index}
+    assert retained <= available
+    assert all(
+        evidence_id in retained
+        for finding in report.findings
+        for evidence_id in [*finding.evidence_ids, *finding.comparator_ids]
+    )
+    assert {item.source_type for item in report.evidence_index} >= {
+        "site", "serp", "competitor"
+    }

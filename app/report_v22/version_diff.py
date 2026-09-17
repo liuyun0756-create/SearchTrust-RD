@@ -118,7 +118,15 @@ def _validate_parent(request: VersionDiffBuildInput) -> None:
     upstream = request.verified_reprioritization_input
     if not _same(parent.findings, upstream.public_findings_result.findings):
         raise VersionDiffError("PARENT_MISMATCH")
-    if not _same(parent.evidence_index, upstream.public_findings_result.evidence_result.evidence_index):
+    rebuilt_evidence = {
+        item.evidence_id: item
+        for item in upstream.public_findings_result.evidence_result.evidence_index
+    }
+    if any(
+        item.evidence_id not in rebuilt_evidence
+        or not _same([item], [rebuilt_evidence[item.evidence_id]])
+        for item in parent.evidence_index
+    ):
         raise VersionDiffError("PARENT_MISMATCH")
     expected = {item.action_id: item for item in upstream.public_action_plan.actions}
     if set(expected) != {item.action_id for item in parent.top_actions}:

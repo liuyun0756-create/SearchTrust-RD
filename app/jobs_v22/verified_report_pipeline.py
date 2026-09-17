@@ -21,6 +21,7 @@ from app.jobs_v22.verified_reprioritization_stage import CheckpointedVerifiedRep
 from app.jobs_v22.version_diff_stage import CheckpointedVersionDiffStage
 from app.report_v22.action_models import PublicActionPlanInput
 from app.report_v22.actions import build_public_action_plan, canonical_public_findings
+from app.report_v22.assembler import select_prospect_report_evidence
 from app.report_v22.findings import build_public_findings
 from app.report_v22.cross_source_findings_models import CrossSourceFindingsInput
 from app.report_v22.execution_plan_models import ExecutionPlanBuildInput
@@ -64,11 +65,33 @@ class VerifiedReportPipeline:
             findings = build_public_findings(public_input)
             plan = build_public_action_plan(PublicActionPlanInput(
                 findings_result=findings, planning_date=parent.report_version.generated_at.date()))
+            referenced_ids = {
+                evidence_id
+                for finding in findings.findings
+                for evidence_id in [*finding.evidence_ids, *finding.comparator_ids]
+            }
+            referenced_ids.update(
+                evidence_id
+                for layer in findings.site_rollup.layers
+                for evidence_id in layer.evidence_ids
+            )
+            referenced_ids.update(item.evidence_id for item in parent.market_snapshot.results)
+            referenced_ids.update(
+                evidence_id
+                for page in parent.site_inventory_summary.selected_pages
+                for evidence_id in page.evidence_ids
+            )
+            referenced_ids.update(
+                evidence_id
+                for competitor in parent.competitor_analysis.competitors
+                for evidence_id in competitor.evidence_ids
+            )
+            expected_evidence = select_prospect_report_evidence(findings, referenced_ids)
             if (canonical_json_bytes([item.model_dump(mode="json") for item in parent.findings])
                     != canonical_json_bytes([item.model_dump(mode="json") for item in findings.findings])
                     or canonical_json_bytes([item.model_dump(mode="json") for item in parent.evidence_index])
                     != canonical_json_bytes([item.model_dump(mode="json")
-                        for item in findings.evidence_result.evidence_index])):
+                        for item in expected_evidence])):
                 raise ValueError
             expected = {item.action_id: item for item in plan.actions}
             if set(expected) != {item.action_id for item in parent.top_actions}:
