@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import asyncio
+import logging
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -16,6 +17,42 @@ from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequ
 
 MAX_RESPONSE_BYTES = 25_000_000
 TOTAL_TIMEOUT_SECONDS = 20
+REJECTION_DIAGNOSTIC_BYTES = 8_192
+logger = logging.getLogger(__name__)
+
+_SAFE_REJECTION_REASONS = frozenset({
+    "immutable v2.2 public GBP reference conflict",
+    "immutable v2.2 report conflict",
+    "immutable v2.2 source snapshot conflict",
+    "invalid v2.2 result checksum",
+    "prospect analysis generation is no longer active",
+    "prospect analysis job is not persistable",
+    "v2.2 prospect report identity mismatch",
+    "v2.2 public GBP report binding mismatch",
+    "v2.2 public GBP source mismatch",
+    "v2.2 report could not be linked to its job",
+    "v2.2 report references an unknown snapshot",
+    "v2.2 result payloads must be objects",
+    "v2.2 result snapshot identities must be unique",
+    "v2.2 source snapshot lineage mismatch",
+    "v2.2 source snapshot schema mismatch",
+})
+
+
+async def _safe_rejection_reason(response: httpx.Response) -> str | None:
+    """Return only an allowlisted database invariant; never log raw provider text."""
+
+    raw = bytearray()
+    chunks = (response.content,) if response.is_stream_consumed else response.aiter_raw()
+    async for chunk in _async_chunks(chunks):
+        if len(raw) + len(chunk) > REJECTION_DIAGNOSTIC_BYTES:
+            return None
+        raw.extend(chunk)
+    try:
+        message = json.loads(raw).get("message")
+    except (AttributeError, TypeError, ValueError, RecursionError):
+        return None
+    return message if message in _SAFE_REJECTION_REASONS else None
 
 
 @dataclass(frozen=True, eq=False, slots=True, weakref_slot=True)
@@ -88,6 +125,10 @@ class VerifiedRpcClient:
                     if response.status_code == 429 or response.status_code >= 500:
                         raise TransientJobError(self.prefix + "_UNAVAILABLE", "Verified report storage is temporarily unavailable.") from None
                     if not 200 <= response.status_code < 300:
+                        reason = await _safe_rejection_reason(response)
+                        if reason is not None:
+                            logger.warning("verified RPC rejected prefix=%s rpc=%s status=%d reason=%s",
+                                self.prefix, rpc, response.status_code, reason)
                         raise DeterministicJobError(self.prefix + "_REJECTED", "The Verified report request could not be completed safely.") from None
                     if response.headers.get("content-encoding", "identity").strip().lower() != "identity":
                         raise self.invalid() from None

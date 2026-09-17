@@ -130,6 +130,37 @@ async def test_result_delivery_errors_are_stable_and_secret_safe(
 
 
 @pytest.mark.anyio
+async def test_result_rejection_logs_only_allowlisted_invariant(caplog) -> None:
+    response = httpx.Response(400, json={
+        "message": "v2.2 public GBP report binding mismatch",
+        "details": "fixture-key-value",
+    })
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: response)
+    ) as client:
+        persister = SupabaseResultPersister(
+            url="https://supabase.example.test",
+            service_role_key="fixture-key-value",
+            http_client=client,
+        )
+        request, site, shared, competitor, report = inputs()
+        public, reference = public_values()
+        with pytest.raises(DeterministicJobError):
+            await persister.persist(
+                job_id=JOB_ID,
+                request=request,
+                site_inventory=site,
+                shared_market=shared,
+                competitor_collection=competitor,
+                report=report,
+                public_gbp_snapshot=public,
+                public_gbp_reference=reference,
+            )
+    assert "v2.2 public GBP report binding mismatch" in caplog.text
+    assert "fixture-key-value" not in caplog.text
+
+
+@pytest.mark.anyio
 async def test_callback_ack_fixture_matches_signed_delivery_contract(provider_fixture) -> None:
     fixture = provider_fixture("delivery/callback_ack.json")
     store = await build_store()
