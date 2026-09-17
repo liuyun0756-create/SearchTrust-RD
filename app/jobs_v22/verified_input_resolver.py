@@ -97,7 +97,8 @@ class VerifiedRpcClient:
     """Shared bounded transport; never expose provider body or exception context."""
 
     def __init__(self, *, url: str, service_role_key: str, http_client: httpx.AsyncClient,
-                 max_response_bytes: int, prefix: str, invalid_retryable: bool = False):
+                 max_response_bytes: int, prefix: str, invalid_retryable: bool = False,
+                 total_timeout_seconds: float | None = None):
         parsed = urlsplit(url)
         if (parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password
                 or parsed.query or parsed.fragment or parsed.path not in ("", "/") or not service_role_key):
@@ -108,6 +109,12 @@ class VerifiedRpcClient:
         self.limit = max_response_bytes
         self.prefix = prefix
         self.invalid_retryable = invalid_retryable
+        self.total_timeout_seconds = (
+            TOTAL_TIMEOUT_SECONDS if total_timeout_seconds is None else total_timeout_seconds
+        )
+        if self.total_timeout_seconds <= 0 or self.total_timeout_seconds > 60:
+            raise DeterministicJobError(prefix + "_NOT_CONFIGURED",
+                "Verified report storage is not configured.")
 
     def invalid(self):
         error = TransientJobError if self.invalid_retryable else DeterministicJobError
@@ -117,11 +124,12 @@ class VerifiedRpcClient:
         try:
             # HTTPX read timeouts measure inactivity; this bounds the entire RPC,
             # including connection/header delays and a continuously trickled body.
-            async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
+            async with asyncio.timeout(self.total_timeout_seconds):
                 async with self.client.stream("POST", f"{self.url}/rest/v1/rpc/{rpc}",
                     headers={"apikey": self.key, "authorization": f"Bearer {self.key}",
                         "content-type": "application/json", "accept-encoding": "identity"},
-                    json=payload, timeout=20, follow_redirects=False) as response:
+                    json=payload, timeout=self.total_timeout_seconds,
+                    follow_redirects=False) as response:
                     if response.status_code == 429 or response.status_code >= 500:
                         raise TransientJobError(self.prefix + "_UNAVAILABLE", "Verified report storage is temporarily unavailable.") from None
                     if not 200 <= response.status_code < 300:

@@ -13,12 +13,15 @@ from app.jobs_v22.verified_models import VerifiedResolvedInput, VerifiedTaskRequ
 from app.report_v22.models import ReportV22
 from app.report_v22.version_diff_identity import finding_fingerprint
 
+PERSISTENCE_TIMEOUT_SECONDS = 60
+
 
 class SupabaseVerifiedResultPersister:
     def __init__(self, *, url: str, service_role_key: str, http_client: httpx.AsyncClient,
                  max_response_bytes: int = 65_536):
         self.rpc = VerifiedRpcClient(url=url, service_role_key=service_role_key, http_client=http_client,
-            max_response_bytes=max_response_bytes, prefix="V22_VERIFIED_RESULT_PERSISTENCE", invalid_retryable=True)
+            max_response_bytes=max_response_bytes, prefix="V22_VERIFIED_RESULT_PERSISTENCE",
+            invalid_retryable=True, total_timeout_seconds=PERSISTENCE_TIMEOUT_SECONDS)
 
     async def persist(self, *, job_id: UUID, case_id: UUID, run_generation: int,
                       request: VerifiedTaskRequest, resolved_input: TrustedVerifiedInput, report: ReportV22) -> None:

@@ -16,6 +16,8 @@ from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
 from app.report_v22.models import ReportV22
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
 
+PERSISTENCE_TIMEOUT_SECONDS = 60
+
 
 def result_snapshot_id(kind: str, case_id: UUID, checksum: str) -> UUID:
     """Return a Case-scoped deterministic ID for an immutable source payload."""
@@ -38,7 +40,8 @@ class SupabaseResultPersister:
         # validation still happens before the first persistence request.
         self._rpc_args = dict(url=url, service_role_key=service_role_key,
             http_client=http_client, max_response_bytes=max_response_bytes,
-            prefix="V22_RESULT_PERSISTENCE", invalid_retryable=True)
+            prefix="V22_RESULT_PERSISTENCE", invalid_retryable=True,
+            total_timeout_seconds=PERSISTENCE_TIMEOUT_SECONDS)
         self.rpc: VerifiedRpcClient | None = None
 
     def _rpc(self) -> VerifiedRpcClient:

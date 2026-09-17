@@ -137,7 +137,7 @@ async def test_persister_rejects_compression_before_reading_or_decoding():
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", ["trickle", "stall"])
 async def test_persister_has_total_deadline_for_body(mode, monkeypatch):
-    monkeypatch.setattr("app.jobs_v22.verified_input_resolver.TOTAL_TIMEOUT_SECONDS", .02, raising=False)
+    monkeypatch.setattr("app.jobs_v22.verified_result_persistence.PERSISTENCE_TIMEOUT_SECONDS", .02)
     body = json.dumps([{"report_id": str(JOB_ID), "idempotent": False}]).encode()
     stream = CountedStream([b" "] * 10 + [body], delay=.01 if mode == "trickle" else .08)
     with pytest.raises(TransientJobError):

@@ -204,12 +204,12 @@ async def test_persister_rejects_compressed_response_before_reading():
             await persist_with_client(client)
     assert stream.reads == 0
     assert calls[0].headers["accept-encoding"] == "identity"
-    assert calls[0].extensions["timeout"]["read"] == 20
+    assert calls[0].extensions["timeout"]["read"] == 60
 
 
 @pytest.mark.anyio
 async def test_persister_total_deadline_stops_trickled_body(monkeypatch):
-    monkeypatch.setattr("app.jobs_v22.verified_input_resolver.TOTAL_TIMEOUT_SECONDS", .02)
+    monkeypatch.setattr("app.jobs_v22.result_persistence.PERSISTENCE_TIMEOUT_SECONDS", .02)
     body = json.dumps([{"report_id": str(JOB_ID), "idempotent": False}]).encode()
     stream = CountedStream([b" "] * 10 + [body], delay=.01)
     async with httpx.AsyncClient(transport=httpx.MockTransport(
