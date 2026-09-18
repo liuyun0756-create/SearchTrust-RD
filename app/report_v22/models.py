@@ -580,6 +580,7 @@ class ReportV22(StrictModel):
     top_actions: list[TopAction] = Field(min_length=3, max_length=3)
     roadmap_30_60_90: Roadmap
     client_summary: ClientSummary
+    client_delivery: ClientDelivery
     evidence_index: list[EvidenceItem] = Field(min_length=1)
     version_diff: VersionDiff
     limitations: list[Limitation] = Field(default_factory=list)
@@ -614,6 +615,8 @@ class ReportV22(StrictModel):
             referenced_evidence.extend(layer.evidence_ids)
         for entry in self.version_diff.entries:
             referenced_evidence.extend(entry.evidence_ids)
+        for card in self.client_delivery.evidence_cards:
+            referenced_evidence.extend(card.evidence_ids)
         missing_evidence = set(referenced_evidence) - evidence_set
         if missing_evidence:
             raise ValueError(f"unknown evidence references: {sorted(missing_evidence)}")
@@ -625,6 +628,8 @@ class ReportV22(StrictModel):
             referenced_findings.extend(layer.finding_ids)
         for entry in self.version_diff.entries:
             referenced_findings.extend(entry.current_finding_ids)
+        for card in self.client_delivery.evidence_cards:
+            referenced_findings.extend(card.finding_ids)
         missing_findings = set(referenced_findings) - finding_set
         if missing_findings:
             raise ValueError(f"unknown finding references: {sorted(missing_findings)}")
@@ -640,6 +645,28 @@ class ReportV22(StrictModel):
 
         if self.client_summary.action_ids != action_ids:
             raise ValueError("client summary action IDs must match ordered top actions")
+        if [item.action_id for item in self.client_delivery.priority_actions] != action_ids:
+            raise ValueError("client delivery action IDs must match ordered top actions")
+        action_finding_set = {
+            finding_id for action in self.top_actions for finding_id in action.finding_ids
+        }
+        evidence_health = {
+            evidence.evidence_id: evidence.health_status for evidence in self.evidence_index
+        }
+        for card in self.client_delivery.evidence_cards:
+            if not set(card.finding_ids) <= action_finding_set:
+                raise ValueError("client evidence must support a selected top action")
+            card_evidence = set(card.evidence_ids)
+            finding_evidence = {
+                evidence_id
+                for finding in self.findings
+                if finding.finding_id in card.finding_ids
+                for evidence_id in finding.evidence_ids
+            }
+            if not card_evidence <= finding_evidence:
+                raise ValueError("client evidence must be bound to its referenced findings")
+            if any(evidence_health[evidence_id] != "healthy" for evidence_id in card.evidence_ids):
+                raise ValueError("client evidence must be healthy")
         roadmap_action_ids = [action_id for phase in self.roadmap_30_60_90.phases for action_id in phase.action_ids]
         if set(roadmap_action_ids) != action_set:
             raise ValueError("roadmap must reference every top action and no unknown actions")

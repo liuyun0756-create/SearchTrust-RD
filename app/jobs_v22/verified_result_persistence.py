@@ -64,11 +64,9 @@ class SupabaseVerifiedResultPersister:
             allowed.update(gbp={request.public_gbp_snapshot_id}, gsc={request.gsc_snapshot_id}, ga4={request.ga4_snapshot_id})
             public_ids = set().union(*(allowed[source] for source in ("site", "serp", "competitor", "gbp")))
             for alias in ("coverage", "pagespeed"):
-                inherited = {e.snapshot_id for e in parent.evidence_index if e.source_type == alias}
-                for source in parent.data_coverage.sources:
-                    if source.source_type == alias:
-                        inherited.update(source.snapshot_ids)
-                allowed[alias] = inherited & public_ids
+                # Derived public evidence may be created during verified rebuild even
+                # when the compact parent report did not retain that alias row.
+                allowed[alias] = public_ids
             if any(e.snapshot_id not in allowed[e.source_type] for e in report.evidence_index):
                 raise ValueError("result evidence binding mismatch")
             coverage = {item.source_type: item.snapshot_ids for item in report.data_coverage.sources}

@@ -85,7 +85,7 @@ def _validate_binding(request: VersionDiffBuildInput) -> None:
     upstream = request.verified_reprioritization_input
     result = request.verified_reprioritization_result
     if (
-        parent.report_version.schema_version != "2.2.0"
+        parent.report_version.schema_version != "2.2.1"
         or parent.report_version.report_type != "prospect"
         or parent.identity.case_id != request.case_id
         or parent.report_version.report_id != request.parent_report_id

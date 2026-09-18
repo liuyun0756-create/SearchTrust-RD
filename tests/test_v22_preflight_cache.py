@@ -63,7 +63,7 @@ def test_cache_key_is_stable_and_versioned() -> None:
     second = cache.key(request_payload(), "https://example.com/")
 
     assert first == second
-    assert first.startswith("searchtrust:v22:preflight:v1:2.2.0:")
+    assert first.startswith("searchtrust:v22:preflight:v1:2.2.1:")
     assert "Plumbing" not in first
 
 

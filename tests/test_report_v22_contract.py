@@ -26,7 +26,7 @@ def validate(payload: dict) -> ReportV22:
 @pytest.mark.parametrize("name", ["prospect.json", "verified.json"])
 def test_shared_fixtures_validate(name: str) -> None:
     report = ReportV22.model_validate_json((CONTRACT_DIR / "fixtures" / name).read_text(encoding="utf-8"))
-    assert report.report_version.schema_version == "2.2.0"
+    assert report.report_version.schema_version == "2.2.1"
     assert [action.sequence for action in report.top_actions] == [1, 2, 3]
 
 
@@ -70,6 +70,23 @@ def test_dangling_finding_references_are_rejected() -> None:
     payload = load_fixture("prospect.json")
     payload["top_actions"][0]["finding_ids"] = ["fn_missing_reference"]
     with pytest.raises(ValidationError, match="unknown finding references"):
+        validate(payload)
+
+
+def test_client_evidence_must_be_bound_to_its_finding() -> None:
+    payload = load_fixture("prospect.json")
+    payload["client_delivery"]["evidence_cards"][0]["evidence_ids"] = [
+        "ev_public_gbp_service_gap"
+    ]
+    with pytest.raises(ValidationError, match="client evidence must be bound"):
+        validate(payload)
+
+
+def test_client_evidence_must_support_a_selected_action() -> None:
+    payload = load_fixture("prospect.json")
+    payload["top_actions"][0]["finding_ids"] = ["fn_market_visibility_gap"]
+    payload["top_actions"][2]["finding_ids"] = ["fn_market_visibility_gap"]
+    with pytest.raises(ValidationError, match="client evidence must support"):
         validate(payload)
 
 
@@ -133,7 +150,7 @@ def test_contract_generation_is_deterministic() -> None:
 
 def test_manifest_hashes_match_contract_files() -> None:
     manifest = json.loads((CONTRACT_DIR / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["contract_version"] == "2.2.0"
+    assert manifest["contract_version"] == "2.2.1"
     for relative_path, expected_hash in manifest["files"].items():
         actual_hash = "sha256:" + hashlib.sha256((CONTRACT_DIR / relative_path).read_bytes()).hexdigest()
         assert actual_hash == expected_hash

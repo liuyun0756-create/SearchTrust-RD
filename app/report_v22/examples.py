@@ -129,6 +129,122 @@ def _layer(layer_key: str, finding_ids: list[str], evidence_ids: list[str]) -> d
     }
 
 
+def _client_delivery(report_type: str) -> dict[str, Any]:
+    checked_sources = [
+        "Website",
+        "Market search sample",
+        "Competitor sample",
+        "Public business profile",
+    ]
+    boundary = (
+        "This report uses public evidence. Authorized Search Console, Analytics, "
+        "and official business-profile performance data were not used."
+    )
+    if report_type == "verified_execution":
+        checked_sources = [
+            "Website",
+            "Market search sample",
+            "Search Console",
+            "Analytics",
+        ]
+        boundary = (
+            "This report uses the connected sources listed above. Unavailable sources "
+            "were not treated as zero or as healthy."
+        )
+    actions = [
+        {
+            "action_id": "ac_publish_emergency_page",
+            "sequence": 1,
+            "title": "Resolve the confirmed page-type gap",
+            "why_now": "The sampled difference may represent an unmet customer need, but it should be validated before anything is built.",
+            "expected_result": "The client has an approved useful page or a documented decision not to build one.",
+            "effort_bucket": "medium",
+            "review_date": "2026-09-25",
+            "required_client_assets": ["Emergency service availability", "Service photos", "Response-time policy"],
+        },
+        {
+            "action_id": "ac_align_public_gbp",
+            "sequence": 2,
+            "title": "Align the website and public business profile",
+            "why_now": "Customers and search systems should encounter the same approved business information across public channels.",
+            "expected_result": "Fresh public checks show the approved field is present and aligned across the website and business profile.",
+            "effort_bucket": "small",
+            "review_date": "2026-10-25",
+            "required_client_assets": ["Approved service description"],
+        },
+        {
+            "action_id": "ac_build_local_proof",
+            "sequence": 3,
+            "title": "Review the confirmed market visibility gap",
+            "why_now": "The agreed market sample contains a visibility difference that should be rechecked on a comparable basis.",
+            "expected_result": "A fresh comparable market sample shows whether the selected visibility condition changed.",
+            "effort_bucket": "medium",
+            "review_date": "2026-11-24",
+            "required_client_assets": ["Approved Austin job examples", "Customer-approved proof"],
+        },
+    ]
+    return {
+        "decision": {
+            "headline": "Decide whether the missing page type is a real growth gap",
+            "business_impact": "The confirmed competitor sample contains a useful page type that was not found in the client sample.",
+            "opportunity": "Validate the customer need, then approve a distinct useful page or document a no-build decision.",
+        },
+        "evidence_cards": [
+            {
+                "source_label": "Website",
+                "subject_label": "Page-type comparison",
+                "observation": "The client website sample did not contain the selected service page type.",
+                "decision_relevance": "This is a decision prompt, not proof that the client should copy a competitor asset.",
+                "finding_ids": ["fn_service_page_gap"],
+                "evidence_ids": ["ev_site_service_page"],
+            },
+            {
+                "source_label": "Public business profile",
+                "subject_label": "Public business information",
+                "observation": "The public profile check found the primary service was not explicitly represented.",
+                "decision_relevance": "The client remains the authority for the correct service description.",
+                "finding_ids": ["fn_public_gbp_service_gap"],
+                "evidence_ids": ["ev_public_gbp_service_gap"],
+            },
+            {
+                "source_label": "Market search sample",
+                "subject_label": "Confirmed market sample",
+                "observation": "The saved market sample recorded a visibility difference in the agreed search context.",
+                "decision_relevance": "This establishes a comparison to revisit, but it does not identify a ranking cause.",
+                "finding_ids": ["fn_market_visibility_gap"],
+                "evidence_ids": ["ev_serp_competitor_alpha", "ev_serp_competitor_beta"],
+            },
+        ],
+        "priority_actions": actions,
+        "roadmap": [
+            {
+                "period": "days_1_30",
+                "objective": actions[0]["title"],
+                "expected_result": "The first priority has a documented completion check.",
+                "action_ids": [actions[0]["action_id"]],
+            },
+            {
+                "period": "days_31_60",
+                "objective": actions[1]["title"],
+                "expected_result": "The second priority has a documented completion check.",
+                "action_ids": [actions[1]["action_id"]],
+            },
+            {
+                "period": "days_61_90",
+                "objective": actions[2]["title"],
+                "expected_result": "The third priority has a documented completion check.",
+                "action_ids": [actions[2]["action_id"]],
+            },
+        ],
+        "coverage_appendix": {
+            "checked_sources": checked_sources,
+            "unavailable_sources": [],
+            "boundary_summary": boundary,
+        },
+        "next_review_date": "2026-09-25",
+    }
+
+
 def build_prospect_fixture() -> dict[str, Any]:
     evidence = [
         _evidence(
@@ -306,7 +422,7 @@ def build_prospect_fixture() -> dict[str, Any]:
             "search_device": "mobile",
         },
         "report_version": {
-            "schema_version": "2.2.0",
+            "schema_version": "2.2.1",
             "report_id": PROSPECT_REPORT_ID,
             "report_type": "prospect",
             "version_number": 1,
@@ -397,6 +513,7 @@ def build_prospect_fixture() -> dict[str, Any]:
             "required_client_assets": ["Service details", "Approved GBP description", "Local job proof"],
             "next_review_date": "2026-11-24",
         },
+        "client_delivery": _client_delivery("prospect"),
         "evidence_index": evidence,
         "version_diff": {"kind": "initial", "parent_report_id": None, "entries": []},
         "limitations": [
@@ -423,7 +540,7 @@ def _connected_source(source_type: str, snapshot_id: str, metrics: list[dict[str
 def build_verified_fixture() -> dict[str, Any]:
     report = deepcopy(build_prospect_fixture())
     report["report_version"] = {
-        "schema_version": "2.2.0",
+        "schema_version": "2.2.1",
         "report_id": VERIFIED_REPORT_ID,
         "report_type": "verified_execution",
         "version_number": 2,
@@ -449,6 +566,7 @@ def build_verified_fixture() -> dict[str, Any]:
         "gbp": _connected_source("gbp", GBP_SNAPSHOT_ID, [{"metric_key": "website_clicks", "label": "GBP website clicks", "value": 84.0, "unit": "count", "comparison_value": 79.0}]),
         "ga4": _connected_source("ga4", GA4_SNAPSHOT_ID, [{"metric_key": "engagement_rate", "label": "Service landing page engagement rate", "value": 0.31, "unit": "ratio", "comparison_value": 0.37}]),
     }
+    report["client_delivery"] = _client_delivery("verified_execution")
     report["evidence_index"].extend(
         [
             _evidence("ev_gsc_low_ctr", GSC_SNAPSHOT_ID, "gsc", 0.012, 0.012, locator=_source_locator(external_resource_id="sc-domain:example-plumbing.test", query="emergency plumber austin", field_path="ctr"), coverage_start="2026-05-28", coverage_end="2026-08-25"),

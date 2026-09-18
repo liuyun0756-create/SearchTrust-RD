@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.jobs_v22.digest import request_digest
+from app.report_v22.client_delivery import build_client_delivery
 from app.report_v22.execution_plan_catalog import (
     MEASUREMENT_DONE,
     MEASUREMENT_OWNERS,
@@ -319,11 +320,26 @@ def assemble_verified_report(
         core_finding_id=core_id,
     )
     business_action = next(item for item in top_actions if core_id in item.finding_ids)
+    data_coverage = _coverage(parent, first_party, evidence)
+    template_keys = [
+        item.public_action.template_key
+        if item.public_action is not None
+        else item.measurement_action.template_key
+        for item in verified_result.actions
+    ]
+    client_delivery = build_client_delivery(
+        report_type="verified_execution",
+        template_keys=template_keys,
+        top_actions=top_actions,
+        findings=findings,
+        evidence_index=evidence,
+        data_coverage=data_coverage,
+    )
     report = ReportV22(
         identity=parent.identity,
         case_context=parent.case_context,
         report_version=ReportVersion(
-            schema_version="2.2.0",
+            schema_version="2.2.1",
             report_id=report_id,
             report_type="verified_execution",
             version_number=parent.report_version.version_number + 1,
@@ -332,7 +348,7 @@ def assemble_verified_report(
             ruleset_version="v22_execution_plan_v1",
             copy_model_version=copy_model_version,
         ),
-        data_coverage=_coverage(parent, first_party, evidence),
+        data_coverage=data_coverage,
         market_snapshot=parent.market_snapshot,
         site_inventory_summary=parent.site_inventory_summary,
         competitor_analysis=parent.competitor_analysis,
@@ -365,6 +381,7 @@ def assemble_verified_report(
             )),
             next_review_date=top_actions[0].review_date,
         ),
+        client_delivery=client_delivery,
         evidence_index=evidence,
         version_diff=version_diff_result.version_diff,
         limitations=_limitations(parent, first_party, limitations),

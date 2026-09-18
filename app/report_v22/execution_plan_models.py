@@ -215,6 +215,8 @@ class ExecutionPlanBuildResult(StrictModel):
             raise ValueError("report must preserve action order")
         if self.report.client_summary.action_ids != action_ids:
             raise ValueError("client summary must preserve action order")
+        if [item.action_id for item in self.report.client_delivery.priority_actions] != action_ids:
+            raise ValueError("client delivery must preserve action order")
         if self.report.report_version.report_id != self.verified_report_id:
             raise ValueError("report identity mismatch")
         if (

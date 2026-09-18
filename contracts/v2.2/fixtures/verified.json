@@ -18,6 +18,130 @@
       "region": "TX"
     }
   },
+  "client_delivery": {
+    "coverage_appendix": {
+      "boundary_summary": "This report uses the connected sources listed above. Unavailable sources were not treated as zero or as healthy.",
+      "checked_sources": [
+        "Website",
+        "Market search sample",
+        "Search Console",
+        "Analytics"
+      ],
+      "unavailable_sources": []
+    },
+    "decision": {
+      "business_impact": "The confirmed competitor sample contains a useful page type that was not found in the client sample.",
+      "headline": "Decide whether the missing page type is a real growth gap",
+      "opportunity": "Validate the customer need, then approve a distinct useful page or document a no-build decision."
+    },
+    "evidence_cards": [
+      {
+        "decision_relevance": "This is a decision prompt, not proof that the client should copy a competitor asset.",
+        "evidence_ids": [
+          "ev_site_service_page"
+        ],
+        "finding_ids": [
+          "fn_service_page_gap"
+        ],
+        "observation": "The client website sample did not contain the selected service page type.",
+        "source_label": "Website",
+        "subject_label": "Page-type comparison"
+      },
+      {
+        "decision_relevance": "The client remains the authority for the correct service description.",
+        "evidence_ids": [
+          "ev_public_gbp_service_gap"
+        ],
+        "finding_ids": [
+          "fn_public_gbp_service_gap"
+        ],
+        "observation": "The public profile check found the primary service was not explicitly represented.",
+        "source_label": "Public business profile",
+        "subject_label": "Public business information"
+      },
+      {
+        "decision_relevance": "This establishes a comparison to revisit, but it does not identify a ranking cause.",
+        "evidence_ids": [
+          "ev_serp_competitor_alpha",
+          "ev_serp_competitor_beta"
+        ],
+        "finding_ids": [
+          "fn_market_visibility_gap"
+        ],
+        "observation": "The saved market sample recorded a visibility difference in the agreed search context.",
+        "source_label": "Market search sample",
+        "subject_label": "Confirmed market sample"
+      }
+    ],
+    "next_review_date": "2026-09-25",
+    "priority_actions": [
+      {
+        "action_id": "ac_publish_emergency_page",
+        "effort_bucket": "medium",
+        "expected_result": "The client has an approved useful page or a documented decision not to build one.",
+        "required_client_assets": [
+          "Emergency service availability",
+          "Service photos",
+          "Response-time policy"
+        ],
+        "review_date": "2026-09-25",
+        "sequence": 1,
+        "title": "Resolve the confirmed page-type gap",
+        "why_now": "The sampled difference may represent an unmet customer need, but it should be validated before anything is built."
+      },
+      {
+        "action_id": "ac_align_public_gbp",
+        "effort_bucket": "small",
+        "expected_result": "Fresh public checks show the approved field is present and aligned across the website and business profile.",
+        "required_client_assets": [
+          "Approved service description"
+        ],
+        "review_date": "2026-10-25",
+        "sequence": 2,
+        "title": "Align the website and public business profile",
+        "why_now": "Customers and search systems should encounter the same approved business information across public channels."
+      },
+      {
+        "action_id": "ac_build_local_proof",
+        "effort_bucket": "medium",
+        "expected_result": "A fresh comparable market sample shows whether the selected visibility condition changed.",
+        "required_client_assets": [
+          "Approved Austin job examples",
+          "Customer-approved proof"
+        ],
+        "review_date": "2026-11-24",
+        "sequence": 3,
+        "title": "Review the confirmed market visibility gap",
+        "why_now": "The agreed market sample contains a visibility difference that should be rechecked on a comparable basis."
+      }
+    ],
+    "roadmap": [
+      {
+        "action_ids": [
+          "ac_publish_emergency_page"
+        ],
+        "expected_result": "The first priority has a documented completion check.",
+        "objective": "Resolve the confirmed page-type gap",
+        "period": "days_1_30"
+      },
+      {
+        "action_ids": [
+          "ac_align_public_gbp"
+        ],
+        "expected_result": "The second priority has a documented completion check.",
+        "objective": "Align the website and public business profile",
+        "period": "days_31_60"
+      },
+      {
+        "action_ids": [
+          "ac_build_local_proof"
+        ],
+        "expected_result": "The third priority has a documented completion check.",
+        "objective": "Review the confirmed market visibility gap",
+        "period": "days_61_90"
+      }
+    ]
+  },
   "client_summary": {
     "action_ids": [
       "ac_publish_emergency_page",
@@ -683,7 +807,7 @@
     "report_id": "33333333-3333-4333-8333-333333333333",
     "report_type": "verified_execution",
     "ruleset_version": "v22-verified-1.0.0",
-    "schema_version": "2.2.0",
+    "schema_version": "2.2.1",
     "version_number": 2
   },
   "roadmap_30_60_90": {

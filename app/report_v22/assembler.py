@@ -11,6 +11,7 @@ from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.jobs_v22.digest import request_digest
 from app.report_v22.action_models import ActionSkeleton, ActionTarget, PublicActionPlan
+from app.report_v22.client_delivery import build_client_delivery
 from app.report_v22.copy_models import PublicActionCopyResult
 from app.report_v22.findings_models import PublicFindingsResult
 from app.report_v22.models import (
@@ -361,6 +362,15 @@ def assemble_prospect_report(
         for evidence_id in competitor.evidence_ids
     )
     report_evidence = select_prospect_report_evidence(findings, retained_ids)
+    data_coverage = _coverage(findings)
+    client_delivery = build_client_delivery(
+        report_type="prospect",
+        template_keys=[action.template_key for action in action_plan.actions],
+        top_actions=top_actions,
+        findings=findings.findings,
+        evidence_index=report_evidence,
+        data_coverage=data_coverage,
+    )
 
     return ReportV22(
         identity=IdentitySection(case_id=request.case_id, business=request.business_identity),
@@ -372,7 +382,7 @@ def assemble_prospect_report(
             "search_device": shared_market.snapshot.device,
         },
         report_version=ReportVersion(
-            schema_version="2.2.0",
+            schema_version="2.2.1",
             report_id=report_id,
             report_type="prospect",
             version_number=1,
@@ -381,7 +391,7 @@ def assemble_prospect_report(
             ruleset_version=findings.ruleset_version,
             copy_model_version=copy_model_version,
         ),
-        data_coverage=_coverage(findings),
+        data_coverage=data_coverage,
         market_snapshot=market_snapshot,
         site_inventory_summary=site_summary,
         competitor_analysis=competitor_analysis,
@@ -418,6 +428,7 @@ def assemble_prospect_report(
             required_client_assets=all_assets,
             next_review_date=top_actions[0].review_date,
         ),
+        client_delivery=client_delivery,
         evidence_index=report_evidence,
         version_diff=VersionDiff(kind="initial", parent_report_id=None, entries=[]),
         limitations=_limitations(

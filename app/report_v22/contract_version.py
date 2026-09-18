@@ -3,5 +3,5 @@
 from typing import Literal
 
 
-CONTRACT_VERSION = "2.2.0"
-ContractVersion = Literal["2.2.0"]
+CONTRACT_VERSION = "2.2.1"
+ContractVersion = Literal["2.2.1"]

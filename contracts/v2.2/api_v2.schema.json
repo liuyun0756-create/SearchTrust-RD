@@ -262,6 +262,304 @@
       "title": "CaseContext",
       "type": "object"
     },
+    "ClientCoverageAppendix": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary_summary": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Boundary Summary",
+          "type": "string"
+        },
+        "checked_sources": {
+          "items": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Checked Sources",
+          "type": "array"
+        },
+        "unavailable_sources": {
+          "items": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Unavailable Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "boundary_summary"
+      ],
+      "title": "ClientCoverageAppendix",
+      "type": "object"
+    },
+    "ClientDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "business_impact": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Business Impact",
+          "type": "string"
+        },
+        "headline": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Headline",
+          "type": "string"
+        },
+        "opportunity": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Opportunity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "headline",
+        "business_impact",
+        "opportunity"
+      ],
+      "title": "ClientDecision",
+      "type": "object"
+    },
+    "ClientDelivery": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage_appendix": {
+          "$ref": "#/$defs/ClientCoverageAppendix"
+        },
+        "decision": {
+          "$ref": "#/$defs/ClientDecision"
+        },
+        "evidence_cards": {
+          "items": {
+            "$ref": "#/$defs/ClientEvidenceCard"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Evidence Cards",
+          "type": "array"
+        },
+        "next_review_date": {
+          "format": "date",
+          "title": "Next Review Date",
+          "type": "string"
+        },
+        "priority_actions": {
+          "items": {
+            "$ref": "#/$defs/ClientPriorityAction"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Priority Actions",
+          "type": "array"
+        },
+        "roadmap": {
+          "items": {
+            "$ref": "#/$defs/ClientRoadmapPhase"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Roadmap",
+          "type": "array"
+        }
+      },
+      "required": [
+        "decision",
+        "evidence_cards",
+        "priority_actions",
+        "roadmap",
+        "coverage_appendix",
+        "next_review_date"
+      ],
+      "title": "ClientDelivery",
+      "type": "object"
+    },
+    "ClientEvidenceCard": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_relevance": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Decision Relevance",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^ev_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "finding_ids": {
+          "items": {
+            "pattern": "^fn_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Finding Ids",
+          "type": "array"
+        },
+        "observation": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Observation",
+          "type": "string"
+        },
+        "source_label": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Source Label",
+          "type": "string"
+        },
+        "subject_label": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Label"
+        }
+      },
+      "required": [
+        "source_label",
+        "observation",
+        "decision_relevance",
+        "finding_ids",
+        "evidence_ids"
+      ],
+      "title": "ClientEvidenceCard",
+      "type": "object"
+    },
+    "ClientPriorityAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "effort_bucket": {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "title": "Effort Bucket",
+          "type": "string"
+        },
+        "expected_result": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Expected Result",
+          "type": "string"
+        },
+        "required_client_assets": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Required Client Assets",
+          "type": "array"
+        },
+        "review_date": {
+          "format": "date",
+          "title": "Review Date",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "why_now": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Why Now",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "sequence",
+        "title",
+        "why_now",
+        "expected_result",
+        "effort_bucket",
+        "review_date"
+      ],
+      "title": "ClientPriorityAction",
+      "type": "object"
+    },
+    "ClientRoadmapPhase": {
+      "additionalProperties": false,
+      "properties": {
+        "action_ids": {
+          "items": {
+            "pattern": "^ac_[a-z0-9][a-z0-9_-]{2,80}$",
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Action Ids",
+          "type": "array"
+        },
+        "expected_result": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Expected Result",
+          "type": "string"
+        },
+        "objective": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "period": {
+          "enum": [
+            "days_1_30",
+            "days_31_60",
+            "days_61_90"
+          ],
+          "title": "Period",
+          "type": "string"
+        }
+      },
+      "required": [
+        "period",
+        "objective",
+        "expected_result",
+        "action_ids"
+      ],
+      "title": "ClientRoadmapPhase",
+      "type": "object"
+    },
     "ClientSummary": {
       "additionalProperties": false,
       "properties": {
@@ -2213,6 +2511,9 @@
         "case_context": {
           "$ref": "#/$defs/CaseContext"
         },
+        "client_delivery": {
+          "$ref": "#/$defs/ClientDelivery"
+        },
         "client_summary": {
           "$ref": "#/$defs/ClientSummary"
         },
@@ -2303,6 +2604,7 @@
         "top_actions",
         "roadmap_30_60_90",
         "client_summary",
+        "client_delivery",
         "evidence_index",
         "version_diff"
       ],
@@ -2356,7 +2658,7 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "2.2.0",
+          "const": "2.2.1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -3503,7 +3805,7 @@
       "$ref": "#/$defs/AnalyzeRequest"
     },
     "contract_version": {
-      "const": "2.2.0",
+      "const": "2.2.1",
       "title": "Contract Version",
       "type": "string"
     },
