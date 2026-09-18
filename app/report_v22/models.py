@@ -442,6 +442,92 @@ class ClientSummary(StrictModel):
     next_review_date: date
 
 
+ClientDisplayLabel = Annotated[str, Field(min_length=1, max_length=100)]
+ClientAsset = Annotated[str, Field(min_length=1, max_length=200)]
+ClientSourceSummary = Annotated[str, Field(min_length=1, max_length=80)]
+
+
+class ClientDecision(StrictModel):
+    headline: str = Field(min_length=1, max_length=160)
+    business_impact: str = Field(min_length=1, max_length=320)
+    opportunity: str = Field(min_length=1, max_length=320)
+
+
+class ClientEvidenceCard(StrictModel):
+    source_label: str = Field(min_length=1, max_length=40)
+    subject_label: ClientDisplayLabel | None = None
+    observation: str = Field(min_length=1, max_length=240)
+    decision_relevance: str = Field(min_length=1, max_length=240)
+    finding_ids: list[FindingId] = Field(min_length=1, max_length=2)
+    evidence_ids: list[EvidenceId] = Field(min_length=1, max_length=4)
+
+    @model_validator(mode="after")
+    def validate_references(self) -> "ClientEvidenceCard":
+        if len(self.finding_ids) != len(set(self.finding_ids)):
+            raise ValueError("client evidence finding IDs must be unique")
+        if len(self.evidence_ids) != len(set(self.evidence_ids)):
+            raise ValueError("client evidence IDs must be unique")
+        return self
+
+
+class ClientPriorityAction(StrictModel):
+    action_id: ActionId
+    sequence: int = Field(ge=1, le=3)
+    title: str = Field(min_length=1, max_length=120)
+    why_now: str = Field(min_length=1, max_length=240)
+    expected_result: str = Field(min_length=1, max_length=240)
+    effort_bucket: EffortBucket
+    review_date: date
+    required_client_assets: list[ClientAsset] = Field(default_factory=list, max_length=3)
+
+
+class ClientRoadmapPhase(StrictModel):
+    period: Literal["days_1_30", "days_31_60", "days_61_90"]
+    objective: str = Field(min_length=1, max_length=180)
+    expected_result: str = Field(min_length=1, max_length=180)
+    action_ids: list[ActionId] = Field(min_length=1, max_length=3)
+
+    @model_validator(mode="after")
+    def validate_action_ids(self) -> "ClientRoadmapPhase":
+        if len(self.action_ids) != len(set(self.action_ids)):
+            raise ValueError("client roadmap action IDs must be unique")
+        return self
+
+
+class ClientCoverageAppendix(StrictModel):
+    checked_sources: list[ClientSourceSummary] = Field(default_factory=list, max_length=4)
+    unavailable_sources: list[ClientSourceSummary] = Field(default_factory=list, max_length=4)
+    boundary_summary: str = Field(min_length=1, max_length=320)
+
+
+class ClientDelivery(StrictModel):
+    decision: ClientDecision
+    evidence_cards: list[ClientEvidenceCard] = Field(min_length=1, max_length=3)
+    priority_actions: list[ClientPriorityAction] = Field(min_length=3, max_length=3)
+    roadmap: list[ClientRoadmapPhase] = Field(min_length=3, max_length=3)
+    coverage_appendix: ClientCoverageAppendix
+    next_review_date: date
+
+    @model_validator(mode="after")
+    def validate_structure(self) -> "ClientDelivery":
+        if [action.sequence for action in self.priority_actions] != [1, 2, 3]:
+            raise ValueError("client priority actions must be ordered with sequences 1, 2, 3")
+        action_ids = [action.action_id for action in self.priority_actions]
+        if len(action_ids) != len(set(action_ids)):
+            raise ValueError("client priority action IDs must be unique")
+        expected_periods = ["days_1_30", "days_31_60", "days_61_90"]
+        if [phase.period for phase in self.roadmap] != expected_periods:
+            raise ValueError("client roadmap phases must be ordered 30, 60, then 90 days")
+        roadmap_action_ids = [
+            action_id for phase in self.roadmap for action_id in phase.action_ids
+        ]
+        if roadmap_action_ids != action_ids:
+            raise ValueError("client roadmap must reference every priority action in order")
+        if self.next_review_date != self.priority_actions[0].review_date:
+            raise ValueError("client next review date must match the first priority action")
+        return self
+
+
 class PreviousFindingReference(StrictModel):
     report_id: UUID
     finding_id: FindingId
