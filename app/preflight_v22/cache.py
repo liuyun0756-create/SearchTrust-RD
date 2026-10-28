@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class PreflightCache:
-    CACHE_VERSION = "v1"
+    # Identity search now includes an observed phone. Do not replay name-only
+    # matches created before that change after a deployment.
+    CACHE_VERSION = "v2"
 
     def __init__(self, redis: Any | None, *, prefix: str, ttl_seconds: int) -> None:
         self.redis = redis

@@ -63,7 +63,7 @@ def test_cache_key_is_stable_and_versioned() -> None:
     second = cache.key(request_payload(), "https://example.com/")
 
     assert first == second
-    assert first.startswith("searchtrust:v22:preflight:v1:2.2.1:")
+    assert first.startswith("searchtrust:v22:preflight:v2:2.2.1:")
     assert "Plumbing" not in first
 
 
@@ -78,6 +78,15 @@ async def test_cache_round_trip_revalidates_frozen_response() -> None:
 
     assert result == response_payload()
     assert redis.set_calls[0][2] == 900
+
+
+@pytest.mark.anyio
+async def test_phone_identity_revision_does_not_replay_name_only_cached_match() -> None:
+    redis = FakeRedis()
+    cache = PreflightCache(redis, prefix="searchtrust:v22", ttl_seconds=900)
+    key = cache.key(request_payload(), "https://example.com/")
+    redis.values[key.replace(":preflight:v2:", ":preflight:v1:")] = response_payload().model_dump_json()
+    assert await cache.get(key) is None
 
 
 @pytest.mark.anyio
