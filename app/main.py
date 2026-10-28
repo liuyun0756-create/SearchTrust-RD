@@ -29,6 +29,15 @@ from fastapi.responses import JSONResponse
 from app.api.health import router as health_router
 from app.api.v2.competitors import router as v2_competitors_router
 from app.api.v2.preflight import router as v2_preflight_router
+from app.api.v2.comparisons import router as v2_comparison_router
+from app.api.v2.collections import router as v2_collection_router
+from app.api.v2.ga4_collections import router as v2_ga4_collection_router
+from app.api.v2.page_checks import router as v2_page_check_router
+from app.api.v2.review_evidence import router as v2_review_evidence_router
+from app.api.v2.review_decisions import router as v2_review_decisions_router
+from app.api.v2.review_generation import router as v2_review_generation_router
+from app.api.v2.ga4_evidence_reviews import router as v2_ga4_review_router
+from app.api.v2.ga4_session_readings import router as v2_ga4_session_router
 from app.api.v2.runtime import close_v22_runtime, create_v22_runtime, router as v2_runtime_router
 from app.competitors_v22.runtime import create_competitor_discovery_runtime
 from app.core.config import settings
@@ -120,6 +129,15 @@ def create_app() -> FastAPI:
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(health_router)
     app.include_router(v2_preflight_router)
+    app.include_router(v2_comparison_router)
+    app.include_router(v2_collection_router)
+    app.include_router(v2_ga4_collection_router)
+    app.include_router(v2_page_check_router)
+    app.include_router(v2_review_evidence_router)
+    app.include_router(v2_review_decisions_router)
+    app.include_router(v2_review_generation_router)
+    app.include_router(v2_ga4_review_router)
+    app.include_router(v2_ga4_session_router)
     app.include_router(v2_runtime_router)
     app.include_router(v2_competitors_router)
 

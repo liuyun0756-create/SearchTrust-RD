@@ -1,0 +1,135 @@
+{
+  "audit": {
+    "causal_attribution": false,
+    "collection_id": "00000000-0000-0000-0000-000000004f4d",
+    "comparisons_available": false,
+    "configuration_after_at": "2026-12-15T08:00:00Z",
+    "configuration_before_at": "2026-12-15T08:00:00Z",
+    "configuration_change_count": 0,
+    "configuration_changes": [],
+    "coverage": [
+      {
+        "expected_dates": 28,
+        "missing_dates": [],
+        "period": "previous",
+        "returned_dates": 28
+      },
+      {
+        "expected_dates": 28,
+        "missing_dates": [],
+        "period": "current",
+        "returned_dates": 28
+      }
+    ],
+    "event_history": "unverified",
+    "observation_checksum": "sha256:8b173000f18eb0d56b2bfc37a04fbaac97a35770939aed5866eef2e5c44132ad",
+    "observed_at": "2026-12-15T08:00:00Z",
+    "processing_completeness": "not_attested",
+    "schema_version": "v22_ga4_evidence_audit_v1",
+    "scope": {
+      "channel": "organic_search",
+      "hosts": [
+        "example.test"
+      ],
+      "landing_path": null,
+      "resource_id": "properties/12345",
+      "timezone": "America/Los_Angeles"
+    },
+    "views": [
+      {
+        "other_row_loss": false,
+        "period": "previous",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "totals"
+      },
+      {
+        "other_row_loss": false,
+        "period": "previous",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "dates"
+      },
+      {
+        "other_row_loss": false,
+        "period": "previous",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "key_events"
+      },
+      {
+        "other_row_loss": false,
+        "period": "current",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "totals"
+      },
+      {
+        "other_row_loss": false,
+        "period": "current",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "dates"
+      },
+      {
+        "other_row_loss": false,
+        "period": "current",
+        "provider_empty_reason": false,
+        "restricted_metrics": [],
+        "row_limit_reached": false,
+        "sampled": false,
+        "thresholded": false,
+        "truncation_capture": "not_captured",
+        "truncation_reasons": [],
+        "view": "key_events"
+      }
+    ],
+    "windows": {
+      "after": {
+        "end": "2026-09-29",
+        "start": "2026-09-02"
+      },
+      "before": {
+        "end": "2026-08-31",
+        "start": "2026-08-04"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2026-09-01",
+        "start": "2026-09-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  "case_id": "00000000-0000-0000-0000-000000000002",
+  "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+  "report_id": "00000000-0000-0000-0000-000000000005",
+  "reviews": [],
+  "saved": null,
+  "schema_version": "v22_ga4_review_view_v1"
+}

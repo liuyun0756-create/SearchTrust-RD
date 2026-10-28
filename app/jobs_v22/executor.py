@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol
 from uuid import UUID
@@ -12,7 +13,7 @@ from app.api.v2.models import AnalyzeRequest
 from app.api.v2.competitor_models import CompetitorDiscoveryResult
 from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
-from app.competitors_v22.selection import AnalysisRequestEnvelope
+from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes
@@ -121,6 +122,15 @@ class ResultPersister(Protocol):
     ) -> None: ...
 
 
+@dataclass(frozen=True)
+class CollectedProspectSources:
+    site_inventory: SiteInventorySnapshot
+    discovery: CompetitorDiscoveryResult
+    shared_market: SharedMarketSnapshot
+    competitor_collection: CompetitorCollectionSnapshot
+    customer_public_gbp: CustomerPublicGbpCollection
+
+
 class ProspectV22Executor:
     """Run a prospect report from the exact discovery snapshot the user confirmed."""
 
@@ -160,9 +170,8 @@ class ProspectV22Executor:
             ) from None
 
     @staticmethod
-    def _validate_discovery_link(envelope: AnalysisRequestEnvelope, state: Any):
+    def _validate_discovery_link(link: AnalysisDiscoveryLink, state: Any):
         result = getattr(state, "result", None)
-        link = envelope.competitor_discovery
         if (
             getattr(state, "status", None) != "succeeded"
             or not isinstance(result, CompetitorDiscoveryResult)
@@ -177,7 +186,7 @@ class ProspectV22Executor:
             )
         return result
 
-    async def execute(
+    async def collect_sources(
         self,
         *,
         job_id: UUID,
@@ -185,7 +194,7 @@ class ProspectV22Executor:
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
-    ) -> ReportV22:
+    ) -> CollectedProspectSources:
         envelope = self._validate_envelope(request)
         analyze = envelope.analyze_request
         if analyze.report_type != "prospect":
@@ -194,15 +203,23 @@ class ProspectV22Executor:
                 "This worker currently supports prospect reports only.",
             )
 
+        return await self.collect_confirmed_sources(job_id=job_id, request=analyze,
+            discovery_link=envelope.competitor_discovery, submitted_at=submitted_at,
+            checkpoints=checkpoints, cost_ledger=cost_ledger)
+
+    async def collect_confirmed_sources(self, *, job_id, request, discovery_link,
+                                        submitted_at, checkpoints, cost_ledger):
+        """Source-only seam shared with first service; never creates a report."""
+        analyze = request
         state = await self.discovery_store.require_state(
-            envelope.competitor_discovery.discovery_id
+            discovery_link.discovery_id
         )
-        discovery = self._validate_discovery_link(envelope, state)
+        discovery = self._validate_discovery_link(discovery_link, state)
         shared_market = await self.market_store.get(
             input_digest=discovery.input_digest,
             now=self.clock(),
         )
-        link = envelope.competitor_discovery
+        link = discovery_link
         if (
             shared_market is None
             or shared_market.snapshot_id != link.market_snapshot_id
@@ -235,6 +252,22 @@ class ProspectV22Executor:
             checkpoints=checkpoints,
             cost_ledger=cost_ledger,
         )
+        return CollectedProspectSources(site_inventory, discovery, shared_market,
+            competitor_collection, customer_public_gbp)
+
+    async def execute(
+        self, *, job_id: UUID, request: ExecutorRequest, submitted_at: datetime,
+        checkpoints: JobCheckpoints, cost_ledger: JobCostLedger | None = None,
+    ) -> ReportV22:
+        envelope = self._validate_envelope(request)
+        analyze = envelope.analyze_request
+        collected = await self.collect_sources(job_id=job_id, request=envelope,
+            submitted_at=submitted_at, checkpoints=checkpoints, cost_ledger=cost_ledger)
+        site_inventory = collected.site_inventory
+        discovery = collected.discovery
+        shared_market = collected.shared_market
+        competitor_collection = collected.competitor_collection
+        customer_public_gbp = collected.customer_public_gbp
         report = await self.report_pipeline.build(
             job_id=job_id,
             request=analyze,

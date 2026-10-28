@@ -1,0 +1,1441 @@
+{
+  "action_state": "actions_supported",
+  "actions": [
+    {
+      "completion": [
+        "The target page and business priority are confirmed.",
+        "A page-specific editing brief or a documented no-change decision is ready for the SEO to execute."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn_4c3f74f538594e3854ecc5a31f81af63eaf6f6daeffeb23e53647a186a579b61",
+        "fn_ff01e8fd97080b2c7d5bade8af9f26c164f1ec9f21ef637575d8ca981684b226"
+      ],
+      "id": "ac-service-d06749c876642fea9955b08a",
+      "materials": [
+        {
+          "body": "Observed:\nThis page has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.\nThis page has meaningful Google search visibility while GA4 confirms a material engagement or conversion gap.\n\nScope: current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\n\nReview the existing target page against the named search observation. Confirm that this service is a business priority and that the page is the intended target. Prepare approved service scope, process, supporting proof and a clear contact step. Improve that page only where its inspected content and confirmed business details support the change; do not infer missing copy from performance data alone.",
+          "confirmation_items": [
+            "Confirm the service priority and intended existing page.",
+            "Inspect the page and obtain approved business details before drafting publishable copy."
+          ],
+          "evidence_ids": [
+            "ev_1f0bbfb119d56d8969a00d9be15c691f42f862a801334d80636152b0cf2d2084",
+            "ev_2760bc5fd047481322942b80358e270da306b2a86e7d087c20cee116f722e3da",
+            "ev_3c6c71461b95f4c5637e6f718d34c6f358c797500885b53b849c1d4290b2c0ad",
+            "ev_41b678bcc6544fc24309560f49ab5a126d52a75578f33762336cb7043d705997",
+            "ev_4a4981044a437636dbdfbf706beb4c37fed0e5072093193220a7b5d69402173a",
+            "ev_751e345d4eb2fa284df8e3ec5e230e590aa39242f10b56eefc75de5ba3aec520",
+            "ev_86b903f7a5a429c5054fff9fe974515b4bd19242d8b13e2ad19c41d744b71176",
+            "ev_8ad836e49ddcb2342740ad4fcbffed7d196b75ae6e1f350746457e51876ef8ff",
+            "ev_b6a5cf93d40c17df3bdb3aa049b7afe1b679757785c0d04da4dca3cf0135c8ad",
+            "ev_b706c37bc50f8602026cd732b9f79c25d650ee6b880eb10c8ed98f20554ef31f",
+            "ev_c66416718f2c11a7f9df195f546608a1d91aabaf6e0ce05ce38929caa83115a6",
+            "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52",
+            "ev_f4272af8e47bfb910cda1af3b6be3a411906f4dd7096f86732d969ccaa946088"
+          ],
+          "id": "ac-service-d06749c876642fea9955b08a-material",
+          "kind": "service_brief",
+          "readiness": "requires_confirmation",
+          "target": "https://example.test/service",
+          "title": "Review the existing service page"
+        }
+      ],
+      "review": "Record the actual edit and date if implemented, then compare eligible evidence for the same page and scope without claiming causality.",
+      "steps": [
+        "Target: https://example.test/service",
+        "Review the existing target page against the named search observation. Confirm that this service is a business priority and that the page is the intended target. Prepare approved service scope, process, supporting proof and a clear contact step. Improve that page only where its inspected content and confirmed business details support the change; do not infer missing copy from performance data alone."
+      ],
+      "target": "https://example.test/service",
+      "title": "Review the existing service page"
+    },
+    {
+      "completion": [
+        "The query intent and matching page are checked, or the unresolved page association is documented."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn_31156e0eed5a9391e27145258d6b3ff9b0eb4324ef32c5ee4b7e529228b83ec6"
+      ],
+      "id": "ac-service-a04588186121745ac8ab46d4",
+      "materials": [
+        {
+          "body": "Observed: This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.\n\nScope: current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\n\nReview the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one.",
+          "confirmation_items": [],
+          "evidence_ids": [
+            "ev_a9ad8e92608d7859b8bb3490b5c6900bc74f397da43514159819343c8919a893",
+            "ev_bffa8e2569cad514bcd59f79747f4069dfb718011f3a8d3a8e874ece174f0876",
+            "ev_ca220d070b81b4c23d143e1203ea8bc875e1d416e4205a6453221d6ddc9a52fd",
+            "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52"
+          ],
+          "id": "ac-service-a04588186121745ac8ab46d4-material",
+          "kind": "technical_check",
+          "readiness": "instructions",
+          "target": "declining query",
+          "title": "Match the query to the intended page"
+        }
+      ],
+      "review": "Compare the same query and eligible scope on the next review; record unresolved page association rather than inventing one.",
+      "steps": [
+        "Target: declining query",
+        "Review the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one."
+      ],
+      "target": "declining query",
+      "title": "Match the query to the intended page"
+    },
+    {
+      "completion": [
+        "The query intent and matching page are checked, or the unresolved page association is documented."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn_4aed692c633429ebaf7d09fd6f36b8862622fc1a3349cc5289ac16439550ea0d"
+      ],
+      "id": "ac-service-b2ea591f14db910281d0f35a",
+      "materials": [
+        {
+          "body": "Observed: This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.\n\nScope: current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\n\nReview the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one.",
+          "confirmation_items": [],
+          "evidence_ids": [
+            "ev_82e1107cec6d3fb92dbf8f984b06448f60a0c941158a00c4ff15ee0f05caec5d",
+            "ev_ce22e99b59c70937495a8c35764762a0ea281807a72b0933f0916962eb4e9f19",
+            "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52",
+            "ev_f813a8b97f537fb6c8f059b7321c1ce9d1474de30812517a605bfd17c959e04c"
+          ],
+          "id": "ac-service-b2ea591f14db910281d0f35a-material",
+          "kind": "technical_check",
+          "readiness": "instructions",
+          "target": "service opportunity",
+          "title": "Match the query to the intended page"
+        }
+      ],
+      "review": "Compare the same query and eligible scope on the next review; record unresolved page association rather than inventing one.",
+      "steps": [
+        "Target: service opportunity",
+        "Review the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one."
+      ],
+      "target": "service opportunity",
+      "title": "Match the query to the intended page"
+    }
+  ],
+  "changes": [],
+  "evidence": [
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/totals/rows/0/key_events",
+      "id": "ev-service-checked-ga4-key_events",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "object": "properties/12345",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 100.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/totals/rows/0/sessions",
+      "id": "ev-service-checked-ga4-sessions",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "object": "properties/12345",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 1000
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/totals/rows/0/clicks",
+      "id": "ev-service-checked-gsc-clicks",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "object": "sc-domain:example.test",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 100.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/totals/rows/0/impressions",
+      "id": "ev-service-checked-gsc-impressions",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "object": "sc-domain:example.test",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 1000.0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/completed_at\n/payload/pages",
+      "id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/deep_analyzed_count",
+      "id": "ev_14fd9f1534038d759bfa5393121f8f4ab15c3d94fc7b651a7850aaa447da8f2e",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/completed_at\n/payload/pages",
+      "id": "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/totals/0/engagement_rate",
+      "id": "ev_1f0bbfb119d56d8969a00d9be15c691f42f862a801334d80636152b0cf2d2084",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "properties/12345",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 0.6
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages//service?gclid=x/session_key_event_rate",
+      "id": "ev_20d84a756758c4e778b1397b59450f0444e05aaef178997e182d944c71c40442",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    {
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test",
+      "field_path": "/previous/querys/growing query/clicks",
+      "id": "ev_21611f25a5d5da519463bd9dbedbf768d894355d264e0700ac9b51c6a16121c0",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "growing query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 20.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/0/position",
+      "id": "ev_2760bc5fd047481322942b80358e270da306b2a86e7d087c20cee116f722e3da",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 8.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages//service?gclid=x/engagement_rate",
+      "id": "ev_3b4e972167a7db987d88666cd2f252c851cb4c91561166da1fd034e83680aafd",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "ratio",
+      "value": 0.25
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/position",
+      "id": "ev_3c6c71461b95f4c5637e6f718d34c6f358c797500885b53b849c1d4290b2c0ad",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "position",
+      "value": 8.0
+    },
+    {
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test",
+      "field_path": "/previous/pages/0/clicks",
+      "id": "ev_3ea7100bf4708576b0f87bea523fdc82d725254aefeb8675f9f85591f97080b0",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "https://example.test/service",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 20.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/0/ctr",
+      "id": "ev_41b678bcc6544fc24309560f49ab5a126d52a75578f33762336cb7043d705997",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "ratio",
+      "value": 0.04
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/ctr",
+      "id": "ev_4a4981044a437636dbdfbf706beb4c37fed0e5072093193220a7b5d69402173a",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "ratio",
+      "value": 0.04
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages//service?gclid=x/sessions",
+      "id": "ev_61fc2afca9cc8664d688c744a586dba52095da6d04a472cf50a15586cc43d62c",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 60
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages/site_total/session_key_event_rate",
+      "id": "ev_73c323e7001092e165567ccc541a4bf65c2fea684e2b1ce85bdcb871a7d2479f",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "site_total",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/totals/0/session_key_event_rate",
+      "id": "ev_751e345d4eb2fa284df8e3ec5e230e590aa39242f10b56eefc75de5ba3aec520",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "properties/12345",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 0.1
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/0/clicks",
+      "id": "ev_7adae829abaa1e76892129168bb978dd3e8362ff87c7a5ec1ac89f5faf45251c",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 30.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/service opportunity/impressions",
+      "id": "ev_82e1107cec6d3fb92dbf8f984b06448f60a0c941158a00c4ff15ee0f05caec5d",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "service opportunity",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 200.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages/0/key_events",
+      "id": "ev_86b903f7a5a429c5054fff9fe974515b4bd19242d8b13e2ad19c41d744b71176",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 0.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/impressions",
+      "id": "ev_8ad836e49ddcb2342740ad4fcbffed7d196b75ae6e1f350746457e51876ef8ff",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 750.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/growing query/clicks",
+      "id": "ev_991436f74212af2e14dbbf05586d7d11ed50adf821a41a1b8dbe3a254f50d57e",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "growing query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 30.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/declining query/position",
+      "id": "ev_a9ad8e92608d7859b8bb3490b5c6900bc74f397da43514159819343c8919a893",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "declining query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "position",
+      "value": 6.0
+    },
+    {
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed ga4 resource for example.test",
+      "field_path": "/previous/landing_pages/0/sessions",
+      "id": "ev_abe3edf0cfd56ebf4bacb265b42b4dec4e34df9b13b963d8f7e3ffbfe66c7f82",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service/",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 30
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages//service?gclid=x/key_events",
+      "id": "ev_af9d0f82d9c371dcc2e318c65f802ad53334c3ea1e5b31daff29aefe6e205594",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 0.0
+    },
+    {
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test",
+      "field_path": "/previous/querys/declining query/clicks",
+      "id": "ev_b1a5e9a86f47eb51c5d2d36a2833308525808aa505557d80184847f4b03314a4",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "declining query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 20.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/totals/0/ctr",
+      "id": "ev_b6a5cf93d40c17df3bdb3aa049b7afe1b679757785c0d04da4dca3cf0135c8ad",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "sc-domain:example.test",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 0.1
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/pages/0/impressions",
+      "id": "ev_b706c37bc50f8602026cd732b9f79c25d650ee6b880eb10c8ed98f20554ef31f",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "http://www.example.test/service/?utm_source=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 750.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/declining query/clicks",
+      "id": "ev_bc925bbd040e2d5bbeac62e2192c0df00fa44fdaa9a8b65aadbd56c5e9ae46c1",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "declining query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 8.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/declining query/impressions",
+      "id": "ev_bffa8e2569cad514bcd59f79747f4069dfb718011f3a8d3a8e874ece174f0876",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "declining query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "count",
+      "value": 100.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages/0/sessions",
+      "id": "ev_c66416718f2c11a7f9df195f546608a1d91aabaf6e0ce05ce38929caa83115a6",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "count",
+      "value": 60
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/declining query/ctr",
+      "id": "ev_ca220d070b81b4c23d143e1203ea8bc875e1d416e4205a6453221d6ddc9a52fd",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "declining query",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "ratio",
+      "value": 0.08
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/service opportunity/position",
+      "id": "ev_ce22e99b59c70937495a8c35764762a0ea281807a72b0933f0916962eb4e9f19",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "service opportunity",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "position",
+      "value": 8.0
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/aggregates/site_total/ctr",
+      "id": "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "sc-domain:example.test",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages/0/engagement_rate",
+      "id": "ev_f4272af8e47bfb910cda1af3b6be3a411906f4dd7096f86732d969ccaa946088",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "/service?gclid=x",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "ratio",
+      "value": 0.25
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "field_path": "/current/querys/service opportunity/ctr",
+      "id": "ev_f813a8b97f537fb6c8f059b7321c1ce9d1474de30812517a605bfd17c959e04c",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "object": "service opportunity",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000901",
+      "source_kind": "gsc",
+      "unit": "ratio",
+      "value": 0.05
+    },
+    {
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "field_path": "/current/landing_pages/site_total/engagement_rate",
+      "id": "ev_fd09cbceba7b8d18e142b83c6ae11d6afbb025ecc72c8ca26f186b21a6798c0b",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "object": "site_total",
+      "observed_at": "2026-08-29T23:00:00Z",
+      "snapshot_id": "30000000-0000-4000-8000-000000000902",
+      "source_kind": "ga4",
+      "unit": "ratio",
+      "value": 0.6
+    }
+  ],
+  "findings": [
+    {
+      "classification": "fact",
+      "comparison_scope": "Saved public sample only",
+      "confidence": "low",
+      "evidence_ids": [
+        "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+        "ev_14fd9f1534038d759bfa5393121f8f4ab15c3d94fc7b651a7850aaa447da8f2e",
+        "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c"
+      ],
+      "id": "fn-public-assessment",
+      "impact_path": "No business impact or healthy-site conclusion is established.",
+      "interpretation": "needs_verification",
+      "judgment": "No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
+      ],
+      "observed_at": "2026-08-28T08:00:00Z",
+      "observed_fact": "The eligible saved website fields below were checked. The supported public rules did not produce an actionable finding.",
+      "rule_id": "v22_capability.public_assessment",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "target": "https://example.test/"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "high",
+      "evidence_ids": [
+        "ev-service-checked-gsc-clicks",
+        "ev-service-checked-gsc-impressions"
+      ],
+      "id": "fn-service-checked-gsc",
+      "impact_path": "No business cause, qualified-lead count or revenue effect is established by these totals.",
+      "interpretation": "supported",
+      "judgment": "These totals establish the checked scope, not that SEO is healthy or that an edit is needed.",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "The GSC current-period totals below were checked for the bound resource.",
+      "rule_id": "v22_capability.service_source_check",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "target": "sc-domain:example.test"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "confidence": "high",
+      "evidence_ids": [
+        "ev-service-checked-ga4-sessions",
+        "ev-service-checked-ga4-key_events"
+      ],
+      "id": "fn-service-checked-ga4",
+      "impact_path": "No business cause, qualified-lead count or revenue effect is established by these totals.",
+      "interpretation": "supported",
+      "judgment": "These totals establish the checked scope, not that SEO is healthy or that an edit is needed.",
+      "limitations": [
+        "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "The GA4 current-period totals below were checked for the bound resource.",
+      "rule_id": "v22_capability.service_source_check",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "target": "properties/12345"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_82e1107cec6d3fb92dbf8f984b06448f60a0c941158a00c4ff15ee0f05caec5d",
+        "ev_ce22e99b59c70937495a8c35764762a0ea281807a72b0933f0916962eb4e9f19",
+        "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52",
+        "ev_f813a8b97f537fb6c8f059b7321c1ce9d1474de30812517a605bfd17c959e04c"
+      ],
+      "id": "fn_4aed692c633429ebaf7d09fd6f36b8862622fc1a3349cc5289ac16439550ea0d",
+      "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+      "interpretation": "supported",
+      "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+      "rule_id": "V22.FIRST_PARTY.GSC.QUERY_OPPORTUNITY",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "service opportunity"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_a9ad8e92608d7859b8bb3490b5c6900bc74f397da43514159819343c8919a893",
+        "ev_bffa8e2569cad514bcd59f79747f4069dfb718011f3a8d3a8e874ece174f0876",
+        "ev_ca220d070b81b4c23d143e1203ea8bc875e1d416e4205a6453221d6ddc9a52fd",
+        "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52"
+      ],
+      "id": "fn_31156e0eed5a9391e27145258d6b3ff9b0eb4324ef32c5ee4b7e529228b83ec6",
+      "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+      "interpretation": "supported",
+      "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+      "rule_id": "V22.FIRST_PARTY.GSC.QUERY_OPPORTUNITY",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "declining query"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_3c6c71461b95f4c5637e6f718d34c6f358c797500885b53b849c1d4290b2c0ad",
+        "ev_4a4981044a437636dbdfbf706beb4c37fed0e5072093193220a7b5d69402173a",
+        "ev_8ad836e49ddcb2342740ad4fcbffed7d196b75ae6e1f350746457e51876ef8ff",
+        "ev_e10f96a930f03c0b119d527235fb85afcce0c5409de14cd4893cb6559f1f1a52"
+      ],
+      "id": "fn_4c3f74f538594e3854ecc5a31f81af63eaf6f6daeffeb23e53647a186a579b61",
+      "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+      "interpretation": "supported",
+      "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This page has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+      "rule_id": "V22.FIRST_PARTY.GSC.PAGE_OPPORTUNITY",
+      "rule_version": "1.0.0",
+      "severity": "high",
+      "target": "http://www.example.test/service/?utm_source=x"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_b1a5e9a86f47eb51c5d2d36a2833308525808aa505557d80184847f4b03314a4",
+        "ev_bc925bbd040e2d5bbeac62e2192c0df00fa44fdaa9a8b65aadbd56c5e9ae46c1"
+      ],
+      "id": "fn_982a09a9473a4327284d57fcbb2b81664b2eed28bc9eaaba78cab95c2ed32554",
+      "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+      "interpretation": "supported",
+      "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "Search Console clicks for this query decreased by 60.0% versus the preceding 90 days.",
+      "rule_id": "V22.FIRST_PARTY.GSC.DIMENSION_DECLINE",
+      "rule_version": "1.0.0",
+      "severity": "high",
+      "target": "declining query"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_21611f25a5d5da519463bd9dbedbf768d894355d264e0700ac9b51c6a16121c0",
+        "ev_991436f74212af2e14dbbf05586d7d11ed50adf821a41a1b8dbe3a254f50d57e"
+      ],
+      "id": "fn_092567dc14c28d1facfefe0c8c8c18dcfebf3c2de875ab22c8e259906ab52da9",
+      "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+      "interpretation": "supported",
+      "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+      "limitations": [
+        "GSC_BREAKDOWNS_NOT_ADDITIVE",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_SELECTED_PROPERTY_SCOPE",
+        "GSC_TOP_ROWS_ONLY",
+        "GSC_WEB_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "Search Console clicks for this query increased by 50.0% versus the preceding 90 days.",
+      "rule_id": "V22.FIRST_PARTY.GSC.DIMENSION_GROWTH",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "growing query"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_3b4e972167a7db987d88666cd2f252c851cb4c91561166da1fd034e83680aafd",
+        "ev_61fc2afca9cc8664d688c744a586dba52095da6d04a472cf50a15586cc43d62c",
+        "ev_fd09cbceba7b8d18e142b83c6ae11d6afbb025ecc72c8ca26f186b21a6798c0b"
+      ],
+      "id": "fn_91f28dddc70f6d8da496403474eea95b348c5973665d0aee9f7e859b04347a64",
+      "impact_path": "A difference in measured behaviour is a reason to investigate the page and measurement together, not proof that the copy caused it.",
+      "interpretation": "needs_verification",
+      "judgment": "Verify the landing-page path and event meaning before deciding whether to change this page.",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This landing page has at least 20 sessions and an engagement rate at least 20% below the site's current GA4 baseline.",
+      "rule_id": "V22.FIRST_PARTY.GA4.ENGAGEMENT_GAP",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "/service?gclid=x"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_20d84a756758c4e778b1397b59450f0444e05aaef178997e182d944c71c40442",
+        "ev_61fc2afca9cc8664d688c744a586dba52095da6d04a472cf50a15586cc43d62c",
+        "ev_73c323e7001092e165567ccc541a4bf65c2fea684e2b1ce85bdcb871a7d2479f",
+        "ev_af9d0f82d9c371dcc2e318c65f802ad53334c3ea1e5b31daff29aefe6e205594"
+      ],
+      "id": "fn_0fcb0aedec88b9e9c8427590987a118aca40ea4edd54ef630156c479ca6434bc",
+      "impact_path": "A difference in measured behaviour is a reason to investigate the page and measurement together, not proof that the copy caused it.",
+      "interpretation": "needs_verification",
+      "judgment": "Verify the landing-page path and event meaning before deciding whether to change this page.",
+      "limitations": [
+        "GA4_BREAKDOWNS_NOT_ADDITIVE",
+        "GA4_ESTIMATED_COUNTS",
+        "GA4_HOST_FILTERED",
+        "GA4_PROCESSING_DELAY_2_DAYS",
+        "GA4_TOP_ROWS_ONLY"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This landing page has at least 20 sessions but no observed key events or a key-event rate at least 50% below the site's current baseline.",
+      "rule_id": "V22.FIRST_PARTY.GA4.CONVERSION_GAP",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "/service?gclid=x"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_1f0bbfb119d56d8969a00d9be15c691f42f862a801334d80636152b0cf2d2084",
+        "ev_2760bc5fd047481322942b80358e270da306b2a86e7d087c20cee116f722e3da",
+        "ev_41b678bcc6544fc24309560f49ab5a126d52a75578f33762336cb7043d705997",
+        "ev_751e345d4eb2fa284df8e3ec5e230e590aa39242f10b56eefc75de5ba3aec520",
+        "ev_86b903f7a5a429c5054fff9fe974515b4bd19242d8b13e2ad19c41d744b71176",
+        "ev_b6a5cf93d40c17df3bdb3aa049b7afe1b679757785c0d04da4dca3cf0135c8ad",
+        "ev_b706c37bc50f8602026cd732b9f79c25d650ee6b880eb10c8ed98f20554ef31f",
+        "ev_c66416718f2c11a7f9df195f546608a1d91aabaf6e0ce05ce38929caa83115a6",
+        "ev_f4272af8e47bfb910cda1af3b6be3a411906f4dd7096f86732d969ccaa946088"
+      ],
+      "id": "fn_ff01e8fd97080b2c7d5bade8af9f26c164f1ec9f21ef637575d8ca981684b226",
+      "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+      "interpretation": "supported",
+      "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+      "limitations": [
+        "CROSS_SOURCE_COVARIATION_DOES_NOT_ESTABLISH_CAUSATION",
+        "THIRD_SOURCE_GBP_MISSING"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "This page has meaningful Google search visibility while GA4 confirms a material engagement or conversion gap.",
+      "rule_id": "V22.CROSS_SOURCE.GSC_GA4.CONFIRMED_SEARCH_OPPORTUNITY",
+      "rule_version": "1.0.0",
+      "severity": "high",
+      "target": "https://example.test/service"
+    },
+    {
+      "classification": "fact",
+      "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\nprevious · 2026-03-03 to 2026-05-31 · Confirmed ga4 resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_3ea7100bf4708576b0f87bea523fdc82d725254aefeb8675f9f85591f97080b0",
+        "ev_7adae829abaa1e76892129168bb978dd3e8362ff87c7a5ec1ac89f5faf45251c",
+        "ev_abe3edf0cfd56ebf4bacb265b42b4dec4e34df9b13b963d8f7e3ffbfe66c7f82",
+        "ev_c66416718f2c11a7f9df195f546608a1d91aabaf6e0ce05ce38929caa83115a6"
+      ],
+      "id": "fn_7b7649a2dcf3f063a781fb2d268873952daed5049ad8f909562ddf8335a6e128",
+      "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+      "interpretation": "supported",
+      "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+      "limitations": [
+        "CROSS_SOURCE_COVARIATION_DOES_NOT_ESTABLISH_CAUSATION",
+        "THIRD_SOURCE_GBP_MISSING"
+      ],
+      "observed_at": "2026-08-29T23:00:00Z",
+      "observed_fact": "Google organic clicks and GA4 sessions for this page both increased by at least 20% versus the preceding 90 days.",
+      "rule_id": "V22.CROSS_SOURCE.GSC_GA4.PAGE_TREND",
+      "rule_version": "1.0.0",
+      "severity": "medium",
+      "target": "https://example.test/service"
+    }
+  ],
+  "generated_at": "2026-08-30T00:00:00Z",
+  "id": "00000000-0000-0000-0000-000000002708",
+  "input_manifest": {
+    "business": {
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "competitor_sites": [
+        "https://competitor-1.test/",
+        "https://competitor-2.test/",
+        "https://competitor-3.test/"
+      ],
+      "confirmation_source": "seo_confirmation",
+      "confirmed_at": "2026-08-29T00:00:00Z",
+      "id": "00000000-0000-0000-0000-000000000388",
+      "primary_service": "Plumber",
+      "priority": null,
+      "revision": 1,
+      "site_url": "https://example.test/",
+      "target_market": "Austin, TX",
+      "target_pages": [],
+      "user_id": "00000000-0000-0000-0000-000000000387"
+    },
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "generation_input_checksum": "sha256:000473117bf763d9ec1a4bfd374aff317ee8995a0faa0ab4c4f0842d0a2b2f31",
+    "id": "00000000-0000-0000-0000-000000002707",
+    "implementation": null,
+    "input_checksum": "sha256:edc99063b2d5c866e0ba084d51ac66715429af1139d5e394d16e6f96776961d9",
+    "job_id": "00000000-0000-0000-0000-000000002708",
+    "mode": "first_service",
+    "previous_report": null,
+    "ruleset_version": "v22_capability_service_v3",
+    "schema_version": "v22_analysis_input_v1",
+    "snapshots": [
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:b78b407dbfbf8c21a72035d6ead9404ae9960edbb09d512c9e103a5b011bcf07",
+        "schema_version": "site_inventory_snapshot_v1",
+        "scope": "Saved site sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_kind": "site"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T12:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:4bce7bc78f114d465f8c431cc19c111e0fc6fcd4e0528f5e71c80504552039d0",
+        "schema_version": "serp_market_snapshot_v1",
+        "scope": "Saved serp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000c",
+        "source_kind": "serp"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-30T00:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c5d780ee3554b73da357113086aa8d0ad4ed225e752a4ddee334f61b60c2311b",
+        "schema_version": "competitor_collection_snapshot_v1",
+        "scope": "Saved competitor sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000d",
+        "source_kind": "competitor"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:30:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:3677ae7933c9e9ce2067d6a6ac73678b1614b03a2afc5520276c0d27d63312f9",
+        "schema_version": "customer_public_gbp_snapshot_v1",
+        "scope": "Saved public_gbp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_kind": "public_gbp"
+      },
+      {
+        "binding_id": "40000000-0000-4000-8000-000000000901",
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c2cf88e7b1798ec7bbf3900940404119c0061feac08c22bdbf2acb0ec00d0f9e",
+        "schema_version": "gsc_sync_v1",
+        "scope": "Confirmed gsc resource for example.test",
+        "snapshot_id": "30000000-0000-4000-8000-000000000901",
+        "source_kind": "gsc"
+      },
+      {
+        "binding_id": "40000000-0000-4000-8000-000000000902",
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:31cf5fcbfcf83cde863249bc6de690e3c46d7671ab5fdf8990d9580d5968d85e",
+        "schema_version": "ga4_sync_v1",
+        "scope": "Confirmed ga4 resource for example.test",
+        "snapshot_id": "30000000-0000-4000-8000-000000000902",
+        "source_kind": "ga4"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000387"
+  },
+  "limitations": [
+    "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+    "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
+    "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
+    "v22_public.market_site_domain_unobserved: insufficient_sample",
+    "v22_public.site_duplicate_title: insufficient_sample",
+    "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change.",
+    "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change.",
+    "V22.CROSS_SOURCE.GA4_GBP.BEHAVIOR_CONFLICT: source_missing",
+    "V22.CROSS_SOURCE.GA4_GBP.BEHAVIOR_TREND: source_missing",
+    "V22.CROSS_SOURCE.GSC_GA4.WEEKLY_CONFLICT: insufficient_sample",
+    "V22.CROSS_SOURCE.GSC_GA4.WEEKLY_COVARIATION: insufficient_sample",
+    "V22.CROSS_SOURCE.GSC_GBP.VISIBILITY_CONFLICT: source_missing",
+    "V22.CROSS_SOURCE.GSC_GBP.VISIBILITY_TREND: source_missing",
+    "V22.FIRST_PARTY.GA4.PAGE_CHANGE: comparison_unavailable",
+    "V22.FIRST_PARTY.GBP.CUSTOMER_ACTION_CHANGE: source_missing",
+    "V22.FIRST_PARTY.GBP.IMPRESSION_CHANGE: source_missing",
+    "V22.FIRST_PARTY.GBP.PROFILE_OR_MEASUREMENT: source_missing",
+    "V22.FIRST_PARTY.GBP.SEARCH_DEMAND_SIGNAL: source_missing",
+    "V22.FIRST_PARTY.GSC.DIMENSION_DECLINE: comparison_unavailable",
+    "V22.FIRST_PARTY.GSC.DIMENSION_GROWTH: comparison_unavailable",
+    "Official GBP Performance was not connected; public business-profile observations are a separate source."
+  ],
+  "prioritization": {
+    "action_order": [
+      "ac-service-d06749c876642fea9955b08a",
+      "ac-service-a04588186121745ac8ab46d4",
+      "ac-service-b2ea591f14db910281d0f35a"
+    ],
+    "business_priority": null,
+    "candidates": [
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test"
+        ],
+        "confidence": "medium",
+        "evidence_support": "needs_verification",
+        "execution": "confirmation_required",
+        "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value. Confirm the stated assumptions before changing anything. Business details or approval are still required.",
+        "impact_paths": [
+          "A difference in measured behaviour is a reason to investigate the page and measurement together, not proof that the copy caused it."
+        ],
+        "input": {
+          "action_id": "ac-service-36a2695d20ce69b4ead6b3f7",
+          "dependencies": [],
+          "finding_ids": [
+            "fn_0fcb0aedec88b9e9c8427590987a118aca40ea4edd54ef630156c479ca6434bc",
+            "fn_91f28dddc70f6d8da496403474eea95b348c5973665d0aee9f7e859b04347a64"
+          ],
+          "material_kinds": [
+            "measurement_check"
+          ],
+          "readiness": [
+            "requires_confirmation"
+          ],
+          "target": "https://example.test/service"
+        },
+        "prerequisite": "none",
+        "reason_codes": [
+          "prerequisite_none",
+          "business_unknown",
+          "evidence_needs_verification",
+          "execution_confirmation_required",
+          "severity_medium",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown",
+          "outside_delivery_budget"
+        ],
+        "selected_order": null,
+        "severity": "medium"
+      },
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test"
+        ],
+        "confidence": "medium",
+        "evidence_support": "supported",
+        "execution": "instructions_only",
+        "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value.",
+        "impact_paths": [
+          "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries."
+        ],
+        "input": {
+          "action_id": "ac-service-a04588186121745ac8ab46d4",
+          "dependencies": [],
+          "finding_ids": [
+            "fn_31156e0eed5a9391e27145258d6b3ff9b0eb4324ef32c5ee4b7e529228b83ec6"
+          ],
+          "material_kinds": [
+            "technical_check"
+          ],
+          "readiness": [
+            "instructions"
+          ],
+          "target": "declining query"
+        },
+        "prerequisite": "none",
+        "reason_codes": [
+          "prerequisite_none",
+          "business_unknown",
+          "evidence_supported",
+          "execution_instructions_only",
+          "severity_medium",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown"
+        ],
+        "selected_order": 2,
+        "severity": "medium"
+      },
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test"
+        ],
+        "confidence": "medium",
+        "evidence_support": "supported",
+        "execution": "instructions_only",
+        "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value.",
+        "impact_paths": [
+          "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries."
+        ],
+        "input": {
+          "action_id": "ac-service-b2ea591f14db910281d0f35a",
+          "dependencies": [],
+          "finding_ids": [
+            "fn_4aed692c633429ebaf7d09fd6f36b8862622fc1a3349cc5289ac16439550ea0d"
+          ],
+          "material_kinds": [
+            "technical_check"
+          ],
+          "readiness": [
+            "instructions"
+          ],
+          "target": "service opportunity"
+        },
+        "prerequisite": "none",
+        "reason_codes": [
+          "prerequisite_none",
+          "business_unknown",
+          "evidence_supported",
+          "execution_instructions_only",
+          "severity_medium",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown"
+        ],
+        "selected_order": 3,
+        "severity": "medium"
+      },
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+          "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test"
+        ],
+        "confidence": "medium",
+        "evidence_support": "supported",
+        "execution": "confirmation_required",
+        "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value. Business details or approval are still required. Publishing access is unknown, not assumed blocked or approved.",
+        "impact_paths": [
+          "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries."
+        ],
+        "input": {
+          "action_id": "ac-service-d06749c876642fea9955b08a",
+          "dependencies": [],
+          "finding_ids": [
+            "fn_4c3f74f538594e3854ecc5a31f81af63eaf6f6daeffeb23e53647a186a579b61",
+            "fn_ff01e8fd97080b2c7d5bade8af9f26c164f1ec9f21ef637575d8ca981684b226"
+          ],
+          "material_kinds": [
+            "service_brief"
+          ],
+          "readiness": [
+            "requires_confirmation"
+          ],
+          "target": "https://example.test/service"
+        },
+        "prerequisite": "none",
+        "reason_codes": [
+          "prerequisite_none",
+          "business_unknown",
+          "evidence_supported",
+          "execution_confirmation_required",
+          "severity_high",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown"
+        ],
+        "selected_order": 1,
+        "severity": "high"
+      }
+    ],
+    "input_checksum": "sha256:edc99063b2d5c866e0ba084d51ac66715429af1139d5e394d16e6f96776961d9",
+    "limitations": [
+      "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+    ],
+    "rules_version": "v22_business_priority_v2",
+    "target_pages": []
+  },
+  "report_type": "verified_execution",
+  "schema_version": "2.2.2",
+  "settlement_policy": "one_credit_per_completed_analysis",
+  "summary": "This page has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline. Review the matching search intent, page and current offer before agreeing an improvement.",
+  "title": "Plumber",
+  "version": 1
+}

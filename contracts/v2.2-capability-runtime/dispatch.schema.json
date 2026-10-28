@@ -1,0 +1,291 @@
+{
+  "$defs": {
+    "CapabilityReportReference": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "payload_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Payload Checksum",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "report_type": {
+          "enum": [
+            "prospect",
+            "verified_execution"
+          ],
+          "title": "Report Type",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.2.2",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "case_id",
+        "schema_version",
+        "report_type",
+        "payload_checksum"
+      ],
+      "title": "CapabilityReportReference",
+      "type": "object"
+    },
+    "CapabilityRequestEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "capability_request": {
+          "$ref": "#/$defs/CapabilityTaskRequest"
+        },
+        "schema_version": {
+          "const": "v22_capability_request_envelope_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "capability_request"
+      ],
+      "title": "CapabilityRequestEnvelope",
+      "type": "object"
+    },
+    "CapabilityTaskRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "input_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Input Checksum",
+          "type": "string"
+        },
+        "manifest_id": {
+          "format": "uuid",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "report_type": {
+          "enum": [
+            "prospect",
+            "verified_execution"
+          ],
+          "title": "Report Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "manifest_id",
+        "input_checksum",
+        "report_type"
+      ],
+      "title": "CapabilityTaskRequest",
+      "type": "object"
+    },
+    "CapabilityTaskStatusResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "deadline_at": {
+          "format": "date-time",
+          "title": "Deadline At",
+          "type": "string"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "progress": {
+          "const": 100,
+          "title": "Progress",
+          "type": "integer"
+        },
+        "report_reference": {
+          "$ref": "#/$defs/CapabilityReportReference"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "run_generation": {
+          "minimum": 1,
+          "title": "Run Generation",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "v22_capability_task_status_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "stage": {
+          "const": "completed",
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "const": "succeeded",
+          "title": "Status",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "job_id",
+        "revision",
+        "run_generation",
+        "status",
+        "stage",
+        "progress",
+        "message",
+        "report_reference",
+        "created_at",
+        "deadline_at",
+        "updated_at"
+      ],
+      "title": "CapabilityTaskStatusResponse",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt_count": {
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "completion": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CapabilityTaskStatusResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cost_counters": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "title": "Cost Counters",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 200,
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9._:-]+$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/CapabilityRequestEnvelope"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "run_generation": {
+      "minimum": 1,
+      "title": "Run Generation",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "v22_capability_dispatch_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "queued",
+        "running",
+        "succeeded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "user_id",
+    "job_id",
+    "case_id",
+    "idempotency_key",
+    "request",
+    "run_generation",
+    "revision",
+    "attempt_count",
+    "cost_counters",
+    "status",
+    "created_at",
+    "deadline_at",
+    "completion"
+  ],
+  "title": "CapabilityDispatch",
+  "type": "object"
+}

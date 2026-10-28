@@ -1,0 +1,1757 @@
+{
+  "$defs": {
+    "ActionFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "causal_attribution": {
+          "const": false,
+          "default": false,
+          "title": "Causal Attribution",
+          "type": "boolean"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/ReviewCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "effect": {
+          "default": null,
+          "title": "Effect",
+          "type": "null"
+        },
+        "ga4": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ga4Facts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gsc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GscFacts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageFacts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recorded_work": {
+          "$ref": "#/$defs/RecordedFacts"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "title",
+        "target",
+        "recorded_work",
+        "page",
+        "gsc",
+        "ga4",
+        "checks"
+      ],
+      "title": "ActionFacts",
+      "type": "object"
+    },
+    "ClientAction": {
+      "additionalProperties": false,
+      "properties": {
+        "facts": {
+          "$ref": "#/$defs/ActionFacts"
+        },
+        "next_decision": {
+          "$ref": "#/$defs/DecisionSummary"
+        }
+      },
+      "required": [
+        "facts",
+        "next_decision"
+      ],
+      "title": "ClientAction",
+      "type": "object"
+    },
+    "ComparisonScope": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "enum": [
+            "all",
+            "organic_search"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "dimension": {
+          "enum": [
+            "property",
+            "page",
+            "query",
+            "device",
+            "country",
+            "landing_page"
+          ],
+          "title": "Dimension",
+          "type": "string"
+        },
+        "filters": {
+          "items": {
+            "$ref": "#/$defs/ScopeFilter"
+          },
+          "maxItems": 4,
+          "title": "Filters",
+          "type": "array"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Key"
+        },
+        "source": {
+          "enum": [
+            "gsc",
+            "ga4"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "dimension",
+        "key",
+        "channel",
+        "filters"
+      ],
+      "title": "ComparisonScope",
+      "type": "object"
+    },
+    "ComparisonWindows": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "before": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "days": {
+          "enum": [
+            7,
+            14,
+            28,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "excluded": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "timezone",
+        "before",
+        "excluded",
+        "after"
+      ],
+      "title": "ComparisonWindows",
+      "type": "object"
+    },
+    "ConditionChange": {
+      "additionalProperties": false,
+      "properties": {
+        "change": {
+          "enum": [
+            "newly_observed",
+            "no_longer_observed",
+            "unchanged"
+          ],
+          "title": "Change",
+          "type": "string"
+        },
+        "condition_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Condition Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_id",
+        "change"
+      ],
+      "title": "ConditionChange",
+      "type": "object"
+    },
+    "DateRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "DateRange",
+      "type": "object"
+    },
+    "DecisionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "decision_state": {
+          "enum": [
+            "needs_review",
+            "seo_recorded"
+          ],
+          "title": "Decision State",
+          "type": "string"
+        },
+        "disposition": {
+          "anyOf": [
+            {
+              "enum": [
+                "continue",
+                "adjust",
+                "observe",
+                "defer",
+                "new"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Disposition"
+        },
+        "system_completion_verified": {
+          "const": false,
+          "default": false,
+          "title": "System Completion Verified",
+          "type": "boolean"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "decision_state",
+        "disposition",
+        "text"
+      ],
+      "title": "DecisionSummary",
+      "type": "object"
+    },
+    "ExecutionMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Body",
+          "type": "string"
+        },
+        "confirmation_items": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 12,
+          "title": "Confirmation Items",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "title_brief",
+            "service_brief",
+            "profile_correction",
+            "technical_check",
+            "measurement_check"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "readiness": {
+          "enum": [
+            "instructions",
+            "requires_confirmation",
+            "ready_to_use"
+          ],
+          "title": "Readiness",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Target",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "target",
+        "body",
+        "readiness",
+        "confirmation_items",
+        "evidence_ids"
+      ],
+      "title": "ExecutionMaterial",
+      "type": "object"
+    },
+    "Ga4ComparisonScope": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "const": "organic_search",
+          "title": "Channel",
+          "type": "string"
+        },
+        "hosts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Hosts",
+          "type": "array"
+        },
+        "landing_path": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Landing Path"
+        },
+        "resource_id": {
+          "maxLength": 128,
+          "pattern": "^properties/[0-9]+$",
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resource_id",
+        "hosts",
+        "timezone",
+        "channel",
+        "landing_path"
+      ],
+      "title": "Ga4ComparisonScope",
+      "type": "object"
+    },
+    "Ga4Facts": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "difference": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Difference"
+        },
+        "measurement_history": {
+          "const": "unverified",
+          "title": "Measurement History",
+          "type": "string"
+        },
+        "processing_completeness": {
+          "const": "not_attested",
+          "title": "Processing Completeness",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "enum": [
+              "TRUNCATION_NOT_CAPTURED",
+              "WINDOW_NOT_ELAPSED",
+              "TOTAL_NOT_RETURNED",
+              "DATES_NOT_RETURNED",
+              "SAMPLED",
+              "THRESHOLDED",
+              "OTHER_ROW_LOSS",
+              "EMPTY_REASON",
+              "TRUNCATED",
+              "SESSIONS_RESTRICTED"
+            ],
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "relative_change_percent": {
+          "anyOf": [
+            {
+              "maxLength": 24,
+              "pattern": "^-?(0|[1-9][0-9]*)\\.[0-9]{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative Change Percent"
+        },
+        "scope": {
+          "$ref": "#/$defs/Ga4ComparisonScope"
+        },
+        "started_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Started At",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "available",
+            "withheld"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "windows": {
+          "$ref": "#/$defs/ComparisonWindows"
+        }
+      },
+      "required": [
+        "scope",
+        "windows",
+        "started_at",
+        "completed_at",
+        "state",
+        "reasons",
+        "before",
+        "after",
+        "difference",
+        "relative_change_percent",
+        "processing_completeness",
+        "measurement_history"
+      ],
+      "title": "Ga4Facts",
+      "type": "object"
+    },
+    "GscFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "concurrent_changes": {
+          "enum": [
+            "unknown",
+            "reported",
+            "none_reported"
+          ],
+          "title": "Concurrent Changes",
+          "type": "string"
+        },
+        "effect_eligibility": {
+          "const": "pending_metric_specific_calibration",
+          "title": "Effect Eligibility",
+          "type": "string"
+        },
+        "evaluated_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Evaluated At",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricComparison"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "reading": {
+          "items": {
+            "$ref": "#/$defs/MetricReading"
+          },
+          "title": "Reading",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "scope": {
+          "$ref": "#/$defs/ComparisonScope"
+        },
+        "state": {
+          "enum": [
+            "waiting",
+            "insufficient",
+            "not_comparable",
+            "comparable"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "windows": {
+          "$ref": "#/$defs/ComparisonWindows"
+        }
+      },
+      "required": [
+        "scope",
+        "windows",
+        "evaluated_at",
+        "state",
+        "reasons",
+        "metrics",
+        "reading",
+        "limitations",
+        "concurrent_changes",
+        "effect_eligibility"
+      ],
+      "title": "GscFacts",
+      "type": "object"
+    },
+    "ImplementationEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "implemented_on": {
+          "pattern": "^[1-9]\\d{3}-\\d{2}-\\d{2}$",
+          "title": "Implemented On",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Note"
+        },
+        "responsible": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Responsible"
+        },
+        "scope": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Scope",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^(UTC|[A-Za-z_+-]+(?:/[A-Za-z0-9_+.-]+)+)$",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "scope",
+        "implemented_on",
+        "timezone",
+        "note",
+        "responsible"
+      ],
+      "title": "ImplementationEntry",
+      "type": "object"
+    },
+    "MetricComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Absolute Change"
+        },
+        "after": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before"
+        },
+        "metric": {
+          "enum": [
+            "clicks",
+            "impressions",
+            "ctr"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "percentage_point_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Percentage Point Change"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "relative_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative Change"
+        },
+        "state": {
+          "enum": [
+            "comparable",
+            "insufficient"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "count",
+            "ratio"
+          ],
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "unit",
+        "state",
+        "before",
+        "after",
+        "absolute_change",
+        "relative_change",
+        "percentage_point_change",
+        "reasons"
+      ],
+      "title": "MetricComparison",
+      "type": "object"
+    },
+    "MetricReading": {
+      "additionalProperties": false,
+      "properties": {
+        "after_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "After Count",
+          "type": "integer"
+        },
+        "after_denominator": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Denominator"
+        },
+        "after_rate_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Rate Step Pp"
+        },
+        "before_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Before Count",
+          "type": "integer"
+        },
+        "before_denominator": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Denominator"
+        },
+        "before_rate_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Rate Step Pp"
+        },
+        "metric": {
+          "enum": [
+            "clicks",
+            "impressions",
+            "ctr"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "enum": [
+              "ZERO_BASELINE",
+              "ONE_COUNT_DIFFERENCE",
+              "UNCHANGED_COUNT",
+              "ZERO_IMPRESSIONS",
+              "UNCHANGED_CTR"
+            ],
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "relative_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative Step Pp"
+        }
+      },
+      "required": [
+        "metric",
+        "before_count",
+        "after_count",
+        "before_denominator",
+        "after_denominator",
+        "relative_step_pp",
+        "before_rate_step_pp",
+        "after_rate_step_pp",
+        "notes"
+      ],
+      "title": "MetricReading",
+      "type": "object"
+    },
+    "PageCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "text_present",
+            "link_present",
+            "anchor_present"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value"
+      ],
+      "title": "PageCondition",
+      "type": "object"
+    },
+    "PageConditionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "observed",
+            "not_observed",
+            "unable_to_check"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_id",
+        "state"
+      ],
+      "title": "PageConditionResult",
+      "type": "object"
+    },
+    "PageFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/ConditionChange"
+          },
+          "title": "Changes",
+          "type": "array"
+        },
+        "comparison": {
+          "enum": [
+            "first_observation",
+            "not_comparable",
+            "compared"
+          ],
+          "title": "Comparison",
+          "type": "string"
+        },
+        "comparison_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_baseline",
+                "invalid_baseline",
+                "different_plan",
+                "invalid_time_order",
+                "check_unavailable"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Comparison Reason"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/PageCondition"
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "unsafe_target",
+                "dns_unavailable",
+                "redirect_requires_confirmation",
+                "robots_unavailable",
+                "robots_disallowed",
+                "robots_invalid",
+                "crawl_delay_exceeds_budget",
+                "page_timeout",
+                "http_error",
+                "http_status",
+                "content_unsupported",
+                "response_too_large",
+                "empty_page",
+                "access_restricted",
+                "parse_failed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure"
+        },
+        "limitation": {
+          "const": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "title": "Limitation",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "previous_observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Observed At"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/PageConditionResult"
+          },
+          "title": "Results",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "checked",
+            "unable_to_check"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "target_url": {
+          "title": "Target Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_url",
+        "observed_at",
+        "previous_observed_at",
+        "conditions",
+        "results",
+        "status",
+        "failure",
+        "comparison",
+        "comparison_reason",
+        "changes",
+        "limitation"
+      ],
+      "title": "PageFacts",
+      "type": "object"
+    },
+    "PlanAction": {
+      "additionalProperties": false,
+      "properties": {
+        "completion": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "title": "Completion",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Id",
+          "type": "string"
+        },
+        "materials": {
+          "items": {
+            "$ref": "#/$defs/ExecutionMaterial"
+          },
+          "maxItems": 3,
+          "title": "Materials",
+          "type": "array"
+        },
+        "review": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Review",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "target": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Target",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "target",
+        "steps",
+        "completion",
+        "review",
+        "materials"
+      ],
+      "title": "PlanAction",
+      "type": "object"
+    },
+    "PriorDiagnosis": {
+      "additionalProperties": false,
+      "properties": {
+        "action_state": {
+          "enum": [
+            "actions_supported",
+            "insufficient_basis"
+          ],
+          "title": "Action State",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/PriorFinding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "source": {
+          "const": "prior_report_not_rechecked",
+          "title": "Source",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "title",
+        "summary",
+        "action_state",
+        "findings",
+        "limitations"
+      ],
+      "title": "PriorDiagnosis",
+      "type": "object"
+    },
+    "PriorFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": [
+            "fact",
+            "inference",
+            "estimate"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "comparison_scope": {
+          "title": "Comparison Scope",
+          "type": "string"
+        },
+        "interpretation": {
+          "enum": [
+            "supported",
+            "needs_verification",
+            "conflicting"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "judgment": {
+          "title": "Judgment",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "observed_fact": {
+          "title": "Observed Fact",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "classification",
+        "target",
+        "observed_fact",
+        "observed_at",
+        "comparison_scope",
+        "judgment",
+        "interpretation",
+        "limitations"
+      ],
+      "title": "PriorFinding",
+      "type": "object"
+    },
+    "RecordedFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "implemented_on": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Implemented On"
+        },
+        "state": {
+          "enum": [
+            "seo_recorded",
+            "not_recorded"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "system_completion_verified": {
+          "const": false,
+          "default": false,
+          "title": "System Completion Verified",
+          "type": "boolean"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Timezone"
+        }
+      },
+      "required": [
+        "state",
+        "implemented_on",
+        "timezone"
+      ],
+      "title": "RecordedFacts",
+      "type": "object"
+    },
+    "ReviewCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "CONFIRM_RECORDED_WORK",
+            "ESTABLISH_PAGE_CHECK",
+            "FIRST_PAGE_BASELINE",
+            "REVIEW_PAGE_CONDITIONS",
+            "WAIT_FOR_WINDOW",
+            "REVIEW_GSC_LIMITS",
+            "REVIEW_GA4_LIMITS",
+            "NO_SELECTED_METRICS",
+            "DESCRIPTIVE_COUNTS_ONLY"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "text"
+      ],
+      "title": "ReviewCheck",
+      "type": "object"
+    },
+    "ReviewDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "completion_statement": {
+          "anyOf": [
+            {
+              "maxLength": 1200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completion Statement"
+        },
+        "disposition": {
+          "enum": [
+            "continue",
+            "adjust",
+            "observe",
+            "defer",
+            "new"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "evidence_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Evidence Checksum",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "reconsider_when": {
+          "anyOf": [
+            {
+              "maxLength": 1200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reconsider When"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 12,
+          "title": "References",
+          "type": "array"
+        },
+        "source": {
+          "const": "seo_recorded",
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target"
+        },
+        "work": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Work"
+        }
+      },
+      "required": [
+        "source",
+        "evidence_checksum",
+        "recorded_at",
+        "action_id",
+        "disposition",
+        "reason",
+        "references",
+        "target",
+        "work",
+        "completion_statement",
+        "reconsider_when"
+      ],
+      "title": "ReviewDecision",
+      "type": "object"
+    },
+    "ScopeFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "enum": [
+            "page",
+            "query",
+            "device",
+            "country",
+            "landing_page"
+          ],
+          "title": "Dimension",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dimension",
+        "value"
+      ],
+      "title": "ScopeFilter",
+      "type": "object"
+    },
+    "SeoAction": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_action": {
+          "$ref": "#/$defs/PlanAction"
+        },
+        "decision_record": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewDecision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "facts": {
+          "$ref": "#/$defs/ActionFacts"
+        },
+        "implementation_entry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImplementationEntry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "next_decision": {
+          "$ref": "#/$defs/DecisionSummary"
+        },
+        "source_references": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Source References",
+          "type": "array"
+        }
+      },
+      "required": [
+        "facts",
+        "approved_action",
+        "implementation_entry",
+        "source_references",
+        "next_decision",
+        "decision_record"
+      ],
+      "title": "SeoAction",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "causal_attribution": {
+      "const": false,
+      "default": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Checksum",
+      "type": "string"
+    },
+    "client_actions": {
+      "items": {
+        "$ref": "#/$defs/ClientAction"
+      },
+      "maxItems": 3,
+      "title": "Client Actions",
+      "type": "array"
+    },
+    "client_new_decisions": {
+      "items": {
+        "$ref": "#/$defs/DecisionSummary"
+      },
+      "maxItems": 3,
+      "title": "Client New Decisions",
+      "type": "array"
+    },
+    "delivery_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Delivery Checksum",
+      "type": "string"
+    },
+    "delivery_id": {
+      "format": "uuid",
+      "title": "Delivery Id",
+      "type": "string"
+    },
+    "delivery_revision": {
+      "title": "Delivery Revision",
+      "type": "integer"
+    },
+    "effect": {
+      "default": null,
+      "title": "Effect",
+      "type": "null"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evidence_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Evidence Checksum",
+      "type": "string"
+    },
+    "input_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Input Checksum",
+      "type": "string"
+    },
+    "prior_diagnosis": {
+      "$ref": "#/$defs/PriorDiagnosis"
+    },
+    "report_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Report Checksum",
+      "type": "string"
+    },
+    "report_id": {
+      "format": "uuid",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "rules_version": {
+      "const": "v22_review_projection_rules_v1",
+      "title": "Rules Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "v22_review_projection_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seo_actions": {
+      "items": {
+        "$ref": "#/$defs/SeoAction"
+      },
+      "maxItems": 3,
+      "title": "Seo Actions",
+      "type": "array"
+    },
+    "seo_new_decisions": {
+      "items": {
+        "$ref": "#/$defs/ReviewDecision"
+      },
+      "maxItems": 3,
+      "title": "Seo New Decisions",
+      "type": "array"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "rules_version",
+    "input_checksum",
+    "evidence_checksum",
+    "evaluated_at",
+    "user_id",
+    "case_id",
+    "report_id",
+    "report_checksum",
+    "delivery_id",
+    "delivery_revision",
+    "delivery_checksum",
+    "prior_diagnosis",
+    "seo_actions",
+    "seo_new_decisions",
+    "client_actions",
+    "client_new_decisions",
+    "checksum"
+  ],
+  "title": "ReviewProjection",
+  "type": "object"
+}

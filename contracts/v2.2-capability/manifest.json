@@ -1,0 +1,24 @@
+{
+  "contract_version": "2.2.2",
+  "files": {
+    "capability.schema.json": "sha256:ee3603605354405a95c7892bbeb66df41d4a218917988bb62f080448e945b5e3",
+    "fixtures/acquisition-0.json": "sha256:b8aba17fe7b76f2fd7fa6e3a13700bfb28d2a7ce0ae79f58741a9aca31b48cef",
+    "fixtures/acquisition-1.json": "sha256:9bc1e2c34b13bb220db25a3cddca5a70eb7e49461e68236dc6fd4544b5f0c88b",
+    "fixtures/acquisition-2.json": "sha256:f22e2c1e676c3018366aabe7a3ef400f7a5ce39e26d29043cbb2d81eeccaf29a",
+    "fixtures/acquisition-3.json": "sha256:2cc48a9f08ab39276796e76add70f2a500a0fbecb74ca4e8426cad61e146f85f",
+    "fixtures/after_acquisition-0.json": "sha256:2df201c494696eaf3191db1126a2f41ac043ed109cc6f96ff33eaf248d058631",
+    "fixtures/after_acquisition-1.json": "sha256:c9dc72cfcdf5184420ffa2a87a3d95b411e57d962693f97e4f1195d35bfe92a2",
+    "fixtures/after_acquisition-2.json": "sha256:1d0ac9616a52a3e522c423f165b9ab89b576eca444ca172f1469a69efb40f2eb",
+    "fixtures/after_acquisition-3.json": "sha256:05aa80c4da3d1496ddc8757390983d59104526ebe020f3bbaa649fb880e46ee8",
+    "fixtures/first_service-0.json": "sha256:f838fd3314ff2d6d6bcfbe5ad460cfc230c3ce1b40e563acd47b886ffa8cd07a",
+    "fixtures/first_service-1.json": "sha256:c662e1933222bbba6bd11fe7efb963c23cc27acc38e20bd7690e38ed7246909c",
+    "fixtures/first_service-2.json": "sha256:54e84115f537a7f8e6b91f4b319f5da615ec763b34d4d82f40485fbe1376ca4b",
+    "fixtures/first_service-3.json": "sha256:eed85708418b739a7352ce2e1cdc4ca453cfcba6b8960ba9bbe8cb5c7a9cb0bf",
+    "fixtures/microseconds.json": "sha256:bf598496d4e5c13f9c4c9ca598b96eb11d0cd5406336a3edad15b2104651e103",
+    "fixtures/rejected.json": "sha256:fd20ca34689866f4617868f9c056fbdc9c70b9e52ee90864879f8daa33a42e19",
+    "fixtures/review-0.json": "sha256:9d3948f8e76212ea0a13be99b918a524addcfd78a857bf2eca969b05b3f93391",
+    "fixtures/review-1.json": "sha256:5b85bf08de582731d266a51884b1ce3d6fccf5f5dc2f6e49ad8411058aacc2ba",
+    "fixtures/review-2.json": "sha256:ed732442bfc8f09057a75dc5ee031f30827d5e5dfbdedb9587281d648b78eb1b",
+    "fixtures/review-3.json": "sha256:3367edb3b73d6a3a22757ba667ba1549f3ff20e6f271b55e1fed3c7e5e87b26a"
+  }
+}

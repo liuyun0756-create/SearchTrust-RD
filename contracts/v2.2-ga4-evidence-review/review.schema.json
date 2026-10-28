@@ -1,0 +1,693 @@
+{
+  "$defs": {
+    "ComparisonWindows": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "before": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "days": {
+          "enum": [
+            7,
+            14,
+            28,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "excluded": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "timezone",
+        "before",
+        "excluded",
+        "after"
+      ],
+      "title": "ComparisonWindows",
+      "type": "object"
+    },
+    "DateRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "DateRange",
+      "type": "object"
+    },
+    "EventChange": {
+      "additionalProperties": false,
+      "properties": {
+        "change": {
+          "enum": [
+            "added",
+            "removed",
+            "changed"
+          ],
+          "title": "Change",
+          "type": "string"
+        },
+        "event_name": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Event Name",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "enum": [
+              "counting_method",
+              "create_time",
+              "custom",
+              "deletable"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "event_name",
+        "change",
+        "fields"
+      ],
+      "title": "EventChange",
+      "type": "object"
+    },
+    "Ga4ComparisonScope": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "const": "organic_search",
+          "title": "Channel",
+          "type": "string"
+        },
+        "hosts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Hosts",
+          "type": "array"
+        },
+        "landing_path": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Landing Path"
+        },
+        "resource_id": {
+          "maxLength": 128,
+          "pattern": "^properties/[0-9]+$",
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resource_id",
+        "hosts",
+        "timezone",
+        "channel",
+        "landing_path"
+      ],
+      "title": "Ga4ComparisonScope",
+      "type": "object"
+    },
+    "Ga4EvidenceAudit": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_attribution": {
+          "const": false,
+          "title": "Causal Attribution",
+          "type": "boolean"
+        },
+        "collection_id": {
+          "format": "uuid",
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "comparisons_available": {
+          "const": false,
+          "title": "Comparisons Available",
+          "type": "boolean"
+        },
+        "configuration_after_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Configuration After At",
+          "type": "string"
+        },
+        "configuration_before_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Configuration Before At",
+          "type": "string"
+        },
+        "configuration_change_count": {
+          "maximum": 8000,
+          "minimum": 0,
+          "title": "Configuration Change Count",
+          "type": "integer"
+        },
+        "configuration_changes": {
+          "items": {
+            "$ref": "#/$defs/EventChange"
+          },
+          "maxItems": 30,
+          "title": "Configuration Changes",
+          "type": "array"
+        },
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/PeriodCoverage"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Coverage",
+          "type": "array"
+        },
+        "event_history": {
+          "const": "unverified",
+          "title": "Event History",
+          "type": "string"
+        },
+        "observation_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Observation Checksum",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "processing_completeness": {
+          "const": "not_attested",
+          "title": "Processing Completeness",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "v22_ga4_evidence_audit_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Ga4ComparisonScope"
+        },
+        "views": {
+          "items": {
+            "$ref": "#/$defs/ViewLimit"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Views",
+          "type": "array"
+        },
+        "windows": {
+          "$ref": "#/$defs/ComparisonWindows"
+        }
+      },
+      "required": [
+        "schema_version",
+        "collection_id",
+        "observation_checksum",
+        "scope",
+        "windows",
+        "observed_at",
+        "coverage",
+        "views",
+        "configuration_before_at",
+        "configuration_after_at",
+        "configuration_change_count",
+        "configuration_changes",
+        "processing_completeness",
+        "event_history",
+        "comparisons_available",
+        "causal_attribution"
+      ],
+      "title": "Ga4EvidenceAudit",
+      "type": "object"
+    },
+    "Ga4ReviewInput": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "$ref": "#/$defs/SeoChecks"
+        },
+        "expected_revision": {
+          "maximum": 2147483645,
+          "minimum": 0,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "observation_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Observation Checksum",
+          "type": "string"
+        },
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "expected_revision",
+        "observation_checksum",
+        "checks"
+      ],
+      "title": "Ga4ReviewInput",
+      "type": "object"
+    },
+    "Ga4ReviewRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "checks": {
+          "$ref": "#/$defs/SeoChecks"
+        },
+        "checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Checksum",
+          "type": "string"
+        },
+        "collection_id": {
+          "format": "uuid",
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "delivery_revision_id": {
+          "format": "uuid",
+          "title": "Delivery Revision Id",
+          "type": "string"
+        },
+        "observation_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Observation Checksum",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "v22_ga4_seo_review_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "const": "seo_recorded",
+          "title": "Source",
+          "type": "string"
+        },
+        "user_id": {
+          "format": "uuid",
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source",
+        "user_id",
+        "case_id",
+        "report_id",
+        "delivery_revision_id",
+        "collection_id",
+        "request_id",
+        "observation_checksum",
+        "revision",
+        "recorded_at",
+        "checks",
+        "checksum"
+      ],
+      "title": "Ga4ReviewRecord",
+      "type": "object"
+    },
+    "Ga4ReviewView": {
+      "additionalProperties": false,
+      "properties": {
+        "audit": {
+          "$ref": "#/$defs/Ga4EvidenceAudit"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "delivery_revision_id": {
+          "format": "uuid",
+          "title": "Delivery Revision Id",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "reviews": {
+          "items": {
+            "$ref": "#/$defs/Ga4ReviewRecord"
+          },
+          "maxItems": 20,
+          "title": "Reviews",
+          "type": "array"
+        },
+        "saved": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ga4ReviewRecord"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "v22_ga4_review_view_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "report_id",
+        "delivery_revision_id",
+        "audit",
+        "reviews",
+        "saved"
+      ],
+      "title": "Ga4ReviewView",
+      "type": "object"
+    },
+    "PeriodCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_dates": {
+          "maximum": 90,
+          "minimum": 1,
+          "title": "Expected Dates",
+          "type": "integer"
+        },
+        "missing_dates": {
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "maxItems": 90,
+          "title": "Missing Dates",
+          "type": "array"
+        },
+        "period": {
+          "enum": [
+            "previous",
+            "current"
+          ],
+          "title": "Period",
+          "type": "string"
+        },
+        "returned_dates": {
+          "maximum": 90,
+          "minimum": 0,
+          "title": "Returned Dates",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "period",
+        "expected_dates",
+        "returned_dates",
+        "missing_dates"
+      ],
+      "title": "PeriodCoverage",
+      "type": "object"
+    },
+    "SeoCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "maxLength": 1200,
+          "title": "Note",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "not_checked",
+            "no_issue_found",
+            "issue_found",
+            "uncertain"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "note"
+      ],
+      "title": "SeoCheck",
+      "type": "object"
+    },
+    "SeoChecks": {
+      "additionalProperties": false,
+      "properties": {
+        "date_coverage": {
+          "$ref": "#/$defs/SeoCheck"
+        },
+        "event_history": {
+          "$ref": "#/$defs/SeoCheck"
+        },
+        "measurement_setup": {
+          "$ref": "#/$defs/SeoCheck"
+        }
+      },
+      "required": [
+        "date_coverage",
+        "event_history",
+        "measurement_setup"
+      ],
+      "title": "SeoChecks",
+      "type": "object"
+    },
+    "TruncationRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "TruncationRange",
+      "type": "object"
+    },
+    "TruncationReason": {
+      "additionalProperties": false,
+      "properties": {
+        "before_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Date"
+        },
+        "date_ranges": {
+          "items": {
+            "$ref": "#/$defs/TruncationRange"
+          },
+          "maxItems": 10,
+          "title": "Date Ranges",
+          "type": "array"
+        },
+        "type": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,127}$",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "date_ranges",
+        "before_date"
+      ],
+      "title": "TruncationReason",
+      "type": "object"
+    },
+    "ViewLimit": {
+      "additionalProperties": false,
+      "properties": {
+        "other_row_loss": {
+          "title": "Other Row Loss",
+          "type": "boolean"
+        },
+        "period": {
+          "enum": [
+            "previous",
+            "current"
+          ],
+          "title": "Period",
+          "type": "string"
+        },
+        "provider_empty_reason": {
+          "title": "Provider Empty Reason",
+          "type": "boolean"
+        },
+        "restricted_metrics": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "title": "Restricted Metrics",
+          "type": "array"
+        },
+        "row_limit_reached": {
+          "title": "Row Limit Reached",
+          "type": "boolean"
+        },
+        "sampled": {
+          "title": "Sampled",
+          "type": "boolean"
+        },
+        "thresholded": {
+          "title": "Thresholded",
+          "type": "boolean"
+        },
+        "truncation_capture": {
+          "enum": [
+            "not_captured",
+            "captured"
+          ],
+          "title": "Truncation Capture",
+          "type": "string"
+        },
+        "truncation_reasons": {
+          "items": {
+            "$ref": "#/$defs/TruncationReason"
+          },
+          "maxItems": 20,
+          "title": "Truncation Reasons",
+          "type": "array"
+        },
+        "view": {
+          "enum": [
+            "totals",
+            "dates",
+            "key_events"
+          ],
+          "title": "View",
+          "type": "string"
+        }
+      },
+      "required": [
+        "period",
+        "view",
+        "truncation_capture",
+        "truncation_reasons",
+        "row_limit_reached",
+        "sampled",
+        "thresholded",
+        "other_row_loss",
+        "provider_empty_reason",
+        "restricted_metrics"
+      ],
+      "title": "ViewLimit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "input": {
+      "$ref": "#/$defs/Ga4ReviewInput"
+    },
+    "view": {
+      "$ref": "#/$defs/Ga4ReviewView"
+    }
+  },
+  "required": [
+    "view",
+    "input"
+  ],
+  "title": "Ga4ReviewContracts",
+  "type": "object"
+}

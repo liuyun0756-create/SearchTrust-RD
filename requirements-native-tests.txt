@@ -1,0 +1,3 @@
+-r requirements-dev.txt
+# Optional: local PostgreSQL/Redis acceptance only, not application runtime.
+psycopg[binary]==3.2.13

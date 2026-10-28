@@ -21,7 +21,7 @@ def test_fast_command_disables_external_network_and_skips_real_redis() -> None:
     command = quality.fast_test_command()
 
     assert command[:3] == [sys.executable, "-m", "pytest"]
-    assert "not redis_integration" in command
+    assert "not redis_integration and not native_integration" in command
     assert "--disable-socket" in command
     assert "--allow-unix-socket" in command
     assert not any(argument.startswith("--allow-hosts") for argument in command)

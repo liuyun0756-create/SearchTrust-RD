@@ -1,0 +1,244 @@
+{
+  "action_state": "actions_supported",
+  "actions": [
+    {
+      "completion": [
+        "The intended route and the live destination have been checked."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn-contact"
+      ],
+      "id": "ac-1",
+      "materials": [
+        {
+          "body": "Confirm the emergency-care contact destination, then write a precise label for that destination. Do not add unsupported opening hours or response-time claims.",
+          "confirmation_items": [
+            "Confirm the intended contact destination."
+          ],
+          "evidence_ids": [
+            "ev-contact"
+          ],
+          "id": "material-1",
+          "kind": "service_brief",
+          "readiness": "requires_confirmation",
+          "target": "https://clinic.example.invalid/emergency#contact",
+          "title": "Contact-route editing brief"
+        }
+      ],
+      "review": "Compare only eligible evidence for the same page and scope.",
+      "steps": [
+        "Check the confirmed service and contact destination before making the approved change."
+      ],
+      "target": "https://clinic.example.invalid/emergency#contact",
+      "title": "Confirm the contact route"
+    },
+    {
+      "completion": [
+        "The intended route and the live destination have been checked."
+      ],
+      "dependencies": [
+        "ac-1"
+      ],
+      "finding_ids": [
+        "fn-contact"
+      ],
+      "id": "ac-2",
+      "materials": [
+        {
+          "body": "Confirm the emergency-care contact destination, then write a precise label for that destination. Do not add unsupported opening hours or response-time claims.",
+          "confirmation_items": [
+            "Confirm the intended contact destination."
+          ],
+          "evidence_ids": [
+            "ev-contact"
+          ],
+          "id": "material-2",
+          "kind": "service_brief",
+          "readiness": "requires_confirmation",
+          "target": "https://clinic.example.invalid/emergency#contact",
+          "title": "Contact-route editing brief"
+        }
+      ],
+      "review": "Compare only eligible evidence for the same page and scope.",
+      "steps": [
+        "Check the confirmed service and contact destination before making the approved change."
+      ],
+      "target": "https://clinic.example.invalid/emergency#contact",
+      "title": "Clarify the approved contact label"
+    }
+  ],
+  "changes": [],
+  "evidence": [
+    {
+      "comparison_scope": "Saved emergency-care page",
+      "field_path": "/contact/label",
+      "id": "ev-contact",
+      "limitations": [
+        "Only the saved sample was checked."
+      ],
+      "object": "https://clinic.example.invalid/emergency",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000a",
+      "source_kind": "site",
+      "unit": null,
+      "value": "Contact us"
+    }
+  ],
+  "findings": [
+    {
+      "classification": "inference",
+      "comparison_scope": "Saved emergency-care page",
+      "confidence": "low",
+      "evidence_ids": [
+        "ev-contact"
+      ],
+      "id": "fn-contact",
+      "impact_path": "A precise instruction could clarify the next contact step.",
+      "interpretation": "needs_verification",
+      "judgment": "The intended route needs confirmation.",
+      "limitations": [
+        "No lost enquiries or causal impact is established."
+      ],
+      "observed_at": "2026-08-28T08:00:00Z",
+      "observed_fact": "The saved link label is Contact us.",
+      "rule_id": "capability_target.contact_route",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "target": "https://clinic.example.invalid/emergency#contact"
+    }
+  ],
+  "generated_at": "2026-08-29T00:10:00Z",
+  "id": "00000000-0000-0000-0000-000000000005",
+  "input_manifest": {
+    "business": {
+      "case_id": "00000000-0000-0000-0000-000000000002",
+      "competitor_sites": [
+        "https://other-clinic.example.invalid"
+      ],
+      "confirmation_source": "seo_confirmation",
+      "confirmed_at": "2026-08-27T08:00:00Z",
+      "id": "00000000-0000-0000-0000-000000000003",
+      "primary_service": "Emergency dental care",
+      "priority": null,
+      "revision": 1,
+      "site_url": "https://clinic.example.invalid/emergency",
+      "target_market": "Northside",
+      "target_pages": [
+        "https://clinic.example.invalid/emergency"
+      ],
+      "user_id": "00000000-0000-0000-0000-000000000001"
+    },
+    "case_id": "00000000-0000-0000-0000-000000000002",
+    "evaluated_at": "2026-08-29T00:00:00Z",
+    "generation_input_checksum": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "id": "00000000-0000-0000-0000-000000000004",
+    "implementation": {
+      "checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "00000000-0000-0000-0000-000000000007",
+      "revision": 1
+    },
+    "input_checksum": "sha256:dbb2c498ecbf57c8a0676bcb72fd21abaadae7c6b699e936f87c2f4183f76be8",
+    "job_id": "00000000-0000-0000-0000-000000000005",
+    "mode": "review",
+    "previous_report": {
+      "case_id": "00000000-0000-0000-0000-000000000002",
+      "payload_checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "report_id": "00000000-0000-0000-0000-000000000006",
+      "report_type": "verified_execution",
+      "version": 1
+    },
+    "ruleset_version": "capability-p1-v1",
+    "schema_version": "v22_analysis_input_v1",
+    "snapshots": [
+      {
+        "binding_id": null,
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "schema_version": "site_inventory_snapshot_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000a",
+        "source_kind": "site"
+      },
+      {
+        "binding_id": null,
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "schema_version": "serp_market_snapshot_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_kind": "serp"
+      },
+      {
+        "binding_id": null,
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "schema_version": "competitor_collection_snapshot_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000c",
+        "source_kind": "competitor"
+      },
+      {
+        "binding_id": null,
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "schema_version": "customer_public_gbp_snapshot_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000d",
+        "source_kind": "public_gbp"
+      },
+      {
+        "binding_id": "00000000-0000-0000-0000-000000000018",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "schema_version": "gsc_sync_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000e",
+        "source_kind": "gsc"
+      },
+      {
+        "binding_id": "00000000-0000-0000-0000-000000000019",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "expires_at": "2026-08-30T08:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "schema_version": "ga4_sync_v1",
+        "scope": "Confirmed emergency-care page and Northside market",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000f",
+        "source_kind": "ga4"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "limitations": [
+    "Synthetic contract sample; no customer outcome is claimed."
+  ],
+  "report_type": "verified_execution",
+  "schema_version": "2.2.2",
+  "settlement_policy": "one_credit_per_completed_analysis",
+  "summary": "The saved page uses a generic contact label. Confirm the intended enquiry route before changing it.",
+  "title": "Review the emergency enquiry route",
+  "version": 2
+}

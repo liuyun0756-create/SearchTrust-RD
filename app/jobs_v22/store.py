@@ -24,7 +24,7 @@ from app.jobs_v22.errors import (
 )
 from app.jobs_v22.keys import JobRedisKeys
 from app.jobs_v22.models import JobErrorState, JobState, JobStatus
-from app.report_v22.models import ReportV22
+from app.jobs_v22.models import DurableReport
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,12 @@ class DurableJobStore:
         idempotency_key: str,
         request_payload: Mapping[str, Any],
         now: datetime,
+        created_at: datetime | None = None,
+        deadline_at: datetime | None = None,
+        initial_generation: int = 1,
+        initial_revision: int = 1,
+        initial_attempt_count: int = 0,
+        initial_cost_counters: dict[str, int | float] | None = None,
     ) -> RegistrationResult:
         digest = request_digest(request_payload)
         idempotency_key_digest = f"sha256:{hashlib.sha256(idempotency_key.encode('utf-8')).hexdigest()}"
@@ -101,19 +107,19 @@ class DurableJobStore:
             stage="queued",
             progress=0,
             message="Queued. Analysis will begin shortly.",
-            attempt_count=0,
-            run_generation=1,
-            revision=1,
+            attempt_count=initial_attempt_count,
+            run_generation=initial_generation,
+            revision=initial_revision,
             request_digest=digest,
             idempotency_key_digest=idempotency_key_digest,
             heartbeat_at=None,
-            created_at=now,
-            deadline_at=now + timedelta(seconds=self.job_timeout_seconds),
+            created_at=created_at or now,
+            deadline_at=deadline_at or now + timedelta(seconds=self.job_timeout_seconds),
             updated_at=now,
             completed_at=None,
             report=None,
             error=None,
-            cost_counters={},
+            cost_counters=initial_cost_counters or {},
             callback_synced_revision=0,
         )
         identity = {
@@ -193,7 +199,7 @@ class DurableJobStore:
         now: datetime,
         attempt_count: int | None = None,
         heartbeat_at: datetime | None = None,
-        report: ReportV22 | None = None,
+        report: DurableReport | None = None,
         error: JobErrorState | None = None,
         cost_counters: dict[str, int | float] | None = None,
         expected_generation: int | None = None,

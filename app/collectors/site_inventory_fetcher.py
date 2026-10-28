@@ -96,11 +96,13 @@ class BoundedSiteFetcher:
         resolver: Resolver | None = None,
         client_factory: ClientFactory | None = None,
         rate_limiter: AsyncRateLimiter | None = None,
+        redirect_limit_code: str = "http_error",
     ) -> None:
         self.connect_timeout = connect_timeout
         self.read_timeout = read_timeout
         self.total_timeout = total_timeout
         self.max_redirects = max_redirects
+        self.redirect_limit_code = redirect_limit_code
         self.resolver = resolver
         self.client_factory = client_factory or self._default_client
         self.rate_limiter = rate_limiter or AsyncRateLimiter(
@@ -187,7 +189,7 @@ class BoundedSiteFetcher:
                             )
                         if redirect_count >= self.max_redirects:
                             raise SiteFetchError(
-                                "http_error",
+                                self.redirect_limit_code,
                                 "The page exceeded the redirect limit.",
                             )
                         current_url = urljoin(target.request_url, location)

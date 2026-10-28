@@ -55,7 +55,19 @@ class Settings(BaseSettings):
     # optional durable runtime stays disabled.
     V22_ANALYZE_ENABLED: bool = False
     V22_VERIFIED_ANALYSIS_ENABLED: bool = False
+    V22_CAPABILITY_EXECUTION_ENABLED: bool = False
+    V22_CAPABILITY_INTAKE_ENABLED: bool = False
+    V22_COMPARISONS_ENABLED: bool = False
+    V22_FIRST_SERVICE_DISCOVERY_ENABLED: bool = False
     V22_GSC_SYNC_ENABLED: bool = False
+    V22_COMPARISON_COLLECTIONS_ENABLED: bool = False
+    V22_GA4_COMPARISON_COLLECTIONS_ENABLED: bool = False
+    V22_GA4_SESSION_SNAPSHOT_READING_ENABLED: bool = False
+    V22_PAGE_CHECKS_ENABLED: bool = False
+    V22_REVIEW_EVIDENCE_WORKSPACE_ENABLED: bool = False
+    V22_REVIEW_DECISIONS_WORKSPACE_ENABLED: bool = False
+    V22_REVIEW_GENERATION_ENABLED: bool = False
+    V22_MULTI_ROUND_REVIEWS_ENABLED: bool = False
     V22_GA4_SYNC_ENABLED: bool = False
     V22_GBP_SYNC_ENABLED: bool = False
     V22_GOOGLE_BROKER_ORIGIN: str = ""
@@ -184,6 +196,13 @@ def v22_verified_execution_ready(configured: Settings) -> bool:
         and configured.V22_CALLBACK_URL
         and secret
     )
+
+
+def v22_capability_execution_ready(configured: Settings) -> bool:
+    """Separate, default-closed frozen-input worker; not paid intake readiness."""
+    return bool(configured.V22_CAPABILITY_EXECUTION_ENABLED and configured.V22_SUPABASE_URL
+        and configured.V22_SUPABASE_SERVICE_ROLE_KEY.get_secret_value()
+        and configured.V22_CALLBACK_URL and configured.V22_CALLBACK_SECRET.get_secret_value())
 
 
 @lru_cache(maxsize=1)

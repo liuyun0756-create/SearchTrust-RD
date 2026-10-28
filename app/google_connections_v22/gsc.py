@@ -176,11 +176,30 @@ class GscProvider:
         *,
         cost_ledger: JobCostLedger | None = None,
     ) -> GscSnapshot:
+        # Ordinary sync retains its established adjacent 90-day windows.
+        return await self.collect_periods(resource_id, token,
+            previous=(end-timedelta(days=179), end-timedelta(days=90)),
+            current=(end-timedelta(days=89), end), cost_ledger=cost_ledger)
+
+    async def collect_periods(
+        self, resource_id: str, token: str, *, previous: tuple[date, date], current: tuple[date, date],
+        cost_ledger: JobCostLedger | None = None,
+    ) -> GscSnapshot:
+        """Internal bounded primitive; caller authorizes resource and derives dates.
+
+        Non-adjacent comparison windows must use a purpose-tagged persistence
+        path, never replace the ordinary sync's latest source implicitly.
+        """
+        if (type(previous) is not tuple or type(current) is not tuple
+                or len(previous) != 2 or len(current) != 2
+                or any(type(day) is not date for period in (previous, current) for day in period)
+                or any(not 0 <= (last-first).days <= 89 for first, last in (previous, current))
+                or (previous[1]-previous[0]) != (current[1]-current[0]) or previous[1] >= current[0]):
+            raise SyncError("SYNC_INVALID_WINDOWS")
         if not resource_id or len(resource_id) > 2048:
             raise SyncError("SYNC_INVALID_RESOURCE")
         periods = []
-        for last in (end, end - timedelta(days=90)):
-            first = last - timedelta(days=89)
+        for first, last in (current, previous):
             views = {}
             for name, (dimension, limit) in VIEWS.items():
                 claim = (

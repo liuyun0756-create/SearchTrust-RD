@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "MetricReview": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Absolute Change"
+        },
+        "after": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After"
+        },
+        "after_denominator": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Denominator"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before"
+        },
+        "before_denominator": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Denominator"
+        },
+        "metric": {
+          "enum": [
+            "impressions",
+            "clicks",
+            "ctr",
+            "sessions",
+            "key_events"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "next_checks": {
+          "items": {
+            "enum": [
+              "review_demand_mix",
+              "review_page_queries",
+              "review_ctr_denominators",
+              "review_session_measurement",
+              "verify_event_history",
+              "select_source",
+              "wait_for_window",
+              "resolve_source_limits",
+              "obtain_impressions"
+            ],
+            "type": "string"
+          },
+          "title": "Next Checks",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "enum": [
+              "ZERO_BASELINE",
+              "UNCHANGED_COUNT",
+              "ONE_COUNT_DIFFERENCE",
+              "ZERO_IMPRESSIONS",
+              "UNCHANGED_CTR",
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED",
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "percentage_point_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Percentage Point Change"
+        },
+        "relative_change": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative Change"
+        },
+        "source_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Reasons",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "not_selected",
+            "waiting",
+            "withheld",
+            "undefined",
+            "descriptive",
+            "snapshot_only",
+            "not_included"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "state",
+        "before",
+        "after",
+        "before_denominator",
+        "after_denominator",
+        "absolute_change",
+        "relative_change",
+        "percentage_point_change",
+        "notes",
+        "source_reasons",
+        "next_checks"
+      ],
+      "title": "MetricReview",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "title": "Action Id",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "not_calibrated",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "causal_attribution": {
+      "const": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "concurrent_changes": {
+      "enum": [
+        "unknown",
+        "reported",
+        "none_reported",
+        "not_available"
+      ],
+      "title": "Concurrent Changes",
+      "type": "string"
+    },
+    "effect_conclusion": {
+      "title": "Effect Conclusion",
+      "type": "null"
+    },
+    "facts_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Facts Checksum",
+      "type": "string"
+    },
+    "implementation_state": {
+      "enum": [
+        "seo_recorded",
+        "not_recorded"
+      ],
+      "title": "Implementation State",
+      "type": "string"
+    },
+    "metrics": {
+      "items": {
+        "$ref": "#/$defs/MetricReview"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "rules_version": {
+      "const": "v22_metric_review_guidance_v1",
+      "title": "Rules Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "rules_version",
+    "facts_checksum",
+    "action_id",
+    "metrics",
+    "implementation_state",
+    "concurrent_changes",
+    "calibration_status",
+    "effect_conclusion",
+    "causal_attribution"
+  ],
+  "title": "MetricReviewGuidance",
+  "type": "object"
+}

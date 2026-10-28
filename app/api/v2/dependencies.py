@@ -11,7 +11,8 @@ from pydantic import ValidationError
 
 from app.api.v2.competitor_models import CompetitorDiscoveryRequest
 from app.api.v2.models import AnalyzeRequest, PreflightRequest, VerifiedTaskRequest
-from app.core.config import settings, v22_verified_execution_ready
+from app.core.config import settings, v22_verified_execution_ready, v22_capability_execution_ready
+from app.jobs_v22.capability_runtime_models import CapabilityRequestEnvelope
 
 
 def _secret_value(value: SecretStr | str) -> str:
@@ -65,6 +66,34 @@ async def require_v22_preflight_enabled() -> None:
         )
 
 
+async def require_v22_capability_enabled() -> None:
+    if not v22_capability_execution_ready(settings):
+        raise HTTPException(status_code=503, detail={
+            "code": "V22_CAPABILITY_NOT_READY",
+            "message": "This analysis workflow is not available yet.",
+        })
+
+
+async def require_v22_acquisition_enabled() -> None:
+    await require_v22_capability_enabled()
+    await require_v22_analyze_enabled()
+    if not settings.V22_CAPABILITY_INTAKE_ENABLED:
+        raise HTTPException(status_code=503,detail={"code":"CAPABILITY_INTAKE_UNAVAILABLE","message":"This workflow is not ready."})
+
+
+async def parse_capability_request(request: Request) -> CapabilityRequestEnvelope:
+    # Small reference only. Never allow source bodies in this endpoint.
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > 2048:
+            raise HTTPException(status_code=413, detail={"code": "INVALID_REQUEST", "message": "The analysis request is invalid."})
+    try:
+        return CapabilityRequestEnvelope.model_validate_json(bytes(body))
+    except ValidationError:
+        raise HTTPException(status_code=422, detail={"code": "INVALID_REQUEST", "message": "The analysis request is invalid."}) from None
+
+
 async def require_v22_competitor_discovery_enabled() -> None:
     if not settings.V22_COMPETITOR_DISCOVERY_ENABLED:
         raise HTTPException(
@@ -106,6 +135,20 @@ async def parse_analyze_request(request: Request) -> AnalyzeRequest:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "VALIDATION_ERROR", "message": "The analysis request is invalid."},
         ) from exc
+
+
+async def parse_acquisition_request(request: Request) -> AnalyzeRequest:
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body)>128*1024:
+            raise HTTPException(status_code=413,detail={"code":"INVALID_REQUEST","message":"The analysis request is too large."})
+    try:
+        value=AnalyzeRequest.model_validate_json(bytes(body))
+        if value.report_type!="prospect": raise ValueError()
+        return value
+    except ValueError:
+        raise HTTPException(status_code=422,detail={"code":"INVALID_REQUEST","message":"The analysis request is invalid."}) from None
 
 
 async def parse_verified_task_request(request: Request) -> VerifiedTaskRequest:

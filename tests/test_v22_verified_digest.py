@@ -31,6 +31,13 @@ def test_verified_numbers_match_ecmascript_canonical_bytes_and_hash(value, expec
     assert verified_request_digest(value) == f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
+def test_verified_digest_matches_complete_frontend_prospect():
+    report = json.loads((Path(__file__).resolve().parents[1] / "contracts/v2.2/fixtures/prospect.json").read_text())
+    ReportV22.model_validate_json(json.dumps(report))
+    # Same full fixture and expected value as FE verified-analysis-v22/digest.test.ts.
+    assert verified_request_digest(report) == "sha256:0a093496b57a559ebed6660245eec41bac828cae11fc0c45473447ee668bde7a"
+
+
 def test_verified_digest_matches_modified_schema_valid_frontend_prospect():
     report = json.loads((Path(__file__).resolve().parents[1] / "contracts/v2.2/fixtures/prospect.json").read_text())
     report["case_context"]["target_market"].update(latitude=1.0, longitude=-0.0)
@@ -38,7 +45,7 @@ def test_verified_digest_matches_modified_schema_valid_frontend_prospect():
     report["identity"]["business"]["primary_location"].update(latitude=1e-6, longitude=-0.0)
     ReportV22.model_validate_json(json.dumps(report))
     # Fixed hash from frontend canonicalDigest with these exact schema-valid edits.
-    expected = "sha256:b976d1b3fba055fdb91c0a3e31477cb515f2add186831d8779741c2ead0e2c3c"
+    expected = "sha256:5af54f0bb6d3391f48790d0066edf968951657b44bc85f90f43379d38f059f06"
     assert verified_request_digest(report) == expected
     assert request_digest(report) != expected
 
@@ -47,6 +54,7 @@ def test_verified_digest_sorts_utf16_keys_and_preserves_array_order():
     value = {"\ufb33": 1.0, "😀": [-0.0, 1e-7], "10": True, "2": None}
     expected = '{"10":true,"2":null,"😀":[0,1e-7],"דּ":1}'.encode()
     assert verified_canonical_json_bytes(value) == expected
+    assert verified_request_digest(value) == "sha256:715e9d7ff4a22b4952be8ac184d8c626c4ddb71f53bc3538b9c80843e50897b4"
     assert verified_request_digest([1, 2]) != verified_request_digest([2, 1])
 
 

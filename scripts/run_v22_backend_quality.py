@@ -21,7 +21,7 @@ def fast_test_command() -> list[str]:
         "pytest",
         "-q",
         "-m",
-        "not redis_integration",
+        "not redis_integration and not native_integration",
         "--disable-socket",
         "--allow-unix-socket",
     ]

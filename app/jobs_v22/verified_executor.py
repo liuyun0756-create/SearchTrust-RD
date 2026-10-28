@@ -19,6 +19,8 @@ from app.jobs_v22.verified_input_resolver import (
 )
 from app.jobs_v22.verified_models import VerifiedRequestEnvelope, VerifiedTaskRequest
 from app.report_v22.models import ReportV22
+from app.report_v22.capability import CapabilityReport
+from app.jobs_v22.capability_runtime_models import CapabilityRequestEnvelope
 
 
 class VerifiedInputResolver(Protocol):
@@ -179,9 +181,11 @@ class V22ExecutorRouter:
         *,
         prospect_executor: RoutedExecutor,
         verified_executor: RoutedExecutor,
+        capability_executor: RoutedExecutor | None = None,
     ) -> None:
         self.prospect_executor = prospect_executor
         self.verified_executor = verified_executor
+        self.capability_executor = capability_executor
 
     async def execute(
         self,
@@ -191,7 +195,7 @@ class V22ExecutorRouter:
         submitted_at: datetime,
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
-    ) -> ReportV22:
+    ) -> ReportV22 | CapabilityReport:
         try:
             if isinstance(request, AnalysisRequestEnvelope):
                 schema = request.schema_version
@@ -201,6 +205,9 @@ class V22ExecutorRouter:
             elif isinstance(request, VerifiedRequestEnvelope):
                 schema = request.schema_version
                 parsed = _parse_verified_envelope(request)
+            elif isinstance(request, CapabilityRequestEnvelope):
+                schema = request.schema_version
+                parsed = CapabilityRequestEnvelope.model_validate_json(canonical_json_bytes(request))
             elif isinstance(request, dict):
                 schema = request.get("schema_version")
                 if schema == "v22_analysis_request_envelope_v1":
@@ -209,6 +216,8 @@ class V22ExecutorRouter:
                     )
                 elif schema == "v22_verified_request_envelope_v1":
                     parsed = _parse_verified_envelope(request)
+                elif schema == "v22_capability_request_envelope_v1":
+                    parsed = CapabilityRequestEnvelope.model_validate_json(canonical_json_bytes(request))
                 else:
                     raise TypeError
             else:
@@ -216,6 +225,11 @@ class V22ExecutorRouter:
         except (TypeError, ValueError, ValidationError, RecursionError, OverflowError):
             raise _invalid_request() from None
 
+        if schema == "v22_capability_request_envelope_v1":
+            if self.capability_executor is None:
+                raise DeterministicJobError("V22_CAPABILITY_EXECUTION_DISABLED", "This analysis format is not enabled.")
+            return await self.capability_executor.execute(job_id=job_id,request=parsed,submitted_at=submitted_at,
+                checkpoints=checkpoints,cost_ledger=cost_ledger)
         executor = (
             self.prospect_executor
             if schema == "v22_analysis_request_envelope_v1"

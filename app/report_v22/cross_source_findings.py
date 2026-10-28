@@ -459,9 +459,14 @@ def build_cross_source_findings(value: CrossSourceFindingsInput | dict) -> Cross
         request = CrossSourceFindingsInput.model_validate_json(canonical_json_bytes(raw))
     except (ValidationError, TypeError, ValueError):
         raise CrossSourceFindingsError("INPUT_INVALID") from None
+    return _evaluate_cross_source_request(request, first_party_builder=build_first_party_findings)
+
+
+def _evaluate_cross_source_request(request: CrossSourceFindingsInput, *, first_party_builder) -> CrossSourceFindingsResult:
+    """Shared rule core, never accepts an unvalidated public request directly."""
     if len(canonical_json_bytes(request)) > request.limits.max_bytes:
         raise CrossSourceFindingsError("LIMIT_EXCEEDED")
-    recomputed = build_first_party_findings(request.first_party_input)
+    recomputed = first_party_builder(request.first_party_input)
     if canonical_json_bytes(recomputed) != canonical_json_bytes(request.first_party_result):
         raise CrossSourceFindingsError("CHECKSUM_MISMATCH")
     parsed = {}

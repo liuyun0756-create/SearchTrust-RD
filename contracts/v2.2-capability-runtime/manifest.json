@@ -1,0 +1,10 @@
+{
+  "files": {
+    "completed.json": "sha256:c1482367f9963acfde569dc6e4c67178ed465c82be6a91e86150fca18ced9a4b",
+    "completed.schema.json": "sha256:0d5f74bf841f05d9da9558440e465c18bf717fd083960bfe83cb400196d650c4",
+    "dispatch.schema.json": "sha256:484dfc369163080c4e460607445526e3a15359f2277bc66ba8339daa2854aadf",
+    "request.json": "sha256:84cb80a57b27e0953669bd5b804590883cbc5321223d940923fe7c2422898af4",
+    "request.schema.json": "sha256:0bc258b10616dd63ed1f2944f167987edc6e3c02d25cb2ff5ab44f138489a891"
+  },
+  "version": "v22_capability_runtime_v1"
+}

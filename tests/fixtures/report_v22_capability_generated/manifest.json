@@ -1,0 +1,20 @@
+{
+  "files": {
+    "public-0.json": "sha256:d4f142c4780faf5d69c95e2d393c9ee41c7a246ae8f7cca5c7a0892a9185ad1b",
+    "public-1.json": "sha256:5c2a241f13cccd80947ca5fa1f7fdd0a7e82b2ebc4cf6131d2ad60819d7a9220",
+    "public-2.json": "sha256:3734c5d9924a4df0a702f39a204d417a4d577f603de767770846f46076743f48",
+    "public-3.json": "sha256:46d64ab03dbd5b91adbdb6da3342946e4717135235a64683f0ca69d660e30976",
+    "service-after.json": "sha256:24833a4b5dbe4069999e8ec9e86561e547d3ceb0f926cc54afef72c93715c82f",
+    "service-conflict.json": "sha256:edd13aa94c9a873bcea4e350de952dcd4742474a1bbf59e47028c89d4c7c62aa",
+    "service-contact-focus.json": "sha256:aa553d0a09b456a42f97451e24af63b3bed7f6a1fe354f7dd743e44fabed29e5",
+    "service-first.json": "sha256:51c50eca52970e1a66ff4b06ba9df3f4209ba4cf3aa7cdf3453eee37cfff4f25",
+    "service-limited-capacity.json": "sha256:1973753267b95b187dfff0f9453d06789e2d4e60228c59cdeac67ee8c2c3d3c2",
+    "service-measurement.json": "sha256:14554703bf872d783773782a76fc0d7ad3256ec9c48cc75bc15b0261a1dfa203",
+    "service-other-focus.json": "sha256:dd5f94d271a8da976ffebd92dc2e1d250ec9c0d4b38316dfe9321d3530eb157f",
+    "service-target-focus.json": "sha256:561333fda5fc0b0f27e57dd08c8b1f58501f133c723343afd8db0fc3fccd3bf0",
+    "service-unstructured-focus.json": "sha256:95606f964754c1edd28ccb94096b0cd8fc8d61b6d82ce942f57d054e45708412",
+    "service-zero.json": "sha256:6fb6ddf78eab54646bfef7fc2daa18137b1290a946b9316b4deb3f7c7ee0ea12"
+  },
+  "purpose": "Actual rules on synthetic saved sources; not customer results",
+  "schema_version": "2.2.2"
+}

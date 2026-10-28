@@ -1,0 +1,52 @@
+{
+  "action_id": "ac-1",
+  "after": 125,
+  "before": 100,
+  "case_id": "00000000-0000-0000-0000-000000000002",
+  "causal_attribution": false,
+  "collection_id": "00000000-0000-0000-0000-000000004f4d",
+  "completed_at": "2026-12-15T08:00:00Z",
+  "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+  "difference": 25,
+  "effect": null,
+  "implementation": {
+    "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+    "id": "b0000000-0000-4000-8000-000000000002",
+    "revision": 1
+  },
+  "measurement_history": "unverified",
+  "observation_checksum": "sha256:0fb059cb9e4d16d1ba1cf2b661f4ed140de9064a5220a21fe846b6e5d4a82baf",
+  "processing_completeness": "not_attested",
+  "reasons": [],
+  "relative_change_percent": "25.00",
+  "report_id": "00000000-0000-0000-0000-000000000005",
+  "schema_version": "v22_ga4_session_snapshot_reading_v1",
+  "scope": {
+    "channel": "organic_search",
+    "hosts": [
+      "example.test"
+    ],
+    "landing_path": null,
+    "resource_id": "properties/12345",
+    "timezone": "America/Los_Angeles"
+  },
+  "started_at": "2026-12-15T08:00:00Z",
+  "state": "available",
+  "user_id": "00000000-0000-0000-0000-000000000001",
+  "windows": {
+    "after": {
+      "end": "2026-09-29",
+      "start": "2026-09-02"
+    },
+    "before": {
+      "end": "2026-08-31",
+      "start": "2026-08-04"
+    },
+    "days": 28,
+    "excluded": {
+      "end": "2026-09-01",
+      "start": "2026-09-01"
+    },
+    "timezone": "America/Los_Angeles"
+  }
+}

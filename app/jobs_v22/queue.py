@@ -38,3 +38,27 @@ class ArqJobQueue:
             _expires=self.expires_seconds,
         )
         return job is not None
+
+
+class ArqAcquisitionPreparationQueue(ArqJobQueue):
+    """Preparation never occupies or overwrites the formal execution queue ID."""
+
+    async def enqueue(self, job_id: UUID, run_generation: int) -> bool:
+        identity = physical_job_id(job_id, run_generation) + ":prepare"
+        job = await self.pool.enqueue_job(
+            "prepare_v22_acquisition", str(job_id), run_generation,
+            _job_id=identity, _queue_name=self.queue_name, _expires=self.expires_seconds,
+        )
+        return job is not None
+
+
+class ArqFirstServicePreparationQueue(ArqJobQueue):
+    """No second logical job or debit; only a separate collection queue key."""
+
+    async def enqueue(self, job_id: UUID, run_generation: int) -> bool:
+        job = await self.pool.enqueue_job(
+            "prepare_v22_first_service", str(job_id), run_generation,
+            _job_id=physical_job_id(job_id, run_generation) + ":first-service-prepare",
+            _queue_name=self.queue_name, _expires=self.expires_seconds,
+        )
+        return job is not None

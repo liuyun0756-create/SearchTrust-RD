@@ -521,3 +521,31 @@ def build_public_action_plan(
     if len(canonical_json_bytes(plan)) > request.limits.max_bytes:
         raise PublicActionError("LIMIT_EXCEEDED")
     return plan
+
+
+def select_public_action_skeletons(value: PublicActionPlanInput | dict[str, Any], *, all_candidates: bool = False) -> list[ActionSkeleton]:
+    """2.2.2 selection: reuse proven grouping/priority without padding to three.
+
+    The legacy builder deliberately remains exactly-three for 2.2.1 consumers.
+    This pure operation performs no fetching, model call, persistence or debit.
+    """
+    request = _validated_input(value)
+    result = canonical_public_findings(request.findings_result)
+    findings, evaluations, sources = _validated_references(result, max_findings=request.limits.max_findings)
+    candidates = _build_candidates(result, findings, evaluations, sources,
+        max_candidates=request.limits.max_candidates,
+        max_findings_per_action=request.limits.max_findings_per_action,
+        max_targets_per_action=request.limits.max_targets_per_action)
+    if len(candidates) > request.limits.max_audit_entries:
+        raise PublicActionError("LIMIT_EXCEEDED")
+    selected = candidates if all_candidates else candidates[:3]
+    _add_dependencies(selected, site_url=result.site_rollup.site_url)
+    ordered = _topological_order(selected)
+    actions = []
+    for sequence, candidate in enumerate(ordered, 1):
+        try:
+            review_date = request.planning_date + timedelta(days=30 * sequence)
+        except OverflowError:
+            raise PublicActionError("DATE_INVALID") from None
+        actions.append(_build_action(candidate, sequence=sequence, review_date=review_date, limits=request.limits))
+    return actions

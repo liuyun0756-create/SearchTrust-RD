@@ -17,7 +17,24 @@ from arq.worker import func
 import httpx
 from pydantic import SecretStr
 
-from app.core.config import settings, v22_verified_execution_ready
+from app.core.config import settings, v22_verified_execution_ready, v22_capability_execution_ready
+from app.jobs_v22.capability_executor import CapabilityV22Executor
+from app.jobs_v22.review_worker import ReviewCoordinator, ReviewWorkRepository, execute_v22_review_generation, reconcile_v22_review_generations
+from app.jobs_v22.review_input_repository import ReviewInputRepository
+from app.jobs_v22.review_report_persistence import ReviewReportRepository
+from app.jobs_v22.capability_input_repository import SupabaseCapabilityInputRepository
+from app.jobs_v22.capability_result_persistence import SupabaseCapabilityResultPersister
+from app.jobs_v22.capability_terminal import CapabilityTerminalCoordinator,capability_terminal_transition
+from app.jobs_v22.capability_reconciler import CapabilityOrphanReconciler, reconcile_v22_capability_orphans
+from app.jobs_v22.capability_acquisition_worker import prepare_v22_acquisition, prepare_v22_first_service
+from app.jobs_v22.capability_first_service_preparation import CapabilityFirstServicePreparer
+from app.jobs_v22.first_service_preparation_reconciler import reconcile_v22_first_service_preparation
+from app.jobs_v22.first_service_discovery_repository import FirstServiceDiscoveryRepository
+from app.jobs_v22.first_service_discovery_worker import (
+    FirstServiceDiscoveryCoordinator, execute_v22_first_service_discovery,
+    reconcile_v22_first_service_discovery,
+)
+from app.jobs_v22.capability_acquisition_preparation import CapabilityAcquisitionPreparer
 from app.google_connections_v22.gsc import GscProvider
 from app.google_connections_v22.ga4 import Ga4Provider
 from app.google_connections_v22.gbp import GbpProvider
@@ -29,6 +46,13 @@ from app.google_connections_v22.gbp_sync_worker import (
 )
 from app.google_connections_v22.sync_io import SyncRepository, TokenBroker
 from app.google_connections_v22.sync_worker import execute_v22_gsc_sync, reconcile_v22_gsc_syncs
+from app.report_v22.collection_worker import execute_v22_collection, reconcile_v22_collections
+from app.report_v22.collection_storage import CollectionRepository
+from app.report_v22.ga4_collection_worker import execute_v22_ga4_collection, reconcile_v22_ga4_collections
+from app.report_v22.ga4_collection_storage import Ga4CollectionRepository
+from app.report_v22.page_check_storage import PageCheckRepository
+from app.report_v22.page_check_worker import execute_v22_page_check, reconcile_v22_page_checks
+from app.google_connections_v22.ga4_comparison import Ga4ComparisonProvider
 from app.competitors_v22.discovery_service import CompetitorDiscoveryService
 from app.competitors_v22.collection_stage import CheckpointedCompetitorCollectionStage
 from app.competitors_v22.market_store import SharedMarketSnapshotStore
@@ -204,13 +228,24 @@ async def _execute_with_lease(
         pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
         job_created_at=state.created_at,
     )
-    await ledger.ensure()
-
     request = await store.get_request(job_id)
+    if request and request.get("schema_version") == "v22_capability_request_envelope_v1":
+        ledger.require_existing = bool(state.cost_counters) or state.attempt_count > 0
+        try:
+            await ledger.ensure()
+        except Exception:
+            raise Retry(defer=30) from None
+        # Once initialized, loss during execution must also stop provider work.
+        ledger.require_existing = True
+    else:
+        await ledger.ensure()
     job_kind = (
         "verified_report"
         if request is not None
-        and request.get("schema_version") == "v22_verified_request_envelope_v1"
+        and (request.get("schema_version") == "v22_verified_request_envelope_v1"
+          or (request.get("schema_version") == "v22_capability_request_envelope_v1"
+            and isinstance(request.get("capability_request"),dict)
+            and request["capability_request"].get("report_type")=="verified_execution"))
         else "prospect_report"
     )
     now = utc_now()
@@ -382,6 +417,14 @@ async def _finish_failure(
         stage="failed",
         diagnostic_id=uuid4(),
     )
+    handled,terminal=await capability_terminal_transition(store=store,state=state,error=error,now=utc_now(),
+        coordinator=ctx.get("capability_terminal_coordinator"),cost_counters=cost_counters)
+    if handled:
+        if terminal is None: raise Retry(defer=30)
+        if terminal.applied:
+            await _notify_state(ctx,state.job_id)
+            await _enqueue_cost_summary(ctx,terminal.state,job_kind=job_kind)
+        return
     failed = await store.transition(
         state.job_id,
         status="failed",
@@ -458,6 +501,30 @@ def _secret_value(value: SecretStr | str) -> str:
 
 async def on_startup(ctx: dict[str, Any]) -> None:
     pool = ctx["redis"]
+    if settings.V22_PAGE_CHECKS_ENABLED and settings.V22_CAPABILITY_EXECUTION_ENABLED:
+        page_client = httpx.AsyncClient(timeout=30, follow_redirects=False)
+        ctx["page_check_client"] = page_client
+        ctx["page_check_repository"] = PageCheckRepository(url=settings.V22_SUPABASE_URL,
+            service_role_key=_secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY), http_client=page_client)
+        ctx["page_check_queue"] = settings.V22_QUEUE_NAME
+    if settings.V22_GA4_COMPARISON_COLLECTIONS_ENABLED and settings.V22_COMPARISONS_ENABLED and settings.V22_CAPABILITY_EXECUTION_ENABLED:
+        ga4_collection_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
+        ctx["ga4_comparison_collection_client"] = ga4_collection_client
+        ctx["ga4_comparison_collection_repository"] = Ga4CollectionRepository(url=settings.V22_SUPABASE_URL,
+            service_role_key=_secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY),http_client=ga4_collection_client)
+        ctx["ga4_comparison_collection_provider"] = Ga4ComparisonProvider(ga4_collection_client)
+        ctx["ga4_comparison_collection_broker"] = TokenBroker(settings.V22_GOOGLE_BROKER_ORIGIN,
+            _secret_value(settings.V22_GOOGLE_BROKER_SECRET),ga4_collection_client,source="ga4")
+        ctx["ga4_comparison_collection_queue"] = settings.V22_QUEUE_NAME
+    if settings.V22_COMPARISON_COLLECTIONS_ENABLED and settings.V22_COMPARISONS_ENABLED and settings.V22_CAPABILITY_EXECUTION_ENABLED:
+        collection_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
+        ctx["comparison_collection_client"] = collection_client
+        ctx["comparison_collection_repository"] = CollectionRepository(url=settings.V22_SUPABASE_URL,
+            service_role_key=_secret_value(settings.V22_SUPABASE_SERVICE_ROLE_KEY),http_client=collection_client)
+        ctx["comparison_collection_provider"] = GscProvider(collection_client)
+        ctx["comparison_collection_broker"] = TokenBroker(settings.V22_GOOGLE_BROKER_ORIGIN,
+            _secret_value(settings.V22_GOOGLE_BROKER_SECRET),collection_client)
+        ctx["comparison_collection_queue"] = settings.V22_QUEUE_NAME
     if settings.V22_GSC_SYNC_ENABLED:
         gsc_client = httpx.AsyncClient(timeout=20, follow_redirects=False)
         ctx["gsc_http_client"] = gsc_client
@@ -636,9 +703,56 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     else:
         verified_executor = UnavailableV22Executor()
 
+    capability_executor = None
+    if v22_capability_execution_ready(settings):
+        capability_http_client = httpx.AsyncClient(timeout=60,follow_redirects=False)
+        try:
+            capability_executor = CapabilityV22Executor(
+                resolver=SupabaseCapabilityInputRepository(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client),
+                persister=SupabaseCapabilityResultPersister(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client))
+        except BaseException:
+            await capability_http_client.aclose()
+            raise
+        ctx["capability_http_client"] = capability_http_client
+        if (settings.V22_REVIEW_GENERATION_ENABLED and settings.V22_REVIEW_DECISIONS_WORKSPACE_ENABLED
+                and settings.V22_REVIEW_EVIDENCE_WORKSPACE_ENABLED):
+            review_kw = dict(url=settings.V22_SUPABASE_URL, service_role_key=storage_key, http_client=capability_http_client)
+            ctx["review_generation_coordinator"] = ReviewCoordinator(work=ReviewWorkRepository(**review_kw),
+                inputs=ReviewInputRepository(**review_kw), reports=ReviewReportRepository(**review_kw))
+            ctx["review_generation_queue"] = settings.V22_QUEUE_NAME
+        ctx["capability_terminal_coordinator"] = CapabilityTerminalCoordinator(capability_executor.resolver)
+        ctx["capability_orphan_reconciler"] = CapabilityOrphanReconciler(
+            url=settings.V22_SUPABASE_URL, service_role_key=storage_key, http_client=capability_http_client)
+        if isinstance(prospect_executor, ProspectV22Executor):
+            from app.api.v2.runtime import V22JobRuntime
+            from app.jobs_v22.queue import ArqJobQueue
+            from app.competitors_v22.selection import RedisDiscoveryVerifier
+            first_service_discovery_store = discovery_store
+            if settings.V22_FIRST_SERVICE_DISCOVERY_ENABLED:
+                ctx["first_service_preparation_recovery_enabled"] = True
+                ctx["first_service_preparation_queue_name"] = settings.V22_QUEUE_NAME
+                first_service_discovery_store = CompetitorDiscoveryStore(pool,
+                    prefix=settings.V22_REDIS_PREFIX + ":first-service-discovery",
+                    state_ttl_seconds=settings.V22_COMPETITOR_STATE_TTL_SECONDS)
+                ctx["first_service_discovery_coordinator"] = FirstServiceDiscoveryCoordinator(
+                    repository=FirstServiceDiscoveryRepository(url=settings.V22_SUPABASE_URL,
+                        service_role_key=storage_key, http_client=capability_http_client),
+                    store=first_service_discovery_store, market_store=market_store,
+                    redis=pool, queue_name=settings.V22_QUEUE_NAME)
+            ctx["capability_acquisition_preparer"] = CapabilityAcquisitionPreparer(
+                repository=capability_executor.resolver, collector=prospect_executor,
+                discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))
+            ctx["capability_first_service_preparer"] = CapabilityFirstServicePreparer(
+                repository=capability_executor.resolver, collector=prospect_executor,
+                discovery_verifier=RedisDiscoveryVerifier(store=first_service_discovery_store, market_store=market_store))
+            runtime = V22JobRuntime(store=ctx["store"], redis=pool,
+                queue=ArqJobQueue(pool, queue_name=settings.V22_QUEUE_NAME),
+                capability_repository=capability_executor.resolver)
+            ctx["capability_submit_dispatch"] = runtime.submit_capability
     ctx["executor"] = V22ExecutorRouter(
         prospect_executor=prospect_executor,
         verified_executor=verified_executor,
+        capability_executor=capability_executor,
     )
     if callback_url and callback_secret:
         http_client = httpx.AsyncClient(timeout=settings.V22_CALLBACK_TIMEOUT_SECONDS)
@@ -652,8 +766,16 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
 
 async def on_shutdown(ctx: dict[str, Any]) -> None:
+    if ctx.get("page_check_client") is not None:
+        await ctx["page_check_client"].aclose()
+    if ctx.get("ga4_comparison_collection_client") is not None:
+        await ctx["ga4_comparison_collection_client"].aclose()
+    if ctx.get("capability_http_client") is not None:
+        await ctx["capability_http_client"].aclose()
     if ctx.get("gsc_http_client") is not None:
         await ctx["gsc_http_client"].aclose()
+    if ctx.get("comparison_collection_client") is not None:
+        await ctx["comparison_collection_client"].aclose()
     if ctx.get("ga4_http_client") is not None:
         await ctx["ga4_http_client"].aclose()
     if ctx.get("gbp_http_client") is not None:
@@ -688,7 +810,21 @@ def _redis_settings() -> RedisSettings:
 
 class WorkerSettings:
     functions = [
+        func(execute_v22_review_generation, name="execute_v22_review_generation", max_tries=1, timeout=250, keep_result=0),
+        func(execute_v22_first_service_discovery, name="execute_v22_first_service_discovery",
+             max_tries=1, timeout=settings.V22_JOB_TIMEOUT_SECONDS, keep_result=0),
+        func(prepare_v22_first_service, name="prepare_v22_first_service",
+             max_tries=max(settings.V22_JOB_TIMEOUT_SECONDS // 30 + 2, settings.V22_JOB_MAX_ATTEMPTS),
+             timeout=settings.V22_JOB_TIMEOUT_SECONDS, keep_result=0),
+        func(prepare_v22_acquisition, name="prepare_v22_acquisition",
+             # Busy leases/uncertain handoffs do not consume SQL provider attempts.
+             max_tries=max(settings.V22_JOB_TIMEOUT_SECONDS // 30 + 2, settings.V22_JOB_MAX_ATTEMPTS),
+             timeout=settings.V22_JOB_TIMEOUT_SECONDS, keep_result=0),
         func(execute_v22_gsc_sync, name="execute_v22_gsc_sync", max_tries=1, timeout=270, keep_result=0),
+        # Claim RPC (30s) + bounded collection (240s) + terminal RPC (30s).
+        func(execute_v22_collection, name="execute_v22_collection", max_tries=1, timeout=315, keep_result=0),
+        func(execute_v22_ga4_collection, name="execute_v22_ga4_collection", max_tries=1, timeout=315, keep_result=0),
+        func(execute_v22_page_check, name="execute_v22_page_check", max_tries=1, timeout=105, keep_result=0),
         func(execute_v22_ga4_sync, name="execute_v22_ga4_sync", max_tries=1, timeout=270, keep_result=0),
         func(execute_v22_gbp_sync, name="execute_v22_gbp_sync", max_tries=1, timeout=270, keep_result=0),
         func(
@@ -707,7 +843,15 @@ class WorkerSettings:
         ),
     ]
     cron_jobs = [
+        cron(reconcile_v22_review_generations, name="reconcile_v22_review_generations", second={8,38}, unique=True, max_tries=1),
+        cron(reconcile_v22_first_service_preparation, name="reconcile_v22_first_service_preparation",
+             second=10, unique=True, max_tries=1),
+        cron(reconcile_v22_first_service_discovery, name="reconcile_v22_first_service_discovery",
+             second=5, unique=True, max_tries=1),
         cron(reconcile_v22_gsc_syncs, name="reconcile_v22_gsc_syncs", second={15, 45}, unique=True, max_tries=1),
+        cron(reconcile_v22_collections, name="reconcile_v22_collections", second={12,42}, unique=True, max_tries=1),
+        cron(reconcile_v22_ga4_collections, name="reconcile_v22_ga4_collections", second={17,47}, unique=True, max_tries=1),
+        cron(reconcile_v22_page_checks, name="reconcile_v22_page_checks", second={19,49}, unique=True, max_tries=1),
         cron(reconcile_v22_ga4_syncs, name="reconcile_v22_ga4_syncs", second={20, 50}, unique=True, max_tries=1),
         cron(reconcile_v22_gbp_syncs, name="reconcile_v22_gbp_syncs", second={25, 55}, unique=True, max_tries=1),
         cron(cleanup_v22_gbp_content, name="cleanup_v22_gbp_content", minute={7, 37}, second=5, unique=True, max_tries=1),
@@ -723,6 +867,14 @@ class WorkerSettings:
             reconcile_v22_jobs,
             name="reconcile_v22_jobs",
             second={0, 30},
+            unique=True,
+            max_tries=1,
+        ),
+        cron(
+            reconcile_v22_capability_orphans,
+            name="reconcile_v22_capability_orphans",
+            minute=set(range(60)),
+            second=55,
             unique=True,
             max_tries=1,
         ),

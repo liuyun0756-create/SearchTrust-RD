@@ -287,6 +287,11 @@ class CheckpointedSiteInventoryStage:
         checkpoints: JobCheckpoints,
         cost_ledger: JobCostLedger | None = None,
     ) -> SiteInventorySnapshot:
+        from app.jobs_v22.first_service_collection_models import FirstServiceCollectionRequest
+        # First-service collection is public-only. Its separately authorized,
+        # pinned GSC/GA4 payloads go to the service evaluator, not this legacy
+        # FirstPartySnapshotEnvelope page-priority adapter.
+        snapshots = [] if isinstance(request, FirstServiceCollectionRequest) else request.first_party_snapshots
         identity = {
             "site_url": str(request.business_identity.site_url),
             "primary_service": request.primary_service,
@@ -295,7 +300,7 @@ class CheckpointedSiteInventoryStage:
             "max_deep_pages": request.generation_limits.max_deep_pages,
             "gsc_snapshots": [
                 snapshot.payload_checksum
-                for snapshot in request.first_party_snapshots
+                for snapshot in snapshots
                 if snapshot.source_type == "gsc"
             ],
         }
@@ -332,7 +337,7 @@ class CheckpointedSiteInventoryStage:
             )
             scope = SiteScope.from_root(str(request.business_identity.site_url))
             gsc_priorities = gsc_priorities_from_snapshots(
-                request.first_party_snapshots,
+                snapshots,
                 scope=scope,
                 now=self.clock(),
             )

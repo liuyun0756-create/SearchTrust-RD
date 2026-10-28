@@ -1,0 +1,2368 @@
+[
+  {
+    "name": "one_to_two",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:481ee22efdf8354c1a4e3299617d9e0d57dfbfc945d371233d95ccb841b0452d",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 2,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 1,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 100.0
+        },
+        {
+          "after_count": 100,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 1.0
+        },
+        {
+          "after_count": 2,
+          "after_denominator": 100,
+          "after_rate_step_pp": 1.0,
+          "before_count": 1,
+          "before_denominator": 100,
+          "before_rate_step_pp": 1.0,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:481ee22efdf8354c1a4e3299617d9e0d57dfbfc945d371233d95ccb841b0452d",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 1.0,
+          "after": 2.0,
+          "before": 1.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 1.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 100.0,
+          "before": 100.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.01,
+          "after": 0.02,
+          "before": 0.01,
+          "metric": "ctr",
+          "percentage_point_change": 1.0,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "hundred_to_two_hundred",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:83c6a17dd370678601e027ef620509ad549a38ffb59ac0376624eb6e0898e659",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 200,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [],
+          "relative_step_pp": 1.0
+        },
+        {
+          "after_count": 10000,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 10000,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 0.01
+        },
+        {
+          "after_count": 200,
+          "after_denominator": 10000,
+          "after_rate_step_pp": 0.01,
+          "before_count": 100,
+          "before_denominator": 10000,
+          "before_rate_step_pp": 0.01,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:83c6a17dd370678601e027ef620509ad549a38ffb59ac0376624eb6e0898e659",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 100.0,
+          "after": 200.0,
+          "before": 100.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 1.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 10000.0,
+          "before": 10000.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.01,
+          "after": 0.02,
+          "before": 0.01,
+          "metric": "ctr",
+          "percentage_point_change": 1.0,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "zero_baseline",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:87c89dbaa6dd5cd34c01b764a733e0ed04ca46873870cc2d79fc4961f15628a1",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 4,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ZERO_BASELINE"
+          ],
+          "relative_step_pp": null
+        },
+        {
+          "after_count": 120,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [],
+          "relative_step_pp": 1.0
+        },
+        {
+          "after_count": 4,
+          "after_denominator": 120,
+          "after_rate_step_pp": 0.8333333333333334,
+          "before_count": 0,
+          "before_denominator": 100,
+          "before_rate_step_pp": 1.0,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:87c89dbaa6dd5cd34c01b764a733e0ed04ca46873870cc2d79fc4961f15628a1",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 4.0,
+          "after": 4.0,
+          "before": 0.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+          ],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 20.0,
+          "after": 120.0,
+          "before": 100.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.2,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.03333333333333333,
+          "after": 0.03333333333333333,
+          "before": 0.0,
+          "metric": "ctr",
+          "percentage_point_change": 3.3333333333333335,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "zero_after",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:d7a7fdc87b2b2cf7d6df966c1bf822c204218c2f8cd830dd0088b0066d06f14c",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 0,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 4,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [],
+          "relative_step_pp": 25.0
+        },
+        {
+          "after_count": 100,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 120,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [],
+          "relative_step_pp": 0.8333333333333334
+        },
+        {
+          "after_count": 0,
+          "after_denominator": 100,
+          "after_rate_step_pp": 1.0,
+          "before_count": 4,
+          "before_denominator": 120,
+          "before_rate_step_pp": 0.8333333333333334,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:d7a7fdc87b2b2cf7d6df966c1bf822c204218c2f8cd830dd0088b0066d06f14c",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": -4.0,
+          "after": 0.0,
+          "before": 4.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": -1.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": -20.0,
+          "after": 100.0,
+          "before": 120.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": -0.16666666666666666,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": -0.03333333333333333,
+          "after": 0.0,
+          "before": 0.03333333333333333,
+          "metric": "ctr",
+          "percentage_point_change": -3.3333333333333335,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "both_zero",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:6e7d8c7c8b84b506911eb506bae9dacb824817f92ddcc50288843eaebc90ac1b",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 0,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ZERO_BASELINE",
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": null
+        },
+        {
+          "after_count": 0,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "ZERO_BASELINE",
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": null
+        },
+        {
+          "after_count": 0,
+          "after_denominator": 0,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": 0,
+          "before_rate_step_pp": null,
+          "metric": "ctr",
+          "notes": [
+            "ZERO_IMPRESSIONS"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:6e7d8c7c8b84b506911eb506bae9dacb824817f92ddcc50288843eaebc90ac1b",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 0.0,
+          "after": 0.0,
+          "before": 0.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+          ],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 0.0,
+          "before": 0.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+          ],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": null,
+          "after": null,
+          "before": null,
+          "metric": "ctr",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_IMPRESSIONS_NO_CTR"
+          ],
+          "relative_change": null,
+          "state": "insufficient",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "no_before_impressions",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:a9dce2dbe7ef40c19b6d31c26f588bdb7f41c300d6f0dd93e7ff6e288ef43cc3",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 4,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ZERO_BASELINE"
+          ],
+          "relative_step_pp": null
+        },
+        {
+          "after_count": 100,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 0,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "ZERO_BASELINE"
+          ],
+          "relative_step_pp": null
+        },
+        {
+          "after_count": 4,
+          "after_denominator": 100,
+          "after_rate_step_pp": 1.0,
+          "before_count": 0,
+          "before_denominator": 0,
+          "before_rate_step_pp": null,
+          "metric": "ctr",
+          "notes": [
+            "ZERO_IMPRESSIONS"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:a9dce2dbe7ef40c19b6d31c26f588bdb7f41c300d6f0dd93e7ff6e288ef43cc3",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 4.0,
+          "after": 4.0,
+          "before": 0.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+          ],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 100.0,
+          "after": 100.0,
+          "before": 0.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+          ],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": null,
+          "after": 0.04,
+          "before": null,
+          "metric": "ctr",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_IMPRESSIONS_NO_CTR"
+          ],
+          "relative_change": null,
+          "state": "insufficient",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "no_after_impressions",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:449780f5602a7bd21299cef40a0a521a0ffc374f969e8ad2ba0fdb5ef6b1e2e7",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 0,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 4,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [],
+          "relative_step_pp": 25.0
+        },
+        {
+          "after_count": 0,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [],
+          "relative_step_pp": 1.0
+        },
+        {
+          "after_count": 0,
+          "after_denominator": 0,
+          "after_rate_step_pp": null,
+          "before_count": 4,
+          "before_denominator": 100,
+          "before_rate_step_pp": 1.0,
+          "metric": "ctr",
+          "notes": [
+            "ZERO_IMPRESSIONS"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:449780f5602a7bd21299cef40a0a521a0ffc374f969e8ad2ba0fdb5ef6b1e2e7",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": -4.0,
+          "after": 0.0,
+          "before": 4.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": -1.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": -100.0,
+          "after": 0.0,
+          "before": 100.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": -1.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": null,
+          "after": null,
+          "before": 0.04,
+          "metric": "ctr",
+          "percentage_point_change": null,
+          "reasons": [
+            "ZERO_IMPRESSIONS_NO_CTR"
+          ],
+          "relative_change": null,
+          "state": "insufficient",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "unchanged",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:36ea462ae697029f0332e9e3257d38799910109d12a38c13c12d27ac56290d9c",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 20,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 20,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 5.0
+        },
+        {
+          "after_count": 400,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 400,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 0.25
+        },
+        {
+          "after_count": 20,
+          "after_denominator": 400,
+          "after_rate_step_pp": 0.25,
+          "before_count": 20,
+          "before_denominator": 400,
+          "before_rate_step_pp": 0.25,
+          "metric": "ctr",
+          "notes": [
+            "UNCHANGED_CTR"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:36ea462ae697029f0332e9e3257d38799910109d12a38c13c12d27ac56290d9c",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 0.0,
+          "after": 20.0,
+          "before": 20.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 400.0,
+          "before": 400.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 0.05,
+          "before": 0.05,
+          "metric": "ctr",
+          "percentage_point_change": 0.0,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "equal_ctr_different_volume",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:613a771f8cfa9857339e0f32b443873906ce3e35bff7abc70e99ba07c24abe4a",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 40,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 10,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [],
+          "relative_step_pp": 10.0
+        },
+        {
+          "after_count": 800,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 200,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [],
+          "relative_step_pp": 0.5
+        },
+        {
+          "after_count": 40,
+          "after_denominator": 800,
+          "after_rate_step_pp": 0.125,
+          "before_count": 10,
+          "before_denominator": 200,
+          "before_rate_step_pp": 0.5,
+          "metric": "ctr",
+          "notes": [
+            "UNCHANGED_CTR"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:613a771f8cfa9857339e0f32b443873906ce3e35bff7abc70e99ba07c24abe4a",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 30.0,
+          "after": 40.0,
+          "before": 10.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 3.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 600.0,
+          "after": 800.0,
+          "before": 200.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 3.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 0.05,
+          "before": 0.05,
+          "metric": "ctr",
+          "percentage_point_change": 0.0,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "same_clicks_different_ctr",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:f5fc401ef717aa830978b3edc1a6b9ab8d7d7c4b735b8628ccd5ccfebcd5a207",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 10,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 10,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 10.0
+        },
+        {
+          "after_count": 10000,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [],
+          "relative_step_pp": 1.0
+        },
+        {
+          "after_count": 10,
+          "after_denominator": 10000,
+          "after_rate_step_pp": 0.01,
+          "before_count": 10,
+          "before_denominator": 100,
+          "before_rate_step_pp": 1.0,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:f5fc401ef717aa830978b3edc1a6b9ab8d7d7c4b735b8628ccd5ccfebcd5a207",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 0.0,
+          "after": 10.0,
+          "before": 10.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 9900.0,
+          "after": 10000.0,
+          "before": 100.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 99.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": -0.099,
+          "after": 0.001,
+          "before": 0.1,
+          "metric": "ctr",
+          "percentage_point_change": -9.9,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "full_ctr",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:c2d29baf1f126a934701ee5e15f0c66c2f389260de7a020e1dd3d355c1390975",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 3,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 2,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 50.0
+        },
+        {
+          "after_count": 3,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 2,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 50.0
+        },
+        {
+          "after_count": 3,
+          "after_denominator": 3,
+          "after_rate_step_pp": 33.333333333333336,
+          "before_count": 2,
+          "before_denominator": 2,
+          "before_rate_step_pp": 50.0,
+          "metric": "ctr",
+          "notes": [
+            "UNCHANGED_CTR"
+          ],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:c2d29baf1f126a934701ee5e15f0c66c2f389260de7a020e1dd3d355c1390975",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 1.0,
+          "after": 3.0,
+          "before": 2.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.5,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 1.0,
+          "after": 3.0,
+          "before": 2.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.5,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 1.0,
+          "before": 1.0,
+          "metric": "ctr",
+          "percentage_point_change": 0.0,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "falling",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:6def194e0109d397c3d60f1d6f2c0f93b4e0f7dba2a8e9911123f99b25e4d8df",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 19,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 20,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 5.0
+        },
+        {
+          "after_count": 400,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 400,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 0.25
+        },
+        {
+          "after_count": 19,
+          "after_denominator": 400,
+          "after_rate_step_pp": 0.25,
+          "before_count": 20,
+          "before_denominator": 400,
+          "before_rate_step_pp": 0.25,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:6def194e0109d397c3d60f1d6f2c0f93b4e0f7dba2a8e9911123f99b25e4d8df",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": -1.0,
+          "after": 19.0,
+          "before": 20.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": -0.05,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 400.0,
+          "before": 400.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": -0.0025000000000000022,
+          "after": 0.0475,
+          "before": 0.05,
+          "metric": "ctr",
+          "percentage_point_change": -0.2500000000000002,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "large_counts",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:2f57685d3e856821b51d54cdfd03f2caaeb3c2286a3233ca09ef0324c9328272",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 1000000001,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 1000000000,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 1e-07
+        },
+        {
+          "after_count": 100000000000,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 100000000000,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 1e-09
+        },
+        {
+          "after_count": 1000000001,
+          "after_denominator": 100000000000,
+          "after_rate_step_pp": 1e-09,
+          "before_count": 1000000000,
+          "before_denominator": 100000000000,
+          "before_rate_step_pp": 1e-09,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:2f57685d3e856821b51d54cdfd03f2caaeb3c2286a3233ca09ef0324c9328272",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 1.0,
+          "after": 1000000001.0,
+          "before": 1000000000.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 1e-09,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 100000000000.0,
+          "before": 100000000000.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 9.999999092680234e-12,
+          "after": 0.01000000001,
+          "before": 0.01,
+          "metric": "ctr",
+          "percentage_point_change": 9.999999092680234e-10,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "safe_integer_limit",
+    "reading": {
+      "blocked_reasons": [],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:666b2533631eac57b12387e07491a1d08bb4507bc4ff2fc0bd5525c94102b843",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [
+        {
+          "after_count": 9007199254740991,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 9007199254740990,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "clicks",
+          "notes": [
+            "ONE_COUNT_DIFFERENCE"
+          ],
+          "relative_step_pp": 1.1102230246251569e-14
+        },
+        {
+          "after_count": 9007199254740991,
+          "after_denominator": null,
+          "after_rate_step_pp": null,
+          "before_count": 9007199254740991,
+          "before_denominator": null,
+          "before_rate_step_pp": null,
+          "metric": "impressions",
+          "notes": [
+            "UNCHANGED_COUNT"
+          ],
+          "relative_step_pp": 1.1102230246251567e-14
+        },
+        {
+          "after_count": 9007199254740991,
+          "after_denominator": 9007199254740991,
+          "after_rate_step_pp": 1.1102230246251567e-14,
+          "before_count": 9007199254740990,
+          "before_denominator": 9007199254740991,
+          "before_rate_step_pp": 1.1102230246251567e-14,
+          "metric": "ctr",
+          "notes": [],
+          "relative_step_pp": null
+        }
+      ],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "descriptive_only"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": "2026-09-29"
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-08-31",
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:1d9467bcd64cd3563286ffc9695f799239cd0931614f8e46ad16755d4caab9d5",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": "2026-08-31"
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:666b2533631eac57b12387e07491a1d08bb4507bc4ff2fc0bd5525c94102b843",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:70d4e4bdf971e9ecf202c56740f6a76f5fd043912cd38c622a8ed41b9d17e86e",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [
+        {
+          "absolute_change": 1.0,
+          "after": 9007199254740991.0,
+          "before": 9007199254740990.0,
+          "metric": "clicks",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 1.1102230246251568e-16,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 0.0,
+          "after": 9007199254740991.0,
+          "before": 9007199254740991.0,
+          "metric": "impressions",
+          "percentage_point_change": null,
+          "reasons": [],
+          "relative_change": 0.0,
+          "state": "comparable",
+          "unit": "count"
+        },
+        {
+          "absolute_change": 1.1102230246251565e-16,
+          "after": 1.0,
+          "before": 0.9999999999999999,
+          "metric": "ctr",
+          "percentage_point_change": 1.1102230246251565e-14,
+          "reasons": [],
+          "relative_change": null,
+          "state": "comparable",
+          "unit": "ratio"
+        }
+      ],
+      "reasons": [],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "missing_source",
+    "reading": {
+      "blocked_reasons": [
+        "SNAPSHOT_MISSING"
+      ],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:e61c5da76ad85ed3aecf8d21646fd08eed57c9e1404be46d6bb502291c43eb71",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "unavailable"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": "2026-10-19",
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:12c714ef968bc2ba6f911f4e508c355be989467fb02976d3147284d1b61dd139",
+        "resource_id": "sc-domain:example.test",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": null
+      },
+      "before_source": null,
+      "causal_attribution": false,
+      "checksum": "sha256:e61c5da76ad85ed3aecf8d21646fd08eed57c9e1404be46d6bb502291c43eb71",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:174e3a2593249488bf7c017a74c1de8b3bb246c8735fefe651a217d0c4da0a66",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GSC_QUERY_PRIVACY_FILTERING",
+        "GSC_WEB_ONLY"
+      ],
+      "metrics": [],
+      "reasons": [
+        "SNAPSHOT_MISSING"
+      ],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "organic_search",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "gsc"
+      },
+      "state": "insufficient",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  },
+  {
+    "name": "ga4_withheld",
+    "reading": {
+      "blocked_reasons": [
+        "GA4_COMPLETENESS_NOT_ATTESTED",
+        "GA4_EVENT_HISTORY_NOT_VERIFIED"
+      ],
+      "calibrated_threshold": null,
+      "causal_attribution": false,
+      "comparison_checksum": "sha256:fd2699b69825beb817b7df2d9614913cd06218c342895978a8a0ae2ab4f10e94",
+      "effect_conclusion": null,
+      "inference_status": "not_calibrated",
+      "metrics": [],
+      "ruleset_version": "v22_metric_resolution_v1",
+      "schema_version": "v22_metric_reading_v1",
+      "state": "unavailable"
+    },
+    "result": {
+      "action_id": "ac-1",
+      "after_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": null,
+        "fetched_at": "2026-10-21T08:00:00Z",
+        "payload_checksum": "sha256:be1ee6e59eafe1f8266475ee7b5fb43d1ff2d52a85323d37b44beb2c73c402f7",
+        "resource_id": "properties/12345",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e22",
+        "used_through": null
+      },
+      "before_source": {
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "data_cutoff": null,
+        "fetched_at": "2026-09-02T08:00:00Z",
+        "payload_checksum": "sha256:65e8f7cff88f716ba5c71f67f3de7a1574729d9fee87ab292cd35e91b3675d26",
+        "resource_id": "properties/12345",
+        "snapshot_id": "00000000-0000-0000-0000-000000004e21",
+        "used_through": null
+      },
+      "causal_attribution": false,
+      "checksum": "sha256:fd2699b69825beb817b7df2d9614913cd06218c342895978a8a0ae2ab4f10e94",
+      "effect_conclusion": null,
+      "effect_eligibility": "pending_metric_specific_calibration",
+      "evaluated_at": "2026-10-22T08:00:00Z",
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "input_checksum": "sha256:43ea1406aeb52c762ea10eaad025357c994b6acc00998d6fd534a342125e37a6",
+      "limitations": [
+        "Implementation is user-reported; this comparison does not verify the live page.",
+        "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+        "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+        "Concurrent changes have not been checked.",
+        "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+        "GA4_HOST_FILTERED",
+        "GA4_ESTIMATED_COUNTS"
+      ],
+      "metrics": [],
+      "reasons": [
+        "GA4_COMPLETENESS_NOT_ATTESTED",
+        "GA4_EVENT_HISTORY_NOT_VERIFIED"
+      ],
+      "ruleset_version": "v22_comparison_descriptive_v1",
+      "schema_version": "v22_comparison_result_v1",
+      "scope": {
+        "channel": "all",
+        "dimension": "property",
+        "filters": [],
+        "key": null,
+        "source": "ga4"
+      },
+      "state": "not_comparable",
+      "windows": {
+        "after": {
+          "end": "2026-09-29",
+          "start": "2026-09-02"
+        },
+        "before": {
+          "end": "2026-08-31",
+          "start": "2026-08-04"
+        },
+        "days": 28,
+        "excluded": {
+          "end": "2026-09-01",
+          "start": "2026-09-01"
+        },
+        "timezone": "America/Los_Angeles"
+      }
+    }
+  }
+]

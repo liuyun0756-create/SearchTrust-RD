@@ -1,0 +1,9 @@
+{
+  "capability_request": {
+    "case_id": "00000000-0000-0000-0000-000000000111",
+    "input_checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifest_id": "00000000-0000-0000-0000-000000000222",
+    "report_type": "prospect"
+  },
+  "schema_version": "v22_capability_request_envelope_v1"
+}

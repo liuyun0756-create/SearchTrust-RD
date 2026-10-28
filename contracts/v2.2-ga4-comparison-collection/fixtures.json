@@ -1,0 +1,1872 @@
+[
+  {
+    "collection": {
+      "checksum": "sha256:1ac85066ca2828760ed990c31838c8eb4cb899e2520a33cb6aa914570182182a",
+      "plan": {
+        "action_id": "ac-1",
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "checksum": "sha256:079de88b8f7c73775af7727b6e0649464b13a5533d581c452f5fc58b20c9bf37",
+        "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+        "expected_report_requests": 6,
+        "implementation": {
+          "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+          "id": "b0000000-0000-4000-8000-000000000002",
+          "revision": 1
+        },
+        "max_configuration_requests": 20,
+        "prepared_at": "2026-12-15T08:00:00Z",
+        "report_id": "00000000-0000-0000-0000-000000000005",
+        "schema_version": "v22_ga4_comparison_plan_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "state": "collectable",
+        "user_id": "00000000-0000-0000-0000-000000000001",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "qualification": {
+        "causal_attribution": false,
+        "complete_daily_observations": true,
+        "effect_conclusion": null,
+        "event_configuration": "same_at_collection",
+        "event_history": "unverified",
+        "metrics": [
+          {
+            "metric": "sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engaged_sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engagement_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "key_events",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "session_key_event_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED"
+            ],
+            "state": "not_comparable"
+          }
+        ],
+        "observation_checksum": "sha256:8b173000f18eb0d56b2bfc37a04fbaac97a35770939aed5866eef2e5c44132ad",
+        "processing_completeness": "not_attested",
+        "ruleset_version": "v22_ga4_qualification_foundation_v1"
+      },
+      "schema_version": "v22_ga4_comparison_collection_v1",
+      "snapshot": {
+        "completed_at": "2026-12-15T08:00:00Z",
+        "configuration_after": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_EVENT",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "configuration_before": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_EVENT",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "current": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-09-02",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-03",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-29",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-09-29",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-09-02",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "previous": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-08-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-29",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-30",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-31",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-08-31",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-08-04",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "schema_version": "ga4_comparison_observation_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "started_at": "2026-12-15T08:00:00Z",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "state": "collected"
+    },
+    "name": "observed_not_final"
+  },
+  {
+    "collection": {
+      "checksum": "sha256:e246595316756db79c2ef8ce3b29543a9d10fba24c75aa62e4137609f038e256",
+      "plan": {
+        "action_id": "ac-1",
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "checksum": "sha256:079de88b8f7c73775af7727b6e0649464b13a5533d581c452f5fc58b20c9bf37",
+        "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+        "expected_report_requests": 6,
+        "implementation": {
+          "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+          "id": "b0000000-0000-4000-8000-000000000002",
+          "revision": 1
+        },
+        "max_configuration_requests": 20,
+        "prepared_at": "2026-12-15T08:00:00Z",
+        "report_id": "00000000-0000-0000-0000-000000000005",
+        "schema_version": "v22_ga4_comparison_plan_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "state": "collectable",
+        "user_id": "00000000-0000-0000-0000-000000000001",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "qualification": {
+        "causal_attribution": false,
+        "complete_daily_observations": false,
+        "effect_conclusion": null,
+        "event_configuration": "same_at_collection",
+        "event_history": "unverified",
+        "metrics": [
+          {
+            "metric": "sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_DAILY_OBSERVATIONS_INCOMPLETE"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engaged_sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_DAILY_OBSERVATIONS_INCOMPLETE"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engagement_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_DAILY_OBSERVATIONS_INCOMPLETE"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "key_events",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_DAILY_OBSERVATIONS_INCOMPLETE",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "session_key_event_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_DAILY_OBSERVATIONS_INCOMPLETE",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED"
+            ],
+            "state": "not_comparable"
+          }
+        ],
+        "observation_checksum": "sha256:ba535f386d1d559d3b87012b8d5300f065a40a13b7bf205cc0275e6b468feb73",
+        "processing_completeness": "not_attested",
+        "ruleset_version": "v22_ga4_qualification_foundation_v1"
+      },
+      "schema_version": "v22_ga4_comparison_collection_v1",
+      "snapshot": {
+        "completed_at": "2026-12-15T08:00:00Z",
+        "configuration_after": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_EVENT",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "configuration_before": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_EVENT",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "current": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-09-02",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-03",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-09-29",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-09-02",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "previous": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-08-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-29",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-30",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-31",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-08-31",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-08-04",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "schema_version": "ga4_comparison_observation_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "started_at": "2026-12-15T08:00:00Z",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "state": "collected"
+    },
+    "name": "missing_dates"
+  },
+  {
+    "collection": {
+      "checksum": "sha256:fcc0d78580dfff562a0d8089b989dff7e2491c703496ac04ff044dc8a3fe6538",
+      "plan": {
+        "action_id": "ac-1",
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "checksum": "sha256:079de88b8f7c73775af7727b6e0649464b13a5533d581c452f5fc58b20c9bf37",
+        "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+        "expected_report_requests": 6,
+        "implementation": {
+          "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+          "id": "b0000000-0000-4000-8000-000000000002",
+          "revision": 1
+        },
+        "max_configuration_requests": 20,
+        "prepared_at": "2026-12-15T08:00:00Z",
+        "report_id": "00000000-0000-0000-0000-000000000005",
+        "schema_version": "v22_ga4_comparison_plan_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "state": "collectable",
+        "user_id": "00000000-0000-0000-0000-000000000001",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "qualification": {
+        "causal_attribution": false,
+        "complete_daily_observations": true,
+        "effect_conclusion": null,
+        "event_configuration": "changed_during_collection",
+        "event_history": "unverified",
+        "metrics": [
+          {
+            "metric": "sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engaged_sessions",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "engagement_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "key_events",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED",
+              "GA4_EVENT_CONFIGURATION_CHANGED"
+            ],
+            "state": "not_comparable"
+          },
+          {
+            "metric": "session_key_event_rate",
+            "reasons": [
+              "GA4_COMPLETENESS_NOT_ATTESTED",
+              "GA4_EVENT_HISTORY_NOT_VERIFIED",
+              "GA4_EVENT_CONFIGURATION_CHANGED"
+            ],
+            "state": "not_comparable"
+          }
+        ],
+        "observation_checksum": "sha256:fffe7d967913217b3114bc41cd45146706783acf44fcaddfbc8466008eb74ff9",
+        "processing_completeness": "not_attested",
+        "ruleset_version": "v22_ga4_qualification_foundation_v1"
+      },
+      "schema_version": "v22_ga4_comparison_collection_v1",
+      "snapshot": {
+        "completed_at": "2026-12-15T08:00:00Z",
+        "configuration_after": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_SESSION",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "configuration_before": {
+          "events": [
+            {
+              "counting_method": "ONCE_PER_EVENT",
+              "create_time": "2026-01-01T00:00:00Z",
+              "custom": true,
+              "deletable": true,
+              "event_name": "contact"
+            }
+          ],
+          "observed_at": "2026-12-15T08:00:00Z"
+        },
+        "current": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-09-02",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-03",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-09-29",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-09-29",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-09-02",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "previous": {
+          "dates": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "date": "2026-08-04",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-05",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-06",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-07",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-08",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-09",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-10",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-11",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-12",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-13",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-14",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-15",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-16",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-17",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-18",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-19",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-20",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-21",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-22",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-23",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-24",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-25",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-26",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-27",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-28",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-29",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-30",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              },
+              {
+                "date": "2026-08-31",
+                "engaged_sessions": 7,
+                "key_events": 2.0,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          },
+          "end_date": "2026-08-31",
+          "key_events": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "event_name": "contact",
+                "key_events": 2.0
+              }
+            ],
+            "truncated": false
+          },
+          "start_date": "2026-08-04",
+          "totals": {
+            "metadata": {
+              "data_loss_from_other_row": false,
+              "empty_reason": null,
+              "metric_restrictions": [],
+              "sampling": [],
+              "subject_to_thresholding": false,
+              "time_zone": "America/Los_Angeles"
+            },
+            "rows": [
+              {
+                "active_users": 8,
+                "average_session_duration": 42.5,
+                "engaged_sessions": 7,
+                "engagement_rate": 0.7,
+                "key_events": 2.0,
+                "screen_page_views": 15,
+                "session_key_event_rate": 0.2,
+                "sessions": 10
+              }
+            ],
+            "truncated": false
+          }
+        },
+        "schema_version": "ga4_comparison_observation_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "started_at": "2026-12-15T08:00:00Z",
+        "windows": {
+          "after": {
+            "end": "2026-09-29",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-08-04"
+          },
+          "days": 28,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "state": "collected"
+    },
+    "name": "changed_configuration"
+  },
+  {
+    "collection": {
+      "checksum": "sha256:9dd665183d1751850723a70f51663733b30410f0a92960ac60abe0a58dd56b3f",
+      "plan": {
+        "action_id": "ac-1",
+        "binding_id": "00000000-0000-0000-0000-000000004e23",
+        "case_id": "00000000-0000-0000-0000-000000000002",
+        "checksum": "sha256:357d56fc81f6d1bb989a7244dbf9e149cb4fe42e0811b84a81b9dc591914ef04",
+        "delivery_revision_id": "b0000000-0000-4000-8000-000000000001",
+        "expected_report_requests": 0,
+        "implementation": {
+          "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+          "id": "b0000000-0000-4000-8000-000000000002",
+          "revision": 1
+        },
+        "max_configuration_requests": 0,
+        "prepared_at": "2026-12-01T07:59:59Z",
+        "report_id": "00000000-0000-0000-0000-000000000005",
+        "schema_version": "v22_ga4_comparison_plan_v1",
+        "scope": {
+          "channel": "organic_search",
+          "hosts": [
+            "example.test"
+          ],
+          "landing_path": null,
+          "resource_id": "properties/12345",
+          "timezone": "America/Los_Angeles"
+        },
+        "state": "waiting",
+        "user_id": "00000000-0000-0000-0000-000000000001",
+        "windows": {
+          "after": {
+            "end": "2026-11-30",
+            "start": "2026-09-02"
+          },
+          "before": {
+            "end": "2026-08-31",
+            "start": "2026-06-03"
+          },
+          "days": 90,
+          "excluded": {
+            "end": "2026-09-01",
+            "start": "2026-09-01"
+          },
+          "timezone": "America/Los_Angeles"
+        }
+      },
+      "qualification": null,
+      "schema_version": "v22_ga4_comparison_collection_v1",
+      "snapshot": null,
+      "state": "waiting"
+    },
+    "name": "waiting"
+  }
+]

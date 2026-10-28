@@ -1,0 +1,255 @@
+{
+  "action_state": "actions_supported",
+  "actions": [
+    {
+      "completion": [
+        "Every targeted URL has a new eligible snapshot that no longer triggers the selected HTTP or explicit noindex finding."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn_f03f976d2dcd913d4a3fad57da68fb73dde5c323cb855ed5f1d0a1af62fe3a30"
+      ],
+      "id": "ac_restore_site_ff871a9b916a",
+      "materials": [
+        {
+          "body": "Observed: The saved response for https://example.test/ had HTTP status 503.\n\nInspect the recorded response and explicit indexing directive at each target. Confirm the intended policy, correct only an unintended condition and capture a new response. Preserve intentional redirects and exclusions.",
+          "confirmation_items": [],
+          "evidence_ids": [
+            "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132",
+            "ev_917f075c7ecd1e675e98ef3448b21450266533a9b2416f45ae3ca6f1e50f1d72"
+          ],
+          "id": "ac_restore_site_ff871a9b916a-material",
+          "kind": "technical_check",
+          "readiness": "instructions",
+          "target": "https://example.test/",
+          "title": "Response and indexing check"
+        }
+      ],
+      "review": "New bound snapshots no longer trigger the selected condition.",
+      "steps": [
+        "Target: https://example.test/",
+        "Review each bound page finding and confirm the intended response and indexing policy.",
+        "Correct only the server response or explicit indexing directive confirmed as unintended.",
+        "Recheck every targeted URL and retain new bound evidence."
+      ],
+      "target": "https://example.test/",
+      "title": "Response and indexing check"
+    }
+  ],
+  "changes": [],
+  "evidence": [
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/check_status",
+      "id": "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "checked"
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/status_code",
+      "id": "ev_917f075c7ecd1e675e98ef3448b21450266533a9b2416f45ae3ca6f1e50f1d72",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 503
+    }
+  ],
+  "findings": [
+    {
+      "classification": "fact",
+      "comparison_scope": "Austin, TX · saved public sample",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_7b4f135199de1c3e219d5950bffcd6aa6c21f05fb0ee9e90f7734fb5b0a87132",
+        "ev_917f075c7ecd1e675e98ef3448b21450266533a9b2416f45ae3ca6f1e50f1d72"
+      ],
+      "id": "fn_f03f976d2dcd913d4a3fad57da68fb73dde5c323cb855ed5f1d0a1af62fe3a30",
+      "impact_path": "An unintended HTTP error can prevent a visitor reaching the intended page.",
+      "interpretation": "supported",
+      "judgment": "Check the saved response before changing the page.",
+      "limitations": [
+        "A saved HTTP error is not proof that the URL is permanently inaccessible.",
+        "These observations concern the saved sample only, not complete site or market coverage."
+      ],
+      "observed_at": "2026-08-28T08:00:00Z",
+      "observed_fact": "The saved response for https://example.test/ had HTTP status 503.",
+      "rule_id": "v22_public.site_http_error",
+      "rule_version": "1.0.0",
+      "severity": "high",
+      "target": "https://example.test/"
+    }
+  ],
+  "generated_at": "2026-08-30T00:00:00Z",
+  "id": "00000000-0000-0000-0000-000000000386",
+  "input_manifest": {
+    "business": {
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "competitor_sites": [
+        "https://competitor-1.test/",
+        "https://competitor-2.test/",
+        "https://competitor-3.test/"
+      ],
+      "confirmation_source": "seo_confirmation",
+      "confirmed_at": "2026-08-29T00:00:00Z",
+      "id": "00000000-0000-0000-0000-000000000388",
+      "primary_service": "Plumber",
+      "priority": null,
+      "revision": 1,
+      "site_url": "https://example.test/",
+      "target_market": "Austin, TX",
+      "target_pages": [],
+      "user_id": "00000000-0000-0000-0000-000000000387"
+    },
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "generation_input_checksum": "sha256:23d2cdcc690f9e825ecf2d1f281ed353c1a70fff18e12a202de8c2b7b257101c",
+    "id": "00000000-0000-0000-0000-000000000385",
+    "implementation": null,
+    "input_checksum": "sha256:175c3f3b9388881096118d1ac3e5cbc2cd0fa5e84ac51efbea952a8659021714",
+    "job_id": "00000000-0000-0000-0000-000000000386",
+    "mode": "acquisition",
+    "previous_report": null,
+    "ruleset_version": "v22_capability_public_v3",
+    "schema_version": "v22_analysis_input_v1",
+    "snapshots": [
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c56059cca6e2c7a274346a232b29f9f67cbc54ea4aac090fa731517c9b509452",
+        "schema_version": "site_inventory_snapshot_v1",
+        "scope": "Saved site sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_kind": "site"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T12:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:4bce7bc78f114d465f8c431cc19c111e0fc6fcd4e0528f5e71c80504552039d0",
+        "schema_version": "serp_market_snapshot_v1",
+        "scope": "Saved serp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000c",
+        "source_kind": "serp"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-30T00:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c5d780ee3554b73da357113086aa8d0ad4ed225e752a4ddee334f61b60c2311b",
+        "schema_version": "competitor_collection_snapshot_v1",
+        "scope": "Saved competitor sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000d",
+        "source_kind": "competitor"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:30:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:3677ae7933c9e9ce2067d6a6ac73678b1614b03a2afc5520276c0d27d63312f9",
+        "schema_version": "customer_public_gbp_snapshot_v1",
+        "scope": "Saved public_gbp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_kind": "public_gbp"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000387"
+  },
+  "limitations": [
+    "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+    "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+    "v22_public.competitor_sample_page_type_gap: insufficient_sample",
+    "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
+    "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
+    "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
+    "v22_public.market_site_domain_unobserved: insufficient_sample",
+    "v22_public.site_duplicate_title: field_not_observed",
+    "v22_public.site_explicit_noindex: field_not_observed",
+    "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+  ],
+  "prioritization": {
+    "action_order": [
+      "ac_restore_site_ff871a9b916a"
+    ],
+    "business_priority": null,
+    "candidates": [
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "Austin, TX · saved public sample"
+        ],
+        "confidence": "medium",
+        "evidence_support": "supported",
+        "execution": "instructions_only",
+        "explanation": "Check access and indexing before optimizing affected pages.",
+        "impact_paths": [
+          "An unintended HTTP error can prevent a visitor reaching the intended page."
+        ],
+        "input": {
+          "action_id": "ac_restore_site_ff871a9b916a",
+          "dependencies": [],
+          "finding_ids": [
+            "fn_f03f976d2dcd913d4a3fad57da68fb73dde5c323cb855ed5f1d0a1af62fe3a30"
+          ],
+          "material_kinds": [
+            "technical_check"
+          ],
+          "readiness": [
+            "instructions"
+          ],
+          "target": "https://example.test/"
+        },
+        "prerequisite": "access_indexing",
+        "reason_codes": [
+          "prerequisite_access_indexing",
+          "business_unknown",
+          "evidence_supported",
+          "execution_instructions_only",
+          "severity_high",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown"
+        ],
+        "selected_order": 1,
+        "severity": "high"
+      }
+    ],
+    "input_checksum": "sha256:175c3f3b9388881096118d1ac3e5cbc2cd0fa5e84ac51efbea952a8659021714",
+    "limitations": [
+      "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+    ],
+    "rules_version": "v22_business_priority_v2",
+    "target_pages": []
+  },
+  "report_type": "prospect",
+  "schema_version": "2.2.2",
+  "settlement_policy": "one_credit_per_completed_analysis",
+  "summary": "The saved response for https://example.test/ had HTTP status 503. Check the saved response before changing the page.",
+  "title": "Plumber",
+  "version": 1
+}

@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "MetricReading": {
+      "additionalProperties": false,
+      "properties": {
+        "after_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "After Count",
+          "type": "integer"
+        },
+        "after_denominator": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Denominator"
+        },
+        "after_rate_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Rate Step Pp"
+        },
+        "before_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Before Count",
+          "type": "integer"
+        },
+        "before_denominator": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Denominator"
+        },
+        "before_rate_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before Rate Step Pp"
+        },
+        "metric": {
+          "enum": [
+            "clicks",
+            "impressions",
+            "ctr"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "enum": [
+              "ZERO_BASELINE",
+              "ONE_COUNT_DIFFERENCE",
+              "UNCHANGED_COUNT",
+              "ZERO_IMPRESSIONS",
+              "UNCHANGED_CTR"
+            ],
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "relative_step_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative Step Pp"
+        }
+      },
+      "required": [
+        "metric",
+        "before_count",
+        "after_count",
+        "before_denominator",
+        "after_denominator",
+        "relative_step_pp",
+        "before_rate_step_pp",
+        "after_rate_step_pp",
+        "notes"
+      ],
+      "title": "MetricReading",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "blocked_reasons": {
+      "items": {
+        "maxLength": 200,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "title": "Blocked Reasons",
+      "type": "array"
+    },
+    "calibrated_threshold": {
+      "title": "Calibrated Threshold",
+      "type": "null"
+    },
+    "causal_attribution": {
+      "const": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "comparison_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Comparison Checksum",
+      "type": "string"
+    },
+    "effect_conclusion": {
+      "title": "Effect Conclusion",
+      "type": "null"
+    },
+    "inference_status": {
+      "const": "not_calibrated",
+      "title": "Inference Status",
+      "type": "string"
+    },
+    "metrics": {
+      "items": {
+        "$ref": "#/$defs/MetricReading"
+      },
+      "maxItems": 3,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "ruleset_version": {
+      "const": "v22_metric_resolution_v1",
+      "title": "Ruleset Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "v22_metric_reading_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "unavailable",
+        "descriptive_only"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ruleset_version",
+    "comparison_checksum",
+    "state",
+    "blocked_reasons",
+    "metrics",
+    "inference_status",
+    "calibrated_threshold",
+    "effect_conclusion",
+    "causal_attribution"
+  ],
+  "title": "MetricReadingGuide",
+  "type": "object"
+}

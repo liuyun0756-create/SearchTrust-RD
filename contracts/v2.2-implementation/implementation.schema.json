@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "ImplementationEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "implemented_on": {
+          "pattern": "^[1-9]\\d{3}-\\d{2}-\\d{2}$",
+          "title": "Implemented On",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Note"
+        },
+        "responsible": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Responsible"
+        },
+        "scope": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Scope",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^(UTC|[A-Za-z_+-]+(?:/[A-Za-z0-9_+.-]+)+)$",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "scope",
+        "implemented_on",
+        "timezone",
+        "note",
+        "responsible"
+      ],
+      "title": "ImplementationEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Checksum",
+      "type": "string"
+    },
+    "delivery_revision": {
+      "exclusiveMaximum": 2147483647,
+      "minimum": 1,
+      "title": "Delivery Revision",
+      "type": "integer"
+    },
+    "delivery_revision_id": {
+      "format": "uuid",
+      "title": "Delivery Revision Id",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ImplementationEntry"
+      },
+      "maxItems": 3,
+      "title": "Entries",
+      "type": "array"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "report_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Report Checksum",
+      "type": "string"
+    },
+    "report_id": {
+      "format": "uuid",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "revision": {
+      "exclusiveMaximum": 2147483647,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "v22_implementation_record_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "user_id",
+    "case_id",
+    "report_id",
+    "report_checksum",
+    "delivery_revision_id",
+    "delivery_revision",
+    "revision",
+    "recorded_at",
+    "entries",
+    "checksum"
+  ],
+  "title": "ImplementationRecord",
+  "type": "object"
+}

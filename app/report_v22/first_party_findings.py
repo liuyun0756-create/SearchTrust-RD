@@ -182,6 +182,15 @@ def build_first_party_findings(value: FirstPartyFindingsInput | dict) -> FirstPa
         request = FirstPartyFindingsInput.model_validate_json(canonical_json_bytes(raw))
     except (ValidationError, TypeError, ValueError):
         raise FirstPartyFindingsError("INPUT_INVALID") from None
+    return _evaluate_first_party_request(request)
+
+
+def _evaluate_first_party_request(request: FirstPartyFindingsInput) -> FirstPartyFindingsResult:
+    """Shared rule core; entry points must first validate their own input model.
+
+    The legacy entry above still requires a parent report. Capability service
+    input can explicitly have no parent, without manufacturing a report ID.
+    """
     if len(canonical_json_bytes(request)) > request.limits.max_bytes:
         raise FirstPartyFindingsError("LIMIT_EXCEEDED")
 

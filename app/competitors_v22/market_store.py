@@ -76,12 +76,16 @@ class SharedMarketSnapshotStore:
         existing = await self.get(input_digest=input_digest, now=now)
         if existing is not None:
             return existing
+        checksum = request_digest(snapshot.model_dump(mode="json"))
         envelope = SharedMarketSnapshot(
             schema_version="competitor_shared_market_v1",
-            snapshot_id=uuid5(NAMESPACE_URL, f"searchtrust:v22:{input_digest}"),
+            # The lookup key represents a market, not one observation forever.
+            # A new capture (including its original job/times) gets a new ID;
+            # existing cache entries above retain their exact historical identity.
+            snapshot_id=uuid5(NAMESPACE_URL, f"searchtrust:v22:market:{input_digest}:{checksum}"),
             source_job_id=snapshot.job_id,
             input_digest=input_digest,
-            snapshot_checksum=request_digest(snapshot.model_dump(mode="json")),
+            snapshot_checksum=checksum,
             created_at=now,
             expires_at=now + timedelta(seconds=self.ttl_seconds),
             snapshot=snapshot,

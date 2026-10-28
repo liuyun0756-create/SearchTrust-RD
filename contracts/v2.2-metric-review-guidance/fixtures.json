@@ -1,0 +1,4518 @@
+{
+  "cases": {
+    "available": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:73d8dab8a31d54da29bb72d22abbd69f566519da1b2041b3dd9164484d64ca4c",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 1120.0,
+            "after": 6720,
+            "after_denominator": null,
+            "before": 5600,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 56.0,
+            "after": 336,
+            "after_denominator": null,
+            "before": 280,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 336,
+            "after_denominator": 6720,
+            "before": 280,
+            "before_denominator": 5600,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "blocked": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [],
+          "reading": [],
+          "reasons": [
+            "SOURCE_BINDING_CHANGED"
+          ],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "not_comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:f2a5049ac14a1ad2975badbab80211a29d111c743e57949d24f14aa5f09e829a",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "resolve_source_limits",
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "SOURCE_BINDING_CHANGED"
+            ],
+            "state": "withheld"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "resolve_source_limits",
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "SOURCE_BINDING_CHANGED"
+            ],
+            "state": "withheld"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "ctr",
+            "next_checks": [
+              "resolve_source_limits",
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "SOURCE_BINDING_CHANGED"
+            ],
+            "state": "withheld"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "equal_ctr": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 30.0,
+              "after": 40.0,
+              "before": 10.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 3.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 600.0,
+              "after": 800.0,
+              "before": 200.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 3.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 40,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 10,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 10.0
+            },
+            {
+              "after_count": 800,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 200,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.5
+            },
+            {
+              "after_count": 40,
+              "after_denominator": 800,
+              "after_rate_step_pp": 0.125,
+              "before_count": 10,
+              "before_denominator": 200,
+              "before_rate_step_pp": 0.5,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:aaba3b3529fde20e84ce3b80b37f40f5cc0731cc7d94e1668d09cbd00d4194c8",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 600.0,
+            "after": 800,
+            "after_denominator": null,
+            "before": 200,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 3.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 30.0,
+            "after": 40,
+            "after_denominator": null,
+            "before": 10,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 3.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 40,
+            "after_denominator": 800,
+            "before": 10,
+            "before_denominator": 200,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "falling": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": -10.0,
+              "after": 10.0,
+              "before": 20.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": -0.5,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 400.0,
+              "before": 400.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": -0.025,
+              "after": 0.025,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": -2.5,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 10,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 20,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 5.0
+            },
+            {
+              "after_count": 400,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 400,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 0.25
+            },
+            {
+              "after_count": 10,
+              "after_denominator": 400,
+              "after_rate_step_pp": 0.25,
+              "before_count": 20,
+              "before_denominator": 400,
+              "before_rate_step_pp": 0.25,
+              "metric": "ctr",
+              "notes": [],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:36342479c35f5659af8020f52e56c952d48bc50ad93c72f098c398e8e07cfe4c",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 0.0,
+            "after": 400,
+            "after_denominator": null,
+            "before": 400,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": -10.0,
+            "after": 10,
+            "after_denominator": null,
+            "before": 20,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": -0.5,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 10,
+            "after_denominator": 400,
+            "before": 20,
+            "before_denominator": 400,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": -2.5,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "large_same_percent": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 100.0,
+              "after": 200.0,
+              "before": 100.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 1.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 10000.0,
+              "before": 10000.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.01,
+              "after": 0.02,
+              "before": 0.01,
+              "metric": "ctr",
+              "percentage_point_change": 1.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 200,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 100,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 1.0
+            },
+            {
+              "after_count": 10000,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 10000,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 0.01
+            },
+            {
+              "after_count": 200,
+              "after_denominator": 10000,
+              "after_rate_step_pp": 0.01,
+              "before_count": 100,
+              "before_denominator": 10000,
+              "before_rate_step_pp": 0.01,
+              "metric": "ctr",
+              "notes": [],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:c793d5438134f888fe0eb8d3a20361502e959c371d0232af0459cc67a60eca90",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 0.0,
+            "after": 10000,
+            "after_denominator": null,
+            "before": 10000,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 100.0,
+            "after": 200,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 1.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 200,
+            "after_denominator": 10000,
+            "before": 100,
+            "before_denominator": 10000,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": 1.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "not_selected": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": null,
+        "gsc": null,
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "not_available",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:959d82e1e51aba12ce75b55fd7ff1b59ad31faabbc05c56a992ef9a02533129f",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "select_source",
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_selected"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "select_source",
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_selected"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "ctr",
+            "next_checks": [
+              "select_source",
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_selected"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "select_source",
+              "review_session_measurement"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_selected"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "select_source",
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_selected"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "one_count": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 1.0,
+              "after": 2.0,
+              "before": 1.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 1.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 100.0,
+              "before": 100.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.01,
+              "after": 0.02,
+              "before": 0.01,
+              "metric": "ctr",
+              "percentage_point_change": 1.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 2,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 1,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [
+                "ONE_COUNT_DIFFERENCE"
+              ],
+              "relative_step_pp": 100.0
+            },
+            {
+              "after_count": 100,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 100,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 1.0
+            },
+            {
+              "after_count": 2,
+              "after_denominator": 100,
+              "after_rate_step_pp": 1.0,
+              "before_count": 1,
+              "before_denominator": 100,
+              "before_rate_step_pp": 1.0,
+              "metric": "ctr",
+              "notes": [],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:f65b4a2228e9e12ab184e3c8018bdb3627d6dcde2536144e352fd1902b6d452a",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 0.0,
+            "after": 100,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 1.0,
+            "after": 2,
+            "after_denominator": null,
+            "before": 1,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [
+              "ONE_COUNT_DIFFERENCE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 1.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 2,
+            "after_denominator": 100,
+            "before": 1,
+            "before_denominator": 100,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": 1.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "session_restricted": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": null,
+          "before": null,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": null,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [
+            "SAMPLED"
+          ],
+          "relative_change_percent": null,
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "withheld",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:2ac067c981ca7a1da5f2525070aafccff7935eb150eb64663aa1eeb0d24d86bd",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 1120.0,
+            "after": 6720,
+            "after_denominator": null,
+            "before": 5600,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 56.0,
+            "after": 336,
+            "after_denominator": null,
+            "before": 280,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 336,
+            "after_denominator": 6720,
+            "before": 280,
+            "before_denominator": 5600,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "resolve_source_limits",
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "SAMPLED"
+            ],
+            "state": "withheld"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "session_waiting": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": null,
+          "before": null,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": null,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [
+            "WINDOW_NOT_ELAPSED"
+          ],
+          "relative_change_percent": null,
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "withheld",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:9ca558f7b79877a884d08624d10dbac01b2b768e87d75da0b4c372af987dda7e",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 1120.0,
+            "after": 6720,
+            "after_denominator": null,
+            "before": 5600,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 56.0,
+            "after": 336,
+            "after_denominator": null,
+            "before": 280,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 336,
+            "after_denominator": 6720,
+            "before": 280,
+            "before_denominator": 5600,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "wait_for_window",
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "WINDOW_NOT_ELAPSED"
+            ],
+            "state": "waiting"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "session_zero": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 1,
+          "before": 0,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 1,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": null,
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:84c05f41147e3f19278b1b7f94be8bb12f1d805cb88c40f5fd6b5c7fa63fd119",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 1120.0,
+            "after": 6720,
+            "after_denominator": null,
+            "before": 5600,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 56.0,
+            "after": 336,
+            "after_denominator": null,
+            "before": 280,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 336,
+            "after_denominator": 6720,
+            "before": 280,
+            "before_denominator": 5600,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 1.0,
+            "after": 1,
+            "after_denominator": null,
+            "before": 0,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED",
+              "ZERO_BASELINE",
+              "ONE_COUNT_DIFFERENCE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "tiny_change": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 1.0,
+              "after": 1000001.0,
+              "before": 1000000.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 1e-06,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 100000000.0,
+              "before": 100000000.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 9.999999999940612e-09,
+              "after": 0.01000001,
+              "before": 0.01,
+              "metric": "ctr",
+              "percentage_point_change": 9.999999999940612e-07,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 1000001,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 1000000,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [
+                "ONE_COUNT_DIFFERENCE"
+              ],
+              "relative_step_pp": 0.0001
+            },
+            {
+              "after_count": 100000000,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 100000000,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 1e-06
+            },
+            {
+              "after_count": 1000001,
+              "after_denominator": 100000000,
+              "after_rate_step_pp": 1e-06,
+              "before_count": 1000000,
+              "before_denominator": 100000000,
+              "before_rate_step_pp": 1e-06,
+              "metric": "ctr",
+              "notes": [],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:ff735bb320bee64edd09a10255d6f59562a99877320ba87bdd5234f523749620",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 0.0,
+            "after": 100000000,
+            "after_denominator": null,
+            "before": 100000000,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 1.0,
+            "after": 1000001,
+            "after_denominator": null,
+            "before": 1000000,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [
+              "ONE_COUNT_DIFFERENCE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 1e-06,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 1000001,
+            "after_denominator": 100000000,
+            "before": 1000000,
+            "before_denominator": 100000000,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": 9.999999999940612e-07,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "unchanged": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 0.0,
+              "after": 20.0,
+              "before": 20.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 400.0,
+              "before": 400.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.0,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 20,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 20,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 5.0
+            },
+            {
+              "after_count": 400,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 400,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "UNCHANGED_COUNT"
+              ],
+              "relative_step_pp": 0.25
+            },
+            {
+              "after_count": 20,
+              "after_denominator": 400,
+              "after_rate_step_pp": 0.25,
+              "before_count": 20,
+              "before_denominator": 400,
+              "before_rate_step_pp": 0.25,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:6e5c463e0f53d2d3df945e27f5ddc32e5a7035afca3fe64967f98c6e10ee063e",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 0.0,
+            "after": 400,
+            "after_denominator": null,
+            "before": 400,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 0.0,
+            "after": 20,
+            "after_denominator": null,
+            "before": 20,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [
+              "UNCHANGED_COUNT"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.0,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 20,
+            "after_denominator": 400,
+            "before": 20,
+            "before_denominator": 400,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "waiting": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [],
+          "reading": [],
+          "reasons": [
+            "AFTER_WINDOW_NOT_ELAPSED"
+          ],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "waiting",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:60db48b410542f8e9dd97b6cdf53336cc843c652e03b4c7e6ac2b8e1c8e71965",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "wait_for_window",
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "AFTER_WINDOW_NOT_ELAPSED"
+            ],
+            "state": "waiting"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "wait_for_window",
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "AFTER_WINDOW_NOT_ELAPSED"
+            ],
+            "state": "waiting"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "ctr",
+            "next_checks": [
+              "wait_for_window",
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [
+              "AFTER_WINDOW_NOT_ELAPSED"
+            ],
+            "state": "waiting"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "work_unconfirmed": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "reported",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": null,
+          "state": "not_recorded",
+          "system_completion_verified": false,
+          "timezone": null
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "reported",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:fe67e94726c72df304b7e1c3988a49e37be4f1b6e4b1670a4e75a1545e598960",
+        "implementation_state": "not_recorded",
+        "metrics": [
+          {
+            "absolute_change": 1120.0,
+            "after": 6720,
+            "after_denominator": null,
+            "before": 5600,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 56.0,
+            "after": 336,
+            "after_denominator": null,
+            "before": 280,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 336,
+            "after_denominator": 6720,
+            "before": 280,
+            "before_denominator": 5600,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "UNCHANGED_CTR"
+            ],
+            "percentage_point_change": 0.0,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "zero_baseline": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 4.0,
+              "after": 4.0,
+              "before": 0.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [
+                "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+              ],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 20.0,
+              "after": 120.0,
+              "before": 100.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.03333333333333333,
+              "after": 0.03333333333333333,
+              "before": 0.0,
+              "metric": "ctr",
+              "percentage_point_change": 3.3333333333333335,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 4,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 0,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [
+                "ZERO_BASELINE"
+              ],
+              "relative_step_pp": null
+            },
+            {
+              "after_count": 120,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 100,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 1.0
+            },
+            {
+              "after_count": 4,
+              "after_denominator": 120,
+              "after_rate_step_pp": 0.8333333333333334,
+              "before_count": 0,
+              "before_denominator": 100,
+              "before_rate_step_pp": 1.0,
+              "metric": "ctr",
+              "notes": [],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:1423ea1632692fc00dc53f8ee3ab8b861976b5e5b6fd40bcc41d031399333c8b",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 20.0,
+            "after": 120,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [],
+            "percentage_point_change": null,
+            "relative_change": 0.2,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 4.0,
+            "after": 4,
+            "after_denominator": null,
+            "before": 0,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [
+              "ZERO_BASELINE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 4,
+            "after_denominator": 120,
+            "before": 0,
+            "before_denominator": 100,
+            "metric": "ctr",
+            "next_checks": [
+              "review_ctr_denominators"
+            ],
+            "notes": [],
+            "percentage_point_change": 3.3333333333333335,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    },
+    "zero_denominator": {
+      "facts": {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 4.0,
+              "after": 4.0,
+              "before": 0.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [
+                "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+              ],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 100.0,
+              "after": 100.0,
+              "before": 0.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [
+                "ZERO_BASELINE_NO_RELATIVE_CHANGE"
+              ],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": null,
+              "after": 0.04,
+              "before": null,
+              "metric": "ctr",
+              "percentage_point_change": null,
+              "reasons": [
+                "ZERO_IMPRESSIONS_NO_CTR"
+              ],
+              "relative_change": null,
+              "state": "insufficient",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 4,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 0,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [
+                "ZERO_BASELINE"
+              ],
+              "relative_step_pp": null
+            },
+            {
+              "after_count": 100,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 0,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [
+                "ZERO_BASELINE"
+              ],
+              "relative_step_pp": null
+            },
+            {
+              "after_count": 4,
+              "after_denominator": 100,
+              "after_rate_step_pp": 1.0,
+              "before_count": 0,
+              "before_denominator": 0,
+              "before_rate_step_pp": null,
+              "metric": "ctr",
+              "notes": [
+                "ZERO_IMPRESSIONS"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      },
+      "guide": {
+        "action_id": "ac-1",
+        "calibration_status": "not_calibrated",
+        "causal_attribution": false,
+        "concurrent_changes": "unknown",
+        "effect_conclusion": null,
+        "facts_checksum": "sha256:1f02f9887aeace8c8d5423c560494c0353844ea71207738f24f34c8b73c3e846",
+        "implementation_state": "seo_recorded",
+        "metrics": [
+          {
+            "absolute_change": 100.0,
+            "after": 100,
+            "after_denominator": null,
+            "before": 0,
+            "before_denominator": null,
+            "metric": "impressions",
+            "next_checks": [
+              "review_demand_mix"
+            ],
+            "notes": [
+              "ZERO_BASELINE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": 4.0,
+            "after": 4,
+            "after_denominator": null,
+            "before": 0,
+            "before_denominator": null,
+            "metric": "clicks",
+            "next_checks": [
+              "review_page_queries"
+            ],
+            "notes": [
+              "ZERO_BASELINE"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "descriptive"
+          },
+          {
+            "absolute_change": null,
+            "after": 4,
+            "after_denominator": 100,
+            "before": 0,
+            "before_denominator": 0,
+            "metric": "ctr",
+            "next_checks": [
+              "obtain_impressions",
+              "review_ctr_denominators"
+            ],
+            "notes": [
+              "ZERO_IMPRESSIONS"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "undefined"
+          },
+          {
+            "absolute_change": 25.0,
+            "after": 125,
+            "after_denominator": null,
+            "before": 100,
+            "before_denominator": null,
+            "metric": "sessions",
+            "next_checks": [
+              "review_session_measurement"
+            ],
+            "notes": [
+              "PROCESSING_NOT_ATTESTED",
+              "MEASUREMENT_HISTORY_UNVERIFIED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": 0.25,
+            "source_reasons": [],
+            "state": "snapshot_only"
+          },
+          {
+            "absolute_change": null,
+            "after": null,
+            "after_denominator": null,
+            "before": null,
+            "before_denominator": null,
+            "metric": "key_events",
+            "next_checks": [
+              "verify_event_history"
+            ],
+            "notes": [
+              "EVENT_VALUES_NOT_INCLUDED"
+            ],
+            "percentage_point_change": null,
+            "relative_change": null,
+            "source_reasons": [],
+            "state": "not_included"
+          }
+        ],
+        "rules_version": "v22_metric_review_guidance_v1"
+      }
+    }
+  },
+  "kind": "synthetic_metric_review_cases_not_empirical_calibration"
+}

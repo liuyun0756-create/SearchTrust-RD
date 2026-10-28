@@ -1,0 +1,522 @@
+[
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-09-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-09-08",
+        "start": "2026-09-02"
+      },
+      "before": {
+        "end": "2026-08-31",
+        "start": "2026-08-25"
+      },
+      "days": 7,
+      "excluded": {
+        "end": "2026-09-01",
+        "start": "2026-09-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-09-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-09-15",
+        "start": "2026-09-02"
+      },
+      "before": {
+        "end": "2026-08-31",
+        "start": "2026-08-18"
+      },
+      "days": 14,
+      "excluded": {
+        "end": "2026-09-01",
+        "start": "2026-09-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-09-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-09-29",
+        "start": "2026-09-02"
+      },
+      "before": {
+        "end": "2026-08-31",
+        "start": "2026-08-04"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2026-09-01",
+        "start": "2026-09-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-09-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-11-30",
+        "start": "2026-09-02"
+      },
+      "before": {
+        "end": "2026-08-31",
+        "start": "2026-06-03"
+      },
+      "days": 90,
+      "excluded": {
+        "end": "2026-09-01",
+        "start": "2026-09-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-03-08",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-03-15",
+        "start": "2026-03-09"
+      },
+      "before": {
+        "end": "2026-03-07",
+        "start": "2026-03-01"
+      },
+      "days": 7,
+      "excluded": {
+        "end": "2026-03-08",
+        "start": "2026-03-08"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-03-08",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-03-22",
+        "start": "2026-03-09"
+      },
+      "before": {
+        "end": "2026-03-07",
+        "start": "2026-02-22"
+      },
+      "days": 14,
+      "excluded": {
+        "end": "2026-03-08",
+        "start": "2026-03-08"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-03-08",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-04-05",
+        "start": "2026-03-09"
+      },
+      "before": {
+        "end": "2026-03-07",
+        "start": "2026-02-08"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2026-03-08",
+        "start": "2026-03-08"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-03-08",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-06-06",
+        "start": "2026-03-09"
+      },
+      "before": {
+        "end": "2026-03-07",
+        "start": "2025-12-08"
+      },
+      "days": 90,
+      "excluded": {
+        "end": "2026-03-08",
+        "start": "2026-03-08"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-11-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-11-08",
+        "start": "2026-11-02"
+      },
+      "before": {
+        "end": "2026-10-31",
+        "start": "2026-10-25"
+      },
+      "days": 7,
+      "excluded": {
+        "end": "2026-11-01",
+        "start": "2026-11-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-11-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-11-15",
+        "start": "2026-11-02"
+      },
+      "before": {
+        "end": "2026-10-31",
+        "start": "2026-10-18"
+      },
+      "days": 14,
+      "excluded": {
+        "end": "2026-11-01",
+        "start": "2026-11-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-11-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-11-29",
+        "start": "2026-11-02"
+      },
+      "before": {
+        "end": "2026-10-31",
+        "start": "2026-10-04"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2026-11-01",
+        "start": "2026-11-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-11-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "America/Los_Angeles"
+    },
+    "windows": {
+      "after": {
+        "end": "2027-01-30",
+        "start": "2026-11-02"
+      },
+      "before": {
+        "end": "2026-10-31",
+        "start": "2026-08-03"
+      },
+      "days": 90,
+      "excluded": {
+        "end": "2026-11-01",
+        "start": "2026-11-01"
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2024-02-29",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "UTC"
+    },
+    "windows": {
+      "after": {
+        "end": "2024-03-07",
+        "start": "2024-03-01"
+      },
+      "before": {
+        "end": "2024-02-28",
+        "start": "2024-02-22"
+      },
+      "days": 7,
+      "excluded": {
+        "end": "2024-02-29",
+        "start": "2024-02-29"
+      },
+      "timezone": "UTC"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2024-02-29",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "UTC"
+    },
+    "windows": {
+      "after": {
+        "end": "2024-03-14",
+        "start": "2024-03-01"
+      },
+      "before": {
+        "end": "2024-02-28",
+        "start": "2024-02-15"
+      },
+      "days": 14,
+      "excluded": {
+        "end": "2024-02-29",
+        "start": "2024-02-29"
+      },
+      "timezone": "UTC"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2024-02-29",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "UTC"
+    },
+    "windows": {
+      "after": {
+        "end": "2024-03-28",
+        "start": "2024-03-01"
+      },
+      "before": {
+        "end": "2024-02-28",
+        "start": "2024-02-01"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2024-02-29",
+        "start": "2024-02-29"
+      },
+      "timezone": "UTC"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2024-02-29",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "UTC"
+    },
+    "windows": {
+      "after": {
+        "end": "2024-05-29",
+        "start": "2024-03-01"
+      },
+      "before": {
+        "end": "2024-02-28",
+        "start": "2023-12-01"
+      },
+      "days": 90,
+      "excluded": {
+        "end": "2024-02-29",
+        "start": "2024-02-29"
+      },
+      "timezone": "UTC"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-01-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "Asia/Shanghai"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-01-08",
+        "start": "2026-01-02"
+      },
+      "before": {
+        "end": "2025-12-31",
+        "start": "2025-12-25"
+      },
+      "days": 7,
+      "excluded": {
+        "end": "2026-01-01",
+        "start": "2026-01-01"
+      },
+      "timezone": "Asia/Shanghai"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-01-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "Asia/Shanghai"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-01-15",
+        "start": "2026-01-02"
+      },
+      "before": {
+        "end": "2025-12-31",
+        "start": "2025-12-18"
+      },
+      "days": 14,
+      "excluded": {
+        "end": "2026-01-01",
+        "start": "2026-01-01"
+      },
+      "timezone": "Asia/Shanghai"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-01-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "Asia/Shanghai"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-01-29",
+        "start": "2026-01-02"
+      },
+      "before": {
+        "end": "2025-12-31",
+        "start": "2025-12-04"
+      },
+      "days": 28,
+      "excluded": {
+        "end": "2026-01-01",
+        "start": "2026-01-01"
+      },
+      "timezone": "Asia/Shanghai"
+    }
+  },
+  {
+    "entry": {
+      "action_id": "window-example",
+      "implemented_on": "2026-01-01",
+      "note": null,
+      "responsible": null,
+      "scope": "Service page",
+      "timezone": "Asia/Shanghai"
+    },
+    "windows": {
+      "after": {
+        "end": "2026-04-01",
+        "start": "2026-01-02"
+      },
+      "before": {
+        "end": "2025-12-31",
+        "start": "2025-10-03"
+      },
+      "days": 90,
+      "excluded": {
+        "end": "2026-01-01",
+        "start": "2026-01-01"
+      },
+      "timezone": "Asia/Shanghai"
+    }
+  }
+]

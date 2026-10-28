@@ -1,0 +1,588 @@
+{
+  "$defs": {
+    "ComparisonWindows": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "before": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "days": {
+          "enum": [
+            7,
+            14,
+            28,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "excluded": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "timezone",
+        "before",
+        "excluded",
+        "after"
+      ],
+      "title": "ComparisonWindows",
+      "type": "object"
+    },
+    "DateRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "DateRange",
+      "type": "object"
+    },
+    "Ga4Binding": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "format": "uuid",
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Ga4ComparisonScope"
+        },
+        "scope_snapshot_id": {
+          "format": "uuid",
+          "title": "Scope Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding_id",
+        "scope_snapshot_id",
+        "observed_at",
+        "scope"
+      ],
+      "title": "Ga4Binding",
+      "type": "object"
+    },
+    "Ga4CollectionContext": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/Ga4Binding"
+          },
+          "maxItems": 20,
+          "title": "Bindings",
+          "type": "array"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "delivery_revision_id": {
+          "format": "uuid",
+          "title": "Delivery Revision Id",
+          "type": "string"
+        },
+        "implementation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImplementationReference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jobs": {
+          "items": {
+            "$ref": "#/$defs/Ga4CollectionView"
+          },
+          "maxItems": 20,
+          "title": "Jobs",
+          "type": "array"
+        },
+        "previews": {
+          "items": {
+            "$ref": "#/$defs/Ga4Preview"
+          },
+          "maxItems": 240,
+          "title": "Previews",
+          "type": "array"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "v22_ga4_collection_context_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "report_id",
+        "delivery_revision_id",
+        "implementation",
+        "bindings",
+        "jobs",
+        "previews"
+      ],
+      "title": "Ga4CollectionContext",
+      "type": "object"
+    },
+    "Ga4CollectionSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "binding_id": {
+          "format": "uuid",
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "days": {
+          "enum": [
+            7,
+            14,
+            28,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "implementation": {
+          "$ref": "#/$defs/ImplementationReference"
+        },
+        "landing_path": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Landing Path"
+        },
+        "scope_snapshot_id": {
+          "format": "uuid",
+          "title": "Scope Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "implementation",
+        "action_id",
+        "days",
+        "binding_id",
+        "scope_snapshot_id",
+        "landing_path"
+      ],
+      "title": "Ga4CollectionSelection",
+      "type": "object"
+    },
+    "Ga4CollectionView": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
+        },
+        "created_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Created At",
+          "type": "string"
+        },
+        "delivery_revision_id": {
+          "format": "uuid",
+          "title": "Delivery Revision Id",
+          "type": "string"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "qualification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ga4Qualification"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "v22_ga4_collection_view_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Ga4ComparisonScope"
+        },
+        "selection": {
+          "$ref": "#/$defs/Ga4CollectionSelection"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "windows": {
+          "$ref": "#/$defs/ComparisonWindows"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "case_id",
+        "report_id",
+        "delivery_revision_id",
+        "selection",
+        "scope",
+        "windows",
+        "status",
+        "created_at",
+        "completed_at",
+        "error_code",
+        "qualification"
+      ],
+      "title": "Ga4CollectionView",
+      "type": "object"
+    },
+    "Ga4ComparisonScope": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "const": "organic_search",
+          "title": "Channel",
+          "type": "string"
+        },
+        "hosts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Hosts",
+          "type": "array"
+        },
+        "landing_path": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Landing Path"
+        },
+        "resource_id": {
+          "maxLength": 128,
+          "pattern": "^properties/[0-9]+$",
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resource_id",
+        "hosts",
+        "timezone",
+        "channel",
+        "landing_path"
+      ],
+      "title": "Ga4ComparisonScope",
+      "type": "object"
+    },
+    "Ga4MetricQualification": {
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "enum": [
+            "sessions",
+            "engaged_sessions",
+            "engagement_rate",
+            "key_events",
+            "session_key_event_rate"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "state": {
+          "const": "not_comparable",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "state",
+        "reasons"
+      ],
+      "title": "Ga4MetricQualification",
+      "type": "object"
+    },
+    "Ga4Preview": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "binding_id": {
+          "format": "uuid",
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "days": {
+          "enum": [
+            7,
+            14,
+            28,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "elapsed": {
+          "title": "Elapsed",
+          "type": "boolean"
+        },
+        "windows": {
+          "$ref": "#/$defs/ComparisonWindows"
+        }
+      },
+      "required": [
+        "binding_id",
+        "action_id",
+        "days",
+        "windows",
+        "elapsed"
+      ],
+      "title": "Ga4Preview",
+      "type": "object"
+    },
+    "Ga4Qualification": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_attribution": {
+          "const": false,
+          "title": "Causal Attribution",
+          "type": "boolean"
+        },
+        "complete_daily_observations": {
+          "title": "Complete Daily Observations",
+          "type": "boolean"
+        },
+        "effect_conclusion": {
+          "title": "Effect Conclusion",
+          "type": "null"
+        },
+        "event_configuration": {
+          "enum": [
+            "none_observed",
+            "changed_during_collection",
+            "same_at_collection"
+          ],
+          "title": "Event Configuration",
+          "type": "string"
+        },
+        "event_history": {
+          "const": "unverified",
+          "title": "Event History",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Ga4MetricQualification"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Metrics",
+          "type": "array"
+        },
+        "observation_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Observation Checksum",
+          "type": "string"
+        },
+        "processing_completeness": {
+          "const": "not_attested",
+          "title": "Processing Completeness",
+          "type": "string"
+        },
+        "ruleset_version": {
+          "enum": [
+            "v22_ga4_qualification_foundation_v1",
+            "v22_ga4_qualification_truncation_v2"
+          ],
+          "title": "Ruleset Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ruleset_version",
+        "observation_checksum",
+        "complete_daily_observations",
+        "processing_completeness",
+        "event_configuration",
+        "event_history",
+        "metrics",
+        "effect_conclusion",
+        "causal_attribution"
+      ],
+      "title": "Ga4Qualification",
+      "type": "object"
+    },
+    "ImplementationReference": {
+      "additionalProperties": false,
+      "properties": {
+        "checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Checksum",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "checksum"
+      ],
+      "title": "ImplementationReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "context": {
+      "$ref": "#/$defs/Ga4CollectionContext"
+    },
+    "selection": {
+      "$ref": "#/$defs/Ga4CollectionSelection"
+    },
+    "view": {
+      "$ref": "#/$defs/Ga4CollectionView"
+    }
+  },
+  "required": [
+    "context",
+    "view",
+    "selection"
+  ],
+  "title": "Ga4CollectionContracts",
+  "type": "object"
+}

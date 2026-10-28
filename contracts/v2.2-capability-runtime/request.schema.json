@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "CapabilityTaskRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "input_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Input Checksum",
+          "type": "string"
+        },
+        "manifest_id": {
+          "format": "uuid",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "report_type": {
+          "enum": [
+            "prospect",
+            "verified_execution"
+          ],
+          "title": "Report Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "manifest_id",
+        "input_checksum",
+        "report_type"
+      ],
+      "title": "CapabilityTaskRequest",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capability_request": {
+      "$ref": "#/$defs/CapabilityTaskRequest"
+    },
+    "schema_version": {
+      "const": "v22_capability_request_envelope_v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_request"
+  ],
+  "title": "CapabilityRequestEnvelope",
+  "type": "object"
+}

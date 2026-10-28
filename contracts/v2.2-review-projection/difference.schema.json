@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "ActionDifference": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "changed_sections": {
+          "items": {
+            "enum": [
+              "approved_work",
+              "recorded_work",
+              "page",
+              "gsc",
+              "ga4",
+              "checks",
+              "decision"
+            ],
+            "type": "string"
+          },
+          "title": "Changed Sections",
+          "type": "array"
+        },
+        "decision_changed": {
+          "title": "Decision Changed",
+          "type": "boolean"
+        },
+        "evidence_changed": {
+          "title": "Evidence Changed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "action_id",
+        "evidence_changed",
+        "decision_changed",
+        "changed_sections"
+      ],
+      "title": "ActionDifference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actions": {
+      "items": {
+        "$ref": "#/$defs/ActionDifference"
+      },
+      "maxItems": 3,
+      "title": "Actions",
+      "type": "array"
+    },
+    "current_input_checksum": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Current Input Checksum",
+      "type": "string"
+    },
+    "new_decisions_changed": {
+      "title": "New Decisions Changed",
+      "type": "boolean"
+    },
+    "previous_input_checksum": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Input Checksum"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "no_previous_projection",
+            "different_review_basis"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Reason"
+    },
+    "schema_version": {
+      "const": "v22_review_difference_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "first_baseline",
+        "not_comparable",
+        "compared"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "state",
+    "reason",
+    "previous_input_checksum",
+    "current_input_checksum",
+    "actions",
+    "new_decisions_changed"
+  ],
+  "title": "ReviewDifference",
+  "type": "object"
+}

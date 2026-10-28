@@ -13,6 +13,7 @@ from app.jobs_v22.errors import JobNotFound
 from app.jobs_v22.models import JobErrorState, utc_now
 from app.jobs_v22.queue import ArqJobQueue, JobQueue
 from app.jobs_v22.store import DurableJobStore
+from app.jobs_v22.capability_terminal import capability_terminal_transition
 
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,15 @@ logger = logging.getLogger(__name__)
 
 class StateSynchronizer(Protocol):
     async def sync(self, job_id) -> bool: ...
+
+
+async def _sync_capability_terminal(synchronizer, job_id, updated):
+    if synchronizer is None or updated is None or not updated.applied:
+        return
+    try:
+        await synchronizer.sync(job_id)
+    except Exception as exc:
+        logger.warning("capability recovered callback deferred job_id_suffix=%s error=%s",str(job_id)[-8:],type(exc).__name__)
 
 
 async def _finish_pending_recovery(
@@ -30,6 +40,7 @@ async def _finish_pending_recovery(
     job_id: UUID,
     generation: int,
     now: datetime,
+    capability_terminal=None,
 ) -> None:
     """Synchronize one takeover generation before exposing it to workers."""
 
@@ -56,6 +67,10 @@ async def _finish_pending_recovery(
             stage="failed",
             diagnostic_id=uuid4(),
         )
+        handled,updated=await capability_terminal_transition(store=store,state=state,error=error,now=now,coordinator=capability_terminal)
+        if handled:
+            await _sync_capability_terminal(synchronizer,job_id,updated)
+            return
         updated = await store.transition(
             job_id,
             status="failed",
@@ -111,6 +126,7 @@ async def reconcile_once(
     now: datetime,
     stale_seconds: int,
     max_attempts: int,
+    capability_terminal=None,
 ) -> None:
     # A prior reconciler may have exited after Redis fenced the stale owner,
     # after the database callback, or after the idempotent physical enqueue.
@@ -125,6 +141,7 @@ async def reconcile_once(
             job_id=job_id,
             generation=generation,
             now=now,
+            capability_terminal=capability_terminal,
         )
 
     if synchronizer is not None:
@@ -187,6 +204,10 @@ async def reconcile_once(
                 stage="failed",
                 diagnostic_id=uuid4(),
             )
+            handled,updated=await capability_terminal_transition(store=store,state=state,error=error,now=now,coordinator=capability_terminal)
+            if handled:
+                await _sync_capability_terminal(synchronizer,job_id,updated)
+                continue
             updated = await store.transition(
                 job_id,
                 status="failed",
@@ -198,6 +219,13 @@ async def reconcile_once(
                 expected_generation=state.run_generation,
             )
         else:
+            probe_error=JobErrorState(error_code="JOB_RETRY_EXHAUSTED",user_message="The previous analysis run did not finish.",
+                retryable=True,stage="failed",diagnostic_id=uuid4())
+            handled,probed=await capability_terminal_transition(store=store,state=state,error=probe_error,now=now,
+                coordinator=capability_terminal,finish=False)
+            if handled:
+                await _sync_capability_terminal(synchronizer,job_id,probed)
+                continue
             updated = await store.take_over_stale(
                 job_id,
                 expected_generation=state.run_generation,
@@ -212,6 +240,7 @@ async def reconcile_once(
                     job_id=job_id,
                     generation=recovery_generation,
                     now=now,
+                    capability_terminal=capability_terminal,
                 )
         if synchronizer is not None and updated.applied and updated.state.terminal:
             try:
@@ -235,4 +264,5 @@ async def reconcile_v22_jobs(ctx: dict[str, Any]) -> None:
         now=utc_now(),
         stale_seconds=settings.V22_JOB_STALE_SECONDS,
         max_attempts=settings.V22_JOB_MAX_ATTEMPTS,
+        capability_terminal=ctx.get("capability_terminal_coordinator"),
     )

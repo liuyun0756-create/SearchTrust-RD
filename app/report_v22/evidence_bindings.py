@@ -9,6 +9,7 @@ from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.report_v22.evidence_errors import EvidenceError
 from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceSource, reject_nonfinite
 from app.report_v22.public_gbp_bindings import conflicts_with_missing, validate_public_binding, validate_reference
+from app.report_v22.shared_market_binding import case_market_binding_id
 
 
 def normalized_host(value: str) -> str:
@@ -117,7 +118,8 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
                         require(result.response_checksum == call.response_checksum)
                 shared = source.shared_snapshot
                 if shared is not None:
-                    require(shared.snapshot_id == b.snapshot_id and shared.expires_at == b.expires_at)
+                    require(b.snapshot_id in {shared.snapshot_id, case_market_binding_id(context.case_id, shared.snapshot_id)})
+                    require(shared.expires_at == b.expires_at)
                     require(shared.created_at <= context.evaluated_at)
                     require(shared.snapshot_checksum == checksum)
                     require(canonical_json_bytes(shared.snapshot) == canonical_json_bytes(p))
@@ -137,6 +139,10 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
         for source in sources.values():
             if source.kind == "competitor":
                 market = sources.get(source.payload.market_snapshot_id)
+                if market is None:
+                    market = sources.get(case_market_binding_id(context.case_id, source.payload.market_snapshot_id))
+                    require(market is not None and market.kind == "serp" and market.shared_snapshot is not None
+                            and market.shared_snapshot.snapshot_id == source.payload.market_snapshot_id)
                 require(market is not None and market.kind == "serp")
                 require(market.binding.payload_checksum == source.payload.market_snapshot_checksum)
         for missing in value.missing_sources:

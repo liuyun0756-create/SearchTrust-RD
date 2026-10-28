@@ -1,0 +1,260 @@
+{
+  "kind": "synthetic_workspace_example",
+  "view": {
+    "actions": [
+      {
+        "action_id": "ac-1",
+        "causal_attribution": false,
+        "checks": [
+          {
+            "code": "FIRST_PAGE_BASELINE",
+            "text": "First recorded check. There is no comparable earlier observation."
+          },
+          {
+            "code": "DESCRIPTIVE_COUNTS_ONLY",
+            "text": "Read these figures within their own scopes and dates. They do not establish the effect of this work."
+          }
+        ],
+        "effect": null,
+        "ga4": {
+          "after": 125,
+          "before": 100,
+          "completed_at": "2026-12-15T08:00:00Z",
+          "difference": 25,
+          "measurement_history": "unverified",
+          "processing_completeness": "not_attested",
+          "reasons": [],
+          "relative_change_percent": "25.00",
+          "scope": {
+            "channel": "organic_search",
+            "hosts": [
+              "clinic.example.invalid"
+            ],
+            "landing_path": null,
+            "resource_id": "properties/12345",
+            "timezone": "America/Los_Angeles"
+          },
+          "started_at": "2026-12-15T08:00:00Z",
+          "state": "available",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "gsc": {
+          "concurrent_changes": "unknown",
+          "effect_eligibility": "pending_metric_specific_calibration",
+          "evaluated_at": "2026-10-22T08:00:00Z",
+          "limitations": [
+            "Implementation is user-reported; this comparison does not verify the live page.",
+            "Descriptive movement only. Metric-specific low-volume effect eligibility has not been calibrated.",
+            "Seasonality, demand, competitors and concurrent changes may affect the observed values. No causal attribution.",
+            "Concurrent changes have not been checked.",
+            "Property-wide movement is not page-specific evidence or proof of the selected action's effect.",
+            "GSC_QUERY_PRIVACY_FILTERING",
+            "GSC_WEB_ONLY"
+          ],
+          "metrics": [
+            {
+              "absolute_change": 56.0,
+              "after": 336.0,
+              "before": 280.0,
+              "metric": "clicks",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 1120.0,
+              "after": 6720.0,
+              "before": 5600.0,
+              "metric": "impressions",
+              "percentage_point_change": null,
+              "reasons": [],
+              "relative_change": 0.2,
+              "state": "comparable",
+              "unit": "count"
+            },
+            {
+              "absolute_change": 0.0,
+              "after": 0.05,
+              "before": 0.05,
+              "metric": "ctr",
+              "percentage_point_change": 0.0,
+              "reasons": [],
+              "relative_change": null,
+              "state": "comparable",
+              "unit": "ratio"
+            }
+          ],
+          "reading": [
+            {
+              "after_count": 336,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 280,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "clicks",
+              "notes": [],
+              "relative_step_pp": 0.35714285714285715
+            },
+            {
+              "after_count": 6720,
+              "after_denominator": null,
+              "after_rate_step_pp": null,
+              "before_count": 5600,
+              "before_denominator": null,
+              "before_rate_step_pp": null,
+              "metric": "impressions",
+              "notes": [],
+              "relative_step_pp": 0.017857142857142856
+            },
+            {
+              "after_count": 336,
+              "after_denominator": 6720,
+              "after_rate_step_pp": 0.01488095238095238,
+              "before_count": 280,
+              "before_denominator": 5600,
+              "before_rate_step_pp": 0.017857142857142856,
+              "metric": "ctr",
+              "notes": [
+                "UNCHANGED_CTR"
+              ],
+              "relative_step_pp": null
+            }
+          ],
+          "reasons": [],
+          "scope": {
+            "channel": "organic_search",
+            "dimension": "property",
+            "filters": [],
+            "key": null,
+            "source": "gsc"
+          },
+          "state": "comparable",
+          "windows": {
+            "after": {
+              "end": "2026-09-29",
+              "start": "2026-09-02"
+            },
+            "before": {
+              "end": "2026-08-31",
+              "start": "2026-08-04"
+            },
+            "days": 28,
+            "excluded": {
+              "end": "2026-09-01",
+              "start": "2026-09-01"
+            },
+            "timezone": "America/Los_Angeles"
+          }
+        },
+        "page": {
+          "changes": [],
+          "comparison": "first_observation",
+          "comparison_reason": "no_baseline",
+          "conditions": [
+            {
+              "id": "contact",
+              "kind": "anchor_present",
+              "value": "contact"
+            }
+          ],
+          "failure": null,
+          "limitation": "static_response_only_rendering_functionality_and_identity_not_verified",
+          "observed_at": "2026-10-23T08:00:00Z",
+          "previous_observed_at": null,
+          "results": [
+            {
+              "condition_id": "contact",
+              "state": "observed"
+            }
+          ],
+          "status": "checked",
+          "target_url": "https://clinic.example.invalid/emergency/service"
+        },
+        "recorded_work": {
+          "implemented_on": "2026-09-01",
+          "state": "seo_recorded",
+          "system_completion_verified": false,
+          "timezone": "America/Los_Angeles"
+        },
+        "target": "https://clinic.example.invalid/emergency#contact",
+        "title": "Confirm the contact route"
+      }
+    ],
+    "case_id": "00000000-0000-0000-0000-000000000002",
+    "confirmation_fingerprint": null,
+    "evaluated_at": "2026-12-16T08:00:00Z",
+    "frozen_at": "2026-12-16T08:01:00Z",
+    "prior_diagnosis": {
+      "action_state": "actions_supported",
+      "findings": [
+        {
+          "classification": "inference",
+          "comparison_scope": "Saved emergency-care page",
+          "interpretation": "needs_verification",
+          "judgment": "The intended route needs confirmation.",
+          "limitations": [
+            "No lost enquiries or causal impact is established."
+          ],
+          "observed_at": "2026-08-28T08:00:00Z",
+          "observed_fact": "The saved link label is Contact us.",
+          "target": "https://clinic.example.invalid/emergency#contact"
+        }
+      ],
+      "limitations": [
+        "Synthetic contract sample; no customer outcome is claimed."
+      ],
+      "source": "prior_report_not_rechecked",
+      "summary": "The saved page uses a generic contact label. Confirm the intended enquiry route before changing it.",
+      "title": "Review the emergency enquiry route"
+    },
+    "report_id": "00000000-0000-0000-0000-000000000005",
+    "report_version": 1,
+    "review_id": "70000000-0000-4000-8000-000000000001",
+    "schema_version": "v22_review_workspace_v1",
+    "selection": {
+      "actions": [
+        {
+          "action_id": "ac-1",
+          "ga4_id": "00000000-0000-0000-0000-000000004f4d",
+          "gsc_id": "00000000-0000-0000-0000-000000007919",
+          "page_current_id": "00000000-0000-0000-0000-00000000791a",
+          "page_previous_id": null
+        }
+      ],
+      "delivery": {
+        "checksum": "sha256:d30ea479825fe717e9156cb19f0d8598b65a6a513ca1025bd0d814ea1b79aec0",
+        "id": "b0000000-0000-4000-8000-000000000001",
+        "revision": 1
+      },
+      "implementation": {
+        "checksum": "sha256:1b9e592aa61e3b04793b487872ca32eff9b8cfd2bcad24c7979cdfed2c6ac2f8",
+        "id": "b0000000-0000-4000-8000-000000000002",
+        "revision": 1
+      },
+      "report": {
+        "checksum": "sha256:e8ef67a7fcb8d9260c58f65fe961926d691402f183469922f7f108604b9d4ed8",
+        "id": "00000000-0000-0000-0000-000000000005"
+      }
+    },
+    "site_url": "https://clinic.example.invalid/emergency",
+    "state": "saved"
+  }
+}

@@ -63,6 +63,7 @@ class JobCostLedger:
         pricing: PricingCatalog,
         job_created_at: datetime,
         clock=None,
+        require_existing: bool = False,
     ) -> None:
         if ttl_seconds < 60:
             raise ValueError("cost ledger TTL is too short")
@@ -75,6 +76,7 @@ class JobCostLedger:
         self.pricing = pricing
         self.job_created_at = job_created_at
         self.clock = clock or _utc_now
+        self.require_existing = require_existing
 
     @property
     def key(self) -> str:
@@ -90,6 +92,8 @@ class JobCostLedger:
 
     def _decode(self, raw, now: datetime) -> CostLedgerState:
         if raw is None:
+            if self.require_existing:
+                raise CostLedgerError("CAPABILITY_RECOVERY_REQUIRED")
             return self._new_state(now)
         try:
             state = CostLedgerState.model_validate_json(raw)

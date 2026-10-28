@@ -10,10 +10,12 @@ from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from app.api.v2.models import JobStage
 from app.report_v22.models import ReportV22, StrictModel
+from app.report_v22.capability import CapabilityReport
 from app.jobs_v22.cost_models import validate_cost_counters_snapshot
 
 
 JobStatus = Literal["queued", "running", "succeeded", "failed"]
+DurableReport = ReportV22 | CapabilityReport
 
 
 def _validated_cost_counters(value: dict[str, int | float]) -> dict[str, int]:
@@ -49,7 +51,7 @@ class JobState(StrictModel):
     deadline_at: AwareDatetime
     updated_at: AwareDatetime
     completed_at: AwareDatetime | None = None
-    report: ReportV22 | None = None
+    report: DurableReport | None = None
     error: JobErrorState | None = None
     cost_counters: dict[str, int | float] = Field(default_factory=dict)
     callback_synced_revision: int = Field(default=0, ge=0)
@@ -76,6 +78,8 @@ class JobState(StrictModel):
                 or self.completed_at is None
             ):
                 raise ValueError("succeeded jobs require a completed report and no error")
+            if isinstance(self.report, CapabilityReport) and (self.report.id != self.job_id or self.report.input_manifest.case_id != self.case_id):
+                raise ValueError("capability result must belong to this task and Case")
         elif self.status == "failed":
             if self.error is None or self.report is not None or self.stage != "failed" or self.completed_at is None:
                 raise ValueError("failed jobs require an error and no report")

@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "CapabilityReportReference": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "payload_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Payload Checksum",
+          "type": "string"
+        },
+        "report_id": {
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "report_type": {
+          "enum": [
+            "prospect",
+            "verified_execution"
+          ],
+          "title": "Report Type",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.2.2",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "case_id",
+        "schema_version",
+        "report_type",
+        "payload_checksum"
+      ],
+      "title": "CapabilityReportReference",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "message": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Message",
+      "type": "string"
+    },
+    "progress": {
+      "const": 100,
+      "title": "Progress",
+      "type": "integer"
+    },
+    "report_reference": {
+      "$ref": "#/$defs/CapabilityReportReference"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "run_generation": {
+      "minimum": 1,
+      "title": "Run Generation",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "v22_capability_task_status_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "const": "completed",
+      "title": "Stage",
+      "type": "string"
+    },
+    "status": {
+      "const": "succeeded",
+      "title": "Status",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "job_id",
+    "revision",
+    "run_generation",
+    "status",
+    "stage",
+    "progress",
+    "message",
+    "report_reference",
+    "created_at",
+    "deadline_at",
+    "updated_at"
+  ],
+  "title": "CapabilityTaskStatusResponse",
+  "type": "object"
+}

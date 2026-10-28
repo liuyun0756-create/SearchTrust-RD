@@ -50,10 +50,11 @@ async def execute_v22_competitor_discovery(
     ledger = JobCostLedger(
         ctx["redis"],
         prefix=store.keys.prefix,
-        job_id=discovery_job_id,
+        job_id=ctx.get("discovery_cost_ledger_job_id", discovery_job_id),
         ttl_seconds=int(ctx.get("competitor_state_ttl_seconds", store.state_ttl_seconds)),
         pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
-        job_created_at=state.created_at,
+        job_created_at=ctx.get("discovery_cost_ledger_created_at", state.created_at),
+        require_existing=bool(ctx.get("discovery_require_existing_cost_ledger", False)),
     )
     await ledger.ensure()
 
@@ -210,7 +211,7 @@ async def _enqueue_cost_summary(ctx: dict[str, Any], state) -> None:
         ledger = JobCostLedger(
             ctx["redis"],
             prefix=ctx["competitor_discovery_store"].keys.prefix,
-            job_id=state.discovery_job_id,
+            job_id=ctx.get("discovery_cost_ledger_job_id", state.discovery_job_id),
             ttl_seconds=int(
                 ctx.get(
                     "competitor_state_ttl_seconds",
@@ -218,22 +219,23 @@ async def _enqueue_cost_summary(ctx: dict[str, Any], state) -> None:
                 )
             ),
             pricing=ctx.get("cost_pricing") or pricing_catalog_from_settings(settings),
-            job_created_at=state.created_at,
+            job_created_at=ctx.get("discovery_cost_ledger_created_at", state.created_at),
+            require_existing=bool(ctx.get("discovery_require_existing_cost_ledger", False)),
         )
         counters = await ledger.snapshot()
         summary = CostSummaryRecord(
-            job_id=state.discovery_job_id,
+            job_id=ctx.get("discovery_cost_ledger_job_id", state.discovery_job_id),
             case_id=state.case_id,
             job_kind="competitor_discovery",
             status=state.status,
-            attempt_count=state.attempt_count,
+            attempt_count=ctx.get("discovery_total_attempts", state.attempt_count),
             ledger_revision=counters.root["cost_ledger_revision"],
             cost_counters=counters,
-            started_at=state.created_at,
+            started_at=ctx.get("discovery_cost_ledger_created_at", state.created_at),
             completed_at=state.completed_at,
         )
         await outbox.enqueue(summary)
-        await outbox.sync(state.discovery_job_id)
+        await outbox.sync(summary.job_id)
     except Exception as exc:
         logger.warning(
             "competitor cost summary deferred job_id_suffix=%s error=%s",
