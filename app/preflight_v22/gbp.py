@@ -243,6 +243,14 @@ class LimitedGbpLookup:
         query_parts = [domain]
         if signals.names:
             query_parts.append(signals.names[0].value)
+        # A shared trading name is not enough to locate the right business.
+        # Keep the single lookup bounded, but include an observed phone so a
+        # site without structured location data is not searched by name alone.
+        for phone in signals.phones:
+            digits = re.sub(r"\D", "", phone.value)
+            if 10 <= len(digits) <= 15:
+                query_parts.append(digits)
+                break
         if signals.markets:
             query_parts.append(signals.markets[0].display_name)
         params.update({"q": " ".join(part for part in query_parts if part), "type": "search"})

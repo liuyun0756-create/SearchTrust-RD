@@ -98,6 +98,26 @@ async def test_gbp_lookup_uses_exact_place_id_without_second_request() -> None:
 
 
 @pytest.mark.anyio
+async def test_name_only_site_uses_observed_phone_to_disambiguate_one_lookup() -> None:
+    calls: list[dict[str, str]] = []
+
+    async def provider(params: dict[str, str]) -> dict[str, Any]:
+        calls.append(params)
+        return {"local_results": []}
+
+    signals = extract_site_signals(
+        '<meta property="og:site_name" content="Example Service Inc.">'
+        '<a href="tel:+15595550123">Call us</a>'
+    )
+    assert not signals.markets
+    await LimitedGbpLookup(provider=provider, configured=True).lookup(
+        site_url="https://example.test/", signals=signals,
+    )
+    assert len(calls) == 1
+    assert calls[0]["q"] == "example.test Example Service Inc. 15595550123"
+
+
+@pytest.mark.anyio
 async def test_gbp_lookup_uses_explicit_cid_as_a_place_request() -> None:
     calls: list[dict[str, str]] = []
 
