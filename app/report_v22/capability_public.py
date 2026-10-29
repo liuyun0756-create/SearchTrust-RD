@@ -16,7 +16,8 @@ from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, GBP_RULES, 
 
 LEGACY_RULESET = "v22_capability_public_v1"
 PRIORITY_RULESET = "v22_capability_public_v2"
-RULESET = "v22_capability_public_v3"
+BUSINESS_RULESET = "v22_capability_public_v3"
+RULESET = "v22_capability_public_v4"
 _ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _BOUNDARY = "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
 _COPY = {
@@ -105,10 +106,11 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = _bound_public_sources(manifest, value)
-        result = build_public_findings(request)
+        reviewed = manifest.ruleset_version in {RULESET, "v22_capability_service_v4"}
+        result = build_public_findings(request, reviewed_evidence=reviewed)
         skeletons = select_public_action_skeletons(PublicActionPlanInput(
             findings_result=result, planning_date=instant(manifest.evaluated_at).date()),
-            all_candidates=manifest.ruleset_version in {RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3"})
+            all_candidates=manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
         refs = {s.snapshot_id: s for s in manifest.snapshots}
         original = {e.evidence_id: e for e in result.evidence_result.evidence_index}
         traces = {e.evidence_id: e for e in result.evidence_result.source_traces}
@@ -169,7 +171,11 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         if manifest.mode == "acquisition":
             limits.append("Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.")
         unchecked = sorted({f"{e.rule_id}: {e.reason}" for e in result.rule_evaluations if e.state == "not_checked"})
-        limits.extend(unchecked)
+        if reviewed:
+            from app.report_v22.quality_copy import unchecked_limits
+            limits.extend(unchecked_limits(result.rule_evaluations))
+        else:
+            limits.extend(unchecked)
         return dict(schema_version="2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
@@ -185,11 +191,11 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
-        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
                 or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
             raise CapabilityPublicError()
         raw = _public_report_content(manifest, request)
-        if manifest.ruleset_version in {RULESET, PRIORITY_RULESET}:
+        if manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             apply_priority(raw, manifest)
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))

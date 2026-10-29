@@ -1,7 +1,7 @@
 import pytest
 from app.report_v22.findings import build_public_findings
 from app.report_v22.public_rule_catalog import DOMAIN, AHEAD
-from findings_helpers import market, request
+from findings_helpers import market, request, seal
 from test_v22_competitor_models import confirmed
 
 
@@ -46,3 +46,29 @@ def test_one_competitor_is_not_enough_for_market_consensus() -> None:
         any("At least two confirmed competitors" in note for note in item.limitations)
         for item in evaluations
     )
+
+
+def test_reviewed_organic_context_gap_does_not_erase_supported_maps_or_claim_absence():
+    from app.jobs_v22.digest import request_digest
+    source = market()
+    for run in source.payload.query_runs:
+        organic = [record.model_copy(update={
+            "record_id": request_digest([record.record_id, "organic"]),
+            "result_type": "organic", "display_name": "Unrelated glossary",
+            "call_id": run.google_call.call_id,
+            "snippet": "A general reference topic.", "url": f"https://unrelated.example/{i}",
+            "normalized_domain": "unrelated.example",
+        }) for i, record in enumerate(run.results)]
+        run.results.extend(organic)
+    for count in source.payload.result_counts:
+        if count.result_type == "organic":
+            count.count = 12
+    value = request(seal(source))
+    before = value.model_dump(mode="json")
+    legacy = build_public_findings(value)
+    assert sum(f.rule_id == DOMAIN for f in legacy.findings) == 3
+    reviewed = build_public_findings(value, reviewed_evidence=True)
+    assert not any(f.rule_id == DOMAIN for f in reviewed.findings)
+    assert sum(f.rule_id == AHEAD for f in reviewed.findings) == 3
+    assert all(e.state == "not_checked" for e in reviewed.rule_evaluations if e.target.result_type == "organic")
+    assert value.model_dump(mode="json") == before

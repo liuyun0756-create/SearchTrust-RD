@@ -6,14 +6,14 @@ from site_business_helpers import request
 from test_v22_site_gbp_alignment import exact_gbp, exact_html, identity, missing
 
 
-def build(*, html=None, raw=None, operating_model="hybrid"):
+def build(*, html=None, raw=None, operating_model="hybrid", reviewed_evidence=False):
     raw = raw or exact_gbp()
     site_request = request(html if html is not None else exact_html())
     evidence = evidence_input(raw, site_request.source)
     return build_public_findings(PublicFindingsInput(
         evidence_input=evidence,
         business_identity=identity(evidence, operating_model=operating_model),
-    ))
+    ), reviewed_evidence=reviewed_evidence)
 
 
 def gbp_evaluations(result):
@@ -75,3 +75,25 @@ def test_operating_model_not_applicable_never_creates_finding():
     evaluation = gbp_evaluations(result)["v22_public.gbp_service_area_alignment"]
     assert evaluation.state == "not_triggered" and evaluation.reason == "field_not_applicable"
     assert evaluation.finding_id is None
+
+
+def test_reviewed_missing_values_cannot_become_mismatch_findings():
+    for html, raw in [
+        (exact_html(telephone=None), exact_gbp()),
+        (exact_html(), missing(exact_gbp(), "phone")),
+        (exact_html(telephone=None), missing(exact_gbp(), "phone")),
+    ]:
+        result = build(html=html, raw=raw, reviewed_evidence=True)
+        evaluation = gbp_evaluations(result)["v22_public.gbp_phone_alignment"]
+        assert evaluation.state == "not_checked" and evaluation.reason == "field_not_observed"
+        assert evaluation.finding_id is None
+        assert any("do not establish a mismatch" in note for note in evaluation.limitations)
+        assert all("offline evaluation" not in note for source in result.evidence_result.source_summaries for note in source.limitations)
+
+
+def test_reviewed_observed_mismatch_is_still_a_finding():
+    raw = exact_gbp()
+    raw["record"]["fields"]["phone"]["value"] = "+1 512 555 9999"
+    result = build(raw=raw, reviewed_evidence=True)
+    assert gbp_evaluations(result)["v22_public.gbp_phone_alignment"].reason == "value_mismatch"
+    assert gbp_evaluations(result)["v22_public.gbp_phone_alignment"].state == "triggered"

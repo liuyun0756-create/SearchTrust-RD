@@ -18,7 +18,7 @@ def market_target(view, query, kind, source=None):
                       device=view.context.search_device)
 
 
-def evaluate(view):
+def evaluate(view, *, reviewed_evidence=False):
     if not view.available("serp"):
         for query in view.context.queries:
             for kind in RESULT_TYPES:
@@ -39,6 +39,14 @@ def evaluate(view):
                 for rule in (DOMAIN, AHEAD):
                     yield decision(view, rule, target, "not_checked", "source_ineligible" if call.status != "succeeded" else "insufficient_sample")
                 continue
+            if reviewed_evidence and kind == "organic":
+                from app.report_v22.search_relevance import organic_scope_supported
+                if not organic_scope_supported(run.query, [record for _, record in records], market=view.context.target_market.city):
+                    for rule in (DOMAIN, AHEAD):
+                        yield decision(view, rule, target, "not_checked", "source_ineligible", notes=[
+                            "The returned organic results did not establish enough query context for a visibility comparison. Review the saved results or collect a comparable sample before judging visibility."
+                        ])
+                    continue
             prefix = f"/payload/query_runs/{index}"
             call_refs = view.refs(snapshot, f"{prefix}/{name}/status", required=True)
             domains = defaultdict(list)

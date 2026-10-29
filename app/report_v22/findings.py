@@ -43,13 +43,13 @@ def _validate_market_context(item, trace, target):
         raise FindingsError("REFERENCE_INVALID")
 
 
-def _validate_outcome(view, outcome, alignment=None):
+def _validate_outcome(view, outcome, alignment=None, *, reviewed_evidence=False):
     evaluation, finding = outcome.evaluation, outcome.finding
     expected_version = GBP_ALIGNMENT_RULE_VERSION if alignment is not None and evaluation.rule_id in GBP_RULES else RULE_VERSION
     if evaluation.rule_id not in {*RULES, *GBP_RULES} or evaluation.rule_version != expected_version:
         raise FindingsError("REFERENCE_INVALID")
     if evaluation.rule_id in GBP_RULES:
-        public_gbp_findings.validate_evaluation(view, evaluation, alignment)
+        public_gbp_findings.validate_evaluation(view, evaluation, alignment, reviewed_evidence=reviewed_evidence)
     if (evaluation.state == "triggered") != (finding is not None):
         raise FindingsError("REFERENCE_INVALID")
     if finding is None:
@@ -141,7 +141,7 @@ def _validate_rollups(view, outcomes, site, clusters):
             raise FindingsError("REFERENCE_INVALID")
 
 
-def _merge_alignment_evidence(inputs, evidence, extra, maximum):
+def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evidence=False):
     items = {item.evidence_id: item for item in evidence.evidence_index}
     traces = {item.evidence_id: item for item in evidence.source_traces}
     sources = {source.binding.snapshot_id: source for source in inputs.sources}
@@ -164,7 +164,9 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum):
     for summary in evidence.source_summaries:
         notes = summary.limitations
         if any(item.snapshot_id == summary.snapshot_id for item in extra.evidence_index):
-            notes = sorted(set([*notes, "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation."]))
+            note = ("The website and public business profile were compared for the confirmed business."
+                    if reviewed_evidence else "Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.")
+            notes = sorted(set([*notes, note]))
         summaries.append(summary.model_copy(update={"evidence_count": counts.get(summary.snapshot_id, 0), "limitations": notes}))
     gaps = list(evidence.coverage_gaps)
     for item in extra.evidence_index:
@@ -187,7 +189,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum):
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, reviewed_evidence=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -248,17 +250,20 @@ def build_public_findings(value: PublicFindingsInput | dict) -> PublicFindingsRe
                 evidence,
                 extra,
                 request.site_gbp_alignment_limits.max_merged_evidence,
+                reviewed_evidence=reviewed_evidence,
             )
         view = EvidenceView(inputs, evidence)
         gbp = (public_gbp_findings.evaluate(view) if alignment is None
-               else public_gbp_findings.evaluate(view, alignment))
+               else public_gbp_findings.evaluate(view, alignment, reviewed_evidence=reviewed_evidence))
+        market = (market_findings.evaluate(view, reviewed_evidence=True) if reviewed_evidence
+                  else market_findings.evaluate(view))
         outcomes, findings, encoded_findings = {}, {}, {}
         retained_bytes = len(canonical_json_bytes(evidence))
         if retained_bytes > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
-        for proposed in chain(site_findings.evaluate(view), market_findings.evaluate(view), competitor_findings.evaluate(view), gbp):
+        for proposed in chain(site_findings.evaluate(view), market, competitor_findings.evaluate(view), gbp):
             outcome = RuleOutcome.model_validate(proposed.model_dump(mode="python"))
-            _validate_outcome(view, outcome, alignment)
+            _validate_outcome(view, outcome, alignment, reviewed_evidence=reviewed_evidence)
             if outcome.finding:
                 finding = outcome.finding
                 encoded = canonical_json_bytes(finding)

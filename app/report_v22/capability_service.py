@@ -19,7 +19,8 @@ from app.report_v22.models import ReportV22
 
 LEGACY_RULESET = "v22_capability_service_v1"
 PRIORITY_RULESET = "v22_capability_service_v2"
-RULESET = "v22_capability_service_v3"
+BUSINESS_RULESET = "v22_capability_service_v3"
+RULESET = "v22_capability_service_v4"
 _RANK = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 
 
@@ -48,7 +49,7 @@ def _validate_history(manifest, previous):
 def _validated(manifest, value, previous):
     manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
     request = CapabilityServiceInput.model_validate_json(canonical_json_bytes(value))
-    if (manifest.mode not in {"first_service", "after_acquisition"} or manifest.ruleset_version not in {RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+    if (manifest.mode not in {"first_service", "after_acquisition"} or manifest.ruleset_version not in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
             or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
         raise CapabilityServiceError()
     _validate_history(manifest, previous)
@@ -228,7 +229,7 @@ def build_service_capability_report(manifest, value, *, previous_report=None) ->
                 candidates.append(candidate)
         raw["evidence"] = sorted(evidence.values(), key=lambda e: e["id"])
         candidates = _merge_service_work(candidates, raw["findings"])
-        if manifest.ruleset_version in {RULESET, PRIORITY_RULESET}:
+        if manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             raw["actions"] = candidates
             apply_priority(raw, manifest)

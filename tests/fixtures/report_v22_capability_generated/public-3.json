@@ -1060,11 +1060,11 @@
     "generation_input_checksum": "sha256:65a340b551ff4d3c3b3b420649982ffe788096cb23e4a0ed0e7ecb925461f60e",
     "id": "00000000-0000-0000-0000-000000000385",
     "implementation": null,
-    "input_checksum": "sha256:bb04f32c4001e056711a49f0f088a7985538122cd2ccac3880820b1c2dd1ba6c",
+    "input_checksum": "sha256:c1dcad70bace589e71aaa2433961372149cdac4ac4eda1b5de86e24972127e65",
     "job_id": "00000000-0000-0000-0000-000000000386",
     "mode": "acquisition",
     "previous_report": null,
-    "ruleset_version": "v22_capability_public_v3",
+    "ruleset_version": "v22_capability_public_v4",
     "schema_version": "v22_analysis_input_v1",
     "snapshots": [
       {
@@ -1125,14 +1125,23 @@
   "limitations": [
     "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
     "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
-    "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
-    "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
-    "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
-    "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
-    "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
-    "v22_public.market_site_domain_unobserved: insufficient_sample",
-    "v22_public.site_duplicate_title: field_not_observed",
-    "v22_public.site_explicit_noindex: field_not_observed",
+    "Address: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Business name: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Domain coverage for 'emergency plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'emergency plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Phone number: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Service areas: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+    "The full competitor-position comparison for 'emergency plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'emergency plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
     "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
   ],
   "prioritization": {
@@ -1275,7 +1284,7 @@
         "severity": "medium"
       }
     ],
-    "input_checksum": "sha256:bb04f32c4001e056711a49f0f088a7985538122cd2ccac3880820b1c2dd1ba6c",
+    "input_checksum": "sha256:c1dcad70bace589e71aaa2433961372149cdac4ac4eda1b5de86e24972127e65",
     "limitations": [
       "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
     ],

@@ -131,3 +131,18 @@ def test_profile_material_uses_the_actual_mismatched_phone_without_choosing_an_a
     assert material.readiness == "requires_confirmation"
     assert "authoritative" in material.body and "call-tracking" in material.body
     assert not any(m.readiness == "ready_to_use" for a in report.actions for m in a.materials)
+
+
+def test_new_rules_do_not_propose_corrections_for_missing_profile_values_but_v3_is_replayable():
+    from site_business_helpers import business_html, source
+    manifest, request = inputs(business_source=source(business_html(telephone=None)))
+    before = request.model_dump(mode="json")
+    current = build_public_capability_report(manifest, request)
+    assert not any(f.rule_id.endswith("phone_alignment") for f in current.findings)
+    assert any("Phone number" in limit for limit in current.limitations)
+    raw = manifest.model_dump(mode="json")
+    raw["ruleset_version"] = "v22_capability_public_v3"
+    raw["input_checksum"] = verified_request_digest({k:v for k,v in raw.items() if k != "input_checksum"})
+    historical = build_public_capability_report(raw, request)
+    assert any(f.rule_id.endswith("phone_alignment") for f in historical.findings)
+    assert request.model_dump(mode="json") == before

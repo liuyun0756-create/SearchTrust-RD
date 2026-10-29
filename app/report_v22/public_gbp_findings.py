@@ -61,7 +61,7 @@ def expected_scope(view, rule):
     return target, reason, sorted(refs)
 
 
-def _alignment_outcome(view, alignment, rule):
+def _alignment_outcome(view, alignment, rule, *, reviewed_evidence=False):
     field = next((item for item in alignment.fields if item.field == ALIGNMENT_FIELDS[rule]), None)
     if field is None:
         raise FindingsError("REFERENCE_INVALID")
@@ -77,6 +77,12 @@ def _alignment_outcome(view, alignment, rule):
         return decision(view, rule, target, "not_checked", field.not_checked_reason,
                         evidence=evidence, comparators=comparators,
                         notes=field.limitations, rule_version=GBP_ALIGNMENT_RULE_VERSION)
+    if reviewed_evidence and field.state in {"site_missing", "gbp_missing", "both_missing"}:
+        label = {"business_name": "Business name", "address": "Address", "phone": "Phone number", "service_area": "Service areas"}[field.field]
+        return decision(view, rule, target, "not_checked", "field_not_observed",
+                        evidence=evidence, comparators=comparators,
+                        notes=[*field.limitations, f"{label} could not be compared because one or both saved sources lack usable values. Missing observations do not establish a mismatch or a missing business detail. Confirm the actual details before proposing a correction."],
+                        rule_version=GBP_ALIGNMENT_RULE_VERSION)
     state = "triggered" if field.state in {"partial_match", "mismatch", "site_missing", "gbp_missing", "both_missing"} else "not_triggered"
     return decision(
         view,
@@ -93,19 +99,19 @@ def _alignment_outcome(view, alignment, rule):
     )
 
 
-def evaluate(view, alignment=None):
+def evaluate(view, alignment=None, *, reviewed_evidence=False):
     if alignment is not None:
         for rule in GBP_RULES:
-            yield _alignment_outcome(view, alignment, rule)
+            yield _alignment_outcome(view, alignment, rule, reviewed_evidence=reviewed_evidence)
         return
     for rule in GBP_RULES:
         target, reason, refs = expected_scope(view, rule)
         yield decision(view, rule, target, "not_checked", reason, evidence=refs)
 
 
-def validate_evaluation(view, evaluation, alignment=None):
+def validate_evaluation(view, evaluation, alignment=None, *, reviewed_evidence=False):
     if alignment is not None:
-        expected = _alignment_outcome(view, alignment, evaluation.rule_id).evaluation
+        expected = _alignment_outcome(view, alignment, evaluation.rule_id, reviewed_evidence=reviewed_evidence).evaluation
         if evaluation != expected:
             raise FindingsError("REFERENCE_INVALID")
         return
