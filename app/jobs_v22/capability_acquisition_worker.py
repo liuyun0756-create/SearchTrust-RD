@@ -204,8 +204,17 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
     repository.rpc = LeasedPreparationRpc(rpc, token=token, before_freeze=before_freeze, kind=kind)
     owned = copy(preparer)
     owned.repository = repository
+    async def report_stage(stage):
+        await pulse()
+        ok = await rpc.post("advance_v22_acquisition_stage", dict(p_job_id=str(job_id),
+            p_run_generation=run_generation, p_lease_token=str(token), p_stage=stage))
+        if ok is not True:
+            lost.set()
+            raise JobLeaseLost()
+
     checkpoints = LeaseCheckpoints(ctx["redis"], prefix=f"{prefix}:{kind}:{run_generation}",
-        ttl_seconds=ctx["state_ttl_seconds"], generation=run_generation, guard=pulse)
+        ttl_seconds=ctx["state_ttl_seconds"], generation=run_generation, guard=pulse,
+        progress_reporter=report_stage if kind == "acquisition" else None)
     heartbeat_task = asyncio.create_task(heartbeat())
     lost_task = asyncio.create_task(lost.wait())
     operation = asyncio.create_task(owned.prepare(user_id=receipt.user_id, job_id=job_id,

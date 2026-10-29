@@ -37,6 +37,7 @@ class Harness:
         self.outcome = None
         self.freeze_lost = False
         self.pulse_ok = True
+        self.stage_ok = True
         self.redis = fakeredis.aioredis.FakeRedis()
         self.client = httpx.AsyncClient(transport=httpx.MockTransport(self.respond))
         self.repo = SupabaseCapabilityInputRepository(url="https://storage.example",service_role_key="test-only",http_client=self.client)
@@ -63,6 +64,8 @@ class Harness:
             return httpx.Response(200,json=self.receipt)
         if name=="heartbeat_v22_acquisition_preparation":
             return httpx.Response(200,json=self.pulse_ok and not self.frozen)
+        if name=="advance_v22_acquisition_stage":
+            return httpx.Response(200,json=self.stage_ok and self.pulse_ok and not self.frozen)
         if name=="freeze_v22_acquisition_preparation":
             assert body["p_input"]["p_manifest"]==self.manifest.model_dump(mode="json")
             assert body["p_cost_counters"]["cost_ledger_revision"]>0
@@ -226,3 +229,27 @@ async def test_formal_worker_cannot_recreate_budget_after_handoff(monkeypatch):
         executor.execute.assert_not_awaited()
         assert not await h.redis.exists(h.ctx["store"].keys.cost_ledger(h.args["job_id"]))
     finally: await h.close()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("allowed", [True, False])
+async def test_collector_milestones_use_current_sql_lease_and_cannot_continue_after_rejection(monkeypatch, allowed):
+    h = Harness(monkeypatch); h.stage_ok = allowed
+    async def collect(**kwargs):
+        for stage in ["collecting_market", "collecting_site", "collecting_competitors", "building_evidence"]:
+            await kwargs["checkpoints"].report_progress(stage)
+        return h.args["collected"]
+    h.collector.collect_sources.side_effect = collect
+    try:
+        if allowed:
+            await h.run()
+            calls = [body for name, body in h.calls if name == "advance_v22_acquisition_stage"]
+            assert [body["p_stage"] for body in calls] == ["collecting_market", "collecting_site", "collecting_competitors", "building_evidence"]
+            assert all(body["p_job_id"] == str(h.args["job_id"]) and body["p_run_generation"] == 1 for body in calls)
+            assert len({body["p_lease_token"] for body in calls}) == 1
+        else:
+            with pytest.raises(Retry): await h.run()
+            assert not h.frozen
+            h.submit.assert_not_awaited()
+    finally:
+        await h.close()

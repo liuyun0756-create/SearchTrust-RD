@@ -54,6 +54,14 @@ async def test_actual_worker_generates_commits_and_recovers_sql_success_without_
         return httpx.Response(200,json=[dict(report_id=str(m.job_id),payload_checksum=verified_request_digest(committed),idempotent=False)])
     redis=fakeredis.aioredis.FakeRedis(decode_responses=False)
     store=DurableJobStore(redis,prefix="capability-worker",state_ttl_seconds=3600)
+    observed_stages = []
+    original_transition = store.transition
+    async def capture_transition(*args, **kwargs):
+        result = await original_transition(*args, **kwargs)
+        if result.applied:
+            observed_stages.append(result.state.stage)
+        return result
+    store.transition = capture_transition
     envelope=CapabilityRequestEnvelope(schema_version="v22_capability_request_envelope_v1",capability_request=task)
     await store.register_job(job_id=m.job_id,case_id=m.case_id,idempotency_key="one-reserved-analysis",request_payload=envelope.model_dump(mode="json"),now=now)
     if lost_ack=="last":
@@ -76,6 +84,7 @@ async def test_actual_worker_generates_commits_and_recovers_sql_success_without_
         state=await store.require_state(m.job_id)
         assert state.status=="succeeded" and state.report.model_dump(mode="json")==committed
         assert state.cost_counters["provider_attempts_total"]==0
+        assert all(stage in observed_stages for stage in ["building_evidence", "evaluating", "validating", "persisting", "completed"])
         await execute_v22_job(ctx,str(m.job_id),1)
         assert calls.count("complete_v22_capability_analysis")==1
         assert calls.count("resolve_v22_capability_analysis_input")== (2 if lost_ack is True else 1)

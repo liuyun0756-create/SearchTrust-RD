@@ -167,7 +167,7 @@ async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_
         prep=CapabilityAcquisitionPreparer(repository=repo,collector=collector,
             discovery_verifier=SimpleNamespace(verify=AsyncMock(return_value=envelope.competitor_discovery)),clock=lambda:args["now"])
         result=await prep.prepare(user_id=args["user_id"],job_id=args["job_id"],idempotency_key=receipt["idempotency_key"],
-            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1),
+            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),
             cost_ledger=SimpleNamespace(job_id=args["job_id"],job_created_at=args["created_at"]))
     assert result.request.capability_request.manifest_id==manifest.id
     assert len(calls)==3 and all("debit" not in path for path,_ in calls)
@@ -191,7 +191,7 @@ async def test_committed_prepare_response_loss_recovers_without_recollection_or_
         repo=SupabaseCapabilityInputRepository(url="https://store.example",service_role_key="fixture",http_client=client)
         prep=CapabilityAcquisitionPreparer(repository=repo,collector=collector,discovery_verifier=verifier,clock=lambda:args["now"])
         call=dict(user_id=args["user_id"],job_id=args["job_id"],idempotency_key=receipt["idempotency_key"],
-            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1),
+            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),
             cost_ledger=SimpleNamespace(job_id=args["job_id"],job_created_at=args["created_at"]))
         with pytest.raises(TransientJobError): await prep.prepare(**call)
         result=await prep.prepare(**call)
@@ -244,6 +244,6 @@ async def test_missing_cost_ledger_after_recorded_spend_does_not_start_collectio
             discovery_verifier=SimpleNamespace(verify=AsyncMock()),clock=lambda:args["now"])
         with pytest.raises(TransientJobError,match="^CAPABILITY_RECOVERY_REQUIRED$"):
             await prep.prepare(user_id=args["user_id"],job_id=args["job_id"],idempotency_key=receipt["idempotency_key"],
-                business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1),cost_ledger=ledger)
+                business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),cost_ledger=ledger)
     collector.collect_sources.assert_not_called()
     ledger.redis.exists.assert_awaited_once_with(ledger.key)

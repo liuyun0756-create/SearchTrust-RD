@@ -280,7 +280,7 @@ async def _execute_with_lease(
     running = await store.transition(
         job_id,
         status="running",
-        stage="collecting_site",
+        stage="building_evidence" if request.get("schema_version") == "v22_capability_request_envelope_v1" else "collecting_site",
         progress=max(state.progress, 1),
         message="Analysis is running.",
         now=started,
@@ -292,11 +292,30 @@ async def _execute_with_lease(
         return
     await _notify_state(ctx, job_id)
 
+    async def report_stage(stage):
+        current = await store.require_state(job_id)
+        if current.run_generation != run_generation or current.status != "running" or heartbeat_lost.is_set():
+            raise JobLeaseLost()
+        updated = await store.transition(job_id, status="running", stage=stage,
+            progress=current.progress, message={
+                "collecting_market": "Checking the saved search context and source validity.",
+                "collecting_site": "Checking website pages and the public business profile.",
+                "collecting_competitors": "Collecting the confirmed competitors' public evidence.",
+                "building_evidence": "Organising saved sources for the diagnosis.",
+                "evaluating": "Evaluating the evidence and supported actions.",
+                "validating": "Validating the report and its source references.",
+                "persisting": "Saving the validated report.",
+            }[stage], now=utc_now(), expected_generation=run_generation)
+        if not updated.applied:
+            raise JobLeaseLost()
+        await _notify_state(ctx, job_id)
+
     checkpoints = JobCheckpoints(
         ctx["redis"],
         prefix=store.keys.prefix,
         ttl_seconds=int(ctx.get("state_ttl_seconds", settings.V22_JOB_STATE_TTL_SECONDS)),
         run_generation=run_generation,
+        progress_reporter=report_stage,
     )
     executor = ctx["executor"]
     attempt_started = monotonic()

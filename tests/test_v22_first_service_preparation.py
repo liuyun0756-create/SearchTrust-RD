@@ -115,7 +115,7 @@ async def test_real_source_only_orchestration_and_repository_do_not_execute_or_c
         preparer=CapabilityFirstServicePreparer(repository=repo,collector=collector,
             discovery_verifier=SimpleNamespace(verify=AsyncMock(return_value=envelope.competitor_discovery)),clock=lambda:args["now"])
         await preparer.prepare(user_id=args["user_id"],job_id=args["job_id"],idempotency_key=receipt["idempotency_key"],
-            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1),
+            business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),
             cost_ledger=SimpleNamespace(job_id=args["job_id"],job_created_at=args["created_at"]))
     collector.report_pipeline.build.assert_not_called()
     assert collector.site_stage.collect.call_count == 1

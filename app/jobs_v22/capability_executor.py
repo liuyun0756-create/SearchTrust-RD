@@ -31,14 +31,17 @@ class CapabilityV22Executor:
             raise DeterministicJobError("V22_CAPABILITY_INPUT_INVALID", "The frozen analysis inputs could not be validated.") from None
         if frozen.completed_report is not None:
             return frozen.completed_report
+        await checkpoints.report_progress("evaluating")
         if m.mode=="acquisition":
             report=await self.public_stage.build(job_id=job_id,manifest=m,request=frozen.request,checkpoints=checkpoints)
         else:
             report=await self.service_stage.build(job_id=job_id,manifest=m,request=frozen.request,
                 previous_report=frozen.previous_report,checkpoints=checkpoints)
         # Never treat a mocked/copied result as completed without full recheck.
+        await checkpoints.report_progress("validating")
         checked=CapabilityReport.model_validate_json(canonical_json_bytes(report))
         if checked.input_manifest!=m: raise DeterministicJobError("V22_CAPABILITY_RESULT_INVALID", "The diagnosis did not match its saved analysis.")
+        await checkpoints.report_progress("persisting")
         await self.persister.persist(user_id=m.user_id,case_id=m.case_id,job_id=job_id,manifest=m,
             run_generation=checkpoints.run_generation,report=checked)
         return checked

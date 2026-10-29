@@ -137,7 +137,9 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
         clock=lambda: NOW,
     )
     redis = fakeredis.aioredis.FakeRedis(decode_responses=False)
-    checkpoints = JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800)
+    from unittest.mock import AsyncMock
+    milestones = AsyncMock()
+    checkpoints = JobCheckpoints(redis, prefix="test:v22", ttl_seconds=604_800, progress_reporter=milestones)
 
     report = await executor.execute(
         job_id=JOB_ID,
@@ -146,6 +148,7 @@ async def test_executor_reuses_confirmed_discovery_and_shared_market_snapshot() 
         checkpoints=checkpoints,
     )
 
+    assert [c.args[0] for c in milestones.await_args_list] == ["collecting_market", "collecting_site", "collecting_competitors", "building_evidence"]
     assert report == prospect_report()
     assert market_store.input_digest == result.input_digest
     assert site_stage.calls == 1

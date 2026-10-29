@@ -211,6 +211,7 @@ class ProspectV22Executor:
                                         submitted_at, checkpoints, cost_ledger):
         """Source-only seam shared with first service; never creates a report."""
         analyze = request
+        await checkpoints.report_progress("collecting_market")
         state = await self.discovery_store.require_state(
             discovery_link.discovery_id
         )
@@ -231,6 +232,7 @@ class ProspectV22Executor:
                 "The confirmed market snapshot is unavailable or has expired.",
             )
 
+        await checkpoints.report_progress("collecting_site")
         site_inventory = await self.site_stage.collect(
             job_id=job_id,
             request=analyze,
@@ -244,6 +246,7 @@ class ProspectV22Executor:
             checkpoints=checkpoints,
             cost_ledger=cost_ledger,
         )
+        await checkpoints.report_progress("collecting_competitors")
         competitor_collection = await self.competitor_stage.collect(
             job_id=job_id,
             request=analyze,
@@ -252,6 +255,7 @@ class ProspectV22Executor:
             checkpoints=checkpoints,
             cost_ledger=cost_ledger,
         )
+        await checkpoints.report_progress("building_evidence")
         return CollectedProspectSources(site_inventory, discovery, shared_market,
             competitor_collection, customer_public_gbp)
 

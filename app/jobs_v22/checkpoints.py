@@ -25,11 +25,17 @@ class JobCheckpoints:
         prefix: str,
         ttl_seconds: int,
         run_generation: int | None = None,
+        progress_reporter: Callable[[str], Awaitable[None]] | None = None,
     ) -> None:
         self.redis = redis
         self.keys = JobRedisKeys(prefix)
         self.ttl_seconds = ttl_seconds
         self.run_generation = run_generation
+        self.progress_reporter = progress_reporter
+
+    async def report_progress(self, stage: str) -> None:
+        if self.progress_reporter is not None:
+            await self.progress_reporter(stage)
 
     async def get(self, job_id: UUID, checkpoint_key: str) -> Any | None:
         raw = await self.redis.get(self.keys.checkpoint(job_id, checkpoint_key))
