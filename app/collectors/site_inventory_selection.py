@@ -206,17 +206,6 @@ def select_key_pages(
         if item.page.page_type == "home":
             choose(item)
             break
-    # A service can live at a plain slug and remain classified as "other".
-    # Reserve a slot for an explicit service match before generic type coverage.
-    service_terms = {token for token in re.findall(r"[a-z0-9]+", primary_service.casefold()) if len(token) >= 2}
-    if service_terms:
-        for item in ranked:
-            if item.page.page_type not in {"other", "service_detail", "service_index", "service_area", "product_detail"}:
-                continue
-            focus_terms = set(re.findall(r"[a-z0-9]+", " ".join((urlsplit(str(item.page.url)).path, item.page.h1 or "")).casefold()))
-            if service_terms <= focus_terms:
-                choose(RankedPage(item.page, item.score, (*item.reasons, "primary_service_focus")))
-                break
     for page_type in _COVERAGE_ORDER:
         if len(chosen) >= limit:
             break
