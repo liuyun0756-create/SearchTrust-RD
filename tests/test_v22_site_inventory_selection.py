@@ -156,6 +156,24 @@ def test_gsc_priority_changes_order_within_same_page_type() -> None:
     assert "gsc_priority" in ranked[1].reasons
 
 
+def test_small_deep_budget_keeps_the_explicit_service_page_before_generic_contact():
+    pages = [checked_page("https://example.com/", "home"),
+             checked_page("https://example.com/contact-us", "contact"),
+             checked_page("https://example.com/plumbing-repair", "other", title="Plumbing repairs and upgrades")]
+    ranked = select_key_pages(pages, limit=2, primary_service="Plumbing repair", target_market="Fresno", gsc_priorities=[])
+    assert [str(item.page.url) for item in ranked] == ["https://example.com/", "https://example.com/plumbing-repair"]
+    assert "primary_service_focus" in ranked[1].reasons
+    assert len(select_key_pages(pages, limit=1, primary_service="Plumbing repair", target_market="Fresno", gsc_priorities=[])) == 1
+
+
+def test_focus_does_not_override_eligibility_or_match_the_generic_site_title():
+    pages = [checked_page("https://example.com/", "home"), checked_page("https://example.com/contact-us", "contact"),
+             checked_page("https://example.com/plumbing-repair", "other").model_copy(update={"meta_robots": ["noindex"]}),
+             checked_page("https://example.com/team", "team").model_copy(update={"title": "Plumbing repair"})]
+    ranked = select_key_pages(pages, limit=2, primary_service="Plumbing repair", target_market="Fresno", gsc_priorities=[])
+    assert [item.page.page_type for item in ranked] == ["home", "contact"]
+
+
 def test_selection_excludes_noindex_and_caps_blog_posts() -> None:
     pages = [checked_page("https://example.com/", "home")]
     pages.extend(
