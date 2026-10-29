@@ -14,6 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT),str(ROOT/"tests")]
 from test_v22_capability_public import inputs as public_inputs
 from test_v22_capability_service import inputs as service_inputs
+from test_v22_page_title_review import title_inputs
 from app.report_v22.capability_public import build_public_capability_report
 from app.report_v22.capability_service import build_service_capability_report
 from app.report_v22.capability import AnalysisInputManifest
@@ -27,6 +28,8 @@ def artifacts():
             (3,[{"status_code":503},{"title":"Shared"},{"title":"Shared"}],True)]:
         manifest,request=public_inputs(records,search_gap=gap)
         values[f"public-{count}.json"]=build_public_capability_report(manifest,request).model_dump(mode="json")
+    manifest,request=title_inputs()
+    values["public-title-review.json"]=build_public_capability_report(manifest,request).model_dump(mode="json")
     for name,options in [("service-zero",{"clean":True}),("service-first",{}),
             ("service-after",{"mode":"after_acquisition"}),("service-conflict",{"conflict":True}),
             ("service-measurement",{"not_set":True})]:

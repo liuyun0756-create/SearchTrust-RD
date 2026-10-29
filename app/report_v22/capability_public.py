@@ -17,7 +17,8 @@ from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, GBP_RULES, 
 LEGACY_RULESET = "v22_capability_public_v1"
 PRIORITY_RULESET = "v22_capability_public_v2"
 BUSINESS_RULESET = "v22_capability_public_v3"
-RULESET = "v22_capability_public_v4"
+REVIEWED_RULESET = "v22_capability_public_v4"
+RULESET = "v22_capability_public_v5"
 _ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _BOUNDARY = "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
 _COPY = {
@@ -106,11 +107,11 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = _bound_public_sources(manifest, value)
-        reviewed = manifest.ruleset_version in {RULESET, "v22_capability_service_v4"}
+        reviewed = manifest.ruleset_version in {RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
         result = build_public_findings(request, reviewed_evidence=reviewed)
         skeletons = select_public_action_skeletons(PublicActionPlanInput(
             findings_result=result, planning_date=instant(manifest.evaluated_at).date()),
-            all_candidates=manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
+            all_candidates=manifest.ruleset_version in {RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
         refs = {s.snapshot_id: s for s in manifest.snapshots}
         original = {e.evidence_id: e for e in result.evidence_result.evidence_index}
         traces = {e.evidence_id: e for e in result.evidence_result.source_traces}
@@ -176,12 +177,16 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        return dict(schema_version="2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,
             summary=summary, evidence=evidence, findings=findings, action_state="actions_supported" if actions else "insufficient_basis",
             actions=actions, limitations=limits, changes=[], settlement_policy="one_credit_per_completed_analysis")
+        if manifest.ruleset_version == RULESET:
+            from app.report_v22.page_title_review import extend_report
+            extend_report(raw, manifest, request, result)
+        return raw
     except (ValueError, TypeError, KeyError, OverflowError):
         raise CapabilityPublicError() from None
 
@@ -191,11 +196,11 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
-        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
                 or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
             raise CapabilityPublicError()
         raw = _public_report_content(manifest, request)
-        if manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
+        if manifest.ruleset_version in {RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             apply_priority(raw, manifest)
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))

@@ -342,7 +342,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4"}
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -350,7 +350,7 @@ class CapabilityReport(StrictModel):
         if self.prioritization is not None:
             from app.report_v22.capability_priority import candidate_input, prioritize
             trace = self.prioritization.model_dump(mode="json")
-            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4")) else "v22_business_priority_v1"
+            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5")) else "v22_business_priority_v1"
             if trace["rules_version"] != expected_version:
                 raise ValueError("priority version mismatch")
             replay = prioritize([entry["input"] for entry in trace["candidates"]],

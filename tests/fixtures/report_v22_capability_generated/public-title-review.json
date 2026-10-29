@@ -1,0 +1,306 @@
+{
+  "action_state": "actions_supported",
+  "actions": [
+    {
+      "completion": [
+        "The SEO records the intended page and a keep-or-revise decision.",
+        "If a revision is approved and published, a new same-page observation confirms the agreed title."
+      ],
+      "dependencies": [],
+      "finding_ids": [
+        "fn-page-title-2e3c83062c68451ec6da"
+      ],
+      "id": "ac-page-title-2e3c83062c68451ec6da",
+      "materials": [
+        {
+          "body": "Page: https://example.test/plumbing-repair\nCurrent title: We tackle your plumbing problems | Fixture Plumbing LLC\nCurrent H1: Plumbing repairs and upgrades\nDraft for SEO approval: Plumbing repair | Fixture Plumbing LLC\n\nFirst confirm that this page should represent the service. Keep the current title if its wording better describes the intended offer. Otherwise adapt the draft to the approved service and brand. Add a location, opening hours or promises only after those business facts are confirmed. This is a title review, not a request to rebuild the page or change its existing contact route.\nTitle guidance: https://developers.google.com/search/docs/appearance/title-link",
+          "confirmation_items": [
+            "Confirm that this is the intended service page.",
+            "Approve the service description and brand wording before publication."
+          ],
+          "evidence_ids": [
+            "ev_38222787c174f123ab51cbaa5a590014a77b287a043b480973e24773139fdf2a",
+            "ev_a7eb3a2dd641dcc3188e6cfe0dc2d9f9082e556e4ae40c4a68c555cd2f5b68e5"
+          ],
+          "id": "ac-page-title-2e3c83062c68451ec6da-material",
+          "kind": "title_brief",
+          "readiness": "requires_confirmation",
+          "target": "https://example.test/plumbing-repair",
+          "title": "Service-page title review"
+        }
+      ],
+      "review": "Check the approved title on the same URL. Any later search change needs comparable observations and does not by itself establish causation.",
+      "steps": [
+        "Confirm the page's intended service and whether the existing title already describes it adequately.",
+        "Review the saved title and H1 on https://example.test/plumbing-repair; compare the draft with the approved service and brand.",
+        "Keep the current wording or approve a revision. Publish only agreed wording; retain unrelated page content and contact details.",
+        "After an agreed edit, capture the same page and check that its title matches the approved wording."
+      ],
+      "target": "https://example.test/plumbing-repair",
+      "title": "Review the service-page title"
+    }
+  ],
+  "changes": [],
+  "evidence": [
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/status_code",
+      "id": "ev_02798e7e6ad87b883e900ee675115fd9103a3426d6795aae34e89d6d24a09f38",
+      "limitations": [],
+      "object": "https://example.test/plumbing-repair",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 200
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/completed_at\n/payload/pages",
+      "id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/response_bytes",
+      "id": "ev_11d04a7c8426149a4387e30466ab31abc5b5c1c6e417548d8636cf5d13fb1faa",
+      "limitations": [],
+      "object": "https://example.test/plumbing-repair",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 120
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/h1",
+      "id": "ev_38222787c174f123ab51cbaa5a590014a77b287a043b480973e24773139fdf2a",
+      "limitations": [],
+      "object": "https://example.test/plumbing-repair",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "Plumbing repairs and upgrades"
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0/title",
+      "id": "ev_a7eb3a2dd641dcc3188e6cfe0dc2d9f9082e556e4ae40c4a68c555cd2f5b68e5",
+      "limitations": [],
+      "object": "https://example.test/plumbing-repair",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "We tackle your plumbing problems | Fixture Plumbing LLC"
+    }
+  ],
+  "findings": [
+    {
+      "classification": "fact",
+      "comparison_scope": "Saved title and H1 on this page only",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev_38222787c174f123ab51cbaa5a590014a77b287a043b480973e24773139fdf2a",
+        "ev_a7eb3a2dd641dcc3188e6cfe0dc2d9f9082e556e4ae40c4a68c555cd2f5b68e5"
+      ],
+      "id": "fn-page-title-2e3c83062c68451ec6da",
+      "impact_path": "A more descriptive title may clarify the page's subject to a searcher; no ranking or enquiry effect is established.",
+      "interpretation": "needs_verification",
+      "judgment": "Confirm this is the intended service page, then review whether its title should describe that service more explicitly. Different wording may be valid.",
+      "limitations": [
+        "A service-label difference is a title-review prompt, not proof that the title is inaccurate or that rankings or enquiries are affected. Confirm the intended page and wording before editing."
+      ],
+      "observed_at": "2026-08-28T08:00:00Z",
+      "observed_fact": "The checked page title is 'We tackle your plumbing problems | Fixture Plumbing LLC'; its H1 is 'Plumbing repairs and upgrades'. The service label 'Plumbing repair' is represented in the H1 but not fully in the title under the literal word check.",
+      "rule_id": "v22_capability.service_title_review",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "target": "https://example.test/plumbing-repair"
+    }
+  ],
+  "generated_at": "2026-08-30T00:00:00Z",
+  "id": "00000000-0000-0000-0000-000000000386",
+  "input_manifest": {
+    "business": {
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "competitor_sites": [
+        "https://competitor-1.test/",
+        "https://competitor-2.test/",
+        "https://competitor-3.test/"
+      ],
+      "confirmation_source": "seo_confirmation",
+      "confirmed_at": "2026-08-29T00:00:00Z",
+      "id": "00000000-0000-0000-0000-000000000388",
+      "primary_service": "Plumbing repair",
+      "priority": null,
+      "revision": 1,
+      "site_url": "https://example.test/",
+      "target_market": "Austin, TX",
+      "target_pages": [],
+      "user_id": "00000000-0000-0000-0000-000000000387"
+    },
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "generation_input_checksum": "sha256:39046a174b90a4ddb006665b1bd777effde14fef0fee5ae3c0b95f09616355ad",
+    "id": "00000000-0000-0000-0000-000000000385",
+    "implementation": null,
+    "input_checksum": "sha256:e5205dd84b66373ac7e2c27047238b1afabb078d597aba7961b5c223e534d176",
+    "job_id": "00000000-0000-0000-0000-000000000386",
+    "mode": "acquisition",
+    "previous_report": null,
+    "ruleset_version": "v22_capability_public_v5",
+    "schema_version": "v22_analysis_input_v1",
+    "snapshots": [
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:ec49687139d018f47761b78aa39acbef940dc2219d5dcbeefd873e5eb0cb2124",
+        "schema_version": "site_inventory_snapshot_v1",
+        "scope": "Saved site sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_kind": "site"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T12:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:4bce7bc78f114d465f8c431cc19c111e0fc6fcd4e0528f5e71c80504552039d0",
+        "schema_version": "serp_market_snapshot_v1",
+        "scope": "Saved serp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000c",
+        "source_kind": "serp"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-30T00:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c5d780ee3554b73da357113086aa8d0ad4ed225e752a4ddee334f61b60c2311b",
+        "schema_version": "competitor_collection_snapshot_v1",
+        "scope": "Saved competitor sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000d",
+        "source_kind": "competitor"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:30:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:3677ae7933c9e9ce2067d6a6ac73678b1614b03a2afc5520276c0d27d63312f9",
+        "schema_version": "customer_public_gbp_snapshot_v1",
+        "scope": "Saved public_gbp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_kind": "public_gbp"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000387"
+  },
+  "limitations": [
+    "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+    "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+    "Address: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Business name: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Domain coverage for 'emergency plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'emergency plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Phone number: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Service areas: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+    "The full competitor-position comparison for 'emergency plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'emergency plumber' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'emergency plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "A service-label difference is a title-review prompt, not proof that the title is inaccurate or that rankings or enquiries are affected. Confirm the intended page and wording before editing.",
+    "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+  ],
+  "prioritization": {
+    "action_order": [
+      "ac-page-title-2e3c83062c68451ec6da"
+    ],
+    "business_priority": null,
+    "candidates": [
+      {
+        "business_match": "unknown",
+        "comparison_scopes": [
+          "Saved title and H1 on this page only"
+        ],
+        "confidence": "medium",
+        "evidence_support": "needs_verification",
+        "execution": "confirmation_required",
+        "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value. Confirm the stated assumptions before changing anything. Business details or approval are still required. Publishing access is unknown, not assumed blocked or approved.",
+        "impact_paths": [
+          "A more descriptive title may clarify the page's subject to a searcher; no ranking or enquiry effect is established."
+        ],
+        "input": {
+          "action_id": "ac-page-title-2e3c83062c68451ec6da",
+          "dependencies": [],
+          "finding_ids": [
+            "fn-page-title-2e3c83062c68451ec6da"
+          ],
+          "material_kinds": [
+            "title_brief"
+          ],
+          "readiness": [
+            "requires_confirmation"
+          ],
+          "target": "https://example.test/plumbing-repair"
+        },
+        "prerequisite": "none",
+        "reason_codes": [
+          "prerequisite_none",
+          "business_unknown",
+          "evidence_needs_verification",
+          "execution_confirmation_required",
+          "severity_low",
+          "confidence_medium",
+          "return_unknown",
+          "stable_identity_tiebreak",
+          "capacity_unknown",
+          "publishing_unknown"
+        ],
+        "selected_order": 1,
+        "severity": "low"
+      }
+    ],
+    "input_checksum": "sha256:e5205dd84b66373ac7e2c27047238b1afabb078d597aba7961b5c223e534d176",
+    "limitations": [
+      "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+    ],
+    "rules_version": "v22_business_priority_v2",
+    "target_pages": []
+  },
+  "report_type": "prospect",
+  "schema_version": "2.2.2",
+  "settlement_policy": "one_credit_per_completed_analysis",
+  "summary": "The checked page title is 'We tackle your plumbing problems | Fixture Plumbing LLC'; its H1 is 'Plumbing repairs and upgrades'. The service label 'Plumbing repair' is represented in the H1 but not fully in the title under the literal word check. Confirm this is the intended service page, then review whether its title should describe that service more explicitly. Different wording may be valid.",
+  "title": "Plumbing repair",
+  "version": 1
+}

@@ -1060,11 +1060,11 @@
     "generation_input_checksum": "sha256:65a340b551ff4d3c3b3b420649982ffe788096cb23e4a0ed0e7ecb925461f60e",
     "id": "00000000-0000-0000-0000-000000000385",
     "implementation": null,
-    "input_checksum": "sha256:c1dcad70bace589e71aaa2433961372149cdac4ac4eda1b5de86e24972127e65",
+    "input_checksum": "sha256:82378c766c228790c72d6a80391f9e99c3c7ab11b602aec445400c66e6b81c1b",
     "job_id": "00000000-0000-0000-0000-000000000386",
     "mode": "acquisition",
     "previous_report": null,
-    "ruleset_version": "v22_capability_public_v4",
+    "ruleset_version": "v22_capability_public_v5",
     "schema_version": "v22_analysis_input_v1",
     "snapshots": [
       {
@@ -1284,7 +1284,7 @@
         "severity": "medium"
       }
     ],
-    "input_checksum": "sha256:c1dcad70bace589e71aaa2433961372149cdac4ac4eda1b5de86e24972127e65",
+    "input_checksum": "sha256:82378c766c228790c72d6a80391f9e99c3c7ab11b602aec445400c66e6b81c1b",
     "limitations": [
       "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
     ],
