@@ -19,6 +19,9 @@ from pydantic import SecretStr
 
 from app.core.config import settings, v22_verified_execution_ready, v22_capability_execution_ready
 from app.jobs_v22.capability_executor import CapabilityV22Executor
+from app.jobs_v22.attachment_cleanup_worker import (
+    cleanup_v22_implementation_attachments, start_attachment_cleanup, stop_attachment_cleanup,
+)
 from app.jobs_v22.review_worker import ReviewCoordinator, ReviewWorkRepository, execute_v22_review_generation, reconcile_v22_review_generations
 from app.jobs_v22.review_input_repository import ReviewInputRepository
 from app.jobs_v22.review_report_persistence import ReviewReportRepository
@@ -524,6 +527,7 @@ def _secret_value(value: SecretStr | str) -> str:
 
 async def on_startup(ctx: dict[str, Any]) -> None:
     pool = ctx["redis"]
+    await start_attachment_cleanup(ctx, settings)
     if settings.V22_PAGE_CHECKS_ENABLED and settings.V22_CAPABILITY_EXECUTION_ENABLED:
         page_client = httpx.AsyncClient(timeout=30, follow_redirects=False)
         ctx["page_check_client"] = page_client
@@ -789,6 +793,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
 
 async def on_shutdown(ctx: dict[str, Any]) -> None:
+    await stop_attachment_cleanup(ctx)
     if ctx.get("page_check_client") is not None:
         await ctx["page_check_client"].aclose()
     if ctx.get("ga4_comparison_collection_client") is not None:
@@ -866,6 +871,8 @@ class WorkerSettings:
         ),
     ]
     cron_jobs = [
+        cron(cleanup_v22_implementation_attachments, name="cleanup_v22_implementation_attachments",
+             second=28, unique=True, max_tries=1, timeout=110),
         cron(reconcile_v22_review_generations, name="reconcile_v22_review_generations", second={8,38}, unique=True, max_tries=1),
         cron(reconcile_v22_first_service_preparation, name="reconcile_v22_first_service_preparation",
              second=10, unique=True, max_tries=1),

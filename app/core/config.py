@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     V22_GOOGLE_BROKER_SECRET: SecretStr = Field(default="", repr=False)
     V22_REDIS_URL: SecretStr = Field(default="", repr=False)
     V22_REDIS_PREFIX: str = Field(default="searchtrust:v22", min_length=1, max_length=100)
+    V22_IMPLEMENTATION_ATTACHMENT_CLEANUP_ENABLED: bool = False
     V22_QUEUE_NAME: str = Field(default="searchtrust:v22:queue", min_length=1, max_length=100)
     V22_INTERNAL_API_TOKEN: SecretStr = Field(default="", repr=False)
     V22_CALLBACK_URL: str = Field(default="")
