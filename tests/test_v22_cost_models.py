@@ -187,3 +187,14 @@ def test_settings_freeze_unknown_and_known_prices() -> None:
     assert catalog.request_usd_micros["gsc"] == 0
     assert catalog.request_usd_micros["firecrawl"] is None
     assert catalog.dify_input_mtok_usd_micros == 2_000_000
+
+
+@pytest.mark.parametrize("phases", [
+    {"preparation": 1}, {"preparation": True, "execution": 1},
+    {"unknown": 2}, {"execution": 0, "preparation": 2},
+])
+def test_invalid_phase_accounting_fails_closed(phases):
+    with pytest.raises(ValidationError):
+        CostLedgerState(job_id=UUID("55555555-5555-4555-8555-555555555555"),
+            pricing=PricingCatalog(), created_at=NOW, updated_at=NOW,
+            job_attempts=2, phase_attempts=phases)

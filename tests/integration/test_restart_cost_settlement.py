@@ -103,3 +103,18 @@ async def test_cost_claim_and_summary_settle_once_across_restart_and_duplicate_s
     assert persister.settlements == {(JOB_ID, summary.ledger_revision)}
     assert await redis_client.zcard(outbox.keys.cost_sync_pending) == 0
     assert await redis_client.get(outbox.keys.cost_summary(JOB_ID)) is None
+
+
+async def test_phase_accounting_survives_redis_client_restart(redis_client, redis_prefix):
+    started = utc_now()
+    first = JobCostLedger(redis_client, prefix=redis_prefix, job_id=JOB_ID,
+        ttl_seconds=3600, pricing=PricingCatalog(), job_created_at=started)
+    await first.record_job_attempt(active_elapsed_ms=20, phase="preparation")
+    recovered = JobCostLedger(redis_client, prefix=redis_prefix, job_id=JOB_ID,
+        ttl_seconds=3600, pricing=PricingCatalog(), job_created_at=started, require_existing=True)
+    await recovered.record_job_attempt(active_elapsed_ms=10, phase="execution")
+    assert (await recovered.snapshot()).root["job_retry_count"] == 0
+    await recovered.record_job_attempt(active_elapsed_ms=10, phase="execution")
+    assert (await recovered.snapshot()).root["job_retry_count"] == 1
+    assert (await recovered.state()).phase_attempts == {"preparation": 1, "execution": 2}
+    assert (await recovered.snapshot()).root["provider_attempts_total"] == 0

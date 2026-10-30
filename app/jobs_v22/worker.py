@@ -335,7 +335,8 @@ async def _execute_with_lease(
             raise JobLeaseLost()
     except TimeoutError:
         await ledger.record_job_attempt(
-            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0),
+            phase="execution",
         )
         await _finish_failure(
             ctx,
@@ -348,13 +349,15 @@ async def _execute_with_lease(
         return
     except asyncio.CancelledError:
         await ledger.record_job_attempt(
-            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0),
+            phase="execution",
         )
         logger.info("v2.2 worker execution cancelled job_id=%s", job_id)
         raise
     except Exception as exc:  # ARQ must receive Retry for classified transient failures.
         await ledger.record_job_attempt(
-            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+            active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0),
+            phase="execution",
         )
         await _finish_failure(
             ctx,
@@ -367,7 +370,8 @@ async def _execute_with_lease(
         return
 
     await ledger.record_job_attempt(
-        active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0)
+        active_elapsed_ms=max(int((monotonic() - attempt_started) * 1000), 0),
+        phase="execution",
     )
     cost_counters = (await ledger.snapshot()).root
     completed = await store.transition(

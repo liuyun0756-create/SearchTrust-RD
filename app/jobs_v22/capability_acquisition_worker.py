@@ -176,7 +176,7 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
     async def record_attempt():
         nonlocal recorded
         if not recorded:
-            await ledger.record_job_attempt(active_elapsed_ms=max(int((monotonic()-started)*1000), 0))
+            await ledger.record_job_attempt(active_elapsed_ms=max(int((monotonic()-started)*1000), 0), phase="preparation")
             recorded = True
 
     async def before_freeze():

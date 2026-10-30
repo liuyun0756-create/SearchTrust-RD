@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
@@ -164,6 +165,53 @@ async def test_dify_usage_and_job_attempts_are_recorded(redis, clock) -> None:
     assert counters["job_active_elapsed_ms"] == 1250
     assert counters["checkpoint_hits_total"] == 2
     assert counters["estimated_cost_usd_micros"] == 2_500_100
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("phases,retries", [
+    (["preparation", "execution"], 0),
+    (["preparation", "preparation", "execution"], 1),
+    (["preparation", "execution", "execution"], 1),
+    (["preparation", "preparation", "execution", "execution"], 2),
+])
+async def test_stage_handoff_is_not_a_retry_and_repeated_stage_is(ledger, phases, retries):
+    for phase in phases:
+        await ledger.record_job_attempt(active_elapsed_ms=10, phase=phase)
+    counters = (await ledger.snapshot()).root
+    assert counters["job_attempts"] == len(phases)
+    assert counters["job_retry_count"] == retries
+    assert counters["job_active_elapsed_ms"] == len(phases) * 10
+    assert counters["provider_attempts_total"] == 0
+
+
+@pytest.mark.anyio
+async def test_unclassified_old_ledger_keeps_legacy_counts_after_resume(ledger, redis):
+    await ledger.record_job_attempt(active_elapsed_ms=10)
+    old = (await ledger.state()).model_dump(mode="json")
+    old.pop("phase_attempts", None)
+    await redis.set(ledger.key, json.dumps(old))
+    await ledger.record_job_attempt(active_elapsed_ms=10, phase="execution")
+    counters = (await ledger.snapshot()).root
+    assert counters["job_attempts"] == 2
+    assert counters["job_retry_count"] == 1
+
+
+@pytest.mark.anyio
+async def test_invalid_attempt_phase_cannot_mutate_costs(ledger):
+    before = (await ledger.snapshot()).root
+    with pytest.raises(ValueError):
+        await ledger.record_job_attempt(active_elapsed_ms=10, phase="unknown")
+    assert (await ledger.snapshot()).root == before
+
+
+@pytest.mark.anyio
+async def test_concurrent_phase_records_preserve_each_stage_count(ledger):
+    await asyncio.gather(*(
+        ledger.record_job_attempt(active_elapsed_ms=10, phase=phase)
+        for phase in ["preparation", "execution", "execution"]
+    ))
+    assert (await ledger.state()).phase_attempts == {"preparation": 1, "execution": 2}
+    assert (await ledger.snapshot()).root["job_retry_count"] == 1
 
 
 @pytest.mark.anyio

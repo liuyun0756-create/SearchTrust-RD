@@ -64,6 +64,12 @@ async def test_actual_worker_generates_commits_and_recovers_sql_success_without_
     store.transition = capture_transition
     envelope=CapabilityRequestEnvelope(schema_version="v22_capability_request_envelope_v1",capability_request=task)
     await store.register_job(job_id=m.job_id,case_id=m.case_id,idempotency_key="one-reserved-analysis",request_payload=envelope.model_dump(mode="json"),now=now)
+    if lost_ack is False:
+        from app.jobs_v22.cost_ledger import JobCostLedger
+        from app.jobs_v22.cost_models import pricing_catalog_from_settings
+        preparation_ledger=JobCostLedger(redis,prefix=store.keys.prefix,job_id=m.job_id,ttl_seconds=3600,
+            pricing=pricing_catalog_from_settings(settings),job_created_at=now)
+        await preparation_ledger.record_job_attempt(active_elapsed_ms=1,phase="preparation")
     if lost_ack=="last":
         from app.jobs_v22.cost_ledger import JobCostLedger
         from app.jobs_v22.cost_models import pricing_catalog_from_settings
@@ -84,6 +90,10 @@ async def test_actual_worker_generates_commits_and_recovers_sql_success_without_
         state=await store.require_state(m.job_id)
         assert state.status=="succeeded" and state.report.model_dump(mode="json")==committed
         assert state.cost_counters["provider_attempts_total"]==0
+        if lost_ack is False:
+            assert state.cost_counters["job_attempts"] == 2
+            assert state.cost_counters["job_retry_count"] == 0
+            assert (await preparation_ledger.state()).phase_attempts == {"preparation": 1, "execution": 1}
         assert all(stage in observed_stages for stage in ["building_evidence", "evaluating", "validating", "persisting", "completed"])
         await execute_v22_job(ctx,str(m.job_id),1)
         assert calls.count("complete_v22_capability_analysis")==1

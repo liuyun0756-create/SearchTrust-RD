@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from math import isfinite
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import AwareDatetime, Field, RootModel, model_validator
@@ -48,6 +48,7 @@ CostJobKind = Literal[
     "gbp_sync",
 ]
 CostJobStatus = Literal["succeeded", "failed"]
+CostAttemptPhase = Literal["job", "preparation", "execution"]
 
 
 PROVIDERS: tuple[CostProvider, ...] = (
@@ -166,12 +167,16 @@ class CostLedgerState(StrictModel):
     local_denials: dict[CostOperation, int] = Field(default_factory=dict)
     checkpoint_hits: int = Field(default=0, ge=0, le=1_000_000)
     job_attempts: int = Field(default=0, ge=0, le=100)
+    # Missing means a pre-phase ledger: preserve its original accounting on resume.
+    phase_attempts: dict[CostAttemptPhase, Annotated[int, Field(ge=1, le=100)]] | None = None
     job_active_elapsed_ms: int = Field(default=0, ge=0, le=MAX_COUNTER_VALUE)
 
     @model_validator(mode="after")
     def validate_state(self) -> "CostLedgerState":
         if self.updated_at < self.created_at:
             raise ValueError("ledger update cannot precede creation")
+        if self.phase_attempts is not None and sum(self.phase_attempts.values()) != self.job_attempts:
+            raise ValueError("phase attempts must sum to total attempts")
         claim_ids = [claim.claim_id for claim in self.claims]
         if len(set(claim_ids)) != len(claim_ids):
             raise ValueError("cost claim IDs must be unique")
@@ -292,7 +297,11 @@ def cost_counters_from_state(state: CostLedgerState, *, now: datetime) -> CostCo
             "job_wall_elapsed_ms": wall_ms,
             "job_active_elapsed_ms": state.job_active_elapsed_ms,
             "job_attempts": state.job_attempts,
-            "job_retry_count": max(state.job_attempts - 1, 0),
+            "job_retry_count": (
+                sum(count - 1 for count in state.phase_attempts.values())
+                if state.phase_attempts is not None
+                else max(state.job_attempts - 1, 0)
+            ),
             "checkpoint_hits_total": state.checkpoint_hits,
         }
     )

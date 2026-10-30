@@ -10,6 +10,7 @@ from redis.exceptions import WatchError
 
 from app.jobs_v22.cost_models import (
     CostClaim,
+    CostAttemptPhase,
     CostCountersV1,
     CostLedgerState,
     CostOperation,
@@ -88,6 +89,7 @@ class JobCostLedger:
             pricing=self.pricing,
             created_at=self.job_created_at,
             updated_at=max(now, self.job_created_at),
+            phase_attempts={},
         )
 
     def _decode(self, raw, now: datetime) -> CostLedgerState:
@@ -239,16 +241,22 @@ class JobCostLedger:
 
         await self._mutate(mutate)
 
-    async def record_job_attempt(self, *, active_elapsed_ms: int) -> None:
+    async def record_job_attempt(self, *, active_elapsed_ms: int, phase: CostAttemptPhase = "job") -> None:
         if isinstance(active_elapsed_ms, bool) or not 0 <= active_elapsed_ms <= 86_400_000:
             raise ValueError("active attempt duration is invalid")
+        if phase not in ("job", "preparation", "execution"):
+            raise ValueError("invalid attempt phase")
 
         def mutate(state: CostLedgerState, now: datetime):
+            phases = None if state.phase_attempts is None else dict(state.phase_attempts)
+            if phases is not None:
+                phases[phase] = phases.get(phase, 0) + 1
             updated = state.model_copy(
                 update={
                     "revision": state.revision + 1,
                     "updated_at": now,
                     "job_attempts": state.job_attempts + 1,
+                    "phase_attempts": phases,
                     "job_active_elapsed_ms": state.job_active_elapsed_ms + active_elapsed_ms,
                 }
             )

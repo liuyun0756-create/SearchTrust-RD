@@ -95,6 +95,7 @@ async def test_real_preparer_freezes_under_lease_and_hands_same_task_to_formal_r
         state=await h.ctx["store"].require_state(h.args["job_id"])
         assert state.created_at==h.args["created_at"] and state.deadline_at==h.args["deadline_at"]
         assert state.attempt_count==1 and state.revision==5
+        assert json.loads(await h.redis.get(h.ctx["store"].keys.cost_ledger(state.job_id)))["phase_attempts"] == {"preparation": 1}
         assert await h.ctx["store"].get_request(state.job_id)==h.dispatch["request"]
         queue.enqueue.assert_awaited_once_with(state.job_id,1)
         assert h.collector.collect_confirmed_sources.await_count==1
