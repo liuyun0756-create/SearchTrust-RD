@@ -31,7 +31,8 @@ def validate_public_binding(source, context):
             and binding.identity_match_status == payload.identity_match_status)
     try:
         raw = payload.model_dump(mode="python", include=set(PublicGbpSample.model_fields))
-        rebuilt = build_customer_public_gbp_snapshot({**raw, "reference": reference})
+        rebuilt = build_customer_public_gbp_snapshot({**raw, "reference": reference},
+            extended_fields=payload.schema_version == "customer_public_gbp_snapshot_v2")
     except PublicGbpError as exc:
         kind = "LIMIT_EXCEEDED" if exc.error_code.endswith("LIMIT_EXCEEDED") else "SNAPSHOT_BINDING_INVALID"
         raise EvidenceError(kind) from None

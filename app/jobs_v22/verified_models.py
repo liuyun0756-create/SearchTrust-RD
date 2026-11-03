@@ -12,7 +12,7 @@ from app.collectors.site_inventory_models import SiteInventorySnapshot
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.jobs_v22.digest import request_digest, verified_request_digest
 from app.report_v22.models import ReportV22, StrictModel
-from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshotValue
 
 if TYPE_CHECKING:
     from app.api.v2.models import AnalyzeRequest
@@ -82,8 +82,8 @@ class VerifiedPublicGbpSnapshotRow(StrictModel):
     snapshot_id: UUID
     case_id: UUID
     source_type: Literal["gbp"]
-    schema_version: Literal["customer_public_gbp_snapshot_v1"]
-    normalized_payload: CustomerPublicGbpSnapshot
+    schema_version: Literal["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2"]
+    normalized_payload: CustomerPublicGbpSnapshotValue
     payload_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     created_at: AwareDatetime
     fetched_at: AwareDatetime
@@ -94,7 +94,8 @@ class VerifiedPublicGbpSnapshotRow(StrictModel):
     def validate_source(self) -> "VerifiedPublicGbpSnapshotRow":
         payload = self.normalized_payload
         if (
-            request_digest(payload) != self.payload_checksum
+            self.schema_version != payload.schema_version
+            or request_digest(payload) != self.payload_checksum
             or self.fetched_at != payload.completed_at
             or self.expires_at != payload.expires_at
             or self.fetched_at > self.created_at

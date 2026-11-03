@@ -22,7 +22,7 @@ from app.report_v22.models import (
     IdentityMatchStatus, ReportType, ScalarValue, SourceLocator, SourceType, StrictModel,
 )
 from pydantic import HttpUrl
-from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshotValue
 
 ActualSourceType = Literal["site", "serp", "competitor", "gsc", "gbp", "ga4"]
 GapReason = Literal["no_snapshot", "not_connected", "unavailable", "empty", "partial", "unhealthy", "identity_mismatch", "identity_unconfirmed", "expired"]
@@ -114,7 +114,7 @@ class FirstPartyEvidenceSource(StrictModel):
 class PublicGbpEvidenceSource(StrictModel):
     kind: Literal["public_gbp"] = "public_gbp"
     binding: SnapshotBinding
-    payload: CustomerPublicGbpSnapshot
+    payload: CustomerPublicGbpSnapshotValue
 
 
 EvidenceSource = Annotated[RenderedEvidenceSource | SiteEvidenceSource | SerpEvidenceSource | CompetitorEvidenceSource | FirstPartyEvidenceSource | PublicGbpEvidenceSource, Field(discriminator="kind")]

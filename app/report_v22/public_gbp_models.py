@@ -160,3 +160,65 @@ class CustomerPublicGbpSnapshot(PublicGbpSample):
     identity_reasons: list[Literal["lookup_failed", "strong_id_conflict", "no_comparable_strong_id",
                                  "website_domain_conflict", "strong_id_matched", "website_not_observed"]]
     health_status: Literal["healthy", "unavailable"]
+
+
+# V1 remains a separate model: decoding historical observations must not add
+# defaults, fields, or new bytes to their frozen payloads.
+Category = Annotated[str, Field(min_length=1, max_length=240)]
+Count = Annotated[int, Field(ge=0, le=1_000_000_000)]
+Rating = Annotated[float, Field(ge=0, le=5, allow_inf_nan=False)]
+Weekday = Literal['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+HoursText = Annotated[str, Field(min_length=1, max_length=500)]
+HoursDay = Annotated[dict[Weekday, HoursText], Field(min_length=1, max_length=7)]
+HoursValue = HoursDay | Annotated[list[HoursDay], Field(min_length=1, max_length=7)]
+EXTENDED_FIELD_NAMES = ('categories', 'rating', 'review_count', 'hours', 'operating_hours', 'photo_count')
+
+
+class PublicGbpFieldsV2(PublicGbpFields):
+    categories: PublicGbpField[Annotated[list[Category], Field(max_length=20)]]
+    rating: PublicGbpField[Rating | None]
+    review_count: PublicGbpField[Count | None]
+    # Keep each returned alias separately. Never combine two conflicting schedules
+    # or infer a missing day, timezone, or holiday opening time.
+    hours: PublicGbpField[HoursValue | None]
+    operating_hours: PublicGbpField[HoursValue | None]
+    photo_count: PublicGbpField[Count | None]
+
+    @model_validator(mode='after')
+    def validate_extended_values(self):
+        if len(set(self.categories.value)) != len(self.categories.value):
+            raise ValueError('duplicate categories')
+        for field in (self.hours, self.operating_hours):
+            if field.state == 'observed':
+                days = field.value if isinstance(field.value, list) else [field.value]
+                if any(not text.strip() for day in days for text in day.values()):
+                    raise ValueError('blank hours')
+        return self
+
+
+class PublicGbpRecordV2(PublicGbpRecord):
+    fields: PublicGbpFieldsV2
+
+
+def validate_extended_sample(sample):
+    states = [getattr(sample.record.fields, field).state for field in EXTENDED_FIELD_NAMES]
+    if sample.collection_status == 'succeeded' and 'request_failed' in states:
+        raise ValueError('inconsistent successful extended sample')
+    if sample.collection_status == 'failed' and any(state != 'request_failed' for state in states):
+        raise ValueError('inconsistent failed extended sample')
+    return sample
+
+
+class CustomerPublicGbpSnapshotInputV2(CustomerPublicGbpSnapshotInput):
+    record: PublicGbpRecordV2
+    _extended_sample = model_validator(mode='after')(validate_extended_sample)
+
+
+class CustomerPublicGbpSnapshotV2(CustomerPublicGbpSnapshot):
+    schema_version: Literal['customer_public_gbp_snapshot_v2'] = 'customer_public_gbp_snapshot_v2'
+    record: PublicGbpRecordV2
+    _extended_sample = model_validator(mode='after')(validate_extended_sample)
+
+
+CustomerPublicGbpSnapshotValue = Annotated[
+    CustomerPublicGbpSnapshot | CustomerPublicGbpSnapshotV2, Field(discriminator='schema_version')]

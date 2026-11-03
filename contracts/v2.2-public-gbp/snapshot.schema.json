@@ -1,0 +1,916 @@
+{
+  "$defs": {
+    "CustomerPublicGbpSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_status": {
+          "enum": [
+            "succeeded",
+            "failed"
+          ],
+          "title": "Collection Status",
+          "type": "string"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "enum": [
+                "timeout",
+                "provider_unavailable",
+                "request_rejected",
+                "invalid_response"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure Code"
+        },
+        "health_status": {
+          "enum": [
+            "healthy",
+            "unavailable"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "identity_reasons": {
+          "items": {
+            "enum": [
+              "lookup_failed",
+              "strong_id_conflict",
+              "no_comparable_strong_id",
+              "website_domain_conflict",
+              "strong_id_matched",
+              "website_not_observed"
+            ],
+            "type": "string"
+          },
+          "title": "Identity Reasons",
+          "type": "array"
+        },
+        "identity_rule_version": {
+          "const": "customer_public_gbp_identity_v1",
+          "default": "customer_public_gbp_identity_v1",
+          "title": "Identity Rule Version",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "provider": {
+          "const": "serpapi_public",
+          "title": "Provider",
+          "type": "string"
+        },
+        "record": {
+          "$ref": "#/$defs/PublicGbpRecord"
+        },
+        "request_record_id": {
+          "pattern": "^req_[a-z0-9]{16,80}$",
+          "title": "Request Record Id",
+          "type": "string"
+        },
+        "request_target": {
+          "$ref": "#/$defs/PublicGbpRequestTarget"
+        },
+        "response_checksum": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Response Checksum"
+        },
+        "schema_version": {
+          "const": "customer_public_gbp_snapshot_v1",
+          "default": "customer_public_gbp_snapshot_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "subject_reference_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Subject Reference Checksum",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_target",
+        "started_at",
+        "completed_at",
+        "expires_at",
+        "provider",
+        "request_record_id",
+        "response_checksum",
+        "collection_status",
+        "failure_code",
+        "record",
+        "subject_reference_checksum",
+        "identity_match_status",
+        "identity_reasons",
+        "health_status"
+      ],
+      "title": "CustomerPublicGbpSnapshot",
+      "type": "object"
+    },
+    "CustomerPublicGbpSnapshotV2": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_status": {
+          "enum": [
+            "succeeded",
+            "failed"
+          ],
+          "title": "Collection Status",
+          "type": "string"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "enum": [
+                "timeout",
+                "provider_unavailable",
+                "request_rejected",
+                "invalid_response"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure Code"
+        },
+        "health_status": {
+          "enum": [
+            "healthy",
+            "unavailable"
+          ],
+          "title": "Health Status",
+          "type": "string"
+        },
+        "identity_match_status": {
+          "enum": [
+            "matched",
+            "mismatch",
+            "needs_confirmation"
+          ],
+          "title": "Identity Match Status",
+          "type": "string"
+        },
+        "identity_reasons": {
+          "items": {
+            "enum": [
+              "lookup_failed",
+              "strong_id_conflict",
+              "no_comparable_strong_id",
+              "website_domain_conflict",
+              "strong_id_matched",
+              "website_not_observed"
+            ],
+            "type": "string"
+          },
+          "title": "Identity Reasons",
+          "type": "array"
+        },
+        "identity_rule_version": {
+          "const": "customer_public_gbp_identity_v1",
+          "default": "customer_public_gbp_identity_v1",
+          "title": "Identity Rule Version",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "provider": {
+          "const": "serpapi_public",
+          "title": "Provider",
+          "type": "string"
+        },
+        "record": {
+          "$ref": "#/$defs/PublicGbpRecordV2"
+        },
+        "request_record_id": {
+          "pattern": "^req_[a-z0-9]{16,80}$",
+          "title": "Request Record Id",
+          "type": "string"
+        },
+        "request_target": {
+          "$ref": "#/$defs/PublicGbpRequestTarget"
+        },
+        "response_checksum": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Response Checksum"
+        },
+        "schema_version": {
+          "const": "customer_public_gbp_snapshot_v2",
+          "default": "customer_public_gbp_snapshot_v2",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "subject_reference_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Subject Reference Checksum",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_target",
+        "started_at",
+        "completed_at",
+        "expires_at",
+        "provider",
+        "request_record_id",
+        "response_checksum",
+        "collection_status",
+        "failure_code",
+        "record",
+        "subject_reference_checksum",
+        "identity_match_status",
+        "identity_reasons",
+        "health_status"
+      ],
+      "title": "CustomerPublicGbpSnapshotV2",
+      "type": "object"
+    },
+    "PublicGbpEntityKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "place_id",
+            "data_id",
+            "cid"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 480,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "PublicGbpEntityKey",
+      "type": "object"
+    },
+    "PublicGbpField_Annotated_list_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240_______FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_20_____": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "maxLength": 240,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Annotated[list[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=240)])]], FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=20)])]]",
+      "type": "object"
+    },
+    "PublicGbpField_Annotated_list_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240_______FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_50_____": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "maxLength": 240,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 50,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Annotated[list[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=240)])]], FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=50)])]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_HttpUrl__AfterValidator___NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[HttpUrl, AfterValidator], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______Annotated_list_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxProperties": 7,
+              "minProperties": 1,
+              "propertyNames": {
+                "enum": [
+                  "monday",
+                  "tuesday",
+                  "wednesday",
+                  "thursday",
+                  "friday",
+                  "saturday",
+                  "sunday"
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "items": {
+                "additionalProperties": {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxProperties": 7,
+                "minProperties": 1,
+                "propertyNames": {
+                  "enum": [
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday"
+                  ]
+                },
+                "type": "object"
+              },
+              "maxItems": 7,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[dict[Literal['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=500)])]], FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=7)])], Annotated[list[Annotated[dict[Literal['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=500)])]], FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=7)])]], FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=7)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_float__FieldInfo_annotation_NoneType__required_True__metadata__Ge_ge_0___Le_le_5____PydanticGeneralMetadata_allow_inf_nan_False______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 5.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[float, FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=5), _PydanticGeneralMetadata(allow_inf_nan=False)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Ge_ge_0___Le_le_1000000000______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=1000000000)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_120______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=120)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=240)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500______NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MinLen(min_length=1), MaxLen(max_length=500)])], NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpField_Union_bool__NoneType__": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "observed",
+            "not_returned",
+            "returned_empty",
+            "unsupported",
+            "request_failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "PublicGbpField[Union[bool, NoneType]]",
+      "type": "object"
+    },
+    "PublicGbpFields": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500______NoneType__"
+        },
+        "business_name": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240______NoneType__"
+        },
+        "phone": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_120______NoneType__"
+        },
+        "service_area_business": {
+          "$ref": "#/$defs/PublicGbpField_Union_bool__NoneType__"
+        },
+        "service_areas": {
+          "$ref": "#/$defs/PublicGbpField_Annotated_list_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240_______FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_50_____"
+        },
+        "website_url": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_HttpUrl__AfterValidator___NoneType__"
+        }
+      },
+      "required": [
+        "business_name",
+        "website_url",
+        "address",
+        "phone",
+        "service_areas",
+        "service_area_business"
+      ],
+      "title": "PublicGbpFields",
+      "type": "object"
+    },
+    "PublicGbpFieldsV2": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500______NoneType__"
+        },
+        "business_name": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240______NoneType__"
+        },
+        "categories": {
+          "$ref": "#/$defs/PublicGbpField_Annotated_list_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240_______FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_20_____"
+        },
+        "hours": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______Annotated_list_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______NoneType__"
+        },
+        "operating_hours": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______Annotated_list_Annotated_dict_Literal__monday____tuesday____wednesday____thursday____friday____saturday____sunday____Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_500_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7_______FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_7______NoneType__"
+        },
+        "phone": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_120______NoneType__"
+        },
+        "photo_count": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Ge_ge_0___Le_le_1000000000______NoneType__"
+        },
+        "rating": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_float__FieldInfo_annotation_NoneType__required_True__metadata__Ge_ge_0___Le_le_5____PydanticGeneralMetadata_allow_inf_nan_False______NoneType__"
+        },
+        "review_count": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Ge_ge_0___Le_le_1000000000______NoneType__"
+        },
+        "service_area_business": {
+          "$ref": "#/$defs/PublicGbpField_Union_bool__NoneType__"
+        },
+        "service_areas": {
+          "$ref": "#/$defs/PublicGbpField_Annotated_list_Annotated_str__FieldInfo_annotation_NoneType__required_True__metadata__MinLen_min_length_1___MaxLen_max_length_240_______FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_50_____"
+        },
+        "website_url": {
+          "$ref": "#/$defs/PublicGbpField_Union_Annotated_HttpUrl__AfterValidator___NoneType__"
+        }
+      },
+      "required": [
+        "business_name",
+        "website_url",
+        "address",
+        "phone",
+        "service_areas",
+        "service_area_business",
+        "categories",
+        "rating",
+        "review_count",
+        "hours",
+        "operating_hours",
+        "photo_count"
+      ],
+      "title": "PublicGbpFieldsV2",
+      "type": "object"
+    },
+    "PublicGbpRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "$ref": "#/$defs/PublicGbpFields"
+        },
+        "observed_entity_keys": {
+          "items": {
+            "$ref": "#/$defs/PublicGbpEntityKey"
+          },
+          "maxItems": 3,
+          "title": "Observed Entity Keys",
+          "type": "array"
+        },
+        "observed_public_gbp_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed Public Gbp Url"
+        }
+      },
+      "required": [
+        "observed_entity_keys",
+        "observed_public_gbp_url",
+        "fields"
+      ],
+      "title": "PublicGbpRecord",
+      "type": "object"
+    },
+    "PublicGbpRecordV2": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "$ref": "#/$defs/PublicGbpFieldsV2"
+        },
+        "observed_entity_keys": {
+          "items": {
+            "$ref": "#/$defs/PublicGbpEntityKey"
+          },
+          "maxItems": 3,
+          "title": "Observed Entity Keys",
+          "type": "array"
+        },
+        "observed_public_gbp_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed Public Gbp Url"
+        }
+      },
+      "required": [
+        "observed_entity_keys",
+        "observed_public_gbp_url",
+        "fields"
+      ],
+      "title": "PublicGbpRecordV2",
+      "type": "object"
+    },
+    "PublicGbpRequestTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_keys": {
+          "items": {
+            "$ref": "#/$defs/PublicGbpEntityKey"
+          },
+          "maxItems": 3,
+          "title": "Entity Keys",
+          "type": "array"
+        },
+        "public_gbp_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Public Gbp Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "public_gbp_url",
+        "entity_keys"
+      ],
+      "title": "PublicGbpRequestTarget",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "customer_public_gbp_snapshot_v1": "#/$defs/CustomerPublicGbpSnapshot",
+      "customer_public_gbp_snapshot_v2": "#/$defs/CustomerPublicGbpSnapshotV2"
+    },
+    "propertyName": "schema_version"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/CustomerPublicGbpSnapshot"
+    },
+    {
+      "$ref": "#/$defs/CustomerPublicGbpSnapshotV2"
+    }
+  ],
+  "title": "CustomerPublicGbpSnapshots"
+}

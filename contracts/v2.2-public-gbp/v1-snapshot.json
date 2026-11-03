@@ -1,0 +1,74 @@
+{
+  "collection_status": "succeeded",
+  "completed_at": "2026-08-29T23:30:00Z",
+  "expires_at": "2026-08-31T00:00:00Z",
+  "failure_code": null,
+  "health_status": "healthy",
+  "identity_match_status": "matched",
+  "identity_reasons": [
+    "strong_id_matched"
+  ],
+  "identity_rule_version": "customer_public_gbp_identity_v1",
+  "limitations": [],
+  "provider": "serpapi_public",
+  "record": {
+    "fields": {
+      "address": {
+        "state": "observed",
+        "value": "123 Fixture Street, Austin, TX"
+      },
+      "business_name": {
+        "state": "observed",
+        "value": "Example Plumbing"
+      },
+      "phone": {
+        "state": "observed",
+        "value": "+1 512 555 0100"
+      },
+      "service_area_business": {
+        "state": "observed",
+        "value": false
+      },
+      "service_areas": {
+        "state": "observed",
+        "value": [
+          "Austin",
+          "Round Rock"
+        ]
+      },
+      "website_url": {
+        "state": "observed",
+        "value": "https://example.test/"
+      }
+    },
+    "observed_entity_keys": [
+      {
+        "kind": "place_id",
+        "value": "fixture-customer-place"
+      },
+      {
+        "kind": "cid",
+        "value": "12345"
+      }
+    ],
+    "observed_public_gbp_url": "https://maps.google.com/?cid=12345"
+  },
+  "request_record_id": "req_aaaaaaaaaaaaaaaaaaaaaaaa",
+  "request_target": {
+    "entity_keys": [
+      {
+        "kind": "place_id",
+        "value": "fixture-customer-place"
+      },
+      {
+        "kind": "cid",
+        "value": "12345"
+      }
+    ],
+    "public_gbp_url": "https://maps.google.com/?cid=12345"
+  },
+  "response_checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "schema_version": "customer_public_gbp_snapshot_v1",
+  "started_at": "2026-08-29T23:00:00Z",
+  "subject_reference_checksum": "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd"
+}

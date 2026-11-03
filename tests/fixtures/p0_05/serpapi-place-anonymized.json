@@ -1,0 +1,29 @@
+{
+  "place_results": {
+    "title": "Example Coffee Shop",
+    "website": "https://example.test/",
+    "address": "123 Fixture Street, Austin, TX",
+    "phone": "+1 512 555 0100",
+    "data_id": "0xabc:0x7b",
+    "place_id": "ChIJfixture",
+    "rating": 4.5,
+    "reviews": 1388,
+    "type": [
+      "Coffee shop",
+      "Cafe",
+      "Coffee store",
+      "Tea store"
+    ],
+    "hours": [
+      {
+        "wednesday": "6:30AM–5PM"
+      },
+      {
+        "thursday": "6:30AM–5PM"
+      },
+      {
+        "friday": "6:30AM–5PM"
+      }
+    ]
+  }
+}

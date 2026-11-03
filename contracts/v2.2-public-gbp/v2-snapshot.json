@@ -1,0 +1,113 @@
+{
+  "collection_status": "succeeded",
+  "completed_at": "2026-08-29T23:30:00Z",
+  "expires_at": "2026-08-31T00:00:00Z",
+  "failure_code": null,
+  "health_status": "healthy",
+  "identity_match_status": "matched",
+  "identity_reasons": [
+    "strong_id_matched"
+  ],
+  "identity_rule_version": "customer_public_gbp_identity_v1",
+  "limitations": [],
+  "provider": "serpapi_public",
+  "record": {
+    "fields": {
+      "address": {
+        "state": "observed",
+        "value": "123 Fixture Street, Austin, TX"
+      },
+      "business_name": {
+        "state": "observed",
+        "value": "Example Plumbing"
+      },
+      "categories": {
+        "state": "observed",
+        "value": [
+          "Coffee shop",
+          "Cafe",
+          "Coffee store",
+          "Tea store"
+        ]
+      },
+      "hours": {
+        "state": "observed",
+        "value": [
+          {
+            "wednesday": "6:30AM–5PM"
+          },
+          {
+            "thursday": "6:30AM–5PM"
+          },
+          {
+            "friday": "6:30AM–5PM"
+          }
+        ]
+      },
+      "operating_hours": {
+        "state": "not_returned",
+        "value": null
+      },
+      "phone": {
+        "state": "observed",
+        "value": "+1 512 555 0100"
+      },
+      "photo_count": {
+        "state": "not_returned",
+        "value": null
+      },
+      "rating": {
+        "state": "observed",
+        "value": 4.5
+      },
+      "review_count": {
+        "state": "observed",
+        "value": 1388
+      },
+      "service_area_business": {
+        "state": "observed",
+        "value": false
+      },
+      "service_areas": {
+        "state": "observed",
+        "value": [
+          "Austin",
+          "Round Rock"
+        ]
+      },
+      "website_url": {
+        "state": "observed",
+        "value": "https://example.test/"
+      }
+    },
+    "observed_entity_keys": [
+      {
+        "kind": "place_id",
+        "value": "fixture-customer-place"
+      },
+      {
+        "kind": "cid",
+        "value": "12345"
+      }
+    ],
+    "observed_public_gbp_url": "https://maps.google.com/?cid=12345"
+  },
+  "request_record_id": "req_aaaaaaaaaaaaaaaaaaaaaaaa",
+  "request_target": {
+    "entity_keys": [
+      {
+        "kind": "place_id",
+        "value": "fixture-customer-place"
+      },
+      {
+        "kind": "cid",
+        "value": "12345"
+      }
+    ],
+    "public_gbp_url": "https://maps.google.com/?cid=12345"
+  },
+  "response_checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "schema_version": "customer_public_gbp_snapshot_v2",
+  "started_at": "2026-08-29T23:00:00Z",
+  "subject_reference_checksum": "sha256:e1607d155e3b9e7bc6a3fe6b7df01deabdf215c8f798d451bf11e4cdd64ed8fd"
+}

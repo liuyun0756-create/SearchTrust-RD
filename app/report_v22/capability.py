@@ -150,7 +150,8 @@ class AnalysisInputManifest(StrictModel):
         if not required <= set(kinds) or (self.mode == "acquisition" and set(kinds) != required):
             raise ValueError("required sources missing or private acquisition source")
         for source in self.snapshots:
-            if source.schema_version != SOURCE_SCHEMAS[source.source_kind]:
+            if source.schema_version != SOURCE_SCHEMAS[source.source_kind] and not (
+                    source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2"):
                 raise ValueError("source schema mismatch")
             if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evaluated_at) < instant(source.expires_at):
                 raise ValueError("source Case or freshness mismatch")

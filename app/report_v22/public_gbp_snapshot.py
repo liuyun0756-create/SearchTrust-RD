@@ -5,18 +5,20 @@ from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.report_v22.evidence_models import reject_nonfinite
 from app.report_v22.public_gbp_errors import PublicGbpError
 from app.report_v22.public_gbp_identity import assess_identity
-from app.report_v22.public_gbp_models import CustomerPublicGbpSnapshot, CustomerPublicGbpSnapshotInput
+from app.report_v22.public_gbp_models import CustomerPublicGbpSnapshot, CustomerPublicGbpSnapshotInput, CustomerPublicGbpSnapshotV2, CustomerPublicGbpSnapshotInputV2
 
 
-def build_customer_public_gbp_snapshot(value: CustomerPublicGbpSnapshotInput | dict) -> CustomerPublicGbpSnapshot:
+def build_customer_public_gbp_snapshot(value: CustomerPublicGbpSnapshotInput | dict, *, extended_fields=False) -> CustomerPublicGbpSnapshot:
     try:
         reject_nonfinite(value)
         raw = value.model_dump(mode="python", warnings=False) if isinstance(value, CustomerPublicGbpSnapshotInput) else value
-        request = CustomerPublicGbpSnapshotInput.model_validate(raw)
+        input_model = CustomerPublicGbpSnapshotInputV2 if extended_fields else CustomerPublicGbpSnapshotInput
+        snapshot_model = CustomerPublicGbpSnapshotV2 if extended_fields else CustomerPublicGbpSnapshot
+        request = input_model.model_validate(raw)
         if len(canonical_json_bytes(request)) > request.limits.max_bytes:
             raise PublicGbpError("LIMIT_EXCEEDED")
         identity, reasons = assess_identity(request.reference, request)
-        result = CustomerPublicGbpSnapshot(
+        result = snapshot_model(
             **request.model_dump(mode="python", exclude={"reference", "limits"}),
             subject_reference_checksum=request_digest(request.reference),
             identity_match_status=identity, identity_reasons=reasons,

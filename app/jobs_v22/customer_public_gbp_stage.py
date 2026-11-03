@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 from uuid import UUID
 
 import httpx
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
 from app.api.v2.models import AnalyzeRequest
 from app.core.config import Settings
@@ -34,16 +34,19 @@ from app.report_v22.models import StrictModel
 from app.report_v22.public_gbp_models import (
     CustomerPublicGbpReference,
     CustomerPublicGbpSnapshot,
-    CustomerPublicGbpSnapshotInput,
+    CustomerPublicGbpSnapshotInputV2,
+    CustomerPublicGbpSnapshotValue,
     PublicGbpEntityKey,
 )
 from app.report_v22.public_gbp_errors import PublicGbpError
+from app.report_v22.public_gbp_details import DETAIL_KEYS, detail_fields
 from app.report_v22.public_gbp_snapshot import build_customer_public_gbp_snapshot
 from app.security_v22.urls import validate_gbp_url
 
 
-STAGE_VERSION = "v22_customer_public_gbp_collection_v1"
-CHECKPOINT_VERSION = "customer_public_gbp_checkpoint_v1"
+LEGACY_STAGE_VERSION = "v22_customer_public_gbp_collection_v1"
+STAGE_VERSION = "v22_customer_public_gbp_collection_v2"
+CHECKPOINT_VERSION = "customer_public_gbp_checkpoint_v2"
 MAX_PROVIDER_ATTEMPTS = 3
 
 
@@ -120,18 +123,31 @@ class SerpApiCustomerPublicGbpProvider:
 
 
 class CustomerPublicGbpCollection(StrictModel):
-    schema_version: Literal["customer_public_gbp_checkpoint_v1"] = CHECKPOINT_VERSION
+    schema_version: Literal["customer_public_gbp_checkpoint_v1", "customer_public_gbp_checkpoint_v2"] = "customer_public_gbp_checkpoint_v1"
     reference: CustomerPublicGbpReference
-    snapshot: CustomerPublicGbpSnapshot
+    snapshot: CustomerPublicGbpSnapshotValue
+
+    @model_validator(mode="after")
+    def validate_version(self):
+        if self.schema_version.rsplit("_", 1)[-1] != self.snapshot.schema_version.rsplit("_", 1)[-1]:
+            raise ValueError("checkpoint and snapshot versions differ")
+        return self
 
 
 class _CustomerPublicGbpCheckpoint(StrictModel):
-    schema_version: Literal["customer_public_gbp_checkpoint_v1"] = CHECKPOINT_VERSION
-    stage_version: Literal["v22_customer_public_gbp_collection_v1"] = STAGE_VERSION
+    schema_version: Literal["customer_public_gbp_checkpoint_v1", "customer_public_gbp_checkpoint_v2"] = CHECKPOINT_VERSION
+    stage_version: Literal["v22_customer_public_gbp_collection_v1", "v22_customer_public_gbp_collection_v2"] = STAGE_VERSION
     job_id: UUID
     input_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     result_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     result: CustomerPublicGbpCollection
+
+    @model_validator(mode="after")
+    def validate_version(self):
+        if (self.schema_version != self.result.schema_version
+                or self.stage_version.rsplit("_", 1)[-1] != self.schema_version.rsplit("_", 1)[-1]):
+            raise ValueError("checkpoint envelope versions differ")
+        return self
 
 
 def _reference(request: AnalyzeRequest, confirmed_at: datetime) -> CustomerPublicGbpReference:
@@ -220,6 +236,11 @@ def _sanitize(payload: Any) -> dict[str, Any]:
         if isinstance(raw.get(key), bool):
             clean["service_area_business"] = raw[key]
             break
+    # Keep presence, emptiness and invalid shapes distinct for the V2 decoder.
+    # Review details and photo galleries remain outside the whitelist.
+    for key in DETAIL_KEYS:
+        if key in raw:
+            clean[key] = raw[key]
     return {"place_results": clean} if clean else {}
 
 
@@ -257,6 +278,7 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
         "service_areas": _field(raw, "service_areas", empty=[]),
         "service_area_business": _field(raw, "service_area_business"),
     }
+    fields.update(detail_fields(raw))
     observed_url = raw.get("place_url")
     if observed_url is None:
         observed_url = raw.get("link")
@@ -270,7 +292,7 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
             raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
                 "The public Google Business Profile response could not be verified.") from None
     try:
-        result = build_customer_public_gbp_snapshot(CustomerPublicGbpSnapshotInput(
+        result = build_customer_public_gbp_snapshot(CustomerPublicGbpSnapshotInputV2(
             reference=reference,
             request_target={"public_gbp_url": reference.public_gbp_url,
                 "entity_keys": reference.entity_keys},
@@ -280,7 +302,7 @@ def _snapshot(*, reference: CustomerPublicGbpReference, payload: dict[str, Any],
             collection_status="succeeded", failure_code=None,
             record={"observed_entity_keys": observed,
                 "observed_public_gbp_url": observed_url, "fields": fields},
-        ))
+        ), extended_fields=True)
     except (PublicGbpError, ValidationError, TypeError, ValueError):
         raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
             "The public Google Business Profile response could not be verified.") from None
@@ -303,11 +325,16 @@ class CheckpointedCustomerPublicGbpStage:
         input_digest = request_digest(reference)
         key = f"{STAGE_VERSION}:result:{input_digest[7:]}"
         saved = await checkpoints.get(job_id, key)
+        saved_stage = STAGE_VERSION
+        if saved is None:
+            saved_stage = LEGACY_STAGE_VERSION
+            saved = await checkpoints.get(job_id, f"{LEGACY_STAGE_VERSION}:result:{input_digest[7:]}")
         if saved is not None:
             try:
                 envelope = _CustomerPublicGbpCheckpoint.model_validate_json(canonical_json_bytes(saved))
                 checked = envelope.result
-                if (envelope.job_id != job_id or envelope.input_digest != input_digest
+                if (envelope.stage_version != saved_stage
+                        or envelope.job_id != job_id or envelope.input_digest != input_digest
                         or envelope.result_checksum != request_digest(checked)
                         or checked.reference != reference
                         or checked.snapshot.subject_reference_checksum != input_digest
@@ -356,7 +383,7 @@ class CheckpointedCustomerPublicGbpStage:
                     "The public Google Business Profile response could not be verified.")
             payload = _sanitize(provider_response.payload)
             completed_at = self.clock()
-            collection = CustomerPublicGbpCollection(reference=reference,
+            collection = CustomerPublicGbpCollection(schema_version=CHECKPOINT_VERSION, reference=reference,
                 snapshot=_snapshot(reference=reference, payload=payload,
                     started_at=started_at, completed_at=completed_at,
                     request_record_id=f"req_{request_digest(params)[7:31]}",

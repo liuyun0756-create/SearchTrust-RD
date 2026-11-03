@@ -1,0 +1,10 @@
+{
+  "files": {
+    "snapshot.schema.json": "sha256:89b0c33b73b89e30fefad2f4958145d8d45999b353b06cd19db5d434a1e7607e",
+    "v1-report.json": "sha256:99abbba6b8c2feb6f7459ec4275a284cb424e0e771f1575be6966418bfb87ed7",
+    "v1-snapshot.json": "sha256:53996272074bd5d780434fa25b34903f1158e4ef99dbfbed4744f4d61a5d20ac",
+    "v2-report.json": "sha256:2b12da65664f218345d464f0a2167e8328180044ebf72ef97668b222842ced9b",
+    "v2-snapshot.json": "sha256:854e5d59b95013acedbb09be83ec67faaa149d1a158c6a106968868825dedfcf"
+  },
+  "version": "customer_public_gbp_snapshot_v2"
+}

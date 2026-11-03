@@ -1,6 +1,7 @@
 """Bind freshly collected public sources without refreshing historical evidence."""
 from datetime import timezone
 from uuid import NAMESPACE_URL, uuid5
+from pydantic import TypeAdapter
 
 from app.api.v2.models import AnalyzeRequest
 from app.collectors.site_inventory_models import SiteInventorySnapshot
@@ -16,7 +17,7 @@ from app.report_v22.evidence_models import RenderedEvidenceSource, SnapshotBindi
 from app.collectors.site_render_models import RenderedSiteSnapshot
 from app.report_v22.evidence_bindings import validate_sources
 from app.report_v22.evidence_errors import EvidenceError
-from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
+from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshotValue
 from app.report_v22.shared_market_binding import case_market_binding_id
 
 
@@ -45,7 +46,7 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
         site = SiteInventorySnapshot.model_validate_json(canonical_json_bytes(collected.site_inventory))
         market = SharedMarketSnapshot.model_validate_json(canonical_json_bytes(collected.shared_market))
         rivals = CompetitorCollectionSnapshot.model_validate_json(canonical_json_bytes(collected.competitor_collection))
-        gbp = CustomerPublicGbpSnapshot.model_validate_json(canonical_json_bytes(collected.customer_public_gbp.snapshot))
+        gbp = TypeAdapter(CustomerPublicGbpSnapshotValue).validate_json(canonical_json_bytes(collected.customer_public_gbp.snapshot))
         reference = CustomerPublicGbpReference.model_validate_json(canonical_json_bytes(collected.customer_public_gbp.reference))
         if (any(t.tzinfo is None for t in (created_at, deadline_at, now))
                 or not created_at <= now < deadline_at
