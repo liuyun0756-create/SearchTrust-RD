@@ -1083,6 +1083,26 @@
     },
     "DeliveryRevision": {
       "additionalProperties": false,
+      "else": {
+        "not": {
+          "properties": {
+            "client_action_ids": {}
+          },
+          "required": [
+            "client_action_ids"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "v22_delivery_revision_v2"
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
       "properties": {
         "actions": {
           "items": {
@@ -1097,6 +1117,25 @@
           "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "title": "Case Id",
           "type": "string"
+        },
+        "client_action_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Action Ids"
         },
         "client_note": {
           "anyOf": [
@@ -1124,7 +1163,10 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "v22_delivery_revision_v1",
+          "enum": [
+            "v22_delivery_revision_v1",
+            "v22_delivery_revision_v2"
+          ],
           "title": "Schema Version",
           "type": "string"
         },
@@ -1175,6 +1217,16 @@
         "client_note",
         "actions"
       ],
+      "then": {
+        "properties": {
+          "client_action_ids": {
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_action_ids"
+        ]
+      },
       "title": "DeliveryRevision",
       "type": "object"
     },
@@ -1888,6 +1940,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.5 (2.2.2/2.2.4 compatible)",
+  "title": "SearchTrust capability contracts 2.2.6 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
   "type": "object"
 }

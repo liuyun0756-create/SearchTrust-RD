@@ -479,7 +479,30 @@ class EditableAction(StrictModel):
 
 
 class DeliveryRevision(StrictModel):
-    schema_version: Literal["v22_delivery_revision_v1"]
+    model_config = ConfigDict(json_schema_extra={
+        "if": {"properties": {"schema_version": {"const": "v22_delivery_revision_v2"}}, "required": ["schema_version"]},
+        "then": {"properties": {"client_action_ids": {"type": "array"}}, "required": ["client_action_ids"]},
+        "else": {"not": {"properties": {"client_action_ids": {}}, "required": ["client_action_ids"]}}
+    })
+    schema_version: Literal["v22_delivery_revision_v1", "v22_delivery_revision_v2"]
+    client_action_ids: list[Label] | None = Field(default=None, max_length=3)
+
+    @model_serializer(mode="wrap")
+    def preserve_v1(self, handler):
+        result = handler(self)
+        if self.client_action_ids is None:
+            result.pop("client_action_ids", None)
+        return result
+
+    @model_validator(mode="after")
+    def visibility_version(self):
+        if self.schema_version == "v22_delivery_revision_v2":
+            ids = self.client_action_ids
+            if ids is None or len(set(ids)) != len(ids) or not set(ids) <= {a.id for a in self.actions}:
+                raise ValueError("client action selection must reference unique delivery actions")
+        elif "client_action_ids" in self.model_fields_set:
+            raise ValueError("client action selection requires revision v2")
+        return self
     report_id: UUID
     user_id: UUID
     case_id: UUID
@@ -494,6 +517,8 @@ class DeliveryRevision(StrictModel):
     def validate_report(self, report: CapabilityReport):
         report = CapabilityReport.model_validate(report)
         manifest = report.input_manifest
+        if self.schema_version == "v22_delivery_revision_v2" and report.schema_version != "2.2.5":
+            raise ValueError("visibility edits require labelled findings")
         if (self.report_id != report.id or self.user_id != manifest.user_id or self.case_id != manifest.case_id
                 or self.source_checksum != verified_request_digest(report.model_dump(mode="json"))):
             raise ValueError("delivery source binding mismatch")
