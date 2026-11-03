@@ -15,7 +15,7 @@ from findings_helpers import collection, market, site
 from public_gbp_helpers import public_source, sample_input
 
 
-def inputs(records=None, *, search_gap=False, business_source=None):
+def inputs(records=None, *, search_gap=False, business_source=None, ruleset=RULESET):
     gbp = sample_input()
     serp = market() if search_gap else market([("example.test", 1, "provider_position")])
     competitor = collection(serp, types=("home", "home", "home"))
@@ -31,7 +31,7 @@ def inputs(records=None, *, search_gap=False, business_source=None):
         request.business_identity = identity(request.evidence_input)
     stamp = lambda d: d.isoformat().replace("+00:00", "Z")
     manifest = dict(schema_version="v22_analysis_input_v1", id=str(UUID(int=901)), job_id=str(UUID(int=902)),
-        user_id=str(UUID(int=903)), case_id=str(ctx.case_id), mode="acquisition", ruleset_version=RULESET,
+        user_id=str(UUID(int=903)), case_id=str(ctx.case_id), mode="acquisition", ruleset_version=ruleset,
         generation_input_checksum=verified_request_digest(request.model_dump(mode="json")),
         evaluated_at=stamp(NOW), previous_report=None, implementation=None,
         business=dict(id=str(UUID(int=904)), user_id=str(UUID(int=903)), case_id=str(ctx.case_id), revision=1,

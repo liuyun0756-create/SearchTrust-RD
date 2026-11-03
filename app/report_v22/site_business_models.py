@@ -10,11 +10,12 @@ from app.report_v22.evidence_models import EvidenceSourceTrace, SiteEvidenceSour
 from app.report_v22.models import EvidenceId, EvidenceItem, StrictModel
 
 VERSION = "site_business_extraction_v1"
+TEXT_PATTERN_VERSION = "site_business_extraction_v2"
 FIELD_NAMES = ("business_name", "address", "phone", "service_area")
 COMPONENTS = ("streetAddress", "addressLocality", "addressRegion", "postalCode", "addressCountry")
-FieldKind = Literal["business_name", "address", "phone", "service_area"]
+FieldKind = Literal["business_name", "address", "phone", "service_area", "opening_hours"]
 Component = Literal["streetAddress", "addressLocality", "addressRegion", "postalCode", "addressCountry"]
-SourceKind = Literal["jsonld_property", "tel_link", "dom_address", "dom_label"]
+SourceKind = Literal["jsonld_property", "tel_link", "dom_address", "dom_label", "text_pattern"]
 Digest = Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
 CandidateId = Annotated[str, Field(pattern=r"^sf_[a-f0-9]{64}$")]
 DiagnosticCode = Literal[
@@ -160,7 +161,7 @@ class CandidateDraft(CandidateModel):
                 raise ValueError("address requires actual components")
         elif self.scalar_value is None or self.components:
             raise ValueError("invalid candidate scalar")
-        bound = {"business_name": 240, "phone": 120, "service_area": 240, "address": 500}[self.field]
+        bound = {"business_name": 240, "phone": 120, "service_area": 240, "address": 500, "opening_hours": 240}[self.field]
         if self.scalar_value is not None and (not self.scalar_value.strip() or len(self.scalar_value) > bound):
             raise ValueError("invalid candidate value")
         if self.field == "phone" and not any(c.isdigit() for c in self.scalar_value):
@@ -171,6 +172,8 @@ class CandidateDraft(CandidateModel):
             raise ValueError("DOM does not establish entity ownership")
         if self.source_kind == "jsonld_property" and self.entity_key is None:
             raise ValueError("structured record requires entity context")
+        if self.field == "opening_hours" and self.source_kind != "text_pattern":
+            raise ValueError("hours are text observations only")
         return self
 
 
@@ -224,8 +227,8 @@ class CandidateSourceStatus(CandidateModel):
 
 
 class SiteBusinessFactsResult(CandidateModel):
-    schema_version: Literal["site_business_facts_v1"] = "site_business_facts_v1"
-    extraction_version: Literal["site_business_extraction_v1"] = VERSION
+    schema_version: Literal["site_business_facts_v1", "site_business_facts_v2"] = "site_business_facts_v1"
+    extraction_version: Literal["site_business_extraction_v1", "site_business_extraction_v2"] = VERSION
     case_id: UUID
     site_url: SiteUrl
     evaluated_at: AwareDatetime
@@ -237,3 +240,12 @@ class SiteBusinessFactsResult(CandidateModel):
     evidence_index: list[EvidenceItem]
     source_traces: list[EvidenceSourceTrace]
     limitations: list[str]
+
+    @model_validator(mode="after")
+    def versioned_candidates(self):
+        modern = self.extraction_version == TEXT_PATTERN_VERSION
+        if (self.schema_version == "site_business_facts_v2") != modern:
+            raise ValueError("extraction schema/version mismatch")
+        if not modern and any(c.source_kind == "text_pattern" for c in self.candidates):
+            raise ValueError("text patterns require extraction v2")
+        return self

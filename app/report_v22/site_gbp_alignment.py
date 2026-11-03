@@ -19,7 +19,7 @@ from app.report_v22.models import BusinessIdentity, EvidenceItem, SourceLocator
 from app.report_v22.site_business_models import FIELD_NAMES, SiteBusinessCandidate, SiteBusinessFactsResult
 from app.report_v22.site_business_selection import REQUIRED
 from app.report_v22.site_gbp_alignment_models import (
-    ALIGNMENT_VERSION,
+    ALIGNMENT_VERSION, TEXT_PATTERN_ALIGNMENT_VERSION, NormalizedValue,
     AlignmentPair,
     SiteBusinessSelectionResult,
     SiteGbpAlignmentBuildResult,
@@ -118,15 +118,15 @@ def _coverage_paths(side: str, field: str, site_source: SiteEvidenceSource,
 
 def _coverage(side: str, field: str, identity: BusinessIdentity,
               site_source: SiteEvidenceSource, public_source: PublicGbpEvidenceSource,
-              inspection) -> tuple[EvidenceItem, EvidenceSourceTrace]:
+              inspection, *, version=ALIGNMENT_VERSION, extraction_version="site_business_extraction_v1") -> tuple[EvidenceItem, EvidenceSourceTrace]:
     source = site_source if side == "site" else public_source
     state = f"{side}_missing"
     context = [
-        ALIGNMENT_VERSION,
+        version,
         field,
         side,
         str(source.binding.snapshot_id),
-        "site_business_extraction_v1",
+        extraction_version,
         "site_business_selection_v1",
         state,
         *[str(url) for url in inspection.required_urls],
@@ -205,6 +205,47 @@ def _not_checked(field, reason, *, unresolved=(), urls=(), limitations=()):
                               limitations=list(limitations))
 
 
+def _text_alignment(field, candidates, gbp_values, country, limits):
+    """Positive corroboration only; unrelated text can never establish a mismatch."""
+    from app.report_v22.site_business_text import TEXT_NOTE, address_matches, phone_key
+    if len(candidates) * len(gbp_values) > limits.max_pair_comparisons:
+        raise FindingsError("LIMIT_EXCEEDED")
+    pairs, strengths = [], []
+    for candidate in candidates:
+        for value, gbp_id in gbp_values:
+            if field == "phone":
+                key = phone_key(candidate.scalar_value, country)
+                matched = key is not None and key == phone_key(value, country)
+                component = "phone"
+            else:
+                anchors = address_matches(candidate.scalar_value, value, country)
+                matched = bool(anchors)
+                component = "street" if any(kind == "street" for _, kind in anchors) else "postal"
+                key = candidate.scalar_value.casefold() if matched else None
+            if not matched:
+                continue
+            strengths.append("partial_match" if component == "postal" else "semantic_match")
+            pairs.append(AlignmentPair(
+                site_evidence_ids=candidate.evidence_ids, gbp_evidence_ids=[gbp_id], state="semantic_match",
+                site_value=NormalizedValue(field=field, original_key=candidate.scalar_value, normalized_key=key,
+                                           country_code=country, version="text_pattern_v1"),
+                gbp_value=NormalizedValue(field=field, original_key=value, normalized_key=key,
+                                          country_code=country, version="text_pattern_v1"),
+                compared_components=[component],
+                omitted_components=["remaining_address_components"] if field == "address" else [],
+            ))
+    state = ("semantic_match" if "semantic_match" in strengths else "partial_match") if pairs else "not_checked"
+    return SiteGbpFieldResult(
+        field=field, state=state, not_checked_reason="site_content_not_checked" if not pairs else None,
+        site_evidence_ids=sorted({key for candidate in candidates for key in candidate.evidence_ids}),
+        gbp_evidence_ids=sorted({key for _, key in gbp_values}), matched_pairs=pairs,
+        unresolved_candidate_ids=[candidate.candidate_id for candidate in candidates],
+        urls=sorted({candidate.final_url for candidate in candidates}, key=str),
+        limitations=[TEXT_NOTE] + (["Only the postcode was corroborated; the remaining address components were not compared."]
+                                  if state == "partial_match" else []),
+    )
+
+
 def build_site_gbp_alignment(
     *,
     context: EvidenceBuildContext,
@@ -218,6 +259,8 @@ def build_site_gbp_alignment(
 ) -> SiteGbpAlignmentBuildResult:
     limits = limits or SiteGbpAlignmentLimits()
     _validate_identity(context, identity, site_source, public_source, facts)
+    text_patterns = facts.extraction_version == "site_business_extraction_v2"
+    version = TEXT_PATTERN_ALIGNMENT_VERSION if text_patterns else ALIGNMENT_VERSION
     candidates = {item.candidate_id: item for item in facts.candidates}
     eligible = defaultdict(list)
     unresolved = defaultdict(list)
@@ -268,6 +311,13 @@ def build_site_gbp_alignment(
             results.append(_not_checked(field, "site_content_not_checked", unresolved=unresolved[field],
                                         urls=field_urls, limitations=inspection.limitations))
             continue
+        if text_patterns and field in {"phone", "address"} and not any(
+                candidate.field == field and candidate.source_kind != "text_pattern" for candidate in facts.candidates):
+            wrapper = getattr(public_source.payload.record.fields, _GBP_FIELD[field])
+            gbp_values = _gbp_items(evidence, public_source.binding.snapshot_id, _GBP_FIELD[field]) if wrapper.state == "observed" else []
+            text_values = [candidates[key] for key in unresolved[field] if candidates[key].source_kind == "text_pattern"]
+            results.append(_text_alignment(field, text_values, gbp_values, identity.primary_location.country_code, limits))
+            continue
         if not eligible[field] and unresolved[field]:
             results.append(_not_checked(field, "identity_unresolved", unresolved=unresolved[field], urls=field_urls))
             continue
@@ -296,7 +346,7 @@ def build_site_gbp_alignment(
                 limitations=inspection.limitations,
             )
             for side in (["site", "gbp"] if state == "both_missing" else ["site"] if state == "site_missing" else ["gbp"]):
-                item, trace = _coverage(side, field, identity, site_source, public_source, inspection)
+                item, trace = _coverage(side, field, identity, site_source, public_source, inspection, version=version, extraction_version=facts.extraction_version)
                 coverage_items[item.evidence_id] = item
                 coverage_traces[trace.evidence_id] = trace
                 result.coverage_evidence_ids.append(item.evidence_id)
@@ -384,6 +434,7 @@ def build_site_gbp_alignment(
             or len(coverage_items) > limits.max_coverage_evidence):
         raise FindingsError("LIMIT_EXCEEDED")
     alignment = SiteGbpAlignmentResult(
+        alignment_version=version,
         case_id=context.case_id,
         site_snapshot_id=site_source.binding.snapshot_id if site_source else None,
         public_gbp_snapshot_id=public_source.binding.snapshot_id if public_source else None,

@@ -9,6 +9,7 @@ from app.report_v22.models import EvidenceId, EvidenceItem, StrictModel
 from app.report_v22.site_business_models import CandidateId, FieldKind
 
 ALIGNMENT_VERSION = "site_gbp_alignment_v1"
+TEXT_PATTERN_ALIGNMENT_VERSION = "site_gbp_alignment_v2"
 SELECTION_VERSION = "site_business_selection_v1"
 
 EligibilityState = Literal["eligible", "unresolved", "excluded"]
@@ -23,6 +24,7 @@ EligibilityReason = Literal[
     "external_entity_hint",
     "noncore_anchor_missing",
     "page_not_eligible",
+    "text_pattern_requires_gbp",
 ]
 FieldState = Literal[
     "exact_match",
@@ -201,7 +203,7 @@ class SiteGbpFieldResult(StrictModel):
 
 
 class SiteGbpAlignmentResult(StrictModel):
-    alignment_version: Literal["site_gbp_alignment_v1"] = ALIGNMENT_VERSION
+    alignment_version: Literal["site_gbp_alignment_v1", "site_gbp_alignment_v2"] = ALIGNMENT_VERSION
     case_id: UUID
     site_snapshot_id: UUID | None = None
     public_gbp_snapshot_id: UUID | None = None

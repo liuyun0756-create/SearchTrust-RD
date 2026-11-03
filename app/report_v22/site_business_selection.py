@@ -171,6 +171,8 @@ def select_site_business_candidates(
     repeated: dict[tuple[str, str], set[str]] = defaultdict(set)
     repeated_core: set[tuple[str, str]] = set()
     for candidate in candidates:
+        if candidate.source_kind == "text_pattern":
+            continue
         key = _candidate_key(candidate, identity)
         page = pages[str(candidate.requested_url)]
         if key:
@@ -182,6 +184,8 @@ def select_site_business_candidates(
     reference_count = 0
     for candidate in candidates:
         state_reason = preliminary.get(candidate.candidate_id)
+        if candidate.source_kind == "text_pattern":
+            state_reason = ("unresolved", "text_pattern_requires_gbp")
         if state_reason is None:
             corroborated = False
             if candidate.field == "phone":

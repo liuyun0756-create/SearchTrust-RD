@@ -9,7 +9,7 @@ import pytest
 
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
 from app.report_v22.capability import AnalysisInputManifest
-from app.report_v22.capability_public import build_public_capability_report
+from app.report_v22.capability_public import RULESET as PUBLIC_RULESET, build_public_capability_report
 from app.report_v22.capability_service import RULESET, CapabilityServiceError, build_service_capability_report
 from app.report_v22.capability_service_inputs import CapabilityServiceInput
 from app.report_v22.first_party_findings import build_first_party_findings
@@ -27,8 +27,8 @@ def _shift_dates(value):
     return value
 
 
-def inputs(*, mode="first_service", conflict=False, not_set=False, records=None, clean=False):
-    public_manifest, public = public_inputs(records)
+def inputs(*, mode="first_service", conflict=False, not_set=False, records=None, clean=False, public_ruleset=PUBLIC_RULESET):
+    public_manifest, public = public_inputs(records, ruleset=public_ruleset)
     gsc, ga4 = aligned_values(conflict=conflict)
     if clean:
         for row in [*gsc.current.queries.rows, *gsc.current.pages.rows]:

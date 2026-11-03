@@ -15,32 +15,33 @@ sys.path[:0]=[str(ROOT),str(ROOT/"tests")]
 from test_v22_capability_public import inputs as public_inputs
 from test_v22_capability_service import inputs as service_inputs
 from test_v22_page_title_review import title_inputs
-from app.report_v22.capability_public import build_public_capability_report
+from app.report_v22.capability_public import TITLE_RULESET, build_public_capability_report
 from app.report_v22.capability_service import build_service_capability_report
 from app.report_v22.capability import AnalysisInputManifest
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
 
 
 def artifacts():
+    # Existing accepted examples remain pinned to their original v5 public input.
     values={}
     for count,records,gap in [(0,[{"title":"Plumbing"}],False),(1,[{"status_code":503}],False),
             (2,[{"status_code":503},{"title":"Shared"},{"title":"Shared"}],False),
             (3,[{"status_code":503},{"title":"Shared"},{"title":"Shared"}],True)]:
-        manifest,request=public_inputs(records,search_gap=gap)
+        manifest,request=public_inputs(records,search_gap=gap,ruleset=TITLE_RULESET)
         values[f"public-{count}.json"]=build_public_capability_report(manifest,request).model_dump(mode="json")
     manifest,request=title_inputs()
     values["public-title-review.json"]=build_public_capability_report(manifest,request).model_dump(mode="json")
     for name,options in [("service-zero",{"clean":True}),("service-first",{}),
             ("service-after",{"mode":"after_acquisition"}),("service-conflict",{"conflict":True}),
             ("service-measurement",{"not_set":True})]:
-        manifest,request,parent=service_inputs(**options)
+        manifest,request,parent=service_inputs(**options,public_ruleset=TITLE_RULESET)
         values[f"{name}.json"]=build_service_capability_report(manifest,request,previous_report=parent).model_dump(mode="json")
     for name,focus in [("service-target-focus", dict(target_pages=["https://example.test/service"], priority="service_visibility")),
             ("service-other-focus", dict(target_pages=["https://example.test/other"], priority="business_identity")),
             ("service-unstructured-focus", dict(priority="Increase revenue")),
             ("service-limited-capacity", dict(execution_conditions={"capacity":"limited","publishing_access":"needs_approval"})),
             ("service-contact-focus", dict(priority="contact_path"))]:
-        manifest,request,_=service_inputs()
+        manifest,request,_=service_inputs(public_ruleset=TITLE_RULESET)
         raw=manifest.model_dump(mode="json")
         raw["business"].update(focus)
         raw["input_checksum"]=verified_request_digest({k:v for k,v in raw.items() if k!="input_checksum"})

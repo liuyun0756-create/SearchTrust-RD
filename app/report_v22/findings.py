@@ -45,7 +45,7 @@ def _validate_market_context(item, trace, target):
 
 def _validate_outcome(view, outcome, alignment=None, *, reviewed_evidence=False):
     evaluation, finding = outcome.evaluation, outcome.finding
-    expected_version = GBP_ALIGNMENT_RULE_VERSION if alignment is not None and evaluation.rule_id in GBP_RULES else RULE_VERSION
+    expected_version = public_gbp_findings.alignment_rule_version(alignment) if alignment is not None and evaluation.rule_id in GBP_RULES else RULE_VERSION
     if evaluation.rule_id not in {*RULES, *GBP_RULES} or evaluation.rule_version != expected_version:
         raise FindingsError("REFERENCE_INVALID")
     if evaluation.rule_id in GBP_RULES:
@@ -189,7 +189,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, reviewed_evidence=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -212,6 +212,9 @@ def build_public_findings(value: PublicFindingsInput | dict, *, reviewed_evidenc
         if request.business_identity is not None:
             site_source = next((source for source in inputs.sources if source.kind == "site"), None)
             public_source = next((source for source in inputs.sources if source.kind == "public_gbp"), None)
+            fields = public_source.payload.record.fields if public_source is not None else None
+            gbp_phone = fields.phone.value if fields and fields.phone.state == "observed" else None
+            gbp_address = fields.address.value if fields and fields.address.state == "observed" else None
             facts = build_site_business_facts(SiteBusinessFactsInput(
                 context={
                     "case_id": inputs.context.case_id,
@@ -221,7 +224,8 @@ def build_public_findings(value: PublicFindingsInput | dict, *, reviewed_evidenc
                 },
                 source=site_source,
                 limits=request.site_business_limits,
-            ))
+            ), text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address,
+                country=request.business_identity.primary_location.country_code)
             selection = select_site_business_candidates(facts, request.business_identity, request.site_gbp_alignment_limits)
             extra = build_site_gbp_alignment(
                 context=inputs.context,

@@ -1,0 +1,10 @@
+{
+  "url": "https://visiontechav.com/swansea/",
+  "final_url": "https://visiontechav.com/swansea/",
+  "fetched_at": "2026-11-02T13:35:18.500263+00:00",
+  "status": 200,
+  "sha256": "8598a5a72786c290e91802cc80d0692d191275e063534c7b82b2363cad83493e",
+  "bytes": 140833,
+  "content_type": "text/html; charset=UTF-8",
+  "notes": "Static HTTP HTML only. Test GBP values are synthetic references copied from the page, not a verified live GBP observation."
+}

@@ -177,7 +177,7 @@ def valid_text(value, field, component=None):
             and (field != "phone" or any(c.isdigit() for c in value)))
 
 
-def dom_candidates(tree):
+def dom_candidates(tree, *, text_patterns=False, gbp_phone=None, gbp_address=None, country=""):
     drafts, diagnostics = [], []
     if tree.dom_failed:
         diagnostics.append(diagnostic(tree, "html_parse_failed"))
@@ -229,4 +229,8 @@ def dom_candidates(tree):
                     emit(field_name, child, "dom_label", visible_text(child))
         else:
             emit(field_name, value_node, "dom_label", visible_text(value_node))
+    if text_patterns:
+        from app.report_v22.site_business_text import text_candidates
+        drafts.extend(text_candidates(tree, gbp_phone=gbp_phone, gbp_address=gbp_address, country=country))
+        require(len(drafts) <= tree.budget.limits.max_candidates_per_page, "LIMIT_EXCEEDED")
     return drafts, diagnostics

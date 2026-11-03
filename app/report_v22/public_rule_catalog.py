@@ -6,6 +6,7 @@ from app.report_v22.models import Confidence, FactClassification, Severity
 RULESET_VERSION = "v22_public_findings_v1"
 RULE_VERSION = "1.0.0"
 GBP_ALIGNMENT_RULE_VERSION = "1.1.0"
+TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION = "1.2.0"
 HTTP = "v22_public.site_http_error"
 NOINDEX = "v22_public.site_explicit_noindex"
 TITLE = "v22_public.site_duplicate_title"

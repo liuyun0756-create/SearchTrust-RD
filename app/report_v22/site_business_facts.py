@@ -11,7 +11,7 @@ from app.report_v22.site_business_html import ParseBudget, diagnostic, dom_candi
 from app.report_v22.site_business_jsonld import jsonld_candidates
 from app.report_v22.site_business_models import (
     CandidateDiagnostic, CandidateFieldStatus, CandidatePage, CandidateSourceStatus, FIELD_NAMES,
-    SiteBusinessFactsInput, SiteBusinessFactsResult,
+    SiteBusinessFactsInput, SiteBusinessFactsResult, VERSION, TEXT_PATTERN_VERSION,
 )
 
 
@@ -46,7 +46,7 @@ def field_states(candidates, diagnostics, checked):
     return fields
 
 
-def build_site_business_facts(value: SiteBusinessFactsInput | dict) -> SiteBusinessFactsResult:
+def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patterns=False, gbp_phone=None, gbp_address=None, country="") -> SiteBusinessFactsResult:
     try:
         reject_nonfinite(value)
         raw = unpack_models(value)
@@ -57,7 +57,9 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict) -> SiteBusin
         source, context = request.source, request.context
         pages, candidates, works, items, traces = [], {}, {}, {}, {}
         notes = sorted(set([*evidence.FIXED_NOTES, *(source.payload.limitations if source else [])]))
-        result = SiteBusinessFactsResult(case_id=context.case_id, site_url=context.site_url, evaluated_at=context.evaluated_at,
+        result = SiteBusinessFactsResult(
+            schema_version="site_business_facts_v2" if text_patterns else "site_business_facts_v1",
+            extraction_version=TEXT_PATTERN_VERSION if text_patterns else VERSION, case_id=context.case_id, site_url=context.site_url, evaluated_at=context.evaluated_at,
             source_snapshot_id=source.binding.snapshot_id if source else None,
             source_payload_checksum=source.binding.payload_checksum if source else None,
             source_status=CandidateSourceStatus(state="missing" if source is None else "ineligible" if reason else "ready", reason=reason),
@@ -81,7 +83,7 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict) -> SiteBusin
                     path = f"/payload/selected_pages/{position}/deep_snapshot/html"
                     tree = parse_html(deep.html, path, budget)
                     structured, diagnostics, documents = jsonld_candidates(tree, page.url, deep.final_url, scope)
-                    dom, dom_diagnostics = dom_candidates(tree)
+                    dom, dom_diagnostics = dom_candidates(tree, text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address, country=country)
                     diagnostics.extend(dom_diagnostics)
                     drafts = [*structured, *dom]
                     require(len(drafts) <= limits.max_candidates_per_page, "LIMIT_EXCEEDED")
@@ -97,7 +99,7 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict) -> SiteBusin
                         fingerprint = evidence.draft_fingerprint(draft)
                         for origin in draft.origins:
                             work["proofs"].setdefault(canonical_json_bytes(origin), set()).add(fingerprint)
-                        candidate = evidence.make_candidate(draft, source, page.url, deep, notes)
+                        candidate = evidence.make_candidate(draft, source, page.url, deep, notes, **({"version": result.extraction_version} if text_patterns else {}))
                         key = candidate.candidate_id
                         if key in page_candidates:
                             previous = page_candidates[key]
@@ -112,7 +114,7 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict) -> SiteBusin
                     candidate.origins = unique(candidate.origins)
                     origin_count += len(candidate.origins)
                     require(origin_count <= limits.max_origins, "LIMIT_EXCEEDED")
-                    for item, trace in evidence.make_evidence(candidate):
+                    for item, trace in evidence.make_evidence(candidate, **({"version": result.extraction_version} if text_patterns else {})):
                         require(item.evidence_id not in items or (items[item.evidence_id] == item and traces[item.evidence_id] == trace), "ID_CONFLICT")
                         if item.evidence_id not in items:
                             retained += len(canonical_json_bytes(item)) + len(canonical_json_bytes(trace))

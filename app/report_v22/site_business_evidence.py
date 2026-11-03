@@ -18,21 +18,21 @@ def value_group(candidate):
     return request_digest({"scalar_value": candidate.scalar_value, "components": candidate.components})
 
 
-def context(candidate, component=None):
-    return [VERSION, str(candidate.requested_url), str(candidate.final_url), candidate.origins[0].decoded_html_checksum,
+def context(candidate, component=None, *, version=VERSION):
+    return [version, str(candidate.requested_url), str(candidate.final_url), candidate.origins[0].decoded_html_checksum,
             candidate.entity_key, candidate.source_kind, candidate.field, value_group(candidate), component]
 
 
-def candidate_id(candidate):
-    return "sf_" + stable_key({"version": VERSION, "snapshot_id": str(candidate.snapshot_id), "context": context(candidate)})
+def candidate_id(candidate, *, version=VERSION):
+    return "sf_" + stable_key({"version": version, "snapshot_id": str(candidate.snapshot_id), "context": context(candidate, version=version)})
 
 
-def make_candidate(draft, source, requested_url, deep, notes):
+def make_candidate(draft, source, requested_url, deep, notes, *, version=VERSION):
     values = dict(**draft.model_dump(mode="python"), snapshot_id=source.binding.snapshot_id, requested_url=requested_url,
                   final_url=deep.final_url, collected_at=deep.collected_at, candidate_id="sf_" + "0" * 64)
     values["limitations"] = sorted(set([*draft.limitations, *notes, *FIXED_NOTES]))
     candidate = SiteBusinessCandidate(**values)
-    return candidate.model_copy(update={"candidate_id": candidate_id(candidate)})
+    return candidate.model_copy(update={"candidate_id": candidate_id(candidate, **({"version": version} if version != VERSION else {}))})
 
 
 def limited_notes(notes):
@@ -43,14 +43,14 @@ def limited_notes(notes):
     return sorted([*FIXED_NOTES, *other, LIMITATIONS_OVERFLOW])
 
 
-def make_evidence(candidate):
-    yield from _expected_evidence(candidate)
+def make_evidence(candidate, *, version=VERSION):
+    yield from _expected_evidence(candidate, version=version)
 
 
-def _expected_evidence(candidate):
+def _expected_evidence(candidate, *, version=VERSION):
     values = candidate.components.items() if candidate.components else [(None, candidate.scalar_value)]
     for component, value in values:
-        record_context = context(candidate, component)
+        record_context = context(candidate, component, version=version)
         selector = EvidenceSelector(category="site_business_field", record_key=stable_key(record_context),
                                     record_context=record_context, field=candidate.field)
         origins = [o for o in candidate.origins if o.component == component]
@@ -75,8 +75,8 @@ def draft_fingerprint(draft):
     return canonical_json_bytes(draft.model_dump(mode="json", exclude={"origins", "limitations"}))
 
 
-def verify_candidate(candidate, source_json, work):
-    require(candidate.candidate_id == candidate_id(candidate), "REFERENCE_INVALID")
+def verify_candidate(candidate, source_json, work, *, version=VERSION):
+    require(candidate.candidate_id == candidate_id(candidate, **({"version": version} if version != VERSION else {})), "REFERENCE_INVALID")
     require(candidate.requested_url == work["requested_url"] and candidate.final_url == work["deep"].final_url
             and candidate.collected_at == work["deep"].collected_at, "REFERENCE_INVALID")
     raw = CandidateDraft.model_validate(candidate.model_dump(mode="python", include=set(CandidateDraft.model_fields)))
@@ -102,7 +102,12 @@ def verify_candidate(candidate, source_json, work):
             require(node.start == origin.start and node.end == origin.end and node.closed and not node.bad and not node.hidden, "REFERENCE_INVALID")
             value = (node.attrs.get("href") or "")[4:] if origin.attribute == "href" else visible_text(node)
         expected = candidate.components[origin.component] if origin.component is not None else candidate.scalar_value
-        require(type(value) is str and value == expected, "REFERENCE_INVALID")
+        if candidate.source_kind == "text_pattern":
+            from app.report_v22.site_business_models import TEXT_PATTERN_VERSION
+            from app.report_v22.site_business_text import text_visible
+            require(version == TEXT_PATTERN_VERSION and origin.kind == "dom" and expected in text_visible(node), "REFERENCE_INVALID")
+        else:
+            require(type(value) is str and value == expected, "REFERENCE_INVALID")
 
 
 def verify_result(result, request, works, expected_ids):
@@ -117,8 +122,8 @@ def verify_result(result, request, works, expected_ids):
         require(request.source is not None and candidate.snapshot_id == request.source.binding.snapshot_id, "REFERENCE_INVALID")
         work = works.get(str(candidate.requested_url))
         require(work is not None, "REFERENCE_INVALID")
-        verify_candidate(candidate, source_json, work)
-        expected = dict((item.evidence_id, (item, trace)) for item, trace in _expected_evidence(candidate))
+        verify_candidate(candidate, source_json, work, version=result.extraction_version)
+        expected = dict((item.evidence_id, (item, trace)) for item, trace in _expected_evidence(candidate, version=result.extraction_version))
         require(candidate.evidence_ids == sorted(expected), "REFERENCE_INVALID")
         for key, (item, trace) in expected.items():
             require(items.get(key) == item and traces.get(key) == trace, "REFERENCE_INVALID")

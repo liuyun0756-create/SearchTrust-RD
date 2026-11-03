@@ -3,7 +3,7 @@ from app.report_v22.evidence_adapters.public_gbp import record_context
 from app.report_v22.findings_common import decision
 from app.report_v22.findings_errors import FindingsError
 from app.report_v22.findings_models import RuleTarget
-from app.report_v22.public_rule_catalog import GBP_ALIGNMENT_RULE_VERSION, GBP_RULES
+from app.report_v22.public_rule_catalog import GBP_ALIGNMENT_RULE_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, GBP_RULES
 
 RULE_FIELDS = dict(zip(GBP_RULES, ("business_name", "address", "phone", "service_areas")))
 ALIGNMENT_FIELDS = dict(zip(GBP_RULES, ("business_name", "address", "phone", "service_area")))
@@ -61,7 +61,13 @@ def expected_scope(view, rule):
     return target, reason, sorted(refs)
 
 
+def alignment_rule_version(alignment):
+    return (TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION if alignment.alignment_version == "site_gbp_alignment_v2"
+            else GBP_ALIGNMENT_RULE_VERSION)
+
+
 def _alignment_outcome(view, alignment, rule, *, reviewed_evidence=False):
+    rule_version = alignment_rule_version(alignment)
     field = next((item for item in alignment.fields if item.field == ALIGNMENT_FIELDS[rule]), None)
     if field is None:
         raise FindingsError("REFERENCE_INVALID")
@@ -76,14 +82,16 @@ def _alignment_outcome(view, alignment, rule, *, reviewed_evidence=False):
     if field.state == "not_checked":
         return decision(view, rule, target, "not_checked", field.not_checked_reason,
                         evidence=evidence, comparators=comparators,
-                        notes=field.limitations, rule_version=GBP_ALIGNMENT_RULE_VERSION)
+                        notes=field.limitations, rule_version=rule_version)
     if reviewed_evidence and field.state in {"site_missing", "gbp_missing", "both_missing"}:
         label = {"business_name": "Business name", "address": "Address", "phone": "Phone number", "service_area": "Service areas"}[field.field]
         return decision(view, rule, target, "not_checked", "field_not_observed",
                         evidence=evidence, comparators=comparators,
                         notes=[*field.limitations, f"{label} could not be compared because one or both saved sources lack usable values. Missing observations do not establish a mismatch or a missing business detail. Confirm the actual details before proposing a correction."],
-                        rule_version=GBP_ALIGNMENT_RULE_VERSION)
+                        rule_version=rule_version)
     state = "triggered" if field.state in {"partial_match", "mismatch", "site_missing", "gbp_missing", "both_missing"} else "not_triggered"
+    if alignment.alignment_version == "site_gbp_alignment_v2" and field.field == "address" and field.state == "partial_match":
+        state = "not_triggered"
     return decision(
         view,
         rule,
@@ -95,7 +103,7 @@ def _alignment_outcome(view, alignment, rule, *, reviewed_evidence=False):
         statement=STATEMENTS[field.field] if state == "triggered" else None,
         notes=field.limitations,
         severity="low" if field.state == "partial_match" else None,
-        rule_version=GBP_ALIGNMENT_RULE_VERSION,
+        rule_version=rule_version,
     )
 
 

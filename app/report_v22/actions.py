@@ -30,7 +30,7 @@ from app.report_v22.public_action_catalog import (
     RULE_ACTIONS,
     ActionTemplate,
 )
-from app.report_v22.public_rule_catalog import ASSET, GBP_RULES, RULESET_VERSION
+from app.report_v22.public_rule_catalog import ASSET, GBP_RULES, RULESET_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION
 
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -159,7 +159,8 @@ def _validated_references(
         ):
             raise PublicActionError("REFERENCE_INVALID")
         binding = RULE_ACTIONS.get(finding.rule_id)
-        if binding is None or binding.rule_version != finding.rule_version:
+        text_alignment = finding.rule_id in GBP_RULES and finding.rule_version == TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION
+        if binding is None or (binding.rule_version != finding.rule_version and not text_alignment):
             raise PublicActionError("UNSUPPORTED_FINDING")
     return findings, evaluations, {key: item.source_type for key, item in evidence.items()}
 

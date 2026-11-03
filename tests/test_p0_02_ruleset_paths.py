@@ -16,13 +16,13 @@ from test_v22_capability_public import inputs
 from verified_pipeline_helpers import frozen_public_fixture
 
 
-def test_new_acquisition_manifest_is_v5_and_executes_reviewed_findings():
+def test_new_acquisition_manifest_uses_current_ruleset_and_executes_reviewed_findings():
     args, _, _ = acquisition_inputs()
     manifest, request = build_acquisition_input(**args)
-    assert manifest.ruleset_version == RULESET == "v22_capability_public_v5"
+    assert manifest.ruleset_version == RULESET == "v22_capability_public_v6"
     with patch("app.report_v22.capability_public.build_public_findings", wraps=build_public_findings) as build:
         report = build_public_capability_report(manifest, request)
-    assert build.call_args.kwargs == {"reviewed_evidence": True}
+    assert build.call_args.kwargs == {"text_patterns": True, "reviewed_evidence": True}
     assert report.input_manifest == manifest
 
 
