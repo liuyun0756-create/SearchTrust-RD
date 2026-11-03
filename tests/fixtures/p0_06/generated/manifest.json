@@ -1,0 +1,12 @@
+{
+  "files": {
+    "contact-mismatch.json": "sha256:bef438f7c9b99441f296f33391fbbcb1c2a8abbe7d156f4bc984e46d80460ea9",
+    "contact-not_checked.json": "sha256:fbdc4ad2097d706bdacf220dd98986ad512b114baa74232242f9f5abf24b718c",
+    "contact-rendered.json": "sha256:a8c7b76d7e8e300f32e92d2c5759dad281ce3ec3bb009ed243bdafa5e2648143",
+    "contact-structured.json": "sha256:d60e60ef6ca9d6cd6765bcda4421a603d93044d18b9415b2ebd911eb25bd3b61",
+    "contact-text_pattern.json": "sha256:ed7add2e21b7348f43f423bfa25b22757bcb19cd8d05318efd0a8d4a048035cd",
+    "public.json": "sha256:7847cedec7c8447e1ccbd4546a1eb8edf02c1793271a788d0e3d069abf1acabf",
+    "service.json": "sha256:e28d067a7ed2f9c0bdc15fb343a88867249ea804220d06cc56883ba42ad98ef5"
+  },
+  "schema_version": "2.2.5"
+}

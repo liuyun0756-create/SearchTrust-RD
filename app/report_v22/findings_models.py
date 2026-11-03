@@ -2,13 +2,13 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, HttpUrl, model_validator
+from pydantic import Field, HttpUrl, PrivateAttr, model_validator
 
 from app.collectors.site_inventory_models import SitePageType
 from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceBuildResult
 from app.report_v22.models import BusinessIdentity, CompetitorId, EvidenceId, Finding, FindingId, LayerAssessment, StrictModel
 from app.report_v22.site_business_models import SiteBusinessLimits
-from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits
+from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits, SiteGbpAlignmentResult
 
 EvaluationState = Literal["triggered", "not_triggered", "not_checked"]
 EvaluationReason = Literal[
@@ -95,6 +95,8 @@ class FindingsRollup(StrictModel):
 
 
 class PublicFindingsResult(StrictModel):
+    # Internal handoff only: never exported into frozen findings contracts.
+    _contact_alignment: SiteGbpAlignmentResult | None = PrivateAttr(default=None)
     ruleset_version: Literal["v22_public_findings_v1"] = "v22_public_findings_v1"
     evidence_result: EvidenceBuildResult
     findings: list[Finding]

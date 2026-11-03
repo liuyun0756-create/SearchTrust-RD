@@ -29,7 +29,8 @@
         "schema_version": {
           "enum": [
             "2.2.2",
-            "2.2.4"
+            "2.2.4",
+            "2.2.5"
           ],
           "title": "Schema Version",
           "type": "string"

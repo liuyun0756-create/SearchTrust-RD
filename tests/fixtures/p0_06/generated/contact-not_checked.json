@@ -1,0 +1,388 @@
+{
+  "action_state": "insufficient_basis",
+  "actions": [],
+  "changes": [],
+  "contact_checks": [
+    {
+      "basis": "structured",
+      "compared_components": [],
+      "evidence_ids": [
+        "ev_4084943f77867838bb23eb048867051bacd92bdd54dc82d085bf9f2dcb775ea6"
+      ],
+      "field": "address",
+      "omitted_components": [],
+      "result": "none",
+      "status": "not_checked"
+    },
+    {
+      "basis": "structured",
+      "compared_components": [],
+      "evidence_ids": [
+        "ev_92e8290abf4a96139f6cd0b104dd13f001a4c6e0e7e050bbe3163b2173908629",
+        "ev_a4de5e2ecefd172662568d31ffe02aaf476a6cb94847a920e78d51476c1351ae"
+      ],
+      "field": "business_name",
+      "omitted_components": [],
+      "result": "none",
+      "status": "not_detected"
+    },
+    {
+      "basis": "structured",
+      "compared_components": [],
+      "evidence_ids": [
+        "ev_b513f7054bd9967c8a4a73acf89d1c798342b082f43e642a298443013217f919"
+      ],
+      "field": "phone",
+      "omitted_components": [],
+      "result": "none",
+      "status": "not_checked"
+    },
+    {
+      "basis": "structured",
+      "compared_components": [],
+      "evidence_ids": [
+        "ev_7993477d16d4d568e9301cac2c25203a183fd55756a6955665b551276a1a14fc",
+        "ev_8c0ce0ff6061bd1b878591b305ec2e7a7af21538f741448986b2fb147507692f",
+        "ev_d8e890e41f4884a87b729956231b268356edf3902394f8b6cff47f85b47010fd"
+      ],
+      "field": "service_area",
+      "omitted_components": [],
+      "result": "none",
+      "status": "not_detected"
+    }
+  ],
+  "evidence": [
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/completed_at\n/payload/pages",
+      "id": "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/completed_at\n/payload/pages",
+      "id": "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+      "limitations": [],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": 0
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/selected_pages/0/deep_snapshot/text",
+      "id": "ev_2578b2b24b6a6652d81605f63de7d9a76b51c6bbe92cb3bb7d2154f90f1a4832",
+      "limitations": [
+        "Page fragments use the existing extractor: at most 240 segments and 360 characters per segment; they are not the complete page."
+      ],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "Saved text is not an extraction fallback."
+    },
+    {
+      "comparison_scope": "Saved public_gbp sample for Austin",
+      "field_path": "/payload/record/fields/address/value",
+      "id": "ev_4084943f77867838bb23eb048867051bacd92bdd54dc82d085bf9f2dcb775ea6",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "object": "https://maps.google.com/?cid=12345",
+      "observed_at": "2026-08-29T23:30:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-000000000047",
+      "source_kind": "public_gbp",
+      "unit": null,
+      "value": "123 Fixture St, Austin, TX"
+    },
+    {
+      "comparison_scope": "Saved public_gbp sample for Austin",
+      "field_path": "/payload/record/fields/service_areas/value/1",
+      "id": "ev_7993477d16d4d568e9301cac2c25203a183fd55756a6955665b551276a1a14fc",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "object": "https://maps.google.com/?cid=12345",
+      "observed_at": "2026-08-29T23:30:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-000000000047",
+      "source_kind": "public_gbp",
+      "unit": null,
+      "value": "Round Rock"
+    },
+    {
+      "comparison_scope": "Saved public_gbp sample for Austin",
+      "field_path": "/payload/record/fields/service_areas/value/0",
+      "id": "ev_8c0ce0ff6061bd1b878591b305ec2e7a7af21538f741448986b2fb147507692f",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "object": "https://maps.google.com/?cid=12345",
+      "observed_at": "2026-08-29T23:30:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-000000000047",
+      "source_kind": "public_gbp",
+      "unit": null,
+      "value": "Austin"
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0\n/payload/selected_pages/0/deep_snapshot/html",
+      "id": "ev_92e8290abf4a96139f6cd0b104dd13f001a4c6e0e7e050bbe3163b2173908629",
+      "limitations": [
+        "This evidence records a missing field in the saved, approved sample after required checks; it is not a business value or proof that the field is absent from the entire internet."
+      ],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "site_missing"
+    },
+    {
+      "comparison_scope": "Saved public_gbp sample for Austin",
+      "field_path": "/payload/record/fields/business_name/value",
+      "id": "ev_a4de5e2ecefd172662568d31ffe02aaf476a6cb94847a920e78d51476c1351ae",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "object": "https://maps.google.com/?cid=12345",
+      "observed_at": "2026-08-29T23:30:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-000000000047",
+      "source_kind": "public_gbp",
+      "unit": null,
+      "value": "Fixture Plumbing"
+    },
+    {
+      "comparison_scope": "Saved public_gbp sample for Austin",
+      "field_path": "/payload/record/fields/phone/value",
+      "id": "ev_b513f7054bd9967c8a4a73acf89d1c798342b082f43e642a298443013217f919",
+      "limitations": [
+        "Customer public GBP identity: strong_id_matched.",
+        "These observations are from a public customer GBP profile, not authorized GBP Performance data."
+      ],
+      "object": "https://maps.google.com/?cid=12345",
+      "observed_at": "2026-08-29T23:30:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-000000000047",
+      "source_kind": "public_gbp",
+      "unit": null,
+      "value": "+1 512 555 0100"
+    },
+    {
+      "comparison_scope": "Saved site sample for Austin",
+      "field_path": "/payload/pages/0\n/payload/selected_pages/0/deep_snapshot/html",
+      "id": "ev_d8e890e41f4884a87b729956231b268356edf3902394f8b6cff47f85b47010fd",
+      "limitations": [
+        "This evidence records a missing field in the saved, approved sample after required checks; it is not a business value or proof that the field is absent from the entire internet."
+      ],
+      "object": "https://example.test/",
+      "observed_at": "2026-08-28T08:00:00Z",
+      "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+      "source_kind": "site",
+      "unit": null,
+      "value": "site_missing"
+    }
+  ],
+  "findings": [
+    {
+      "classification": "fact",
+      "comparison_scope": "Saved public sample only",
+      "confidence": "low",
+      "coverage": [
+        {
+          "checked": true,
+          "source": "site"
+        },
+        {
+          "checked": false,
+          "source": "gbp"
+        },
+        {
+          "checked": false,
+          "source": "serp"
+        },
+        {
+          "checked": false,
+          "source": "competitor"
+        },
+        {
+          "checked": false,
+          "source": "citation"
+        },
+        {
+          "checked": false,
+          "source": "gsc"
+        },
+        {
+          "checked": false,
+          "source": "ga4"
+        },
+        {
+          "checked": false,
+          "source": "rendered"
+        }
+      ],
+      "evidence_ids": [
+        "ev_06bf1bf8699c1a3979a5a5bbe88545ccfe50175c25ea881a6e463e57aca63b70",
+        "ev_1a744f88d7a9d20b0186db4eeb15d478ee86304a4a1768e0e018f3bfdb80038c",
+        "ev_2578b2b24b6a6652d81605f63de7d9a76b51c6bbe92cb3bb7d2154f90f1a4832"
+      ],
+      "id": "fn-public-assessment",
+      "impact_path": "No business impact or healthy-site conclusion is established.",
+      "interpretation": "needs_verification",
+      "judgment": "No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
+      "kind": "fact",
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
+      ],
+      "observed_at": "2026-08-28T08:00:00Z",
+      "observed_fact": "The eligible saved website fields below were checked. The supported public rules did not produce an actionable finding.",
+      "rule_id": "v22_capability.public_assessment",
+      "rule_version": "1.0.0",
+      "severity": "low",
+      "status": "not_assessed",
+      "target": "https://example.test/"
+    }
+  ],
+  "generated_at": "2026-08-30T00:00:00Z",
+  "id": "00000000-0000-0000-0000-000000000386",
+  "input_manifest": {
+    "business": {
+      "case_id": "11111111-1111-4111-8111-111111111111",
+      "competitor_sites": [
+        "https://competitor-1.test/",
+        "https://competitor-2.test/",
+        "https://competitor-3.test/"
+      ],
+      "confirmation_source": "seo_confirmation",
+      "confirmed_at": "2026-08-29T00:00:00Z",
+      "id": "00000000-0000-0000-0000-000000000388",
+      "primary_service": "Plumber",
+      "priority": null,
+      "revision": 1,
+      "site_url": "https://example.test/",
+      "target_market": "Austin, TX",
+      "target_pages": [],
+      "user_id": "00000000-0000-0000-0000-000000000387"
+    },
+    "case_id": "11111111-1111-4111-8111-111111111111",
+    "evaluated_at": "2026-08-30T00:00:00Z",
+    "generation_input_checksum": "sha256:50d9e123db8ef526b150db0fe4639f9dd12a8587911cd29015d09b5c83500fcb",
+    "id": "00000000-0000-0000-0000-000000000385",
+    "implementation": null,
+    "input_checksum": "sha256:81c4ab974888e488a6066448be24e215d557dff5d82d4a3bd54cabad46358597",
+    "job_id": "00000000-0000-0000-0000-000000000386",
+    "mode": "acquisition",
+    "previous_report": null,
+    "ruleset_version": "v22_capability_public_v8",
+    "schema_version": "v22_analysis_input_v1",
+    "snapshots": [
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T08:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:e2f8dc1892a0961f320caab0c88e3fee6a9d42d3cfe216a644019026b0a4a678",
+        "schema_version": "site_inventory_snapshot_v1",
+        "scope": "Saved site sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000b",
+        "source_kind": "site"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-28T12:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:4bce7bc78f114d465f8c431cc19c111e0fc6fcd4e0528f5e71c80504552039d0",
+        "schema_version": "serp_market_snapshot_v1",
+        "scope": "Saved serp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000c",
+        "source_kind": "serp"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-30T00:00:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:c5d780ee3554b73da357113086aa8d0ad4ed225e752a4ddee334f61b60c2311b",
+        "schema_version": "competitor_collection_snapshot_v1",
+        "scope": "Saved competitor sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-00000000000d",
+        "source_kind": "competitor"
+      },
+      {
+        "binding_id": null,
+        "case_id": "11111111-1111-4111-8111-111111111111",
+        "expires_at": "2026-08-31T00:00:00Z",
+        "fetched_at": "2026-08-29T23:30:00Z",
+        "health": "healthy",
+        "identity_match": "matched",
+        "payload_checksum": "sha256:2030a1d27af762cd4112cca2bda130a6d262b373447cfd8da76e18c4435e4338",
+        "schema_version": "customer_public_gbp_snapshot_v1",
+        "scope": "Saved public_gbp sample for Austin",
+        "snapshot_id": "00000000-0000-0000-0000-000000000047",
+        "source_kind": "public_gbp"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000387"
+  },
+  "limitations": [
+    "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+    "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+    "Address: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Business name: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Domain coverage for 'emergency plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'emergency plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'plumber' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Domain coverage for 'water heater repair' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+    "Phone number: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Service areas: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+    "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+    "The full competitor-position comparison for 'emergency plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'emergency plumber' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'emergency plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'plumber' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "The full competitor-position comparison for 'water heater repair' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+    "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+  ],
+  "prioritization": {
+    "action_order": [],
+    "business_priority": null,
+    "candidates": [],
+    "input_checksum": "sha256:81c4ab974888e488a6066448be24e215d557dff5d82d4a3bd54cabad46358597",
+    "limitations": [
+      "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+    ],
+    "rules_version": "v22_business_priority_v2",
+    "target_pages": []
+  },
+  "report_type": "prospect",
+  "schema_version": "2.2.5",
+  "settlement_policy": "one_credit_per_completed_analysis",
+  "summary": "No action is proposed from the available public evidence for https://example.test/. The eligible saved website fields below were checked. The supported public rules did not produce an actionable finding.",
+  "title": "Plumber",
+  "version": 1
+}

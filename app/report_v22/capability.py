@@ -142,7 +142,7 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("snapshot order is not canonical")
         required = set(SOURCE_ORDER[:4 if self.mode == "acquisition" else 6])
         if self.schema_version == "v22_analysis_input_v2":
-            if self.mode != "acquisition" or self.ruleset_version != "v22_capability_public_v7":
+            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8"}:
                 raise ValueError("rendered inputs require their own acquisition ruleset")
             required.add("rendered")
         elif "rendered" in kinds or self.ruleset_version == "v22_capability_public_v7":
@@ -186,11 +186,41 @@ class CapabilityEvidence(StrictModel):
     limitations: list[Text] = Field(max_length=20)
 
 
+class FindingCoverage(StrictModel):
+    source: Literal["site", "gbp", "serp", "competitor", "citation", "gsc", "ga4", "rendered"]
+    checked: bool
+
+
 class CapabilityFinding(StrictModel):
     id: Label
     rule_id: Label
     rule_version: Label
     classification: Literal["fact", "inference", "estimate"]
+    kind: Literal["fact", "inference", "recommendation"] | None = None
+    status: Literal["confirmed", "not_detected", "not_checked", "not_assessed"] | None = None
+    coverage: list[FindingCoverage] | None = Field(default=None, min_length=1, max_length=8)
+
+    @model_serializer(mode="wrap")
+    def preserve_unlabelled_findings(self, handler):
+        value = handler(self)
+        for field in ("kind", "status", "coverage"):
+            if getattr(self, field) is None:
+                value.pop(field, None)
+        return value
+
+    @model_validator(mode="after")
+    def validate_labels(self):
+        labels = (self.kind, self.status, self.coverage)
+        if any(v is not None for v in labels):
+            if any(v is None for v in labels):
+                raise ValueError("finding labels must be complete")
+            if self.kind != "fact" and self.status != "not_assessed":
+                raise ValueError("non-factual findings cannot claim factual confirmation")
+            if len({v.source for v in self.coverage}) != len(self.coverage):
+                raise ValueError("duplicate coverage source")
+        elif {"kind", "status", "coverage"} & self.model_fields_set:
+            raise ValueError("historical finding labels must be absent, not null")
+        return self
     severity: Literal["low", "medium", "high", "critical"]
     confidence: Literal["low", "medium", "high"]
     target: Text
@@ -278,8 +308,44 @@ class PrioritizationTrace(StrictModel):
     limitations: list[Text] = Field(min_length=1, max_length=5)
 
 
+class ContactCheck(StrictModel):
+    result: Literal["match", "partial_match", "mismatch", "none"]
+    field: Literal["phone", "address", "business_name", "service_area"]
+    status: Literal["confirmed", "not_detected", "not_checked", "not_assessed"]
+    basis: Literal["structured", "text_pattern", "rendered"]
+    compared_components: list[Label] = Field(max_length=20)
+    omitted_components: list[Label] = Field(max_length=20)
+    evidence_ids: list[Label] = Field(max_length=500)
+
+    @model_validator(mode="after")
+    def unique_references(self):
+        for items in (self.compared_components, self.omitted_components, self.evidence_ids):
+            if len(items) != len(set(items)):
+                raise ValueError("duplicate contact check component or reference")
+        return self
+
+
 class CapabilityReport(StrictModel):
-    schema_version: Literal["2.2.2", "2.2.4"]
+    model_config = ConfigDict(json_schema_extra={
+        "if": {"properties": {"schema_version": {"const": "2.2.5"}}, "required": ["schema_version"]},
+        "then": {
+            "if": {"properties": {"input_manifest": {"type": "object", "properties": {
+                "ruleset_version": {"const": "v22_capability_public_v8"}}, "required": ["ruleset_version"]}},
+                "required": ["input_manifest"]},
+            "then": {"properties": {"contact_checks": {"type": "array"}}, "required": ["contact_checks"]},
+            "else": {"not": {"properties": {"contact_checks": {}}, "required": ["contact_checks"]}},
+            "properties": {"findings": {"type": "array", "items": {
+            "type": "object", "required": ["kind", "status", "coverage"],
+            "properties": {"kind": {"enum": ["fact", "inference", "recommendation"]},
+                "status": {"enum": ["confirmed", "not_detected", "not_checked", "not_assessed"]},
+                "coverage": {"type": "array"}}
+        }}}},
+        "else": {"not": {"properties": {"contact_checks": {}}, "required": ["contact_checks"]},
+            "properties": {"findings": {"type": "array", "items": {
+            "type": "object", "not": {"anyOf": [{"properties": {name: {}}, "required": [name]} for name in ("kind", "status", "coverage")]}
+        }}}}
+    })
+    schema_version: Literal["2.2.2", "2.2.4", "2.2.5"]
     id: UUID
     report_type: Literal["prospect", "verified_execution"]
     version: int = Field(ge=1)
@@ -289,6 +355,7 @@ class CapabilityReport(StrictModel):
     summary: Text
     evidence: list[CapabilityEvidence] = Field(min_length=1, max_length=500)
     findings: list[CapabilityFinding] = Field(min_length=1, max_length=50)
+    contact_checks: list[ContactCheck] | None = Field(default=None, max_length=4)
     action_state: Literal["actions_supported", "insufficient_basis"]
     actions: list[CapabilityAction] = Field(max_length=3)
     limitations: list[Text] = Field(min_length=1, max_length=40)
@@ -302,12 +369,19 @@ class CapabilityReport(StrictModel):
         # Adding optional metadata must not change historical report digests.
         if self.prioritization is None:
             result.pop("prioritization", None)
+        if self.contact_checks is None:
+            result.pop("contact_checks", None)
         return result
 
     @model_validator(mode="after")
     def validate_references(self):
         manifest = self.input_manifest
-        if (self.schema_version == "2.2.4") != (manifest.schema_version == "v22_analysis_input_v2"):
+        labelled = self.schema_version == "2.2.5"
+        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_service_v5"}):
+            raise ValueError("finding labels require a versioned ruleset")
+        if any((f.kind is not None) != labelled for f in self.findings):
+            raise ValueError("finding labels require the new report version")
+        if not labelled and (self.schema_version == "2.2.4") != (manifest.schema_version == "v22_analysis_input_v2"):
             raise ValueError("report and manifest versions disagree")
         if self.id != manifest.job_id or instant(self.generated_at) < instant(manifest.evaluated_at):
             raise ValueError("report task or evaluation binding mismatch")
@@ -323,6 +397,14 @@ class CapabilityReport(StrictModel):
         snapshots = {s.snapshot_id: s for s in manifest.snapshots}
         evidence = {e.id: e for e in self.evidence}
         findings = {f.id: f for f in self.findings}
+        has_checks = manifest.ruleset_version == "v22_capability_public_v8"
+        if has_checks != (self.contact_checks is not None) or (not has_checks and "contact_checks" in self.model_fields_set):
+            raise ValueError("contact checks require public v8")
+        checks = self.contact_checks or []
+        if len({c.field for c in checks}) != len(checks):
+            raise ValueError("duplicate contact check field")
+        if any(not set(c.evidence_ids) <= evidence.keys() for c in checks):
+            raise ValueError("contact check references unknown evidence")
         prior: set[str] = set()
         for item in self.evidence:
             snapshot = snapshots.get(item.snapshot_id)
@@ -351,7 +433,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7"}
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_service_v5"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -359,7 +441,7 @@ class CapabilityReport(StrictModel):
         if self.prioritization is not None:
             from app.report_v22.capability_priority import candidate_input, prioritize
             trace = self.prioritization.model_dump(mode="json")
-            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7")) else "v22_business_priority_v1"
+            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8")) else "v22_business_priority_v1"
             if trace["rules_version"] != expected_version:
                 raise ValueError("priority version mismatch")
             replay = prioritize([entry["input"] for entry in trace["candidates"]],

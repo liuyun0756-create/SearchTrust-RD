@@ -12,7 +12,7 @@ from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.prospect_report_pipeline import build_persisted_public_findings_input
 from app.jobs_v22.result_persistence import result_snapshot_id
 from app.report_v22.capability import AnalysisInputManifest, BusinessScope, instant
-from app.report_v22.capability_public import RULESET, RENDERED_RULESET
+from app.report_v22.capability_finding_status import PUBLIC_RULESET as RULESET
 from app.report_v22.evidence_models import RenderedEvidenceSource, SnapshotBinding
 from app.collectors.site_render_models import RenderedSiteSnapshot
 from app.report_v22.evidence_bindings import validate_sources
@@ -99,9 +99,9 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
             payload_checksum=s.binding.payload_checksum, fetched_at=stamp(s.binding.fetched_at),
             expires_at=stamp(s.binding.expires_at), health="healthy", identity_match="matched", binding_id=None,
             scope=f"{s.kind} · {scope.primary_service} · {scope.target_market}") for s in value.evidence_input.sources]
-        mode, ruleset = "acquisition", RENDERED_RULESET if rendered is not None else RULESET
+        mode, ruleset = "acquisition", RULESET
         if private_snapshots is not None:
-            from app.report_v22.capability_service import RULESET as SERVICE_RULESET
+            from app.report_v22.capability_finding_status import SERVICE_RULESET
             from app.report_v22.capability_service_inputs import CapabilityServiceInput, ServiceFirstPartyInput
             first = ServiceFirstPartyInput(case_id=req.case_id, parent_report_id=None,
                 evaluated_at=evaluated, snapshots=private_snapshots)

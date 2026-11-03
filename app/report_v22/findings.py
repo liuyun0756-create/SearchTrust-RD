@@ -298,6 +298,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             rule_evaluations=[outcome.evaluation for outcome in ordered], site_rollup=site, cluster_rollups=clusters)
         if len(canonical_json_bytes(result)) > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
+        result._contact_alignment = alignment
         return result
     except EvidenceError as exc:
         if not alignment_enabled:

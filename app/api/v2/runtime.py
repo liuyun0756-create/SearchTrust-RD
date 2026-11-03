@@ -209,7 +209,7 @@ def state_to_public(state: JobState) -> TaskStatusResponse | CapabilityTaskStatu
         report=state.report
         return CapabilityTaskStatusResponse(schema_version="v22_capability_task_status_v1",job_id=state.job_id,
             revision=state.revision,run_generation=state.run_generation,status="succeeded",stage="completed",progress=100,message=state.message,
-            report_reference=dict(report_id=report.id,case_id=state.case_id,schema_version="2.2.2",report_type=report.report_type,
+            report_reference=dict(report_id=report.id,case_id=state.case_id,schema_version=report.schema_version,report_type=report.report_type,
                 payload_checksum=verified_request_digest(report.model_dump(mode="json"))),
             created_at=state.created_at,deadline_at=state.deadline_at,updated_at=state.updated_at)
     error = None

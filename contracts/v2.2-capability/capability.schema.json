@@ -533,6 +533,23 @@
           "title": "Confidence",
           "type": "string"
         },
+        "coverage": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/FindingCoverage"
+              },
+              "maxItems": 8,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage"
+        },
         "evidence_ids": {
           "items": {
             "maxLength": 200,
@@ -574,6 +591,23 @@
           "pattern": "\\S",
           "title": "Judgment",
           "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "fact",
+                "inference",
+                "recommendation"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
         },
         "limitations": {
           "items": {
@@ -623,6 +657,24 @@
           "title": "Severity",
           "type": "string"
         },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "confirmed",
+                "not_detected",
+                "not_checked",
+                "not_assessed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
         "target": {
           "maxLength": 2000,
           "minLength": 1,
@@ -653,6 +705,62 @@
     },
     "CapabilityReport": {
       "additionalProperties": false,
+      "else": {
+        "not": {
+          "properties": {
+            "contact_checks": {}
+          },
+          "required": [
+            "contact_checks"
+          ]
+        },
+        "properties": {
+          "findings": {
+            "items": {
+              "not": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "kind": {}
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "status": {}
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "coverage": {}
+                    },
+                    "required": [
+                      "coverage"
+                    ]
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "2.2.5"
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
       "properties": {
         "action_state": {
           "enum": [
@@ -677,6 +785,22 @@
           "maxItems": 50,
           "title": "Changes",
           "type": "array"
+        },
+        "contact_checks": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ContactCheck"
+              },
+              "maxItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contact Checks"
         },
         "evidence": {
           "items": {
@@ -745,7 +869,8 @@
         "schema_version": {
           "enum": [
             "2.2.2",
-            "2.2.4"
+            "2.2.4",
+            "2.2.5"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -792,7 +917,168 @@
         "changes",
         "settlement_policy"
       ],
+      "then": {
+        "else": {
+          "not": {
+            "properties": {
+              "contact_checks": {}
+            },
+            "required": [
+              "contact_checks"
+            ]
+          }
+        },
+        "if": {
+          "properties": {
+            "input_manifest": {
+              "properties": {
+                "ruleset_version": {
+                  "const": "v22_capability_public_v8"
+                }
+              },
+              "required": [
+                "ruleset_version"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "input_manifest"
+          ]
+        },
+        "properties": {
+          "findings": {
+            "items": {
+              "properties": {
+                "coverage": {
+                  "type": "array"
+                },
+                "kind": {
+                  "enum": [
+                    "fact",
+                    "inference",
+                    "recommendation"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "confirmed",
+                    "not_detected",
+                    "not_checked",
+                    "not_assessed"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "status",
+                "coverage"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "then": {
+          "properties": {
+            "contact_checks": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "contact_checks"
+          ]
+        }
+      },
       "title": "CapabilityReport",
+      "type": "object"
+    },
+    "ContactCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "enum": [
+            "structured",
+            "text_pattern",
+            "rendered"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "compared_components": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Compared Components",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "field": {
+          "enum": [
+            "phone",
+            "address",
+            "business_name",
+            "service_area"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "omitted_components": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Omitted Components",
+          "type": "array"
+        },
+        "result": {
+          "enum": [
+            "match",
+            "partial_match",
+            "mismatch",
+            "none"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "confirmed",
+            "not_detected",
+            "not_checked",
+            "not_assessed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "field",
+        "status",
+        "basis",
+        "compared_components",
+        "omitted_components",
+        "evidence_ids"
+      ],
+      "title": "ContactCheck",
       "type": "object"
     },
     "DeliveryRevision": {
@@ -1083,6 +1369,35 @@
         "evidence_ids"
       ],
       "title": "ExecutionMaterial",
+      "type": "object"
+    },
+    "FindingCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "checked": {
+          "title": "Checked",
+          "type": "boolean"
+        },
+        "source": {
+          "enum": [
+            "site",
+            "gbp",
+            "serp",
+            "competitor",
+            "citation",
+            "gsc",
+            "ga4",
+            "rendered"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "checked"
+      ],
+      "title": "FindingCoverage",
       "type": "object"
     },
     "ImplementationReference": {
@@ -1573,6 +1888,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.4 (2.2.2 compatible)",
+  "title": "SearchTrust capability contracts 2.2.5 (2.2.2/2.2.4 compatible)",
   "type": "object"
 }

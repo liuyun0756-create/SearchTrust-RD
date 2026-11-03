@@ -19,7 +19,8 @@ from verified_pipeline_helpers import frozen_public_fixture
 def test_new_acquisition_manifest_uses_current_ruleset_and_executes_reviewed_findings():
     args, _, _ = acquisition_inputs()
     manifest, request = build_acquisition_input(**args)
-    assert manifest.ruleset_version == RULESET == "v22_capability_public_v6"
+    from app.report_v22.capability_finding_status import PUBLIC_RULESET
+    assert manifest.ruleset_version == PUBLIC_RULESET == "v22_capability_public_v8"
     with patch("app.report_v22.capability_public.build_public_findings", wraps=build_public_findings) as build:
         report = build_public_capability_report(manifest, request)
     assert build.call_args.kwargs == {"text_patterns": True, "reviewed_evidence": True}

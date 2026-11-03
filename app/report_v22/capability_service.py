@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
 from app.jobs_v22.errors import DeterministicJobError
+from app.report_v22.capability_finding_status import SERVICE_RULESET as LABELLED_RULESET, annotate_findings
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.capability_public import _public_report_content
 from app.report_v22.capability_service_copy import CAUSAL_LIMIT, action_content, interpretation
@@ -35,7 +36,7 @@ def _validate_history(manifest, previous):
         return
     if not isinstance(previous, dict) or verified_request_digest(previous) != ref.payload_checksum:
         raise CapabilityServiceError()
-    if previous.get("schema_version") in {"2.2.2", "2.2.4"}:
+    if previous.get("schema_version") in {"2.2.2", "2.2.4", "2.2.5"}:
         prior = CapabilityReport.model_validate_json(canonical_json_bytes(previous))
         identity = (prior.id, prior.input_manifest.case_id, prior.report_type, prior.version)
         if prior.input_manifest.user_id != manifest.user_id: raise CapabilityServiceError()
@@ -49,7 +50,7 @@ def _validate_history(manifest, previous):
 def _validated(manifest, value, previous):
     manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
     request = CapabilityServiceInput.model_validate_json(canonical_json_bytes(value))
-    if (manifest.mode not in {"first_service", "after_acquisition"} or manifest.ruleset_version not in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+    if (manifest.mode not in {"first_service", "after_acquisition"} or manifest.ruleset_version not in {LABELLED_RULESET, RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
             or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
         raise CapabilityServiceError()
     _validate_history(manifest, previous)
@@ -229,7 +230,7 @@ def build_service_capability_report(manifest, value, *, previous_report=None) ->
                 candidates.append(candidate)
         raw["evidence"] = sorted(evidence.values(), key=lambda e: e["id"])
         candidates = _merge_service_work(candidates, raw["findings"])
-        if manifest.ruleset_version in {RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
+        if manifest.ruleset_version in {LABELLED_RULESET, RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             raw["actions"] = candidates
             apply_priority(raw, manifest)
@@ -242,6 +243,8 @@ def build_service_capability_report(manifest, value, *, previous_report=None) ->
         # Pair/source availability is not silently replaced by a zero value.
         if not any(s.source_kind == "official_gbp" for s in manifest.snapshots):
             raw["limitations"].append("Official GBP Performance was not connected; public business-profile observations are a separate source.")
+        if manifest.ruleset_version == LABELLED_RULESET:
+            annotate_findings(raw)
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))
         if len(canonical_json_bytes(report)) > 2_000_000: raise CapabilityServiceError()
         return report

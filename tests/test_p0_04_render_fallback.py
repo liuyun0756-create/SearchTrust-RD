@@ -248,7 +248,7 @@ def test_rendered_address_is_positive_only_and_retains_comparison_scope(html,add
     assert 'rendered page' in ' '.join(field.limitations)
 
 
-def test_acquisition_bridge_uses_v7_only_when_rendered_snapshot_exists():
+def test_acquisition_bridge_keeps_rendered_manifest_separate_with_current_ruleset():
     from test_v22_capability_acquisition_preparation import inputs
     from app.jobs_v22.capability_acquisition_input import build_acquisition_input
     from app.report_v22.capability_public import build_public_capability_report
@@ -264,8 +264,8 @@ def test_acquisition_bridge_uses_v7_only_when_rendered_snapshot_exists():
         reason='static_not_checked',static_text_characters=0,limitation='render_unavailable')],limitations=[RENDER_FAILURE])
     manifest,value = build_acquisition_input(**args,rendered=rendered)
     report = build_public_capability_report(manifest,value)
-    assert manifest.schema_version == 'v22_analysis_input_v2' and manifest.ruleset_version == 'v22_capability_public_v7'
-    assert report.schema_version == '2.2.4' and RENDER_FAILURE in report.limitations
+    assert manifest.schema_version == 'v22_analysis_input_v2' and manifest.ruleset_version == 'v22_capability_public_v8'
+    assert report.schema_version == '2.2.5' and RENDER_FAILURE in report.limitations
     again, unchanged = build_acquisition_input(**args,rendered=None)
     assert (again,unchanged)==(old_manifest,old_value)
     assert canonical_json_bytes(build_public_capability_report(again,unchanged)) == before
