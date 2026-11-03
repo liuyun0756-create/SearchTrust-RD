@@ -1,0 +1,20 @@
+{
+  "schema_version": "gold_input_v1",
+  "site_id": "pr-plumbing-fresno",
+  "group": "A",
+  "site_url": "https://www.prplumbingfresno.com/",
+  "snapshot_files": [
+    {
+      "path": "page.html",
+      "base": "case",
+      "sha256": "eb83aa5eca509e903c833d39bb393b08ed89bd6a61bfa14e2bb8a2ddda8e1544"
+    },
+    {
+      "path": "capture.json",
+      "base": "case",
+      "sha256": "b18bfc217fbdab5b306615c04ebbc1a0b080543d4a432414b68660fbea0b28a8"
+    }
+  ],
+  "generation": null,
+  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+}

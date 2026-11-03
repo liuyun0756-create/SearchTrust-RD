@@ -1,0 +1,41 @@
+{
+  "schema_version": "gold_input_v1",
+  "site_id": "nova-service",
+  "group": "A",
+  "site_url": "https://novaservice.pro/",
+  "snapshot_files": [
+    {
+      "path": "nova-v5-report.json",
+      "base": "private",
+      "sha256": "c4889bee14815dd7622444dd119d46b7a367fa96901f3855aa56b6d1aac8942e"
+    },
+    {
+      "path": "nova-v5-snapshots.json",
+      "base": "private",
+      "sha256": "ddd0365816b21cd59972896429414aee909f18ecdaad74e95d2e11c071af9ca7"
+    },
+    {
+      "path": "nova-v5-generation-recipe.json",
+      "base": "private",
+      "sha256": "6b853fbb4d3072736fa3e9e21aa9d640de8ea1bfb53a2e5d2df3de8121636c61"
+    }
+  ],
+  "generation": {
+    "kind": "nova_frozen_recipe",
+    "report": {
+      "path": "nova-v5-report.json",
+      "base": "private",
+      "sha256": "c4889bee14815dd7622444dd119d46b7a367fa96901f3855aa56b6d1aac8942e"
+    },
+    "snapshots": {
+      "path": "nova-v5-snapshots.json",
+      "base": "private",
+      "sha256": "ddd0365816b21cd59972896429414aee909f18ecdaad74e95d2e11c071af9ca7"
+    },
+    "recipe": {
+      "path": "nova-v5-generation-recipe.json",
+      "base": "private",
+      "sha256": "6b853fbb4d3072736fa3e9e21aa9d640de8ea1bfb53a2e5d2df3de8121636c61"
+    }
+  }
+}

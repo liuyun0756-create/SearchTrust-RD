@@ -1,0 +1,127 @@
+{
+  "schema_version": "gold_truth_v1",
+  "site_id": "seamless-gutters-pensacola",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "site_fields": {
+    "business_name": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "gbp_fields": {
+    "business_name": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "category": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "operating_model": {
+    "value": null,
+    "evidence_refs": []
+  },
+  "local_entities": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "trust_claims": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "checks": [
+    {
+      "id": "phone-false-absence",
+      "reported_issue": "通用检查：页面可见的电话不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "address-false-absence",
+      "reported_issue": "通用检查：页面可见的地址不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "rule_id": "v22_public.gbp_address_alignment",
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "opening_hours-false-absence",
+      "reported_issue": "通用检查：页面可见的营业时间不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "rule_id": null,
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "service_area-false-absence",
+      "reported_issue": "通用检查：页面可见的服务城市/区域不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "rule_id": "v22_public.gbp_service_area_alignment",
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "service-page-context",
+      "kind": "page_type",
+      "reported_issue": "通用检查：核对服务页定位，不能仅因服务页无完整地址而报告缺 NAP。",
+      "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+      "expected_page_type": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "client-weak-actions",
+      "kind": "client_weak_actions",
+      "reported_issue": "通用检查：客户可见且全部依据未检查、未检测到或低置信的行动应被隐藏；混合依据沿用 P0-07 已确认规则。",
+      "expected_count": null,
+      "evidence_refs": []
+    }
+  ],
+  "sample_purpose": "通用误报检查；负责人确认反馈未记录该站具体错误，不属于已知错误回归样本。"
+}

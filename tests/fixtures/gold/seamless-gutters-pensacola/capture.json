@@ -1,0 +1,13 @@
+{
+  "requested_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+  "started_at": "2026-11-03T07:10:36.025273+00:00",
+  "method": "BoundedSiteFetcher; direct HTTP; trust_env=False; no paid API",
+  "status": "captured",
+  "final_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+  "http_status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "response_bytes": 264331,
+  "sha256": "61aac9bb7e21306e02ebe11a05a956f69d416e843e197c6449dc10e447f1efc7",
+  "file": "page.html",
+  "completed_at": "2026-11-03T07:10:42.591286+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "requested_url": "https://allstarplumbingfresno.com/",
+  "started_at": "2026-11-03T07:10:36.025069+00:00",
+  "method": "BoundedSiteFetcher; direct HTTP; trust_env=False; no paid API",
+  "status": "captured",
+  "final_url": "https://allstarplumbingfresno.com/",
+  "http_status": 200,
+  "content_type": "text/html",
+  "response_bytes": 48787,
+  "sha256": "582fc1e968188778225262b81acd8499f2ebd1d93a28a04cd05559fa75eea0e9",
+  "file": "page.html",
+  "completed_at": "2026-11-03T07:10:37.978771+00:00"
+}

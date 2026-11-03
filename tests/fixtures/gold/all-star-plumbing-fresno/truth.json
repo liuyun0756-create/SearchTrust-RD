@@ -1,0 +1,78 @@
+{
+  "schema_version": "gold_truth_v1",
+  "site_id": "all-star-plumbing-fresno",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "site_fields": {
+    "business_name": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "gbp_fields": {
+    "business_name": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "category": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "operating_model": {
+    "value": null,
+    "evidence_refs": []
+  },
+  "local_entities": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "trust_claims": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "checks": []
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "gold_input_v1",
+  "site_id": "all-star-plumbing-fresno",
+  "group": "A",
+  "site_url": "https://allstarplumbingfresno.com/",
+  "snapshot_files": [
+    {
+      "path": "page.html",
+      "base": "case",
+      "sha256": "582fc1e968188778225262b81acd8499f2ebd1d93a28a04cd05559fa75eea0e9"
+    },
+    {
+      "path": "capture.json",
+      "base": "case",
+      "sha256": "208911c21e8d4ccca1b4d03a465fc206dbffa7dcbcdee735d6d19c7a09280471"
+    }
+  ],
+  "generation": null,
+  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+}

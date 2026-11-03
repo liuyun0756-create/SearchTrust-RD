@@ -1,0 +1,13 @@
+{
+  "requested_url": "https://www.volcanoeshikingguides.com/",
+  "started_at": "2026-11-03T07:11:26.980248+00:00",
+  "method": "BoundedSiteFetcher; trust_env=False; retry with 10 MB limit; no paid API",
+  "status": "captured",
+  "final_url": "https://www.volcanoeshikingguides.com/",
+  "http_status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "response_bytes": 2141616,
+  "sha256": "92a7300ed80fb10c1c2c5a9fc887f89959a1cd34c16a7b06f4625320972799af",
+  "file": "page.html",
+  "completed_at": "2026-11-03T07:11:28.040410+00:00"
+}

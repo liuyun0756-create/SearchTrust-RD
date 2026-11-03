@@ -1,0 +1,8 @@
+{
+  "requested_url": "https://www.volcanoeshikingguides.com/",
+  "started_at": "2026-11-03T07:10:36.025460+00:00",
+  "method": "BoundedSiteFetcher; direct HTTP; trust_env=False; no paid API",
+  "status": "unavailable",
+  "reason": "response_too_large",
+  "completed_at": "2026-11-03T07:10:38.202725+00:00"
+}

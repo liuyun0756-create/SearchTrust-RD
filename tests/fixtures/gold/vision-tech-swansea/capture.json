@@ -1,0 +1,12 @@
+{
+  "requested_url": "https://visiontechav.com/swansea/",
+  "final_url": "https://visiontechav.com/swansea/",
+  "status": "captured",
+  "http_status": 200,
+  "completed_at": "2026-11-02T13:35:18.500263+00:00",
+  "content_type": "text/html; charset=UTF-8",
+  "response_bytes": 140833,
+  "sha256": "8598a5a72786c290e91802cc80d0692d191275e063534c7b82b2363cad83493e",
+  "file": "page.html",
+  "method": "Byte-identical copy of tests/fixtures/p0_03/visiontech-swansea.html; no synthetic GBP bindings copied"
+}

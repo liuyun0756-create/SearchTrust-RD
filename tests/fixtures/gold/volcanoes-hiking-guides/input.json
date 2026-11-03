@@ -1,0 +1,20 @@
+{
+  "schema_version": "gold_input_v1",
+  "site_id": "volcanoes-hiking-guides",
+  "group": "B",
+  "site_url": "https://www.volcanoeshikingguides.com/",
+  "snapshot_files": [
+    {
+      "path": "page.html",
+      "base": "case",
+      "sha256": "92a7300ed80fb10c1c2c5a9fc887f89959a1cd34c16a7b06f4625320972799af"
+    },
+    {
+      "path": "capture-retry.json",
+      "base": "case",
+      "sha256": "3c63b815586d71e6979af0404522fc7494a44c28b2c33b19f67f74c6f2c56835"
+    }
+  ],
+  "generation": null,
+  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+}

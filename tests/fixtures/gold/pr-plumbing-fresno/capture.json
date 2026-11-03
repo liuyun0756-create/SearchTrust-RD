@@ -1,0 +1,13 @@
+{
+  "requested_url": "https://www.prplumbingfresno.com/",
+  "started_at": "2026-11-03T07:10:36.022584+00:00",
+  "method": "BoundedSiteFetcher; direct HTTP; trust_env=False; no paid API",
+  "status": "captured",
+  "final_url": "https://www.prplumbingfresno.com/",
+  "http_status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "response_bytes": 76424,
+  "sha256": "eb83aa5eca509e903c833d39bb393b08ed89bd6a61bfa14e2bb8a2ddda8e1544",
+  "file": "page.html",
+  "completed_at": "2026-11-03T07:10:37.669036+00:00"
+}

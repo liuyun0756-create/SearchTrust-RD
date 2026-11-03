@@ -1,0 +1,103 @@
+{
+  "schema_version": "gold_truth_v1",
+  "site_id": "vision-tech-swansea",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "site_fields": {
+    "business_name": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "present": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "gbp_fields": {
+    "business_name": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "address": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "phone": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "opening_hours": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "service_area": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    },
+    "category": {
+      "state": null,
+      "values": null,
+      "evidence_refs": []
+    }
+  },
+  "operating_model": {
+    "value": null,
+    "evidence_refs": []
+  },
+  "local_entities": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "trust_claims": {
+    "values": null,
+    "evidence_refs": []
+  },
+  "checks": [
+    {
+      "id": "phone-presence",
+      "reported_issue": "反馈称电话存在但被报未找到",
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "address-presence",
+      "reported_issue": "反馈称地址存在但被报未找到",
+      "rule_id": "v22_public.gbp_address_alignment",
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "opening-hours-presence",
+      "reported_issue": "反馈称营业时间存在但被报未找到",
+      "rule_id": null,
+      "target": null,
+      "expected_triggered": null,
+      "evidence_refs": []
+    }
+  ]
+}
