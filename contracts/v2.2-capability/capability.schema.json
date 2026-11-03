@@ -78,7 +78,10 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "v22_analysis_input_v1",
+          "enum": [
+            "v22_analysis_input_v1",
+            "v22_analysis_input_v2"
+          ],
           "title": "Schema Version",
           "type": "string"
         },
@@ -86,7 +89,7 @@
           "items": {
             "$ref": "#/$defs/SnapshotReference"
           },
-          "maxItems": 7,
+          "maxItems": 8,
           "minItems": 4,
           "title": "Snapshots",
           "type": "array"
@@ -443,7 +446,8 @@
             "public_gbp",
             "gsc",
             "ga4",
-            "official_gbp"
+            "official_gbp",
+            "rendered"
           ],
           "title": "Source Kind",
           "type": "string"
@@ -739,7 +743,10 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "2.2.2",
+          "enum": [
+            "2.2.2",
+            "2.2.4"
+          ],
           "title": "Schema Version",
           "type": "string"
         },
@@ -1528,7 +1535,8 @@
             "public_gbp",
             "gsc",
             "ga4",
-            "official_gbp"
+            "official_gbp",
+            "rendered"
           ],
           "title": "Source Kind",
           "type": "string"
@@ -1565,6 +1573,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.2",
+  "title": "SearchTrust capability contracts 2.2.4 (2.2.2 compatible)",
   "type": "object"
 }

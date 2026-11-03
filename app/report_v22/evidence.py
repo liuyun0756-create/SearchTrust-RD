@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from app.jobs_v22.digest import canonical_json_bytes
 from app.report_v22.evidence_adapters import site, serp, competitor, first_party
-from app.report_v22.evidence_adapters import public_gbp
+from app.report_v22.evidence_adapters import public_gbp, rendered
 from app.report_v22.public_gbp_bindings import source_origin
 from app.report_v22.evidence_adapters.common import coverage, full_limitations, limited
 from app.report_v22.evidence_bindings import eligibility, validate_sources
@@ -65,7 +65,7 @@ def build_evidence_index(value: EvidenceBuildInput | dict) -> EvidenceBuildResul
         retained_bytes=0
         gaps=[EvidenceCoverageGap(source_type=m.source_type,reason=m.reason,competitor_id=m.competitor_id,
                                   gbp_origin=m.gbp_origin) for m in request.missing_sources]
-        adapters={"site":site,"serp":serp,"competitor":competitor,"first_party":first_party}
+        adapters={"rendered":rendered,"site":site,"serp":serp,"competitor":competitor,"first_party":first_party}
         for source in sources:
             notes=set(full_limitations(source))
             if source.kind == "public_gbp":

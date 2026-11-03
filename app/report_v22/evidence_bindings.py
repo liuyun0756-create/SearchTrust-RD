@@ -76,8 +76,8 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
             b, p = source.binding, source.payload
             require(b.case_id == context.case_id and b.fetched_at <= context.evaluated_at)
             kind = p.source_type if source.kind == "first_party" else source.kind
-            if kind == "public_gbp":
-                kind = "gbp"
+            if kind in {"public_gbp", "rendered"}:
+                kind = "gbp" if kind == "public_gbp" else "site"
             require(b.source_type == kind and b.schema_version == p.schema_version)
             _validate_times(p.model_dump(mode="python"), b.fetched_at)
             if source.kind == "first_party":
@@ -96,6 +96,9 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
                 raise EvidenceError("CHECKSUM_MISMATCH")
             if source.kind == "public_gbp":
                 validate_public_binding(source, context)
+            elif source.kind == "rendered":
+                from app.report_v22.rendered_alignment import validate_rendered_binding
+                validate_rendered_binding(source, value)
             elif source.kind == "site":
                 require(
                     host(context.site_url)

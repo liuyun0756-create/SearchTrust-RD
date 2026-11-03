@@ -91,9 +91,10 @@ class CapabilityAcquisitionPreparer:
     The existing collector is reused via collect_sources, never execute: this
     phase must not generate, persist or charge for a legacy report first.
     """
-    def __init__(self, *, repository, collector, discovery_verifier, clock=None):
+    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None):
         self.repository = repository
         self.collector = collector
+        self.render_stage = render_stage
         self.discovery_verifier = discovery_verifier
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
@@ -118,9 +119,15 @@ class CapabilityAcquisitionPreparer:
             raise DeterministicJobError("V22_ACQUISITION_PREPARATION_INVALID", "The confirmed discovery changed.")
         collected = await self.collector.collect_sources(job_id=job_id, request=envelope,
             submitted_at=receipt.created_at, checkpoints=checkpoints, cost_ledger=cost_ledger)
+        rendered = None
+        if self.render_stage is not None:
+            rendered = await self.render_stage.collect(job_id=job_id, business=receipt.business,
+                static=collected.site_inventory, gbp=collected.customer_public_gbp.snapshot,
+                country=envelope.analyze_request.target_market.country_code,
+                checkpoints=checkpoints, cost_ledger=cost_ledger)
         manifest, value = build_acquisition_input(user_id=user_id, job_id=job_id, business=receipt.business,
             request=envelope.analyze_request, collected=collected, created_at=receipt.created_at,
-            deadline_at=receipt.deadline_at, now=self.clock())
+            deadline_at=receipt.deadline_at, now=self.clock(), rendered=rendered)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)

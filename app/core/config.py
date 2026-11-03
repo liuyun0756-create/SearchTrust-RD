@@ -144,6 +144,7 @@ class Settings(BaseSettings):
     V22_SITE_INVENTORY_SITEMAP_FILES: Annotated[int, Field(ge=1, le=100)] = 20
     V22_SITE_INVENTORY_BATCH_SIZE: Annotated[int, Field(ge=1, le=100)] = 25
     V22_SITE_INVENTORY_FIRECRAWL_ENABLED: bool = True
+    V22_SITE_RENDER_FALLBACK_ENABLED: bool = False
 
     # ── v2.2 SERP market ───────────────────────────────────────────────────
     V22_SERP_MARKET_CONNECT_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5

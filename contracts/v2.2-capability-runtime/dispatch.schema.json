@@ -27,7 +27,10 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "2.2.2",
+          "enum": [
+            "2.2.2",
+            "2.2.4"
+          ],
           "title": "Schema Version",
           "type": "string"
         }

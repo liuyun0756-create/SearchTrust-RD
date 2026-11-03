@@ -28,6 +28,7 @@ CostOperation = Literal[
     "serpapi_public_profile",
     "serpapi_customer_public_gbp",
     "firecrawl_map",
+    "firecrawl_scrape",
     "jina_fetch",
     "pagespeed_analysis",
     "gsc_search_analytics",
@@ -67,6 +68,7 @@ OPERATION_PROVIDER: dict[CostOperation, CostProvider] = {
     "serpapi_public_profile": "serpapi",
     "serpapi_customer_public_gbp": "serpapi",
     "firecrawl_map": "firecrawl",
+    "firecrawl_scrape": "firecrawl",
     "jina_fetch": "jina",
     "pagespeed_analysis": "pagespeed",
     "gsc_search_analytics": "gsc",
@@ -83,6 +85,7 @@ OPERATION_LIMITS: dict[CostOperation, int] = {
     "serpapi_public_profile": 15,
     "serpapi_customer_public_gbp": 3,
     "firecrawl_map": 4,
+    "firecrawl_scrape": 2,
     "jina_fetch": 0,
     "pagespeed_analysis": 5,
     "gsc_search_analytics": 12,
@@ -157,7 +160,7 @@ class CostClaim(StrictModel):
 
 
 class CostLedgerState(StrictModel):
-    schema_version: Literal["v22_cost_ledger_v1"] = "v22_cost_ledger_v1"
+    schema_version: Literal["v22_cost_ledger_v1", "v22_cost_ledger_v2"] = "v22_cost_ledger_v1"
     job_id: UUID
     revision: int = Field(default=1, ge=1)
     pricing: PricingCatalog

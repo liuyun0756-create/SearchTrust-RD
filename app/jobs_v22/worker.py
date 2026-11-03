@@ -38,6 +38,7 @@ from app.jobs_v22.first_service_discovery_worker import (
     reconcile_v22_first_service_discovery,
 )
 from app.jobs_v22.capability_acquisition_preparation import CapabilityAcquisitionPreparer
+from app.jobs_v22.site_render_stage import build_site_render_stage
 from app.google_connections_v22.gsc import GscProvider
 from app.google_connections_v22.ga4 import Ga4Provider
 from app.google_connections_v22.gbp import GbpProvider
@@ -768,6 +769,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                     redis=pool, queue_name=settings.V22_QUEUE_NAME)
             ctx["capability_acquisition_preparer"] = CapabilityAcquisitionPreparer(
                 repository=capability_executor.resolver, collector=prospect_executor,
+                render_stage=build_site_render_stage(settings),
                 discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))
             ctx["capability_first_service_preparer"] = CapabilityFirstServicePreparer(
                 repository=capability_executor.resolver, collector=prospect_executor,

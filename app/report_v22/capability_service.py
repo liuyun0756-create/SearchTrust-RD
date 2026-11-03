@@ -35,7 +35,7 @@ def _validate_history(manifest, previous):
         return
     if not isinstance(previous, dict) or verified_request_digest(previous) != ref.payload_checksum:
         raise CapabilityServiceError()
-    if previous.get("schema_version") == "2.2.2":
+    if previous.get("schema_version") in {"2.2.2", "2.2.4"}:
         prior = CapabilityReport.model_validate_json(canonical_json_bytes(previous))
         identity = (prior.id, prior.input_manifest.case_id, prior.report_type, prior.version)
         if prior.input_manifest.user_id != manifest.user_id: raise CapabilityServiceError()

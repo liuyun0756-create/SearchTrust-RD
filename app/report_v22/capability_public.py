@@ -20,6 +20,7 @@ BUSINESS_RULESET = "v22_capability_public_v3"
 REVIEWED_RULESET = "v22_capability_public_v4"
 TITLE_RULESET = "v22_capability_public_v5"
 RULESET = "v22_capability_public_v6"
+RENDERED_RULESET = "v22_capability_public_v7"
 _ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _BOUNDARY = "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
 _COPY = {
@@ -56,8 +57,8 @@ class CapabilityPublicError(ValueError):
 
 
 def _kind(source):
-    if source.kind == "public_gbp":
-        return "public_gbp"
+    if source.kind in {"public_gbp", "rendered"}:
+        return source.kind
     return source.binding.source_type
 
 
@@ -65,7 +66,7 @@ def _bound_public_sources(manifest, value):
     # JSON round-trip revalidates model_copy mutations in nested legacy models.
     request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
     context = request.evidence_input.context
-    refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp"}}
+    refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
     if (context.case_id != manifest.case_id or context.report_type != "prospect"
             or str(context.site_url) != manifest.business.site_url
@@ -77,6 +78,18 @@ def _bound_public_sources(manifest, value):
         raise CapabilityPublicError()
     for source in sources:
         ref, binding = refs[_kind(source)], source.binding
+        if source.kind == "rendered":
+            from app.collectors.site_inventory_urls import SiteScope, canonicalize_site_resource_url
+            scope = SiteScope.from_root(manifest.business.site_url)
+            allowed = []
+            for raw in [manifest.business.site_url, *manifest.business.target_pages]:
+                url = canonicalize_site_resource_url(raw, scope=scope)
+                if url and url not in allowed:
+                    allowed.append(url)
+                if len(allowed) == 2:
+                    break
+            if any(str(p.url) not in allowed for p in source.payload.pages):
+                raise CapabilityPublicError()
         if (binding.snapshot_id != ref.snapshot_id or binding.case_id != manifest.case_id
                 or binding.schema_version != ref.schema_version
                 or binding.payload_checksum != ref.payload_checksum
@@ -108,13 +121,15 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = _bound_public_sources(manifest, value)
-        reviewed = manifest.ruleset_version in {RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
-        result = (build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)
+        reviewed = manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
+        result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
+                  if manifest.ruleset_version == RENDERED_RULESET
+                  else build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)
                   if manifest.ruleset_version == RULESET
                   else build_public_findings(request, reviewed_evidence=reviewed))
         skeletons = select_public_action_skeletons(PublicActionPlanInput(
             findings_result=result, planning_date=instant(manifest.evaluated_at).date()),
-            all_candidates=manifest.ruleset_version in {RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
+            all_candidates=manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
         refs = {s.snapshot_id: s for s in manifest.snapshots}
         original = {e.evidence_id: e for e in result.evidence_result.evidence_index}
         traces = {e.evidence_id: e for e in result.evidence_result.source_traces}
@@ -145,6 +160,8 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 comparison_scope="Saved public sample only", judgment="No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
                 interpretation="needs_verification", impact_path="No business impact or healthy-site conclusion is established.",
                 evidence_ids=[e.evidence_id for e in sample], limitations=[_BOUNDARY]))
+        if manifest.ruleset_version == RENDERED_RULESET:
+            used.update(sorted(e.evidence_id for e in original.values() if refs[e.snapshot_id].source_kind == "rendered")[:50])
         evidence = []
         for key in sorted(used):
             item, trace = original[key], traces[key]
@@ -174,19 +191,24 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         limits = [_BOUNDARY]
         if manifest.mode == "acquisition":
             limits.append("Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.")
+        if manifest.ruleset_version == RENDERED_RULESET:
+            from app.report_v22.rendered_alignment import RENDER_NOTE
+            limits.extend(sorted({note for source in request.evidence_input.sources if source.kind == "rendered" for note in source.payload.limitations}))
+            if any(refs[original[key].snapshot_id].source_kind == "rendered" and original[key].source_type != "coverage" for key in used):
+                limits.append(RENDER_NOTE)
         unchecked = sorted({f"{e.rule_id}: {e.reason}" for e in result.rule_evaluations if e.state == "not_checked"})
         if reviewed:
             from app.report_v22.quality_copy import unchecked_limits
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        raw = dict(schema_version="2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,
             summary=summary, evidence=evidence, findings=findings, action_state="actions_supported" if actions else "insufficient_basis",
             actions=actions, limitations=limits, changes=[], settlement_policy="one_credit_per_completed_analysis")
-        if manifest.ruleset_version in {RULESET, TITLE_RULESET}:
+        if manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET}:
             from app.report_v22.page_title_review import extend_report
             extend_report(raw, manifest, request, result)
         return raw
@@ -199,11 +221,11 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
-        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
                 or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
             raise CapabilityPublicError()
         raw = _public_report_content(manifest, request)
-        if manifest.ruleset_version in {RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
+        if manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             apply_priority(raw, manifest)
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))

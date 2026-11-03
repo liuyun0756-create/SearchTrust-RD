@@ -14,6 +14,7 @@ from pydantic import AwareDatetime, BaseModel, Field, model_validator
 from app.api.v2.models import ConfirmedCompetitor, DimensionValue, FirstPartySnapshotEnvelope, ProviderRequestContext
 from app.collectors.serp_market_models import SerpMarketSnapshot
 from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.collectors.site_render_models import RenderedSiteSnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
 from app.report_v22.models import (
@@ -85,6 +86,12 @@ class SiteEvidenceSource(StrictModel):
     payload: SiteInventorySnapshot
 
 
+class RenderedEvidenceSource(StrictModel):
+    kind: Literal["rendered"] = "rendered"
+    binding: SnapshotBinding
+    payload: RenderedSiteSnapshot
+
+
 class SerpEvidenceSource(StrictModel):
     kind: Literal["serp"] = "serp"
     binding: SnapshotBinding
@@ -110,7 +117,7 @@ class PublicGbpEvidenceSource(StrictModel):
     payload: CustomerPublicGbpSnapshot
 
 
-EvidenceSource = Annotated[SiteEvidenceSource | SerpEvidenceSource | CompetitorEvidenceSource | FirstPartyEvidenceSource | PublicGbpEvidenceSource, Field(discriminator="kind")]
+EvidenceSource = Annotated[RenderedEvidenceSource | SiteEvidenceSource | SerpEvidenceSource | CompetitorEvidenceSource | FirstPartyEvidenceSource | PublicGbpEvidenceSource, Field(discriminator="kind")]
 
 
 class GbpOriginMetadata(StrictModel):

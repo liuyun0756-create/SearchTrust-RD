@@ -29,11 +29,11 @@ Label = Annotated[str, Field(min_length=1, max_length=200, pattern=r"\S")]
 Timestamp = Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$", json_schema_extra={"format":"date-time"})]
 SafeInteger = Annotated[int, Field(ge=-9007199254740991, le=9007199254740991)]
 Checksum = Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
-SourceKind = Literal["site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp"]
+SourceKind = Literal["site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp", "rendered"]
 Mode = Literal["acquisition", "after_acquisition", "first_service", "review"]
-SOURCE_ORDER = ("site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp")
+SOURCE_ORDER = ("site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp", "rendered")
 SOURCE_SCHEMAS = dict(zip(SOURCE_ORDER, ("site_inventory_snapshot_v1", "serp_market_snapshot_v1",
-    "competitor_collection_snapshot_v1", "customer_public_gbp_snapshot_v1", "gsc_sync_v1", "ga4_sync_v1", "gbp_sync_v1")))
+    "competitor_collection_snapshot_v1", "customer_public_gbp_snapshot_v1", "gsc_sync_v1", "ga4_sync_v1", "gbp_sync_v1", "site_rendered_snapshot_v1")))
 
 
 def instant(value: str) -> datetime:
@@ -113,14 +113,14 @@ class ImplementationReference(StrictModel):
 
 
 class AnalysisInputManifest(StrictModel):
-    schema_version: Literal["v22_analysis_input_v1"]
+    schema_version: Literal["v22_analysis_input_v1", "v22_analysis_input_v2"]
     id: UUID
     job_id: UUID
     user_id: UUID
     case_id: UUID
     mode: Mode
     business: BusinessScope
-    snapshots: list[SnapshotReference] = Field(min_length=4, max_length=7)
+    snapshots: list[SnapshotReference] = Field(min_length=4, max_length=8)
     evaluated_at: Timestamp
     ruleset_version: Label
     generation_input_checksum: Checksum
@@ -141,6 +141,12 @@ class AnalysisInputManifest(StrictModel):
         if kinds != sorted(kinds, key=SOURCE_ORDER.index):
             raise ValueError("snapshot order is not canonical")
         required = set(SOURCE_ORDER[:4 if self.mode == "acquisition" else 6])
+        if self.schema_version == "v22_analysis_input_v2":
+            if self.mode != "acquisition" or self.ruleset_version != "v22_capability_public_v7":
+                raise ValueError("rendered inputs require their own acquisition ruleset")
+            required.add("rendered")
+        elif "rendered" in kinds or self.ruleset_version == "v22_capability_public_v7":
+            raise ValueError("rendered source requires a versioned manifest")
         if not required <= set(kinds) or (self.mode == "acquisition" and set(kinds) != required):
             raise ValueError("required sources missing or private acquisition source")
         for source in self.snapshots:
@@ -272,7 +278,7 @@ class PrioritizationTrace(StrictModel):
 
 
 class CapabilityReport(StrictModel):
-    schema_version: Literal["2.2.2"]
+    schema_version: Literal["2.2.2", "2.2.4"]
     id: UUID
     report_type: Literal["prospect", "verified_execution"]
     version: int = Field(ge=1)
@@ -300,6 +306,8 @@ class CapabilityReport(StrictModel):
     @model_validator(mode="after")
     def validate_references(self):
         manifest = self.input_manifest
+        if (self.schema_version == "2.2.4") != (manifest.schema_version == "v22_analysis_input_v2"):
+            raise ValueError("report and manifest versions disagree")
         if self.id != manifest.job_id or instant(self.generated_at) < instant(manifest.evaluated_at):
             raise ValueError("report task or evaluation binding mismatch")
         if self.report_type != ("prospect" if manifest.mode == "acquisition" else "verified_execution"):
@@ -342,7 +350,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6"}
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -350,7 +358,7 @@ class CapabilityReport(StrictModel):
         if self.prioritization is not None:
             from app.report_v22.capability_priority import candidate_input, prioritize
             trace = self.prioritization.model_dump(mode="json")
-            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6")) else "v22_business_priority_v1"
+            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7")) else "v22_business_priority_v1"
             if trace["rules_version"] != expected_version:
                 raise ValueError("priority version mismatch")
             replay = prioritize([entry["input"] for entry in trace["candidates"]],

@@ -25,7 +25,7 @@ class CapabilityRequestEnvelope(StrictModel):
 class CapabilityReportReference(StrictModel):
     report_id: UUID
     case_id: UUID
-    schema_version: Literal["2.2.2"]
+    schema_version: Literal["2.2.2", "2.2.4"]
     report_type: Literal["prospect", "verified_execution"]
     payload_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
 

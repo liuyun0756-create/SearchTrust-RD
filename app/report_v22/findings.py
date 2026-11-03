@@ -189,12 +189,14 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
         raw = value.model_dump(mode="python", warnings=False) if isinstance(value, PublicFindingsInput) else value
         request = PublicFindingsInput.model_validate(raw)
+        if any(s.kind == "rendered" for s in request.evidence_input.sources) and not rendered_pages:
+            raise FindingsError("INPUT_INVALID")
         alignment_enabled = request.business_identity is not None
         inputs = request.evidence_input
         if inputs.context.report_type != "prospect" or any(s.kind == "first_party" for s in inputs.sources):
@@ -248,6 +250,9 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 evidence=evidence,
                 limits=request.site_gbp_alignment_limits,
             )
+            if rendered_pages:
+                from app.report_v22.rendered_alignment import supplement_alignment
+                extra = supplement_alignment(extra, facts=facts, request=request, evidence=evidence)
             alignment = extra.alignment
             evidence = _merge_alignment_evidence(
                 inputs,

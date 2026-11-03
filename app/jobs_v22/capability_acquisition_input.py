@@ -11,7 +11,9 @@ from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.prospect_report_pipeline import build_persisted_public_findings_input
 from app.jobs_v22.result_persistence import result_snapshot_id
 from app.report_v22.capability import AnalysisInputManifest, BusinessScope, instant
-from app.report_v22.capability_public import RULESET
+from app.report_v22.capability_public import RULESET, RENDERED_RULESET
+from app.report_v22.evidence_models import RenderedEvidenceSource, SnapshotBinding
+from app.collectors.site_render_models import RenderedSiteSnapshot
 from app.report_v22.evidence_bindings import validate_sources
 from app.report_v22.evidence_errors import EvidenceError
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference, CustomerPublicGbpSnapshot
@@ -23,14 +25,14 @@ def stamp(value):
 
 
 def build_acquisition_input(*, user_id, job_id, business, request, collected,
-                            created_at, deadline_at, now):
+                            created_at, deadline_at, now, rendered=None):
     """Internal adapter, not an authorization gate. SQL still checks entitlement."""
     return _build_collected_input(user_id=user_id, job_id=job_id, business=business,
-        request=request, collected=collected, created_at=created_at, deadline_at=deadline_at, now=now)
+        request=request, collected=collected, created_at=created_at, deadline_at=deadline_at, now=now, rendered=rendered)
 
 
 def _build_collected_input(*, user_id, job_id, business, request, collected,
-                           created_at, deadline_at, now, private_snapshots=None):
+                           created_at, deadline_at, now, private_snapshots=None, rendered=None):
     try:
         scope = BusinessScope.model_validate_json(canonical_json_bytes(business))
         if private_snapshots is None:
@@ -61,6 +63,9 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
         # Evaluation is determined by the fixed inputs, not by a retry's clock.
         evaluated = max(created_at, instant(scope.confirmed_at), site.completed_at,
                         rivals.completed_at, market.snapshot.completed_at, gbp.completed_at)
+        if rendered is not None:
+            rendered = RenderedSiteSnapshot.model_validate_json(canonical_json_bytes(rendered))
+            evaluated = max(evaluated, rendered.completed_at)
         if evaluated > now or market.expires_at <= now or gbp.expires_at <= now:
             raise ValueError()
         value = build_persisted_public_findings_input(
@@ -80,13 +85,20 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
                 # These snapshots have no source expiry. They are accepted only
                 # from this run, and only until its ORIGINAL processing deadline.
                 source.binding.expires_at = deadline_at
+        if rendered is not None:
+            if private_snapshots is not None or rendered.started_at < created_at:
+                raise ValueError()
+            value.evidence_input.sources.append(RenderedEvidenceSource(payload=rendered, binding=SnapshotBinding(
+                snapshot_id=result_snapshot_id("rendered", req.case_id, request_digest(rendered)), case_id=req.case_id,
+                source_type="site", schema_version=rendered.schema_version, payload_checksum=request_digest(rendered),
+                fetched_at=rendered.completed_at, expires_at=deadline_at, health_status="healthy", identity_match_status="matched")))
         validate_sources(value.evidence_input)
         refs = [dict(snapshot_id=str(s.binding.snapshot_id), case_id=str(req.case_id),
             source_kind=s.kind, schema_version=s.binding.schema_version,
             payload_checksum=s.binding.payload_checksum, fetched_at=stamp(s.binding.fetched_at),
             expires_at=stamp(s.binding.expires_at), health="healthy", identity_match="matched", binding_id=None,
             scope=f"{s.kind} · {scope.primary_service} · {scope.target_market}") for s in value.evidence_input.sources]
-        mode, ruleset = "acquisition", RULESET
+        mode, ruleset = "acquisition", RENDERED_RULESET if rendered is not None else RULESET
         if private_snapshots is not None:
             from app.report_v22.capability_service import RULESET as SERVICE_RULESET
             from app.report_v22.capability_service_inputs import CapabilityServiceInput, ServiceFirstPartyInput
@@ -103,7 +115,7 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
                     binding_id=str(s.binding_id), scope=f"{s.external_resource_id} · {s.coverage_start} to {s.coverage_end}"))
             value = CapabilityServiceInput(public_input=value, first_party_input=first)
             mode, ruleset = "first_service", SERVICE_RULESET
-        manifest = dict(schema_version="v22_analysis_input_v1",
+        manifest = dict(schema_version="v22_analysis_input_v2" if rendered is not None else "v22_analysis_input_v1",
             id=str(uuid5(NAMESPACE_URL, f"searchtrust:capability:{mode}:{job_id}")),
             job_id=str(job_id), user_id=str(user_id), case_id=str(req.case_id), mode=mode,
             business=scope.model_dump(mode="json"), snapshots=refs, evaluated_at=stamp(evaluated),

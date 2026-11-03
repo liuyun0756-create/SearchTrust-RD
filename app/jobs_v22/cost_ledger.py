@@ -165,6 +165,7 @@ class JobCostLedger:
                     "revision": state.revision + 1,
                     "updated_at": now,
                     "claims": [*state.claims, claim],
+                    "schema_version": "v22_cost_ledger_v2" if operation == "firecrawl_scrape" else state.schema_version,
                 }
             )
             return updated, claim
