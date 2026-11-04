@@ -1,78 +1,495 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "all-star-plumbing-fresno",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "All Star Plumbing",
+        "All Star Plumbing, Inc."
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "正文多处 'All Star Plumbing is eager to help you…'；页脚 '©2026 All Star Plumbing, Inc.'"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Plumber.name = 'All Star Plumbing'"
+        },
+        {
+          "file": "page.html",
+          "locator": "<title> 'Plumber Fresno CA - 24 Hour Plumbing | All Star Plumbing Fresno'（标题后缀含 Fresno）"
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "5639 W Barstow Ave, Fresno, CA 93722"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页脚 'All Star Plumbing Locations' 区块 <p class=\"text-white font-bold mb-4\">5639 W Barstow Ave, Fresno, CA 93722</p>"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD PostalAddress streetAddress '5639 W Barstow Ave', 93722"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "(559) 445-9999",
+        "(559) 675-3366",
+        "(559) 323-9999"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页头 'Call Now (559) 445-9999'；页脚 FRESNO <a href=\"tel:5594459999\">"
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 MADERA <a href=\"tel:5596753366\">(559) 675-3366；CLOVIS <a href=\"tel:5593239999\">(559) 323-9999"
+        }
+      ]
     },
     "opening_hours": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "24 Hour Emergency Plumber"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页头横幅 '24 Hour Emergency Plumber // Call Now'"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD openingHoursSpecification 周一至周日 opens 00:00 closes 23:59（不可见，仅结构化数据）"
+        }
+      ]
     },
     "service_area": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Fresno CA, San Joaquin Valley & surrounding areas",
+        "FRESNO",
+        "MADERA",
+        "CLOVIS"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页脚 'All Star Plumbing serving Fresno CA, San Joaquin Valley & surrounding areas'"
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚地点标签 <strong>FRESNO</strong>/<strong>MADERA</strong>/<strong>CLOVIS</strong>"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD areaServed: Fresno, Clovis, Madera, San Joaquin Valley"
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "All Star Plumbing Fresno"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.business_name (state=observed)"
+        }
+      ]
     },
     "address": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "5639 W Barstow Ave, Fresno, CA 93722, United States"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address (state=observed)"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "+1 559-445-9999"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.phone (state=observed)"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "monday: 7 am–7 pm",
+        "tuesday: 7 am–7 pm",
+        "wednesday: 7 am–7 pm",
+        "thursday: 7 am–7 pm",
+        "friday: 7 am–7 pm",
+        "saturday: Closed",
+        "sunday: Closed"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.hours (state=observed)；operating_hours=not_returned"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.service_areas (state=not_returned, value=[])；service_area_business=not_returned——提供方未返回，不等于确认为空"
+        }
+      ]
     },
     "category": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Plumber",
+        "Bathroom Renovator",
+        "Construction Company",
+        "Contractor",
+        "Kitchen Renovator"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.categories (state=observed)"
+        }
+      ]
     }
   },
   "operating_model": {
     "value": null,
-    "evidence_refs": []
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "页面有上门服务描述 'we will rush out to you and fix it FREE'、'Schedule Service' 预约上门；同时页脚公开展示门牌地址"
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address observed 且有营业时间；service_area_business=not_returned"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Fresno, CA",
+        "type": "city",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "excerpt": "All Star Plumbing serving Fresno CA, San Joaquin Valley & surrounding areas"
+      },
+      {
+        "name": "San Joaquin Valley",
+        "type": "region",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "excerpt": "All Star Plumbing is your most trusted partner in Fresno CA, the San Joaquin Valley and surrounding areas."
+      },
+      {
+        "name": "Madera",
+        "type": "city",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "excerpt": "MADERA (559) 675-3366"
+      },
+      {
+        "name": "Clovis",
+        "type": "city",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "excerpt": "CLOVIS (559) 323-9999"
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "页脚 'All Star Plumbing Locations' 区块；正文 'Plumber in Fresno, CA' 段落"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "LIC# 977185",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      },
+      {
+        "text": "Google Reviews 4.7",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "href": "https://search.google.com/local/reviews?placeid=ChIJC6367lVnlIAR24gsqin98zY",
+        "resolved_url": null,
+        "destination_entity": "place_id ChIJC6367lVnlIAR24gsqin98zY（与已保存客户 GBP observed_entity_keys.place_id 相同；跳转终点未检查）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Check out All Star Plumbing on Yelp",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "href": "https://yelp.com/biz/all-star-plumbing-fresno",
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      },
+      {
+        "text": "2 Year Warranty",
+        "page_url": "https://allstarplumbingfresno.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "页脚 '<p class=\"text-white font-bold mb-4\">LIC# 977185</p>'、Google Reviews 徽章链接、Yelp 链接；正文 '<h3>2 Year Warranty</h3>'"
+      }
+    ]
   },
-  "checks": []
+  "checks": [
+    {
+      "id": "gbp-name-alignment",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "681d634f-3bbf-5a07-8f82-9b1514d0ae58",
+        "urls": [
+          "https://allstarplumbingfresno.com/",
+          "https://allstarplumbingfresno.com/about",
+          "https://allstarplumbingfresno.com/backflow-testing",
+          "https://allstarplumbingfresno.com/bathroom-remodel",
+          "https://allstarplumbingfresno.com/contact",
+          "https://allstarplumbingfresno.com/drain-cleaning",
+          "https://allstarplumbingfresno.com/faucet-installation",
+          "https://allstarplumbingfresno.com/garbage-disposal-installation",
+          "https://allstarplumbingfresno.com/hydro-jetting",
+          "https://allstarplumbingfresno.com/kitchen-remodel",
+          "https://allstarplumbingfresno.com/leak-detection",
+          "https://allstarplumbingfresno.com/plumbing-remodeling",
+          "https://allstarplumbingfresno.com/privacy-policy",
+          "https://allstarplumbingfresno.com/repipe-specialists",
+          "https://allstarplumbingfresno.com/sewer-camera-inspection",
+          "https://allstarplumbingfresno.com/sewer-line-cleaning",
+          "https://allstarplumbingfresno.com/sewer-repair",
+          "https://allstarplumbingfresno.com/sink-installation",
+          "https://allstarplumbingfresno.com/tankless-water-heaters",
+          "https://allstarplumbingfresno.com/terms-of-use",
+          "https://allstarplumbingfresno.com/toilet-installation",
+          "https://allstarplumbingfresno.com/water-filter-installation",
+          "https://allstarplumbingfresno.com/water-heater-installation",
+          "https://allstarplumbingfresno.com/water-heater-repair",
+          "https://allstarplumbingfresno.com/water-softener-installation"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报（待确认）：网站名 'All Star Plumbing' 与 GBP 'All Star Plumbing Fresno' 仅差城市后缀，且该后缀与域名 allstarplumbingfresno.com 及网站 <title> 'All Star Plumbing Fresno' 一致，地址与电话均匹配，属于同一实体的名称变体，不应作为 medium 级'名称不一致'报告；若负责人按 GBP 指南视城市后缀为名称堆砌，则应改为 true。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "JSON-LD name 'All Star Plumbing'；<title> '... | All Star Plumbing Fresno'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.business_name = 'All Star Plumbing Fresno'"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-q1-organic",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "4f33d25f-66ac-3620-8421-65f6f5510094",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair Fresno",
+        "result_type": "organic",
+        "latitude": 36.7468422,
+        "longitude": -119.7725868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：'Plumbing repair Fresno' 移动端 organic 已保存 9 条结果（angi.com、premierplumbinginc.net、prplumbingfresno.com 等），均不含 allstarplumbingfresno.com；结果为 Fresno 本地化样本，观察成立。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='Plumbing repair Fresno'].results[result_type=organic] 位置1-9"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-q2-organic",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "4f33d25f-66ac-3620-8421-65f6f5510094",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair near me",
+        "result_type": "organic",
+        "latitude": 36.7468422,
+        "longitude": -119.7725868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报（待确认）：'Plumbing repair near me' organic 样本 10 条中仅第 1 条 plumberinfresno.com 与 Fresno 相关，其余为 Napa、Santa Clara、San Diego、Idaho、Hutchinson KS、Sioux Falls、Kansas City 等外地页面，样本未按 Fresno 本地化，'未出现客户域名'不能作为有效的本地可见度发现。字面事实为真；若负责人只看字面事实可改 true。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='Plumbing repair near me'].results[result_type=organic] 位置3-10 均为外地结果"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-q3-organic",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "4f33d25f-66ac-3620-8421-65f6f5510094",
+        "urls": [],
+        "title_key": null,
+        "query": "best Plumbing repair Fresno",
+        "result_type": "organic",
+        "latitude": 36.7468422,
+        "longitude": -119.7725868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：'best Plumbing repair Fresno' organic 已保存 9 条结果（costlessplumbing.net、reddit、homeguide、yelp 等），均不含 allstarplumbingfresno.com，样本为 Fresno 本地相关，观察成立。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='best Plumbing repair Fresno'].results[result_type=organic] 位置1-9"
+        }
+      ]
+    },
+    {
+      "id": "service-title-review-home",
+      "kind": "rule",
+      "rule_id": "v22_capability.service_title_review",
+      "target": null,
+      "expected_triggered": false,
+      "reported_issue": "误报（低价值，待确认）：该发现(fn-page-title-4c8f05c6eb2962c938cc)在 evaluation_catalog 中无对应 RuleEvaluation，无法复制 target，不计入误报率。目标为首页而非服务页，标题 'Plumber Fresno CA - 24 Hour Plumbing | All Star Plumbing Fresno' 已覆盖 Plumber/Plumbing + Fresno 意图，H1 为 'Plumbing Repair & Service'；仅因字面缺 'repair' 建议改首页标题价值很低。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<title>Plumber Fresno CA - 24 Hour Plumbing | All Star Plumbing Fresno</title>；<h1>Plumbing Repair & Service</h1>"
+        }
+      ]
+    },
+    {
+      "id": "opening-hours-site-vs-gbp",
+      "kind": "rule",
+      "rule_id": null,
+      "target": null,
+      "expected_triggered": true,
+      "reported_issue": "漏报（规则未实现，不计分）：网站页头 '24 Hour Emergency Plumber' 且 JSON-LD openingHoursSpecification 为周一至周日 00:00–23:59，而客户 GBP 营业时间为周一至周五 7 am–7 pm、周六日 Closed，两渠道营业时间明显冲突，应提示核对。当前无营业时间对齐规则。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页头 '24 Hour Emergency Plumber'；JSON-LD openingHoursSpecification 00:00-23:59 ×7天"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.hours"
+        }
+      ]
+    },
+    {
+      "id": "page-type-home",
+      "kind": "page_type",
+      "page_url": "https://allstarplumbingfresno.com/",
+      "expected_page_type": "home",
+      "reported_issue": "首页应归类为 home。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "canonical https://allstarplumbingfresno.com/"
+        }
+      ]
+    },
+    {
+      "id": "page-type-sewer-repair",
+      "kind": "page_type",
+      "page_url": "https://allstarplumbingfresno.com/sewer-repair",
+      "expected_page_type": "service_detail",
+      "reported_issue": "服务详情页（title 'Sewer Repair services | All Star Plumbing Fresno'，H1 'Sewer Repair Specialist in Fresno'）应为 service_detail；当前库存将 22 个服务页均归为 faq，疑似分类错误。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/sewer-repair].page_type"
+        }
+      ]
+    },
+    {
+      "id": "page-type-terms",
+      "kind": "page_type",
+      "page_url": "https://allstarplumbingfresno.com/terms-of-use",
+      "expected_page_type": "legal",
+      "reported_issue": "'Terms of Use | All Star Plumbing' 为法律页，应为 legal；当前与 privacy-policy 一同被归为 service_detail，疑似分类错误。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/terms-of-use].page_type"
+        }
+      ]
+    },
+    {
+      "id": "client-weak-actions",
+      "kind": "client_weak_actions",
+      "expected_count": 0,
+      "reported_issue": "客户可见的全部弱依据行动应为 0：GBP 对齐与搜索复查两条行动依据均为 low/未确认，应默认隐藏；服务标题行动依据为 confirmed/medium 可保留。",
+      "evidence_refs": []
+    }
+  ]
 }

@@ -1,78 +1,520 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "nova-service",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Nova Service, Inc."
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/ 页脚 Contact Us: <h4 class=\"et_pb_module_header\"><span>Nova Service, Inc.</span></h4>；© 2026 Nova Service, Inc.；JSON-LD Organization.name"
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "2602 N. Miami, Fresno, CA 93727"
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/ 页脚 et_pb_blurb_1_tb_footer: <span>2602 N. Miami, Fresno, CA 93727</span>（全站页脚，各页一致）"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "559-291-5085"
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/ 页头 '559-291-5085 24-Hour Emergency Service'；页脚 <a href=\"tel:5592915085\">559-291-5085</a>；JSON-LD telephone"
+        }
+      ]
     },
     "opening_hours": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "24/7/365",
+        "Mon – Thu: 8:00am – 5:00pm",
+        "Fri: 8:00am – 4:00pm",
+        "Sat – Sun: Appointment Only",
+        "Emergency Services Available 24/7/365"
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/ 页脚 <h3>Business Hours</h3><p>24/7/365</p>"
+        },
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/contact-us Business Hours: Mon – Thu: 8:00am – 5:00pm / Fri: 8:00am – 4:00pm / Sat – Sun: Appointment Only / Emergency Services Available 24/7/365（注：与页脚 24/7/365 口径不一致）"
+        }
+      ]
     },
     "service_area": {
       "present": null,
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/history 'residents and businesses throughout Central California'；首页 meta description \"The Central Valley's trusted plumber\"——仅为泛化区域描述，未见明确服务区列表，待负责人判断是否算服务区声明"
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Nova Service, Inc."
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 normalized_payload.record.fields.business_name {state: observed}"
+        }
+      ]
     },
     "address": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "2602 N Miami Ave, Fresno, CA 93727"
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields.address {state: observed}"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "(559) 291-5085"
+      ],
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields.phone {state: observed}"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields 中无营业时间字段（provider 未采集）"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields.service_areas {state: not_returned, value: []}；service_area_business not_returned——provider 未返回，不等于确认为空"
+        }
+      ]
     },
     "category": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields 中无 category 字段；仅 SERP maps 样本（serp snapshot 936e0b70-1b8f-37ee-879f-25c9bf75087d query_runs[0] position 5, provider_cid 35635639726340544）显示 categories ['Plumber']，不是 GBP 快照来源，故不计为 observed"
+        }
+      ]
     }
   },
   "operating_model": {
     "value": null,
-    "evidence_refs": []
+    "evidence_refs": [
+      {
+        "file": "nova-v5-snapshots.json",
+        "base": "private",
+        "locator": "nova-v5-generation-recipe.json 中 operating_model='service_area'；但 gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 公开显示地址 2602 N Miami Ave 且 service_areas not_returned，网站全站页脚公开同一地址——像 storefront 或 hybrid；水管工上门服务又像 service_area，证据不足以定论，留空待负责人确认"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Fresno, CA",
+        "type": "city",
+        "page_url": "https://novaservice.pro/",
+        "excerpt": "2602 N. Miami, Fresno, CA 93727"
+      },
+      {
+        "name": "Central California / Central Valley",
+        "type": "region",
+        "page_url": "https://novaservice.pro/history",
+        "excerpt": "founded in November 1999 in Fresno, California ... throughout Central California"
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "nova-v5-snapshots.json",
+        "base": "private",
+        "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/ 页脚地址；/history 正文；title 'Serving the Central Valley Since 1999'"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "License #771417",
+        "page_url": "https://novaservice.pro/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      },
+      {
+        "text": "BBB Rating（图片 bbb-rating.png，alt='BBB Rating'，无链接）",
+        "page_url": "https://novaservice.pro/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      },
+      {
+        "text": "Nova Service proudly maintains an A+ rating with the Better Business Bureau",
+        "page_url": "https://novaservice.pro/history",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "nova-v5-snapshots.json",
+        "base": "private",
+        "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / 首页页头 <p>License #771417</p>；页脚 <img src=.../bbb-rating.png alt=\"BBB Rating\">；/history 正文 A+ rating。均无外链，未核验 CSLB/BBB 归属"
+      }
+    ]
   },
-  "checks": []
+  "checks": [
+    {
+      "id": "market-ahead-maps-1",
+      "kind": "rule",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "936e0b70-1b8f-37ee-879f-25c9bf75087d",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair Fresno",
+        "result_type": "maps",
+        "latitude": 36.774001,
+        "longitude": -119.68942,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_07eb7d9a3b69f3867d8adb94e2284a5e",
+          "cp_3997508753803a845049dd8964832558"
+        ]
+      },
+      "expected_triggered": true,
+      "reported_issue": "保存的移动端 maps 样本（Fresno 36.774,-119.689）中 Nova Service 最佳位置 #5，用户确认竞品 PR Plumbing #1、Fresno Plumbing & Heating #2 排在前面；Costless 在其后未计入。事实准确，作为单点采样差距值得报告（不含原因推断）。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "serp snapshot 936e0b70-1b8f-37ee-879f-25c9bf75087d query_runs[0] results(result_type=maps): novaservice.pro position 5; prplumbingfresno.com position 1"
+        }
+      ]
+    },
+    {
+      "id": "market-ahead-maps-2",
+      "kind": "rule",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "936e0b70-1b8f-37ee-879f-25c9bf75087d",
+        "urls": [],
+        "title_key": null,
+        "query": "best Plumbing repair Fresno",
+        "result_type": "maps",
+        "latitude": 36.774001,
+        "longitude": -119.68942,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_07eb7d9a3b69f3867d8adb94e2284a5e",
+          "cp_3997508753803a845049dd8964832558"
+        ]
+      },
+      "expected_triggered": true,
+      "reported_issue": "保存的移动端 maps 样本（Fresno 36.774,-119.689）中 Nova Service 最佳位置 #8，用户确认竞品 PR Plumbing #1、Fresno Plumbing & Heating #5 排在前面；Costless 在其后未计入。事实准确，作为单点采样差距值得报告（不含原因推断）。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "serp snapshot 936e0b70-1b8f-37ee-879f-25c9bf75087d query_runs[1] results(result_type=maps): novaservice.pro position 8; prplumbingfresno.com position 1"
+        }
+      ]
+    },
+    {
+      "id": "market-ahead-maps-3",
+      "kind": "rule",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "936e0b70-1b8f-37ee-879f-25c9bf75087d",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair near me",
+        "result_type": "maps",
+        "latitude": 36.774001,
+        "longitude": -119.68942,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_07eb7d9a3b69f3867d8adb94e2284a5e",
+          "cp_3997508753803a845049dd8964832558"
+        ]
+      },
+      "expected_triggered": true,
+      "reported_issue": "保存的移动端 maps 样本（Fresno 36.774,-119.689）中 Nova Service 最佳位置 #5，用户确认竞品 PR Plumbing #1、Fresno Plumbing & Heating #2 排在前面；Costless 在其后未计入。事实准确，作为单点采样差距值得报告（不含原因推断）。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "serp snapshot 936e0b70-1b8f-37ee-879f-25c9bf75087d query_runs[2] results(result_type=maps): novaservice.pro position 5; prplumbingfresno.com position 1"
+        }
+      ]
+    },
+    {
+      "id": "market-domain-unobserved-organic-1",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "936e0b70-1b8f-37ee-879f-25c9bf75087d",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair Fresno",
+        "result_type": "organic",
+        "latitude": 36.774001,
+        "longitude": -119.68942,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "主查询 'Plumbing repair Fresno' 的保存自然结果共 9 条（thumbtack、costlessplumbing.net、prplumbingfresno.com、fresnoplumbinginc.com、yelp、reddit、pacificplumbing.biz 等），确实没有 novaservice.pro；样本与查询相关，判断有效（仅首屏样本、低置信）。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "serp snapshot 936e0b70-1b8f-37ee-879f-25c9bf75087d query_runs[0] results(result_type=organic) positions 1-9，无 normalized_domain=novaservice.pro"
+        }
+      ]
+    },
+    {
+      "id": "service-title-plumbing-repair",
+      "kind": "rule",
+      "rule_id": "v22_capability.service_title_review",
+      "target": null,
+      "expected_triggered": true,
+      "reported_issue": "/plumbing-repair/ 是主服务 'Plumbing repair' 的落地页，title 为 'We Can Tackle Any Plumbing Problem! - Nova Service, Inc.'，不含服务词和 Fresno；建议复核标题是合理的。注：该能力规则不在 evaluation_catalog 中，无法复制 target，故 target=null，脚本只能显示无法判断。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd / https://novaservice.pro/plumbing-repair title 与 h1 'We do plumbing repairs and upgrades of all kinds'"
+        }
+      ]
+    },
+    {
+      "id": "gbp_name_alignment",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "0d2052e3-e390-5dc2-8965-20001ad5b8cd",
+        "urls": [
+          "https://novaservice.pro/",
+          "https://novaservice.pro/accessibility-statement/",
+          "https://novaservice.pro/contact-us/",
+          "https://novaservice.pro/emergency-drain-cleaning/",
+          "https://novaservice.pro/executive-officers/",
+          "https://novaservice.pro/history/",
+          "https://novaservice.pro/hot-water-heater/",
+          "https://novaservice.pro/leak-detection/",
+          "https://novaservice.pro/plumbing-fixture-repair-replace/",
+          "https://novaservice.pro/plumbing-repair/",
+          "https://novaservice.pro/privacy-policy/",
+          "https://novaservice.pro/re-pipe/",
+          "https://novaservice.pro/team/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站 'Nova Service, Inc.' 与 GBP 'Nova Service, Inc.' 完全一致，不应触发。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd 全站页脚 NAP"
+        },
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields"
+        }
+      ]
+    },
+    {
+      "id": "gbp_phone_alignment",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "0d2052e3-e390-5dc2-8965-20001ad5b8cd",
+        "urls": [
+          "https://novaservice.pro/",
+          "https://novaservice.pro/accessibility-statement/",
+          "https://novaservice.pro/contact-us/",
+          "https://novaservice.pro/emergency-drain-cleaning/",
+          "https://novaservice.pro/executive-officers/",
+          "https://novaservice.pro/history/",
+          "https://novaservice.pro/hot-water-heater/",
+          "https://novaservice.pro/leak-detection/",
+          "https://novaservice.pro/plumbing-fixture-repair-replace/",
+          "https://novaservice.pro/plumbing-repair/",
+          "https://novaservice.pro/privacy-policy/",
+          "https://novaservice.pro/re-pipe/",
+          "https://novaservice.pro/team/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站 559-291-5085 与 GBP (559) 291-5085 为同一号码，不应触发。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd 全站页脚 NAP"
+        },
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields"
+        }
+      ]
+    },
+    {
+      "id": "gbp_address_alignment",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_address_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "0d2052e3-e390-5dc2-8965-20001ad5b8cd",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站 '2602 N. Miami, Fresno, CA 93727' 与 GBP '2602 N Miami Ave, Fresno, CA 93727' 实质一致（仅缺 Ave），不应生成发现。注意：系统是因 operating_model=service_area 判为 field_not_applicable 而未触发，理由存疑，见 operating_model。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd 全站页脚 NAP"
+        },
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "gbp snapshot c24db89a-b4b3-5453-a33a-2599faff7193 record.fields"
+        }
+      ]
+    },
+    {
+      "id": "page-type-plumbing-repair",
+      "kind": "page_type",
+      "page_url": "https://novaservice.pro/plumbing-repair",
+      "expected_page_type": "service_detail",
+      "reported_issue": "主服务落地页，系统按 unmatched_path 归为 other；同理 /re-pipe、/hot-water-heater、/leak-detection、/emergency-drain-cleaning、/plumbing-fixture-repair-replace 都应为 service_detail。",
+      "evidence_refs": [
+        {
+          "file": "nova-v5-snapshots.json",
+          "base": "private",
+          "locator": "site snapshot 0d2052e3-e390-5dc2-8965-20001ad5b8cd pages[url=https://novaservice.pro/plumbing-repair] page_type=other classification_reasons=['unmatched_path:plumbing-repair']"
+        }
+      ]
+    },
+    {
+      "id": "client-weak-actions",
+      "kind": "client_weak_actions",
+      "expected_count": 0,
+      "reported_issue": "两个可见行动：市场复查（混合依据，含 3 条 confirmed/medium）与服务页标题复查（confirmed/medium），都不应属于全弱依据行动。",
+      "evidence_refs": [
+        {
+          "file": "../.release-private/2026-11-03-gold/p0-10-reports/nova-service.json",
+          "locator": "actions[*].finding_ids 对应 findings status/confidence"
+        }
+      ]
+    }
+  ]
 }

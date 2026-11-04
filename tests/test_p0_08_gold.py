@@ -70,8 +70,19 @@ def test_truth_template_has_required_annotation_dimensions(site_id):
         assert "feedback-pending" not in checks
 
 
-def blank_truth():
-    return json.loads((GOLD / "nova-service/truth.json").read_text())
+def blank_truth(site_id="nova-service"):
+    """Independent empty annotation template; never load confirmed real answers."""
+    fields = ("business_name", "address", "phone", "opening_hours", "service_area")
+    return {
+        "schema_version": "gold_truth_v1", "site_id": site_id,
+        "reviewed_by": None, "reviewed_at": None,
+        "site_fields": {name: {"present": None, "values": None, "evidence_refs": []} for name in fields},
+        "gbp_fields": {name: {"state": None, "values": None, "evidence_refs": []} for name in (*fields, "category")},
+        "operating_model": {"value": None, "evidence_refs": []},
+        "local_entities": {"values": None, "evidence_refs": []},
+        "trust_claims": {"values": None, "evidence_refs": []},
+        "checks": [],
+    }
 
 
 def deny_network(monkeypatch):
@@ -134,7 +145,12 @@ def test_blank_truth_missing_input_and_unimplemented_rules_do_not_score_as_corre
     descriptor = json.loads((GOLD / "seamless-gutters-pensacola/input.json").read_text())
     descriptor.update(generation=None, snapshot_files=[])
     (directory / "input.json").write_text(json.dumps(descriptor))
-    (directory / "truth.json").write_bytes((GOLD / "seamless-gutters-pensacola/truth.json").read_bytes())
+    truth = blank_truth(descriptor["site_id"])
+    truth["checks"] = [
+        dict(id="unlabelled-rule", rule_id=None, target=None, expected_triggered=None),
+        dict(id="unlabelled-actions", kind="client_weak_actions", expected_count=None),
+    ]
+    (directory / "truth.json").write_text(json.dumps(truth))
     case = evaluate_case(directory, tmp_path)
     assert case["reason"] == "generation_input_missing"
     assert all(row["reason"] == "未标注" for row in case["findings"] + case["checks"])
@@ -237,21 +253,45 @@ def test_invalid_checksum_is_error_not_clean_zero(tmp_path):
     assert result["summary"]["finding_metrics"]["false_positive_rate"] is None
 
 
-def test_six_real_sites_run_offline_without_editing_frozen_inputs(monkeypatch):
+@pytest.mark.parametrize("truth_mode", ["blank", "confirmed"])
+def test_six_real_sites_run_offline_without_editing_frozen_inputs(monkeypatch, truth_mode):
+    from scripts import eval_gold
     from scripts.eval_gold import evaluate_all
     private = ROOT.parent / ".release-private/2026-10-29"
     if not (private / "nova-v5-report.json").exists():
         pytest.skip("Private Nova replay unavailable")
+    before_truth = {path: path.read_bytes() for path in GOLD.glob("*/truth.json")}
+    if truth_mode == "blank":
+        read_json = eval_gold.read_json
+        def read_with_blank_truth(path):
+            if path in before_truth:
+                return blank_truth(path.parent.name)
+            return read_json(path)
+        monkeypatch.setattr(eval_gold, "read_json", read_with_blank_truth)
     deny_network(monkeypatch)
     result = evaluate_all(GOLD, private)
+    assert all(path.read_bytes() == content for path, content in before_truth.items())
     assert not result["errors"]
     assert len(result["cases"]) == 6
     nova = next(c for c in result["cases"] if c["site_id"] == "nova-service")
     assert nova["frozen_replay_byte_identical"] is True
     assert nova["action_metrics"]["visible_resampling_actions"] == 1
     assert nova["action_metrics"]["visible_weak_only_actions"] == 0
-    assert result["summary"]["finding_metrics"]["false_positive_rate"] is None
-    assert result["summary"]["field_metrics"]["not_checked_rate"] is None
+    findings = result["summary"]["finding_metrics"]
+    fields = result["summary"]["field_metrics"]
+    if truth_mode == "blank":
+        assert findings["false_positive_rate"] is None
+        assert findings["judged_generated_findings"] == 0
+        assert fields["not_checked_rate"] is None
+        assert fields["confirmed_present_fields"] == 0
+        assert all(row["reason"] == "未标注" for case in result["cases"] for row in case["findings"])
+    else:
+        assert findings["false_positive_rate"] == 10 / 43
+        assert findings["false_positives"] == 10
+        assert findings["judged_generated_findings"] == 43
+        assert fields["not_checked_rate"] == 9 / 26
+        assert fields["not_checked_fields"] == 9
+        assert fields["confirmed_present_fields"] == 26
     assert result["summary"]["action_cases_evaluated"] == 6
     assert result["summary"]["action_cases_unavailable"] == 0
     assert all(c["status"] == "已生成" for c in result["cases"])

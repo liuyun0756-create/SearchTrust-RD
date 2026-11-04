@@ -1,111 +1,538 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "volcanoes-hiking-guides",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Volcanoes Hiking Guides"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization \"name\":\"Volcanoes Hiking Guides\",\"legalName\":\"Volcanoes Hiking Guides LLC\""
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 \"© 2026 Volcanoes Hiking Guides. All Rights Reserved.\""
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": false,
+      "values": [],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "首页静态 HTML 全文无街道地址/邮编：无 \"Keaau\"、\"96749\"、\"11th Ave\"、\"PostalAddress\"、\"streetAddress\"；JSON-LD Organization 无 address 字段（仅判首页范围）"
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 CONTACT 区只有 \"Phone: (808) 491-9022\"、\"Email:\"、\"Service area: …\"，无地址"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "(808) 491-9022",
+        "+1-808-491-9022"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<a href=\"tel:+18084919022\">(808) 491-9022</a>（页眉、页脚等多处）"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization \"telephone\":\"+1-808-491-9022\""
+        }
+      ]
     },
     "opening_hours": {
-      "present": null,
+      "present": true,
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "负责人人工核对",
+          "locator": "2026-11-04 负责人确认联系页有营业时间（保存证据只含首页，具体文字未记录）"
+        },
+        {
+          "file": "page.html",
+          "locator": "首页无营业/办公时间，无 openingHours；仅有行程出发时间 \"Group tour: Friday, Saturday and Sunday at 9 am and 11 am. Private: any day and time, by request.\" 与 \"Start times run from 8 am to 3 pm depending on the hike\"，属团期而非营业时间"
+        }
+      ]
     },
     "service_area": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Hawaiʻi Volcanoes National Park, Mauna Loa, Hawaiʻi Island"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页脚 \"Service area: Hawaiʻi Volcanoes National Park, Mauna Loa, Hawaiʻi Island\""
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization \"areaServed\":[{\"name\":\"Hawaiʻi Volcanoes National Park\"},{\"name\":\"Mauna Loa\"}]"
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Volcanoes Hiking Guides"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.business_name (state=observed, serpapi_public, 2026-11-03T09:48:29Z, cid 16906567364961418758 strong_id_matched)"
+        }
+      ]
     },
     "address": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "1515-55 11th Ave, Keaau, HI 96749"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address (state=observed)"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "(808) 491-9022"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.phone (state=observed)"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "monday: 8 AM–5 PM",
+        "tuesday: 8 AM–5 PM",
+        "wednesday: 8 AM–5 PM",
+        "thursday: 8 AM–5 PM",
+        "friday: 8 AM–5 PM",
+        "saturday: 8 AM–5 PM",
+        "sunday: 8 AM–5 PM"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.hours (state=observed，每日 8 AM–5 PM)；同快照 operating_hours 为 not_returned，取 hours"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.service_areas / service_area_business (state=not_returned → not_checked)"
+        }
+      ]
     },
     "category": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Tour operator"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.categories (state=observed, [\"Tour operator\"])"
+        }
+      ]
     }
   },
   "operating_model": {
-    "value": null,
-    "evidence_refs": []
+    "value": "meeting_point",
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "\"Meeting areas vary by experience. Your exact meeting location, map pin and arrival instructions are confirmed after booking.\""
+      },
+      {
+        "file": "page.html",
+        "locator": "FAQ JSON-LD \"Where do we meet?\" … \"Keiki to Kūpuna at Kīlauea Military Camp; 3-hour hikes at the Kīlauea Welcome Center there; 4.5-hour hikes at Kīlauea Iki Overlook; 6-hour hikes near Kīlauea Visitor Center. The private Mauna Loa hike uses a Puʻu ʻŌʻō Trail or Saddle Road access point.\""
+      },
+      {
+        "file": "page.html",
+        "locator": "\"These are commonly used areas, not guaranteed fixed meeting points.\""
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "request.business_identity.operating_model = \"storefront\"（系统输入，与页面所述集合点模式不符；本次使 service_area 对齐为 not_applicable）"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Hawaiʻi Volcanoes National Park",
+        "type": "national_park",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Our Kīlauea hikes meet inside Hawaiʻi Volcanoes National Park"
+      },
+      {
+        "name": "Mauna Loa / Saddle Road",
+        "type": "natural_feature",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "choose our private 5-hour Mauna Loa Ancient Forest & Bird Hike along Saddle Road"
+      },
+      {
+        "name": "Kīlauea Iki Crater / Overlook",
+        "type": "natural_feature",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Common meeting area: Kīlauea Iki Overlook area"
+      },
+      {
+        "name": "Kīlauea Military Camp / Kīlauea Welcome Center",
+        "type": "meeting_point",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Common meeting area: Kīlauea Welcome Center at Kīlauea Military Camp"
+      },
+      {
+        "name": "Kīlauea Visitor Center",
+        "type": "meeting_point",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Common meeting area: Kīlauea Visitor Center area"
+      },
+      {
+        "name": "Puʻu ʻŌʻō Trail",
+        "type": "meeting_point",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Common meeting area: Puʻu ʻŌʻō or the confirmed Saddle Road-area access point"
+      },
+      {
+        "name": "Hilo",
+        "type": "city",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Joining Us from Hilo, Kona or Waikoloa"
+      },
+      {
+        "name": "Kailua-Kona / Waikoloa / Kohala Coast / Volcano Village",
+        "type": "city",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Staying in Hilo, Kailua-Kona, Waikoloa, along the Kohala Coast or in Volcano Village?"
+      },
+      {
+        "name": "Hawaiʻi Island (Big Island)",
+        "type": "region",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "excerpt": "Service area: Hawaiʻi Volcanoes National Park, Mauna Loa, Hawaiʻi Island"
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "H1 \"Best Big Island Volcano Tours Led by Expert Interpretive Hiking Guides\"；区块 \"Joining Us from Hilo, Kona or Waikoloa\" + \"Drive times to the park\"；\"Meeting Points & Park Entry\""
+      },
+      {
+        "file": "page.html",
+        "locator": "内链 /meeting-locations-directions-park-entry、/best-time-to-visit-hawaii-volcanoes-national-park"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "5.0 Google Rating",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "href": "https://share.google/tv7K3sxM5ATPwNgxu",
+        "resolved_url": "https://www.google.com.hk/search?...&kgmid=/g/11pz_h7s0v&q=Volcanoes+Hiking+Guides&...&source=sh/x/loc/uni/m1/1",
+        "destination_entity": "本商家 Volcanoes Hiking Guides 的 Google 商家结果（负责人 2026-11-04 实际点击确认，未指向国家公园）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Google（评价区链接，相邻文字 \"★★★★★ 5.0 rating\"）",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "href": "https://share.google/tv7K3sxM5ATPwNgxu",
+        "resolved_url": "https://www.google.com.hk/search?...&kgmid=/g/11pz_h7s0v&q=Volcanoes+Hiking+Guides&...&source=sh/x/loc/uni/m1/1",
+        "destination_entity": "本商家 Volcanoes Hiking Guides 的 Google 商家结果（负责人 2026-11-04 实际点击确认，未指向国家公园）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Tripadvisor（评价区链接）",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "href": "https://www.tripadvisor.com/Attraction_Review-g60607-d23993311-Reviews-Volcanoes_Hiking_Guides-Volcano_Island_of_Hawaii_Hawaii.html",
+        "resolved_url": null,
+        "destination_entity": "Tripadvisor 商家页 Volcanoes_Hiking_Guides（URL 路径可见，未检查跳转终点）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Tripadvisor Travelers’ Choice",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      },
+      {
+        "text": "Authorized Commercial Hiking Operator, Commercial Use Authorization (CUA)",
+        "page_url": "https://www.volcanoeshikingguides.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "share.google/tv7K3sxM5ATPwNgxu 共 5 个链接：文字 \"5.0 Google Rating\" 3 处，⭐⭐⭐⭐⭐ 1 处，评价区 \"Google\" 1 处"
+      },
+      {
+        "file": "live curl -L 2026-11-04（非保存证据）",
+        "locator": "share.google/tv7K3sxM5ATPwNgxu → 302 google.com/share.google?q=tv7K3sxM5ATPwNgxu → 6 次跳转后 google.com.hk/search?kgmid=/g/11pz_h7s0v&q=Volcanoes+Hiking+Guides&source=sh/x/loc/uni/m1/1"
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.rating=5.0, review_count=9（与 5.0 Google Rating 一致）"
+      },
+      {
+        "file": "page.html",
+        "locator": "<a href=\"https://www.tripadvisor.com/Attraction_Review-g60607-d23993311-Reviews-Volcanoes_Hiking_Guides-…\">Tripadvisor</a>；页脚 \"Authorized Commercial Hiking Operator, Commercial Use Authorization (CUA)\""
+      }
+    ]
   },
   "checks": [
     {
       "id": "business-category",
-      "reported_issue": "反馈指出类别误判",
+      "kind": "rule",
+      "reported_issue": "反馈指出类别误判。人工核对：GBP 类别为 \"Tour operator\"，网站为火山徒步向导团（JSON-LD 描述 \"leads small-group and private Big Island volcano hikes\"），类别正确，不应生成类别问题。当前规则目录无类别规则（evaluation_catalog 中无对应项），rule_id/target 留空；expected_triggered=false 仅表示人工期望，脚本会显示「规则或精确目标未评估」，不能视为已通过。",
       "rule_id": null,
       "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.categories = [\"Tour operator\"]"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization description \"Volcanoes Hiking Guides leads small-group and private Big Island volcano hikes in Hawaiʻi Volcanoes National Park and on Mauna Loa\""
+        }
+      ]
     },
     {
       "id": "address-operating-model",
-      "reported_issue": "反馈指出地址对齐与经营模式误判",
+      "kind": "rule",
+      "reported_issue": "反馈指出地址对齐与经营模式误判。人工核对：页面显示为集合点模式（按行程在国家公园内外不同集合点会合，预订后发地图钉），首页未公布街道地址；GBP 地址为 1515-55 11th Ave, Keaau，其性质（办公或登记地）未核实。按负责人反馈口径，地址对齐不应因此扣分，期望不触发。bound 输入 operating_model 为 storefront，与页面不符，若首页内容被检查，存在误判风险。本次 gbp_address_alignment 为 not_checked/site_content_not_checked（首页超资源上限），规则并未实际判定，比对显示无法判断。",
       "rule_id": "v22_public.gbp_address_alignment",
-      "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "808f9c55-6284-570f-a95a-d7cac4275fe1",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "\"Your exact meeting location, map pin and arrival instructions are confirmed after booking.\""
+        },
+        {
+          "file": "page.html",
+          "locator": "\"These are commonly used areas, not guaranteed fixed meeting points.\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address = \"1515-55 11th Ave, Keaau, HI 96749\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.business_identity.operating_model = \"storefront\""
+        }
+      ]
     },
     {
       "id": "rating-link-destination",
-      "reported_issue": "反馈称 5.0 Google Rating 链接指向国家公园而非本商家",
+      "kind": "rule",
+      "reported_issue": "反馈称 5.0 Google Rating 链接指向国家公园。负责人 2026-11-04 实际点击确认：落地为本商家 Volcanoes Hiking Guides 的 Google 结果，不指向国家公园；不应生成“评分链接指向他方”的问题。当前无对应规则，rule_id/target 留空。",
       "rule_id": null,
       "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<a href=\"https://share.google/tv7K3sxM5ATPwNgxu\">5.0 Google Rating</a>"
+        },
+        {
+          "file": "live curl -L 2026-11-04（非保存证据）",
+          "locator": "终点 google.com.hk/search?kgmid=/g/11pz_h7s0v&q=Volcanoes+Hiking+Guides&source=sh/x/loc/uni/m1/1"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.rating=5.0, review_count=9"
+        },
+        {
+          "file": "负责人人工核对",
+          "locator": "2026-11-04 负责人在浏览器打开实际页面确认"
+        }
+      ]
     },
     {
       "id": "local-content",
-      "reported_issue": "反馈指出本地内容被误报为缺失",
+      "kind": "rule",
+      "reported_issue": "反馈指出本地内容被误报为缺失。人工核对：首页含大量本地内容（Hawaiʻi Volcanoes National Park、Kīlauea Iki、Kīlauea Military Camp、Mauna Loa/Saddle Road 集合点，\"Joining Us from Hilo, Kona or Waikoloa\" 及到公园车程，Service area 页脚），并有 /meeting-locations-directions-park-entry 本地页面。不应生成「本地内容缺失」问题。当前目录无直接对应规则；competitor_sample_page_type_gap(location/service_area) 语义是竞品页面类型差距，不等同本地内容缺失，且均为 not_checked/insufficient_sample，故不挂接，rule_id/target 留空。",
       "rule_id": null,
       "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "区块标题 \"Joining Us from Hilo, Kona or Waikoloa\" / \"Drive times to the park\" / \"Meeting Points & Park Entry\""
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 \"Service area: Hawaiʻi Volcanoes National Park, Mauna Loa, Hawaiʻi Island\""
+        },
+        {
+          "file": "page.html",
+          "locator": "内链 https://www.volcanoeshikingguides.com/meeting-locations-directions-park-entry"
+        }
+      ]
+    },
+    {
+      "id": "market-domain-maps-volcano-tours-big-island",
+      "kind": "rule",
+      "reported_issue": "保存样本中 maps「volcano tours Big Island」只返回 4 条：tourvolcano.com、bigislandhilotours.com、bigislandvolcano.tours、cbigisland.com，确实不含 volcanoeshikingguides.com（也无本商家 cid）。样本按 Hilo 坐标 19.7241,-155.0868、US/en/mobile 采集，4 条地址均在夏威夷（Hilo/Pepeekeo/Kailua-Kona），本地化有效。规则只陈述“保存样本未见域名”，事实成立，应触发。注意样本仅 4 条且有 SERP_LOCAL_PACK_SECTION_INVALID；同次「guided volcano hike Hawaii」maps 本商家排第 1，不能推出整体不可见。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "2704db8f-260f-3657-99c6-a06038325f47",
+        "urls": [],
+        "title_key": null,
+        "query": "volcano tours Big Island",
+        "result_type": "maps",
+        "latitude": 19.7241,
+        "longitude": -155.0868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"volcano tours Big Island\"].results[result_type=maps] 4 条，normalized_domain 均非 volcanoeshikingguides.com"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"guided volcano hike Hawaii\"].results[maps, position=1] = Volcanoes Hiking Guides / 1515-55 11th Ave, Keaau（对照）"
+        }
+      ]
+    },
+    {
+      "id": "market-domain-organic-volcano-tours-big-island",
+      "kind": "rule",
+      "reported_issue": "保存样本 organic「volcano tours Big Island」8 条：nps.gov、getyourguide.com、reddit.com、bluehawaiianconcierge.com、shakaguide.com、volcanotours.com、thevolcanovan.com、discoverhawaiitours.com，确实不含本站域名。google_call 带 Hilo 坐标、US/en/mobile，结果均为夏威夷/大岛火山主题，本地化合理。规则陈述成立，应触发（仅样本观察，非排名结论）。 本地化判断依据调用参数和结果域名/URL，未逐条阅读标题与摘要。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "2704db8f-260f-3657-99c6-a06038325f47",
+        "urls": [],
+        "title_key": null,
+        "query": "volcano tours Big Island",
+        "result_type": "organic",
+        "latitude": 19.7241,
+        "longitude": -155.0868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"volcano tours Big Island\"].results[result_type=organic] position 1–8 域名列表"
+        }
+      ]
+    },
+    {
+      "id": "market-domain-organic-guided-volcano-hike-hawaii",
+      "kind": "rule",
+      "reported_issue": "保存样本 organic「guided volcano hike Hawaii」10 条：hawaiitours.com、epiclava.com、hawaii-guide.com、tripadvisor.com（分类列表页）、bluehawaiianconcierge.com、activities.marriott.com、royalkona.com、robertshawaii.com、getyourguide.com、volcanotours.com，确实不含本站域名。Hilo 坐标、US/en/mobile，结果为夏威夷主题。规则陈述成立，应触发；同查询 maps 本商家第 1，说明仅 organic 未见。 本地化判断依据调用参数和结果域名/URL，未逐条阅读标题与摘要。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "2704db8f-260f-3657-99c6-a06038325f47",
+        "urls": [],
+        "title_key": null,
+        "query": "guided volcano hike Hawaii",
+        "result_type": "organic",
+        "latitude": 19.7241,
+        "longitude": -155.0868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"guided volcano hike Hawaii\"].results[result_type=organic] position 1–10 域名列表"
+        }
+      ]
+    },
+    {
+      "id": "market-domain-organic-hawaii-volcanoes-np-tour",
+      "kind": "rule",
+      "reported_issue": "保存样本 organic「Hawaii Volcanoes National Park tour」10 条：tripadvisor.com×2、tourvolcano.com、nps.gov、lovebigisland.com、epiclava.com、discoverhawaiitours.com、royalkona.com、volcanotours.com、hawaii.com，确实不含本站域名。Hilo 坐标、US/en/mobile，本查询无 limitations，结果均为夏威夷火山公园主题。规则陈述成立，应触发。 本地化判断依据调用参数和结果域名/URL，未逐条阅读标题与摘要。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "2704db8f-260f-3657-99c6-a06038325f47",
+        "urls": [],
+        "title_key": null,
+        "query": "Hawaii Volcanoes National Park tour",
+        "result_type": "organic",
+        "latitude": 19.7241,
+        "longitude": -155.0868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"Hawaii Volcanoes National Park tour\"].results[result_type=organic] position 1–10 域名列表"
+        }
+      ]
     }
   ]
 }

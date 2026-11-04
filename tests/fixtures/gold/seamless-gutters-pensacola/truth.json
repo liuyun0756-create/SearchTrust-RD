@@ -1,126 +1,1099 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "seamless-gutters-pensacola",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Gutter Solutions & Home Improvements",
+        "Seamless Gutters of Pensacola"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页脚 et_pb_text_inner: 'Gutter Solutions & Home Improvements' + 正文 'Here at Gutter Solutions and Home Improvements'"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization.name / og:site_name = 'Seamless Gutters of Pensacola'；版权 '2025 Gutter Solutions Of Pensacola LLC'"
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "10025 Ashton Brosnaham rd Pensacola Fl 32534",
+        "7665 Burnside Lp, Pensacola, FL 32526"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "Contact Us 区块 h6 'Address' 后 '10025 Ashton Brosnaham rd Pensacola Fl 32534'；页脚同地址链接 maps.app.goo.gl/8MMJyNe2na4og54U7"
+        },
+        {
+          "file": "page.html",
+          "locator": "et_pb_map_pin 'Gutter Solutions & Home Improvements Office' infowindow: '7665 Burnside Lp, Pensacola, FL 32526'"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "(850) 776-1782",
+        "(850) 972-0225"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "页头 'Get a QUOTE (850) 776-1782'；Contact Us 'Phone (850) 776-1782'；页脚 <a href=\"tel:8507761782\">(850) 776-1782 | (850) 972-0225</a>"
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization.telephone '+18507761782'"
+        }
+      ]
     },
     "opening_hours": {
       "present": null,
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "全文（含脚本外文本）无 hours/AM/PM/星期 营业时间文字或 openingHours 结构化数据"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.selected_pages[0].deep_snapshot.html（首页）同样无营业时间"
+        },
+        {
+          "file": "负责人人工核对",
+          "locator": "2026-11-04 首页静态 HTML 未见；联系页负责人暂未能打开，状态未知"
+        }
+      ]
     },
     "service_area": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Pace, FL",
+        "Milton, FL",
+        "Gulf Breeze,FL",
+        "Crestview, FL",
+        "Navarre, FL",
+        "Atmore, AL",
+        "Brewton, AL",
+        "Jay, FL",
+        "Foley, AL",
+        "Daphne, AL",
+        "Freeport, FL",
+        "Mobile County, AL",
+        "Baldwin County, AL",
+        "Escambia County, FL",
+        "Santa Rosa County, FL",
+        "Okaloosa County, FL",
+        "Walton County, FL",
+        "Bay County, FL"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "h2 'Area We Served' 下城市链接列表（Pace, FL … Freeport, FL）"
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 'SERVICE AREAS' 县列表 + 段落 'Our service areas include Pensacola, Pace, Milton, Gulf Breeze, Crestview, Fort Walton Beach, ...'"
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Gutter Solutions & Home Improvements"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 16921898606511158364, strong_id_matched, 2026-11-03T09:48:28Z）"
+        }
+      ]
     },
     "address": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.address.state='not_returned'（提供方未返回；疑为隐藏地址的服务区商家，未能确认为空）"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "(850) 776-1782"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 16921898606511158364, strong_id_matched, 2026-11-03T09:48:28Z）"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Monday 7 AM–6 PM",
+        "Tuesday 7 AM–6 PM",
+        "Wednesday 7 AM–6 PM",
+        "Thursday 7 AM–6 PM",
+        "Friday 7 AM–6 PM",
+        "Saturday 9 AM–5 PM",
+        "Sunday 9 AM–5 PM"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.hours.state='observed'"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.service_areas.state='not_returned', value=[]；service_area_business 也 not_returned"
+        }
+      ]
     },
     "category": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Gutter service",
+        "Concrete contractor",
+        "Service establishment",
+        "Fence contractor",
+        "Gutter cleaning service",
+        "Siding contractor"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.categories"
+        }
+      ]
     }
   },
   "operating_model": {
-    "value": null,
-    "evidence_refs": []
+    "value": "service_area",
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "上门施工类业务（gutter installation），'Area We Served' 列出 FL/AL 多城市与 7 个县"
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "public_gbp address not_returned（服务区商家常见隐藏地址）；request.business_identity.operating_model='service_area'（确认绑定值，仅作佐证）"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Pensacola, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Pace, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Milton, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Gulf Breeze, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Crestview, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Navarre, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Atmore, AL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Brewton, AL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Jay, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Foley, AL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Daphne, AL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Freeport, FL",
+        "type": "service_area_city",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "Area We Served"
+      },
+      {
+        "name": "Mobile County, AL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Baldwin County, AL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Escambia County, FL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Santa Rosa County, FL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Okaloosa County, FL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Walton County, FL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      },
+      {
+        "name": "Bay County, FL",
+        "type": "service_area_county",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "excerpt": "SERVICE AREAS（页脚）"
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "'Area We Served' 区块与页脚 'SERVICE AREAS'；标题/H1 'Seamless Gutter Installation Services Pensacola, FL'"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "EXCELLENT · Based on 82 reviews · Posted on Google（Trustindex 评论挂件，7 条 Google 评论）",
+        "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": "Google reviews（挂件内无指向 GBP 的链接）",
+        "belongs_to_business": true
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "ti-widget: 'Based on <strong>82 reviews</strong>'，评论正文提及 'Gutter Solutions'；GBP 快照 review_count=116，挂件数量滞后"
+      }
+    ]
   },
   "checks": [
     {
       "id": "phone-false-absence",
-      "reported_issue": "通用检查：页面可见的电话不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "reported_issue": "通用检查：页面可见电话 (850) 776-1782（另有 (850) 972-0225），与 GBP 观察值 (850) 776-1782 一致；电话未被判缺失，规则 not_triggered 正确，不应触发。",
       "rule_id": "v22_public.gbp_phone_alignment",
-      "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/",
+          "https://seamlessgutterspensacola.com/are-gutter-guards-worth-it-homeowners-guide/",
+          "https://seamlessgutterspensacola.com/atmore-alabama/",
+          "https://seamlessgutterspensacola.com/best-concrete-services-pensacola-climate/",
+          "https://seamlessgutterspensacola.com/brewton-alabama/",
+          "https://seamlessgutterspensacola.com/category/blog/",
+          "https://seamlessgutterspensacola.com/category/concrete-services/",
+          "https://seamlessgutterspensacola.com/category/drainage-solutions/",
+          "https://seamlessgutterspensacola.com/category/gutter-cleaning/",
+          "https://seamlessgutterspensacola.com/category/gutter-damage/",
+          "https://seamlessgutterspensacola.com/category/gutter-guards/",
+          "https://seamlessgutterspensacola.com/category/gutter-repair/",
+          "https://seamlessgutterspensacola.com/category/screen-room-enclosures/",
+          "https://seamlessgutterspensacola.com/category/seamless-gutter-installation/",
+          "https://seamlessgutterspensacola.com/complete-guide-to-screen-room-enclosures-costs-benefits-design-ideas-for-outdoor-living/",
+          "https://seamlessgutterspensacola.com/concrete-old/",
+          "https://seamlessgutterspensacola.com/crestview-florida/",
+          "https://seamlessgutterspensacola.com/daphne-alabama/",
+          "https://seamlessgutterspensacola.com/foley-alabama/",
+          "https://seamlessgutterspensacola.com/freeport-florida/",
+          "https://seamlessgutterspensacola.com/gallery/",
+          "https://seamlessgutterspensacola.com/gulf-breezee-florida/",
+          "https://seamlessgutterspensacola.com/gutter-installation-cost-pensacola/",
+          "https://seamlessgutterspensacola.com/how-to-spot-hidden-gutter-damage-after-rainstorms/",
+          "https://seamlessgutterspensacola.com/is-gutter-guard-installation-worth-home/",
+          "https://seamlessgutterspensacola.com/jay-florida/",
+          "https://seamlessgutterspensacola.com/milton-florida/",
+          "https://seamlessgutterspensacola.com/navarre-florida/",
+          "https://seamlessgutterspensacola.com/pace-florida/",
+          "https://seamlessgutterspensacola.com/pensacola/",
+          "https://seamlessgutterspensacola.com/seamless-gutter-installation-cost-pensacola-fl-2026/",
+          "https://seamlessgutterspensacola.com/signs-you-need-gutter-repair-service/",
+          "https://seamlessgutterspensacola.com/spring-gutter-cleaning-guide-2026/",
+          "https://seamlessgutterspensacola.com/tag/best-concrete-services-pensacola/",
+          "https://seamlessgutterspensacola.com/tag/coastal-home-upgrades/",
+          "https://seamlessgutterspensacola.com/tag/concrete-for-coastal-climate/",
+          "https://seamlessgutterspensacola.com/tag/concrete-services/",
+          "https://seamlessgutterspensacola.com/tag/custom-screen-rooms/",
+          "https://seamlessgutterspensacola.com/tag/gutter-installation-pricing-guide/",
+          "https://seamlessgutterspensacola.com/tag/rain-gutter-installation-pensacola/",
+          "https://seamlessgutterspensacola.com/tag/seamless-gutter-installation-pensacola/",
+          "https://seamlessgutterspensacola.com/tag/seamless-gutter-installation/",
+          "https://seamlessgutterspensacola.com/tag/underground-drain-installation/",
+          "https://seamlessgutterspensacola.com/top-warning-signs-you-need-gutter-repair-in-pensacola-fl-before-its-too-late/",
+          "https://seamlessgutterspensacola.com/underground-drain-systems-florida-homeowners-guide/",
+          "https://seamlessgutterspensacola.com/underground-drainage-pensacola-benefits-costs/",
+          "https://seamlessgutterspensacola.com/why-gutter-cleaning-must-before-hurricane-season/",
+          "https://seamlessgutterspensacola.com/why-seamless-gutters-smart-investment-modern-homes/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "tel:8507761782 '(850) 776-1782 | (850) 972-0225'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.phone"
+        }
+      ],
+      "kind": "rule"
     },
     {
       "id": "address-false-absence",
-      "reported_issue": "通用检查：页面可见的地址不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "reported_issue": "通用检查：页面可见两个地址（10025 Ashton Brosnaham rd …32534 与 Office 7665 Burnside Lp …32526），GBP 未返回地址（服务区商家）；无可比对的 GBP 地址，规则 not_triggered/field_not_applicable 正确，不应触发。注：站内两地址互相不一致为另一问题，当前无对应规则。",
       "rule_id": "v22_public.gbp_address_alignment",
-      "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "Contact Us 区块 h6 'Address' 后 '10025 Ashton Brosnaham rd Pensacola Fl 32534'；页脚同地址链接 maps.app.goo.gl/8MMJyNe2na4og54U7"
+        },
+        {
+          "file": "page.html",
+          "locator": "et_pb_map_pin 'Gutter Solutions & Home Improvements Office' infowindow: '7665 Burnside Lp, Pensacola, FL 32526'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.address.state='not_returned'（提供方未返回；疑为隐藏地址的服务区商家，未能确认为空）"
+        }
+      ],
+      "kind": "rule"
     },
     {
       "id": "opening_hours-false-absence",
-      "reported_issue": "通用检查：页面可见的营业时间不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "reported_issue": "通用检查：页面静态 HTML 无营业时间（GBP 有 Mon-Fri 7AM–6PM, Sat-Sun 9AM–5PM）；当前无营业时间对齐规则（semantic_rules_not_implemented），报告也未生成'营业时间缺失'发现，无法按规则评估，保持 null。",
       "rule_id": null,
       "target": null,
       "expected_triggered": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "全文（含脚本外文本）无 hours/AM/PM/星期 营业时间文字或 openingHours 结构化数据"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.selected_pages[0].deep_snapshot.html（首页）同样无营业时间"
+        }
+      ],
+      "kind": "rule"
     },
     {
       "id": "service_area-false-absence",
-      "reported_issue": "通用检查：页面可见的服务城市/区域不能被报告判为缺失；识别不到只能未检查或未检测到。",
+      "reported_issue": "通用检查：页面可见服务城市/县列表，但 GBP 快照 service_areas 未返回，无法比对；规则 not_checked/field_not_observed（未误判为缺失），是否应触发无法判断。",
       "rule_id": "v22_public.gbp_service_area_alignment",
-      "target": null,
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
       "expected_triggered": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "h2 'Area We Served' 下城市链接列表（Pace, FL … Freeport, FL）"
+        },
+        {
+          "file": "page.html",
+          "locator": "页脚 'SERVICE AREAS' 县列表 + 段落 'Our service areas include Pensacola, Pace, Milton, Gulf Breeze, Crestview, Fort Walton Beach, ...'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.service_areas.state='not_returned', value=[]；service_area_business 也 not_returned"
+        }
+      ],
+      "kind": "rule"
     },
     {
       "id": "service-page-context",
       "kind": "page_type",
-      "reported_issue": "通用检查：核对服务页定位，不能仅因服务页无完整地址而报告缺 NAP。",
+      "reported_issue": "通用检查：/gutter-installation/ 为单一服务详情页（H1 'Seamless Gutter Installation Services Pensacola, FL'、流程/FAQ/报价 CTA），应为 service_detail；不应因服务页无完整 NAP 报缺失（本页实际有地址电话）。注：bound 库存中该 URL check_status=failed(page_timeout)，系统 actual 为空。",
       "page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
-      "expected_page_type": null,
-      "evidence_refs": []
+      "expected_page_type": "service_detail",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<title>Seamless Gutter Installation Services in Pensacola, FL</title>；JSON-LD BreadcrumbList Home > Gutter Installation"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/gutter-installation] check_status=failed, error_code=page_timeout"
+        }
+      ]
     },
     {
       "id": "client-weak-actions",
       "kind": "client_weak_actions",
-      "reported_issue": "通用检查：客户可见且全部依据未检查、未检测到或低置信的行动应被隐藏；混合依据沿用 P0-07 已确认规则。",
-      "expected_count": null,
-      "evidence_refs": []
+      "reported_issue": "通用检查：默认客户可见 3 个行动（索引检查、可比搜索复查、标题差异化），每个都至少有 confirmed 且非 low 的依据（noindex/重复标题/Maps 竞品领先为 medium），无全部弱依据行动，应为 0。注：'索引检查'行动依据为 wp-login noindex 误报，内容本身不应保留，但不属弱依据统计。",
+      "expected_count": 0,
+      "evidence_refs": [
+        {
+          "file": "eval_gold.py 输出",
+          "locator": "cases[0].action_metrics.actions"
+        }
+      ]
+    },
+    {
+      "id": "noindex-login",
+      "kind": "rule",
+      "rule_id": "v22_public.site_explicit_noindex",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/wp-login.php"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报：https://seamlessgutterspensacola.com/wp-login.php 为 WordPress 登录/找回密码系统页，meta robots 'noindex, noarchive' 是 WP 默认预期行为，不应作为索引问题报告。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/wp-login.php] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "noindex-lostpw",
+      "kind": "rule",
+      "rule_id": "v22_public.site_explicit_noindex",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/wp-login.php?action=lostpassword"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报：https://seamlessgutterspensacola.com/wp-login.php?action=lostpassword 为 WordPress 登录/找回密码系统页，meta robots 'noindex, noarchive' 是 WP 默认预期行为，不应作为索引问题报告。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/wp-login.php?action=lostpassword] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "noindex-redir-cost",
+      "kind": "rule",
+      "rule_id": "v22_public.site_explicit_noindex",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Fgutter-installation-cost-pensacola%2F"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报：https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Fgutter-installation-cost-pensacola%2F 为 WordPress 登录/找回密码系统页，meta robots 'noindex, noarchive' 是 WP 默认预期行为，不应作为索引问题报告。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Fgutter-installation-cost-pensacola%2F] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "noindex-redir-drain",
+      "kind": "rule",
+      "rule_id": "v22_public.site_explicit_noindex",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Funderground-drain-systems-florida-homeowners-guide%2F"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报：https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Funderground-drain-systems-florida-homeowners-guide%2F 为 WordPress 登录/找回密码系统页，meta robots 'noindex, noarchive' 是 WP 默认预期行为，不应作为索引问题报告。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Funderground-drain-systems-florida-homeowners-guide%2F] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-concrete-services",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/concrete-services",
+          "https://seamlessgutterspensacola.com/tag/concrete-services"
+        ],
+        "title_key": "concrete services - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/concrete-services 与 /tag/concrete-services 两个 WP 归档页均 200、未 noindex，标题同为 'concrete services - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/concrete-services] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/concrete-services] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-gutter-cleaning",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/gutter-cleaning",
+          "https://seamlessgutterspensacola.com/tag/gutter-cleaning"
+        ],
+        "title_key": "gutter cleaning - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/gutter-cleaning 与 /tag/gutter-cleaning 两个 WP 归档页均 200、未 noindex，标题同为 'gutter cleaning - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/gutter-cleaning] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/gutter-cleaning] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-gutter-damage",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/gutter-damage",
+          "https://seamlessgutterspensacola.com/tag/gutter-damage"
+        ],
+        "title_key": "gutter damage - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/gutter-damage 与 /tag/gutter-damage 两个 WP 归档页均 200、未 noindex，标题同为 'gutter damage - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/gutter-damage] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/gutter-damage] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-gutter-guards",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/gutter-guards",
+          "https://seamlessgutterspensacola.com/tag/gutter-guards"
+        ],
+        "title_key": "gutter guards - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/gutter-guards 与 /tag/gutter-guards 两个 WP 归档页均 200、未 noindex，标题同为 'gutter guards - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/gutter-guards] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/gutter-guards] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-gutter-repair",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/gutter-repair",
+          "https://seamlessgutterspensacola.com/tag/gutter-repair"
+        ],
+        "title_key": "gutter repair - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/gutter-repair 与 /tag/gutter-repair 两个 WP 归档页均 200、未 noindex，标题同为 'gutter repair - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/gutter-repair] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/gutter-repair] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-screen-room-enclosures",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/screen-room-enclosures",
+          "https://seamlessgutterspensacola.com/tag/screen-room-enclosures"
+        ],
+        "title_key": "screen room enclosures - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/screen-room-enclosures 与 /tag/screen-room-enclosures 两个 WP 归档页均 200、未 noindex，标题同为 'screen room enclosures - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/screen-room-enclosures] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/screen-room-enclosures] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-seamless-gutter-installation",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/category/seamless-gutter-installation",
+          "https://seamlessgutterspensacola.com/tag/seamless-gutter-installation"
+        ],
+        "title_key": "seamless gutter installation - seamless gutters of pensacola",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：/category/seamless-gutter-installation 与 /tag/seamless-gutter-installation 两个 WP 归档页均 200、未 noindex，标题同为 'seamless gutter installation - seamless gutters of pensacola'，同名分类/标签归档互相竞争，值得建议合并或 noindex 其一（低严重度）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/category/seamless-gutter-installation] meta_robots/title"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/tag/seamless-gutter-installation] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "duptitle-wp-login",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/wp-login.php",
+          "https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Fgutter-installation-cost-pensacola%2F",
+          "https://seamlessgutterspensacola.com/wp-login.php?redirect_to=https%3A%2F%2Fseamlessgutterspensacola.com%2Funderground-drain-systems-florida-homeowners-guide%2F"
+        ],
+        "title_key": "log in ‹ seamless gutters of pensacola — wordpress",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报：3 个 wp-login.php URL（同一登录页不同 redirect_to 参数）标题均为 'Log In ‹ Seamless Gutters of Pensacola — WordPress'，系统页且已 noindex，重复标题无 SEO 意义。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=site].payload.pages[url=https://seamlessgutterspensacola.com/wp-login.php] meta_robots/title"
+        }
+      ]
+    },
+    {
+      "id": "ahead-maps-install",
+      "kind": "rule",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "0b378ca7-2536-3181-845c-c21b928a6958",
+        "urls": [],
+        "title_key": null,
+        "query": "gutter installation Pensacola",
+        "result_type": "maps",
+        "latitude": 30.42130899999999,
+        "longitude": -87.2169149,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_6706ff4bf59e336e20869f01",
+          "cp_cad3fd3f225a0d347395295a",
+          "cp_ceb6caec6912e145e8f7450e"
+        ]
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：'gutter installation Pensacola' 移动端 Maps 样本中客户 www.seamlessgutterspensacola.com 位于第 18，3 个确认竞品分别 martinsseamlessgutters #1、pensacola.brothersgutters #2、pensacolaseamlessgutters #3，结论与数据一致。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=serp].payload.query_runs[query='gutter installation Pensacola'].results (result_type=maps)"
+        }
+      ]
+    },
+    {
+      "id": "ahead-maps-seamless",
+      "kind": "rule",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "0b378ca7-2536-3181-845c-c21b928a6958",
+        "urls": [],
+        "title_key": null,
+        "query": "seamless gutters Pensacola",
+        "result_type": "maps",
+        "latitude": 30.42130899999999,
+        "longitude": -87.2169149,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_6706ff4bf59e336e20869f01",
+          "cp_cad3fd3f225a0d347395295a",
+          "cp_ceb6caec6912e145e8f7450e"
+        ]
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：'seamless gutters Pensacola' 移动端 Maps 样本中客户 www.seamlessgutterspensacola.com 位于第 11，3 个确认竞品分别 martinsseamlessgutters #1、pensacolaseamlessgutters #2、pensacola.brothersgutters #3，结论与数据一致。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=serp].payload.query_runs[query='seamless gutters Pensacola'].results (result_type=maps)"
+        }
+      ]
+    },
+    {
+      "id": "unobserved-organic-install",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "0b378ca7-2536-3181-845c-c21b928a6958",
+        "urls": [],
+        "title_key": null,
+        "query": "gutter installation Pensacola",
+        "result_type": "organic",
+        "latitude": 30.42130899999999,
+        "longitude": -87.2169149,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确：'gutter installation Pensacola' 自然结果 9 条中无 seamlessgutterspensacola.com（第 2 为客户 Yelp 页 m.yelp.com/biz/gutter-solutions-and-home-improvements-pensacola-2，竞品 brothersgutters #4、martinsseamlessgutters #6），官网未出现属实。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=serp].payload.query_runs[0].results (organic, provider_position 1-9)"
+        }
+      ]
+    },
+    {
+      "id": "unobserved-organic-nearme",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "0b378ca7-2536-3181-845c-c21b928a6958",
+        "urls": [],
+        "title_key": null,
+        "query": "gutter installation near me",
+        "result_type": "organic",
+        "latitude": 30.42130899999999,
+        "longitude": -87.2169149,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "误报（待确认）：'gutter installation near me' 自然结果样本未本地化到 Pensacola——全为 Eufaula/Montgomery/Helena AL、Raceland LA、Baltimore MD 等外地 Yelp/目录页，样本不能代表目标市场，'域名未出现'不应作为可见度问题报告（应像 'seamless gutters Pensacola' organic 一样判 source_ineligible）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "sources[kind=serp].payload.query_runs[2].results (organic, provider_position 1-8)"
+        }
+      ]
+    },
+    {
+      "id": "gbp-name-mismatch",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [
+          "https://seamlessgutterspensacola.com/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "正确（待确认）：网站 JSON-LD Organization.name/og:site_name/WP 站名为 'Seamless Gutters of Pensacola'，GBP 名为 'Gutter Solutions & Home Improvements'；虽然页面可见文字（页脚、首页标题）多用 GBP 名，但结构化数据品牌名与 GBP 不一致是真实 NAP 不一致，值得建议统一。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization.name 'Seamless Gutters of Pensacola'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.business_name"
+        }
+      ]
     }
   ],
   "sample_purpose": "通用误报检查；负责人确认反馈未记录该站具体错误，不属于已知错误回归样本。"

@@ -1,103 +1,659 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "vision-tech-swansea",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Vision-Tech AV",
+        "Vision-Tech AV LTD"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<title>Commercial AV Integration &amp; Installation Swansea | Vision-Tech AV</title>"
+        },
+        {
+          "file": "page.html",
+          "locator": "Trading Address: <p class=\"elementor-icon-box-description\"> Vision-Tech AV LTD Unit 9, ..."
+        },
+        {
+          "file": "page.html",
+          "locator": "JSON-LD Organization name \"Vision-Tech AV\""
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Unit 9, Parc Gelli Werdd, Cross Hands, Llanelli. SA14 6EF."
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "h3 'Trading Address' + p: 'Vision-Tech AV LTD Unit 9, Parc Gelli Werdd, Cross Hands, Llanelli. SA14 6EF.'（正文联系区与页脚各一次）"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "site.selected_pages av-support-maintenance / knowledge-base / planned-preventative-maintenance 联系区显示 'Location SA18 1NE Ammanford, United Kingdom'（与主地址不一致，非本页）"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "0333 335 5510"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "<a href=\"tel:03333355510\">0333 335 5510</a>（'Call us at any time' 与页脚 'Call Now' 两处）"
+        }
+      ]
     },
     "opening_hours": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Mon - Fri: 09:00 - 17:30"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "h3 'Opening Hours' + p.elementor-icon-box-description 'Mon - Fri: 09:00 - 17:30'"
+        }
+      ]
     },
     "service_area": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Swansea",
+        "Cardiff",
+        "Llanelli",
+        "Bristol",
+        "South Wales"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "h2 'Areas We Serve' (OUR SERVICE AREA) 列出 Cardiff / Llanelli / Bristol / South Wales"
+        },
+        {
+          "file": "page.html",
+          "locator": "导航 'Areas We Serve' 子菜单: Swansea, Cardiff, Llanelli, Bristol, South Wales；本页 H1 'Leading Audio-Visual Integration & Consultancy in Swansea'"
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Vision Tech AV LTD"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.business_name (provider serpapi_public, fetched 2026-11-03T09:48:27Z, cid 3467016953362037400, strong_id_matched)"
+        }
+      ]
     },
     "address": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Unit 9, Parc, Gelli Werdd, Cross Hands, Llanelli SA14 6EF, United Kingdom"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "+44 333 335 5510"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.phone"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "monday: Open 24 hours",
+        "tuesday: Open 24 hours",
+        "wednesday: Open 24 hours",
+        "thursday: Open 24 hours",
+        "friday: Open 24 hours",
+        "saturday: Open 24 hours",
+        "sunday: Open 24 hours"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.hours（operating_hours 为 not_returned）"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.service_areas / service_area_business state=not_returned（提供方未返回该字段，不等于确认为空）"
+        }
+      ]
     },
     "category": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Audio visual consultant",
+        "Audio visual equipment supplier"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.categories"
+        }
+      ]
     }
   },
   "operating_model": {
-    "value": null,
-    "evidence_refs": []
+    "value": "service_area",
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "唯一地址为 Cross Hands, Llanelli 工业园 'Trading Address'；Swansea 本页无门店/展厅/到访信息，而是 'Areas We Serve' 落地页",
+        "note": "草稿判断，需负责人确认：B2B AV 集成商在客户现场安装（'Our on-site engineers manage the full physical integration'），疑为显示地址的服务区域型；bound business_identity.operating_model 输入为 storefront，二者不一致"
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "site.selected_pages https://visiontechav.com/ 与 /about-us: 'Our on-site engineers manage the full physical integration...'"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Swansea",
+        "type": "city",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Leading Audio-Visual Integration & Consultancy in Swansea"
+      },
+      {
+        "name": "Cardiff",
+        "type": "city",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Areas We Serve: Cardiff"
+      },
+      {
+        "name": "Llanelli",
+        "type": "city",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Areas We Serve: Llanelli；Trading Address ... Cross Hands, Llanelli. SA14 6EF."
+      },
+      {
+        "name": "Bristol",
+        "type": "city",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Areas We Serve: Bristol"
+      },
+      {
+        "name": "South Wales",
+        "type": "region",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Areas We Serve: South Wales"
+      },
+      {
+        "name": "Cross Hands",
+        "type": "locality",
+        "page_url": "https://visiontechav.com/swansea/",
+        "excerpt": "Unit 9, Parc Gelli Werdd, Cross Hands, Llanelli. SA14 6EF."
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "H1 / 'Areas We Serve' 区块 / Trading Address"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "we bring over 25 years of field experience to every site in Swansea",
+        "page_url": "https://visiontechav.com/swansea/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": true
+      },
+      {
+        "text": "25+ Years of AV Excellence, Delivered Worldwid",
+        "page_url": "https://visiontechav.com/swansea/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": true
+      },
+      {
+        "text": "With over 25 years of AV expertise, Vision-Tech AV delivers seamless projects worldwide, on time and on budget.",
+        "page_url": "https://visiontechav.com/swansea/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": true
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "'Why Choose Vision-Tech AV in Swansea?' 段落、联系区标题、页脚简介；均为无链接自述声明，本页无评价/认证链接（Google 评价 widget 只出现在 /contact-us）"
+      }
+    ]
   },
   "checks": [
     {
       "id": "phone-presence",
-      "reported_issue": "反馈称电话存在但被报未找到",
+      "reported_issue": "原反馈：电话存在但被报未找到。草稿：网站 0333 335 5510（tel:03333355510）与 GBP +44 333 335 5510 为同一号码，系统判 not_triggered/semantic_match，正确，不应生成对齐发现。",
       "rule_id": "v22_public.gbp_phone_alignment",
-      "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/",
+          "https://visiontechav.com/about-us/",
+          "https://visiontechav.com/author/designs-webbersgmail-com/",
+          "https://visiontechav.com/av-support-maintenance/",
+          "https://visiontechav.com/blogs/",
+          "https://visiontechav.com/bristol/",
+          "https://visiontechav.com/business-av-integration-project-management-guide/",
+          "https://visiontechav.com/cardiff/",
+          "https://visiontechav.com/category/audiovisual-companies-in-bristol/",
+          "https://visiontechav.com/category/av-integration/",
+          "https://visiontechav.com/category/commercial-av-integration/",
+          "https://visiontechav.com/category/uncategorized/",
+          "https://visiontechav.com/commercial-av-integration-challenges-in-south-wales/",
+          "https://visiontechav.com/contact-us/",
+          "https://visiontechav.com/knowledge-base/",
+          "https://visiontechav.com/location-uk/",
+          "https://visiontechav.com/planned-preventative-maintenance/",
+          "https://visiontechav.com/portfolio/",
+          "https://visiontechav.com/privacy-policy/",
+          "https://visiontechav.com/services/",
+          "https://visiontechav.com/services/av-design-consultancy/",
+          "https://visiontechav.com/services/av-installation-commissioning/",
+          "https://visiontechav.com/services/control-systems/",
+          "https://visiontechav.com/services/documentation-and-technical-drawings/",
+          "https://visiontechav.com/services/project-management/",
+          "https://visiontechav.com/solutions/",
+          "https://visiontechav.com/solutions/av-for-education/",
+          "https://visiontechav.com/solutions/av-solutions-for-culture-leisure/",
+          "https://visiontechav.com/solutions/commercial-led-displays/",
+          "https://visiontechav.com/solutions/digital-signage/",
+          "https://visiontechav.com/solutions/distributed-audio-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/boardroom-av-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/google-meet/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/teams-rooms/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/zoom-rooms/",
+          "https://visiontechav.com/solutions/town-hall-spaces/",
+          "https://visiontechav.com/solutions/wireless-display-solutions/",
+          "https://visiontechav.com/south-wales/",
+          "https://visiontechav.com/support-contracts-sla/",
+          "https://visiontechav.com/tag/audiovisual-company-bristol/",
+          "https://visiontechav.com/tag/av-design/",
+          "https://visiontechav.com/tag/av-installation-services-swansea/",
+          "https://visiontechav.com/tag/av-installation/",
+          "https://visiontechav.com/tag/av-installations/",
+          "https://visiontechav.com/tag/av-installer/",
+          "https://visiontechav.com/tag/av-integration/",
+          "https://visiontechav.com/tag/av-project-management/",
+          "https://visiontechav.com/tag/commercial-av-integration/",
+          "https://visiontechav.com/tag/commercial-av-solutions-llanelli/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "tel:03333355510"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.phone"
+        }
+      ]
     },
     {
       "id": "address-presence",
-      "reported_issue": "反馈称地址存在但被报未找到",
+      "reported_issue": "原反馈：地址存在但被报未找到。草稿：网站 'Unit 9, Parc Gelli Werdd, Cross Hands, Llanelli. SA14 6EF.' 与 GBP 'Unit 9, Parc, Gelli Werdd, Cross Hands, Llanelli SA14 6EF' 实质一致，不应生成不一致发现（系统 not_triggered/partial_match，只比对了邮编）。另：3 个支持类页面写 'SA18 1NE Ammanford'，属站内旧地址残留，需负责人决定是否另算问题。",
       "rule_id": "v22_public.gbp_address_alignment",
-      "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/",
+          "https://visiontechav.com/about-us/",
+          "https://visiontechav.com/author/designs-webbersgmail-com/",
+          "https://visiontechav.com/av-support-maintenance/",
+          "https://visiontechav.com/blogs/",
+          "https://visiontechav.com/bristol/",
+          "https://visiontechav.com/business-av-integration-project-management-guide/",
+          "https://visiontechav.com/cardiff/",
+          "https://visiontechav.com/category/audiovisual-companies-in-bristol/",
+          "https://visiontechav.com/category/av-integration/",
+          "https://visiontechav.com/category/commercial-av-integration/",
+          "https://visiontechav.com/category/uncategorized/",
+          "https://visiontechav.com/commercial-av-integration-challenges-in-south-wales/",
+          "https://visiontechav.com/contact-us/",
+          "https://visiontechav.com/knowledge-base/",
+          "https://visiontechav.com/location-uk/",
+          "https://visiontechav.com/planned-preventative-maintenance/",
+          "https://visiontechav.com/portfolio/",
+          "https://visiontechav.com/privacy-policy/",
+          "https://visiontechav.com/services/",
+          "https://visiontechav.com/services/av-design-consultancy/",
+          "https://visiontechav.com/services/av-installation-commissioning/",
+          "https://visiontechav.com/services/control-systems/",
+          "https://visiontechav.com/services/documentation-and-technical-drawings/",
+          "https://visiontechav.com/services/project-management/",
+          "https://visiontechav.com/solutions/",
+          "https://visiontechav.com/solutions/av-for-education/",
+          "https://visiontechav.com/solutions/av-solutions-for-culture-leisure/",
+          "https://visiontechav.com/solutions/commercial-led-displays/",
+          "https://visiontechav.com/solutions/digital-signage/",
+          "https://visiontechav.com/solutions/distributed-audio-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/boardroom-av-systems/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/google-meet/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/teams-rooms/",
+          "https://visiontechav.com/solutions/meeting-room-av-systems/zoom-rooms/",
+          "https://visiontechav.com/solutions/town-hall-spaces/",
+          "https://visiontechav.com/solutions/wireless-display-solutions/",
+          "https://visiontechav.com/south-wales/",
+          "https://visiontechav.com/support-contracts-sla/",
+          "https://visiontechav.com/tag/audiovisual-company-bristol/",
+          "https://visiontechav.com/tag/av-design/",
+          "https://visiontechav.com/tag/av-installation-services-swansea/",
+          "https://visiontechav.com/tag/av-installation/",
+          "https://visiontechav.com/tag/av-installations/",
+          "https://visiontechav.com/tag/av-installer/",
+          "https://visiontechav.com/tag/av-integration/",
+          "https://visiontechav.com/tag/av-project-management/",
+          "https://visiontechav.com/tag/commercial-av-integration/",
+          "https://visiontechav.com/tag/commercial-av-solutions-llanelli/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "Trading Address 区块"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.address"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "site.selected_pages /av-support-maintenance 'Location SA18 1NE Ammanford, United Kingdom'"
+        }
+      ]
     },
     {
       "id": "opening-hours-presence",
-      "reported_issue": "反馈称营业时间存在但被报未找到",
+      "reported_issue": "原反馈：营业时间存在但被报未找到。草稿：网站 'Mon - Fri: 09:00 - 17:30'，GBP 为一周 7 天 'Open 24 hours'，属真实不一致，应报告；但当前无营业时间对齐规则，rule_id/target 无法填写，评估只能为无法判断。",
       "rule_id": null,
       "target": null,
-      "expected_triggered": null,
-      "evidence_refs": []
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "Opening Hours: Mon - Fri: 09:00 - 17:30"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.hours"
+        }
+      ]
+    },
+    {
+      "id": "gbp-name",
+      "reported_issue": "误报：网站 'Vision-Tech AV'（页脚/地址区亦写 'Vision-Tech AV LTD'）与 GBP 'Vision Tech AV LTD' 仅连字符和法律后缀 LTD 差异，同一实体名称，无需更正；GB 规则未剥离 LTD 后缀导致误判。",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/",
+          "https://visiontechav.com/contact-us/",
+          "https://visiontechav.com/services/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "Trading Address: 'Vision-Tech AV LTD ...'"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields.business_name"
+        },
+        {
+          "file": "../.release-private/2026-11-03-gold/p0-10-reports/vision-tech-swansea.json",
+          "locator": "finding fn_d2826d28... observed_fact"
+        }
+      ]
+    },
+    {
+      "id": "dup-title-av-integration",
+      "reported_issue": "正确（低优先级）：/category/av-integration 与 /tag/av-integration 均 200、index,follow、自引用 canonical，标题同为 'AV Integration Archives - Vision-Tech AV'，内容为重叠的博文列表。重复属实；更合理的修复是 noindex 或合并标签/分类归档，而非仅改标题。",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/category/av-integration",
+          "https://visiontechav.com/tag/av-integration"
+        ],
+        "title_key": "av integration archives - vision-tech av",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "site.pages url=https://visiontechav.com/category/av-integration & /tag/av-integration: title, meta_robots=index,follow, canonical_url"
+        }
+      ]
+    },
+    {
+      "id": "dup-title-commercial-av-integration",
+      "reported_issue": "正确（低优先级）：/category/commercial-av-integration 与 /tag/commercial-av-integration 均可索引，标题同为 'Commercial AV Integration Archives - Vision-Tech AV'，WordPress 分类与标签同名归档重复；建议 noindex/合并而非仅改标题。",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/category/commercial-av-integration",
+          "https://visiontechav.com/tag/commercial-av-integration"
+        ],
+        "title_key": "commercial av integration archives - vision-tech av",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "site.pages url=https://visiontechav.com/category/commercial-av-integration & /tag/commercial-av-integration"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-organic-av-installation-swansea",
+      "reported_issue": "正确：已保存的 'AV installation Swansea' 自然结果前 10 条（GB/en/mobile，Swansea 坐标）域名中无 visiontechav.com，判定与样本一致。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "ae283000-6d7a-38e0-ba25-0aa23970fead",
+        "urls": [],
+        "title_key": null,
+        "query": "AV installation Swansea",
+        "result_type": "organic",
+        "latitude": 51.62144,
+        "longitude": -3.943645999999999,
+        "country_code": "GB",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='AV installation Swansea'].results[result_type=organic].normalized_domain（10 条）"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-organic-audio-visual-company-swansea",
+      "reported_issue": "正确：已保存的 'audio visual company Swansea' 自然结果前 10 条（GB/en/mobile，Swansea 坐标）域名中无 visiontechav.com，判定与样本一致。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "ae283000-6d7a-38e0-ba25-0aa23970fead",
+        "urls": [],
+        "title_key": null,
+        "query": "audio visual company Swansea",
+        "result_type": "organic",
+        "latitude": 51.62144,
+        "longitude": -3.943645999999999,
+        "country_code": "GB",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='audio visual company Swansea'].results[result_type=organic].normalized_domain（10 条）"
+        }
+      ]
+    },
+    {
+      "id": "domain-unobserved-organic-commercial-av-integration-swansea",
+      "reported_issue": "正确：已保存的 'commercial AV integration Swansea' 自然结果前 10 条（GB/en/mobile，Swansea 坐标）域名中无 visiontechav.com，判定与样本一致。 注：同词 maps 中客户 GBP 排第 5，不影响自然结果结论。",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "ae283000-6d7a-38e0-ba25-0aa23970fead",
+        "urls": [],
+        "title_key": null,
+        "query": "commercial AV integration Swansea",
+        "result_type": "organic",
+        "latitude": 51.62144,
+        "longitude": -3.943645999999999,
+        "country_code": "GB",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='commercial AV integration Swansea'].results[result_type=organic].normalized_domain（10 条）"
+        }
+      ]
+    },
+    {
+      "id": "competitors-ahead-commercial-maps",
+      "reported_issue": "正确：'commercial AV integration Swansea' maps 样本中客户 'Vision Tech AV LTD' 第 5，用户确认竞品 Audio T Swansea 第 1、Pro Audio Visual 第 3 排在前面，事实成立。（Audio T 为消费级音响零售，竞品是否恰当需负责人确认）",
+      "rule_id": "v22_public.market_confirmed_competitors_ahead",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "ae283000-6d7a-38e0-ba25-0aa23970fead",
+        "urls": [],
+        "title_key": null,
+        "query": "commercial AV integration Swansea",
+        "result_type": "maps",
+        "latitude": 51.62144,
+        "longitude": -3.943645999999999,
+        "country_code": "GB",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": [
+          "cp_b88a3a51cf9913e6e6ac0399",
+          "cp_e15348877e19a04a55e4d9fd"
+        ]
+      },
+      "expected_triggered": true,
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query='commercial AV integration Swansea'].results[result_type=maps] position 1 Audio T Swansea / 3 Pro Audio Visual / 5 Vision Tech AV LTD"
+        }
+      ]
     }
   ]
 }

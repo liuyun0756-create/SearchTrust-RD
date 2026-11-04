@@ -1,78 +1,851 @@
 {
   "schema_version": "gold_truth_v1",
   "site_id": "pr-plumbing-fresno",
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "claude-draft；负责人已确认 6 项口径（2026-11-04）",
+  "reviewed_at": "2026-11-04T14:45:00+08:00",
   "site_fields": {
     "business_name": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "PR Plumbing, Heating & Air Conditioning Inc."
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "footer .contact <p itemprop=\"legalName\">PR Plumbing, Heating & Air Conditioning Inc.</p>"
+        },
+        {
+          "file": "page.html",
+          "locator": "首页 H1 下正文 \"Since 2000, the professionals at <strong>PR Plumbing, Heating & Air Conditioning Inc.</strong>\""
+        }
+      ]
     },
     "address": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Fresno, CA 93703"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "footer .contact itemprop=\"address\": <span itemprop=\"addressLocality\">Fresno</span>, <span itemprop=\"addressRegion\">CA</span> <span itemprop=\"postalCode\">93703</span>（可见部分无街道）"
+        },
+        {
+          "file": "page.html",
+          "locator": "head JSON-LD ProfessionalService streetAddress \"1504 N Maple Ave\", Fresno, CA 93703（仅结构化数据，非可见文本）"
+        }
+      ]
     },
     "phone": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "559-244-0440"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "header \"Call Us Today at <a href=\\\"tel:+1-559-244-0440\\\" class=\\\"call-num\\\">559-244-0440</a>\""
+        },
+        {
+          "file": "page.html",
+          "locator": "footer .contact \"Phone: <a href=\\\"tel:+1-559-244-0440\\\" itemprop=\\\"telephone\\\">\""
+        }
+      ]
     },
     "opening_hours": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": false,
+      "values": [],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "全文检索 Monday/Hours/24 hours/24/7/Open 24 无匹配；JSON-LD 无 openingHours（仅首页静态 HTML，contact-us 页 HTML 未保存）"
+        },
+        {
+          "file": "负责人人工核对",
+          "locator": "2026-11-04 负责人确认联系页也没有营业时间"
+        }
+      ]
     },
     "service_area": {
-      "present": null,
-      "values": null,
-      "evidence_refs": []
+      "present": true,
+      "values": [
+        "Fresno, CA",
+        "Clovis, CA",
+        "Madera, CA",
+        "Sanger, CA",
+        "Selma, CA",
+        "Kingsburg, CA",
+        "Hanford, CA",
+        "Fowler, CA",
+        "Parlier, CA",
+        "Reedley, CA",
+        "Dinuba, CA",
+        "Kerman, CA",
+        "Prather, CA",
+        "Oakhurst, CA",
+        "Coarsegold, CA"
+      ],
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "footer <h4>Service Areas</h4> <div class=\"service-areas\"> 15 个 /near-me/*-plumber 链接 + \"View All\" -> /near-me"
+        },
+        {
+          "file": "page.html",
+          "locator": "FAQ \"provides emergency services I Fresno and our other service areas\""
+        }
+      ]
     }
   },
   "gbp_fields": {
     "business_name": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "PR Plumbing, Heating & Air Conditioning Inc."
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
     },
     "address": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "1504 N Maple Ave, Fresno, CA 93703"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
     },
     "phone": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "(559) 244-0440"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
     },
     "opening_hours": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "monday: Open 24 hours",
+        "tuesday: Open 24 hours",
+        "wednesday: Open 24 hours",
+        "thursday: Open 24 hours",
+        "friday: Open 24 hours",
+        "saturday: Open 24 hours",
+        "sunday: Open 24 hours"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.hours（7 天均 \"Open 24 hours\"；operating_hours=not_returned）"
+        }
+      ]
     },
     "service_area": {
-      "state": null,
+      "state": "not_checked",
       "values": null,
-      "evidence_refs": []
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.service_areas state=not_returned value=[]；service_area_business state=not_returned — 提供方未返回，不能确认为空"
+        }
+      ]
     },
     "category": {
-      "state": null,
-      "values": null,
-      "evidence_refs": []
+      "state": "observed",
+      "values": [
+        "Plumber",
+        "Air conditioning contractor",
+        "Air conditioning repair service",
+        "Furnace repair service",
+        "HVAC contractor",
+        "Insulation contractor"
+      ],
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "public_gbp record.fields.categories"
+        }
+      ]
     }
   },
   "operating_model": {
-    "value": null,
-    "evidence_refs": []
+    "value": "hybrid",
+    "evidence_refs": [
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "public_gbp address observed \"1504 N Maple Ave, Fresno, CA 93703\"（公开显示地址）"
+      },
+      {
+        "file": "page.html",
+        "locator": "footer Service Areas 15 城 + FAQ \"We have 30 service trucks ... respond to your call quickly\"（上门服务）"
+      },
+      {
+        "file": "bound-p0-10.json.gz",
+        "locator": "request.business_identity.operating_model=\"storefront\"（系统输入值，与本草稿 hybrid 不同，待确认）"
+      }
+    ]
   },
   "local_entities": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "name": "Fresno, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Fresno, CA\""
+      },
+      {
+        "name": "Clovis, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Clovis, CA\""
+      },
+      {
+        "name": "Madera, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Madera, CA\""
+      },
+      {
+        "name": "Sanger, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Sanger, CA\""
+      },
+      {
+        "name": "Selma, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Selma, CA\""
+      },
+      {
+        "name": "Kingsburg, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Kingsburg, CA\""
+      },
+      {
+        "name": "Hanford, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Hanford, CA\""
+      },
+      {
+        "name": "Fowler, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Fowler, CA\""
+      },
+      {
+        "name": "Parlier, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Parlier, CA\""
+      },
+      {
+        "name": "Reedley, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Reedley, CA\""
+      },
+      {
+        "name": "Dinuba, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Dinuba, CA\""
+      },
+      {
+        "name": "Kerman, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Kerman, CA\""
+      },
+      {
+        "name": "Prather, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Prather, CA\""
+      },
+      {
+        "name": "Oakhurst, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Oakhurst, CA\""
+      },
+      {
+        "name": "Coarsegold, CA",
+        "type": "service_area_city",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "footer Service Areas 链接 \"Coarsegold, CA\""
+      },
+      {
+        "name": "1504 N Maple Ave, Fresno, CA 93703",
+        "type": "business_address",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "excerpt": "JSON-LD PostalAddress（可见页脚仅 Fresno, CA 93703）"
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "footer .service-areas; head JSON-LD ProfessionalService"
+      }
+    ]
   },
   "trust_claims": {
-    "values": null,
-    "evidence_refs": []
+    "values": [
+      {
+        "text": "Since 2000, the professionals at PR Plumbing, Heating & Air Conditioning Inc. have dedicated themselves to superior customer service",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": true
+      },
+      {
+        "text": "two dozen fully-equipped trucks and over thirty employees（同页 FAQ 另称 30 service trucks and over 40 experienced employees，数字不一致）",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": true
+      },
+      {
+        "text": "Leave a Review",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": "https://www.google.com/search?q=PR+Plumbing%2C+Heating+%26+Air+Conditioning+Inc.&ie=UTF-8#lrd=0x80945db06cd06e31:0x812f6a121ffb2bc6,3,,,,",
+        "resolved_url": null,
+        "destination_entity": "Google 评论（data_id 0x80945db06cd06e31:0x812f6a121ffb2bc6 与 GBP 快照 data_id 一致；未实际跳转检查）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Google Maps",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": "https://www.google.com/maps/place/PR+Plumbing,+Heating+%26+Air+Conditioning+Inc./@36.7938642,-119.7553543,17z/data=!3m1!4b1!4m2!3m1!1s0x80945db06cd06e31:0x812f6a121ffb2bc6?hl=en-US&shorturl=1",
+        "resolved_url": null,
+        "destination_entity": "Google Maps 商家页（data_id 与 GBP 快照一致；未实际跳转检查）",
+        "belongs_to_business": true
+      },
+      {
+        "text": "Check Out Our Google Reviews / More 5-Star Reviews（评论轮播为 JS 注入，静态 HTML 无内容）",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": "/testimonials",
+        "resolved_url": null,
+        "destination_entity": "站内 testimonials 页",
+        "belongs_to_business": null
+      },
+      {
+        "text": "Our Certifications 轮播图片：Peoples choice / Gold winner / Silver winner / google / bbb（仅图片 alt，无链接、无颁发方说明）",
+        "page_url": "https://www.prplumbingfresno.com/",
+        "href": null,
+        "resolved_url": null,
+        "destination_entity": null,
+        "belongs_to_business": null
+      }
+    ],
+    "evidence_refs": [
+      {
+        "file": "page.html",
+        "locator": "H1 下正文 \"Since 2000\""
+      },
+      {
+        "file": "page.html",
+        "locator": "FAQ accordion \"30 service trucks and over 40\""
+      },
+      {
+        "file": "page.html",
+        "locator": "footer .quick-links"
+      },
+      {
+        "file": "page.html",
+        "locator": "section \"Our Certifications\" .carousel-item img alt"
+      }
+    ]
   },
-  "checks": []
+  "checks": [
+    {
+      "id": "http-520-hvac-maintenance",
+      "kind": "rule",
+      "rule_id": "v22_public.site_http_error",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/hvac-maintenance"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "/hvac-maintenance 保存响应为 Cloudflare 520（noindex 错误页），且被 /hvac-services 内链指向；同次抓取其余 133 页均 200，属值得报告的问题（正确页应为 /hvac-services/hvac-maintenance，200）。520 可能为临时性，需复测。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/hvac-maintenance] status_code=520 title=\"prplumbingfresno.com | 520: Web server is returning an unknown error\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/hvac-services].internal_links 含 /hvac-maintenance"
+        }
+      ]
+    },
+    {
+      "id": "http-520-sacramento-hvac",
+      "kind": "rule",
+      "rule_id": "v22_public.site_http_error",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/projects/sacramento-hvac-installation"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "/projects/sacramento-hvac-installation 保存响应为 520，且被 /sitemap 和 /projects 内链；案例页无法访问，值得报告。520 可能为临时性，需复测。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/projects/sacramento-hvac-installation] status_code=520 meta_robots=[noindex,nofollow]"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/sitemap,/projects].internal_links 含该 URL"
+        }
+      ]
+    },
+    {
+      "id": "http-404-hvac-repair",
+      "kind": "rule",
+      "rule_id": "v22_public.site_http_error",
+      "target": {
+        "kind": "page",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/hvac-repair"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "/hvac-repair 返回 404，被 /hvac-services 内链指向；实际服务页在 /hvac-services/hvac-repair（200）。站内断链，真实问题。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/hvac-repair] status_code=404 title=\"404 - Page Not Found | PR Plumbing...\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/hvac-services].internal_links 含 /hvac-repair"
+        }
+      ]
+    },
+    {
+      "id": "serp-organic-best-fresno",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "5ef29e14-3def-3c75-ad33-3e79a33b642b",
+        "urls": [],
+        "title_key": null,
+        "query": "best Plumbing repair Fresno",
+        "result_type": "organic",
+        "latitude": 36.7468422,
+        "longitude": -119.7725868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "'best Plumbing repair Fresno' 移动端自然结果 9 条（costlessplumbing、reddit、homeguide、rotorooter、quora、yelp 等）确实无 prplumbingfresno.com；样本已定位 Fresno，事实成立（同站 Maps 排第 1，单次样本，低置信）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=serp].payload.query_runs[query=\"best Plumbing repair Fresno\"].results[result_type=organic] 1-9"
+        }
+      ]
+    },
+    {
+      "id": "serp-organic-near-me",
+      "kind": "rule",
+      "rule_id": "v22_public.market_site_domain_unobserved",
+      "target": {
+        "kind": "market",
+        "snapshot_id": "5ef29e14-3def-3c75-ad33-3e79a33b642b",
+        "urls": [],
+        "title_key": null,
+        "query": "Plumbing repair near me",
+        "result_type": "organic",
+        "latitude": 36.7468422,
+        "longitude": -119.7725868,
+        "country_code": "US",
+        "language": "en",
+        "device": "mobile",
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "'Plumbing repair near me' 自然结果明显未按 Fresno 定位：含 Napa/Sonoma County 的 yelp 搜索、Santa Clara、Idaho、Hutchinson KS、Sioux Falls SD 等外地结果；以该样本断言客户域名“未出现”不成立，属误报（应判样本无效/未检查）。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "serp query_runs[query=\"Plumbing repair near me\"].results[organic]: m.yelp.com ...find_loc=Napa%2C+CA; bayshoreplumbers.com/service-area/santa-clara; bestplumbers.com/united-states/idaho; ...find_loc=Hutchinson%2C+KS; todayshomeowner.com/near-me/south-dakota/sioux-falls"
+        }
+      ]
+    },
+    {
+      "id": "dup-title-clogged-drains",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/clogged-drains-drain-trap-cleaning",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-in-fresno-7-signs-you-need-service-and-what-it-costs"
+        ],
+        "title_key": "clogged drains and drain trap cleaning",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "'Water Heater Repair in Fresno: 7 Signs...' 文章 H1 正确，但 title 误用了另一篇的 'Clogged Drains And Drain Trap Cleaning'，属真实 CMS 标题错误。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=.../water-heater-repair-in-fresno-7-signs-you-need-service-and-what-it-costs] title=\"Clogged Drains And Drain Trap Cleaning\" h1=\"Water Heater Repair in Fresno: 7 Signs...\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=.../clogged-drains-drain-trap-cleaning] title 相同"
+        }
+      ]
+    },
+    {
+      "id": "dup-title-smart-water",
+      "kind": "rule",
+      "rule_id": "v22_public.site_duplicate_title",
+      "target": {
+        "kind": "title_group",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation-1"
+        ],
+        "title_key": "residential smart water control system installation",
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": true,
+      "reported_issue": "/projects/residential-smart-water-control-system-installation 与其 '-1' 副本 title、H1 完全相同，均 200，疑似重复发布的案例页，应合并或区分。",
+      "evidence_refs": [
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=site].payload.pages[url=/projects/residential-smart-water-control-system-installation(-1)] title/h1 均为 \"Residential Smart Water Control System Installation\""
+        }
+      ]
+    },
+    {
+      "id": "gbp-name-align",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_name_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/",
+          "https://www.prplumbingfresno.com/about-us",
+          "https://www.prplumbingfresno.com/ac-installation",
+          "https://www.prplumbingfresno.com/ac-maintenance",
+          "https://www.prplumbingfresno.com/ac-repairs",
+          "https://www.prplumbingfresno.com/air-conditioning-services",
+          "https://www.prplumbingfresno.com/air-scrubber",
+          "https://www.prplumbingfresno.com/articles",
+          "https://www.prplumbingfresno.com/boiler-repairs",
+          "https://www.prplumbingfresno.com/commercial-plumbing",
+          "https://www.prplumbingfresno.com/commercial-services",
+          "https://www.prplumbingfresno.com/contact-us",
+          "https://www.prplumbingfresno.com/faq",
+          "https://www.prplumbingfresno.com/furnace-repairs",
+          "https://www.prplumbingfresno.com/heat-pump-repairs",
+          "https://www.prplumbingfresno.com/heating-maintenance",
+          "https://www.prplumbingfresno.com/heating-repairs",
+          "https://www.prplumbingfresno.com/heating-services",
+          "https://www.prplumbingfresno.com/hvac-services",
+          "https://www.prplumbingfresno.com/hvac-services/hvac-repair",
+          "https://www.prplumbingfresno.com/plumber-services",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/do-you-need-emergency-ac-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/garbage-disposal-wont-turn-on-fresno-checklist",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/how-to-detect-and-fix-a-freon-leak-in-your-ac-what-california-homeowners-need-to-know",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/licensed-heating-contractor-fresno",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/tips-madera-emergency-ac-service-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-installation",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-fresno-why-is-my-water-heater-making-knocking-noises",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-in-fresno-7-signs-you-need-service-and-what-it-costs",
+          "https://www.prplumbingfresno.com/plumbing-repairs",
+          "https://www.prplumbingfresno.com/projects",
+          "https://www.prplumbingfresno.com/projects/50-gallon-water-heater-installation-",
+          "https://www.prplumbingfresno.com/projects/back-flow-testing-fresno",
+          "https://www.prplumbingfresno.com/projects/bathroom-remodel-in-clovis-ca",
+          "https://www.prplumbingfresno.com/projects/commercial-restroom-shower-upgrade",
+          "https://www.prplumbingfresno.com/projects/dual-rinnai-tankless-water-heater-installation",
+          "https://www.prplumbingfresno.com/projects/fresno-slab-leak-repair",
+          "https://www.prplumbingfresno.com/projects/fresno-tub-shower-enclosure",
+          "https://www.prplumbingfresno.com/projects/kitchen-gas-stove-pot-filler-installation",
+          "https://www.prplumbingfresno.com/projects/new-plumbing-equipment",
+          "https://www.prplumbingfresno.com/projects/quality-plumbing-installation-in-fresno-ca",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation-1",
+          "https://www.prplumbingfresno.com/projects/roman-tub-open-shower-installation",
+          "https://www.prplumbingfresno.com/projects/sink-drain-supply-upgrade",
+          "https://www.prplumbingfresno.com/projects/top-quality-heating-and-air-conditioning-packaged-unit-install",
+          "https://www.prplumbingfresno.com/projects/trane-ac-installation-in-fresno",
+          "https://www.prplumbingfresno.com/projects/water-valve-rebuild-in-fresno",
+          "https://www.prplumbingfresno.com/testimonials",
+          "https://www.prplumbingfresno.com/water-heaters"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站名称 'PR Plumbing, Heating & Air Conditioning Inc.' 与 GBP 名称逐字一致，不应生成不一致发现（系统当前 not_checked/site_content_not_checked）。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "footer itemprop=\"legalName\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
+    },
+    {
+      "id": "gbp-phone-align",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_phone_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/",
+          "https://www.prplumbingfresno.com/about-us",
+          "https://www.prplumbingfresno.com/ac-installation",
+          "https://www.prplumbingfresno.com/ac-maintenance",
+          "https://www.prplumbingfresno.com/ac-repairs",
+          "https://www.prplumbingfresno.com/air-conditioning-services",
+          "https://www.prplumbingfresno.com/air-scrubber",
+          "https://www.prplumbingfresno.com/articles",
+          "https://www.prplumbingfresno.com/boiler-repairs",
+          "https://www.prplumbingfresno.com/commercial-plumbing",
+          "https://www.prplumbingfresno.com/commercial-services",
+          "https://www.prplumbingfresno.com/contact-us",
+          "https://www.prplumbingfresno.com/faq",
+          "https://www.prplumbingfresno.com/furnace-repairs",
+          "https://www.prplumbingfresno.com/heat-pump-repairs",
+          "https://www.prplumbingfresno.com/heating-maintenance",
+          "https://www.prplumbingfresno.com/heating-repairs",
+          "https://www.prplumbingfresno.com/heating-services",
+          "https://www.prplumbingfresno.com/hvac-services",
+          "https://www.prplumbingfresno.com/hvac-services/hvac-repair",
+          "https://www.prplumbingfresno.com/plumber-services",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/do-you-need-emergency-ac-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/garbage-disposal-wont-turn-on-fresno-checklist",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/how-to-detect-and-fix-a-freon-leak-in-your-ac-what-california-homeowners-need-to-know",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/licensed-heating-contractor-fresno",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/tips-madera-emergency-ac-service-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-installation",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-fresno-why-is-my-water-heater-making-knocking-noises",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-in-fresno-7-signs-you-need-service-and-what-it-costs",
+          "https://www.prplumbingfresno.com/plumbing-repairs",
+          "https://www.prplumbingfresno.com/projects",
+          "https://www.prplumbingfresno.com/projects/50-gallon-water-heater-installation-",
+          "https://www.prplumbingfresno.com/projects/back-flow-testing-fresno",
+          "https://www.prplumbingfresno.com/projects/bathroom-remodel-in-clovis-ca",
+          "https://www.prplumbingfresno.com/projects/commercial-restroom-shower-upgrade",
+          "https://www.prplumbingfresno.com/projects/dual-rinnai-tankless-water-heater-installation",
+          "https://www.prplumbingfresno.com/projects/fresno-slab-leak-repair",
+          "https://www.prplumbingfresno.com/projects/fresno-tub-shower-enclosure",
+          "https://www.prplumbingfresno.com/projects/kitchen-gas-stove-pot-filler-installation",
+          "https://www.prplumbingfresno.com/projects/new-plumbing-equipment",
+          "https://www.prplumbingfresno.com/projects/quality-plumbing-installation-in-fresno-ca",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation-1",
+          "https://www.prplumbingfresno.com/projects/roman-tub-open-shower-installation",
+          "https://www.prplumbingfresno.com/projects/sink-drain-supply-upgrade",
+          "https://www.prplumbingfresno.com/projects/top-quality-heating-and-air-conditioning-packaged-unit-install",
+          "https://www.prplumbingfresno.com/projects/trane-ac-installation-in-fresno",
+          "https://www.prplumbingfresno.com/projects/water-valve-rebuild-in-fresno",
+          "https://www.prplumbingfresno.com/testimonials",
+          "https://www.prplumbingfresno.com/water-heaters"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站电话 559-244-0440 与 GBP (559) 244-0440 号码一致，仅格式不同，不应触发（系统当前 not_checked）。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "tel:+1-559-244-0440"
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
+    },
+    {
+      "id": "gbp-address-align",
+      "kind": "rule",
+      "rule_id": "v22_public.gbp_address_alignment",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [
+          "https://www.prplumbingfresno.com/",
+          "https://www.prplumbingfresno.com/about-us",
+          "https://www.prplumbingfresno.com/ac-installation",
+          "https://www.prplumbingfresno.com/ac-maintenance",
+          "https://www.prplumbingfresno.com/ac-repairs",
+          "https://www.prplumbingfresno.com/air-conditioning-services",
+          "https://www.prplumbingfresno.com/air-scrubber",
+          "https://www.prplumbingfresno.com/articles",
+          "https://www.prplumbingfresno.com/boiler-repairs",
+          "https://www.prplumbingfresno.com/commercial-plumbing",
+          "https://www.prplumbingfresno.com/commercial-services",
+          "https://www.prplumbingfresno.com/contact-us",
+          "https://www.prplumbingfresno.com/faq",
+          "https://www.prplumbingfresno.com/furnace-repairs",
+          "https://www.prplumbingfresno.com/heat-pump-repairs",
+          "https://www.prplumbingfresno.com/heating-maintenance",
+          "https://www.prplumbingfresno.com/heating-repairs",
+          "https://www.prplumbingfresno.com/heating-services",
+          "https://www.prplumbingfresno.com/hvac-services",
+          "https://www.prplumbingfresno.com/hvac-services/hvac-repair",
+          "https://www.prplumbingfresno.com/plumber-services",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/do-you-need-emergency-ac-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/garbage-disposal-wont-turn-on-fresno-checklist",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/how-to-detect-and-fix-a-freon-leak-in-your-ac-what-california-homeowners-need-to-know",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/licensed-heating-contractor-fresno",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/tips-madera-emergency-ac-service-repairs",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-installation",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-fresno-why-is-my-water-heater-making-knocking-noises",
+          "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/water-heater-repair-in-fresno-7-signs-you-need-service-and-what-it-costs",
+          "https://www.prplumbingfresno.com/plumbing-repairs",
+          "https://www.prplumbingfresno.com/projects",
+          "https://www.prplumbingfresno.com/projects/50-gallon-water-heater-installation-",
+          "https://www.prplumbingfresno.com/projects/back-flow-testing-fresno",
+          "https://www.prplumbingfresno.com/projects/bathroom-remodel-in-clovis-ca",
+          "https://www.prplumbingfresno.com/projects/commercial-restroom-shower-upgrade",
+          "https://www.prplumbingfresno.com/projects/dual-rinnai-tankless-water-heater-installation",
+          "https://www.prplumbingfresno.com/projects/fresno-slab-leak-repair",
+          "https://www.prplumbingfresno.com/projects/fresno-tub-shower-enclosure",
+          "https://www.prplumbingfresno.com/projects/kitchen-gas-stove-pot-filler-installation",
+          "https://www.prplumbingfresno.com/projects/new-plumbing-equipment",
+          "https://www.prplumbingfresno.com/projects/quality-plumbing-installation-in-fresno-ca",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation",
+          "https://www.prplumbingfresno.com/projects/residential-smart-water-control-system-installation-1",
+          "https://www.prplumbingfresno.com/projects/roman-tub-open-shower-installation",
+          "https://www.prplumbingfresno.com/projects/sink-drain-supply-upgrade",
+          "https://www.prplumbingfresno.com/projects/top-quality-heating-and-air-conditioning-packaged-unit-install",
+          "https://www.prplumbingfresno.com/projects/trane-ac-installation-in-fresno",
+          "https://www.prplumbingfresno.com/projects/water-valve-rebuild-in-fresno",
+          "https://www.prplumbingfresno.com/testimonials",
+          "https://www.prplumbingfresno.com/water-heaters"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "expected_triggered": false,
+      "reported_issue": "网站 JSON-LD 地址 1504 N Maple Ave, Fresno, CA 93703 与 GBP 一致；可见页脚仅显示 Fresno, CA 93703（无街道），属不完整而非冲突，不应触发不一致发现（系统当前 not_checked）。",
+      "evidence_refs": [
+        {
+          "file": "page.html",
+          "locator": "JSON-LD PostalAddress + footer itemprop=\"address\""
+        },
+        {
+          "file": "bound-p0-10.json.gz",
+          "locator": "request.evidence_input.sources[kind=public_gbp].payload.record.fields（serpapi_public, cid 9308775580876614598, identity matched, 2026-11-03T09:48:25Z）"
+        }
+      ]
+    }
+  ]
 }
