@@ -170,7 +170,7 @@ def test_actual_blocked_sites_generate_with_bounded_evidence_and_unchecked_conte
     observations = {}
     for name in ("all-star-plumbing-fresno", "seamless-gutters-pensacola", "volcanoes-hiking-guides"):
         directory = GOLD / name
-        report, result, request, _, _, _ = generate(read_json(directory / "input.json"), directory, private)
+        report, result, request, _, _, _ = generate(read_json(directory / "input.json"), directory, private, ruleset="v22_capability_public_v9")
         assert len(report.actions) <= 3
         assert all(len(f.evidence_ids) <= 20 for f in report.findings)
         assert all(len(m.evidence_ids) <= 20 for a in report.actions for m in a.materials)

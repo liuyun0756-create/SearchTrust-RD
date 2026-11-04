@@ -20,10 +20,10 @@ def test_new_acquisition_manifest_uses_current_ruleset_and_executes_reviewed_fin
     args, _, _ = acquisition_inputs()
     manifest, request = build_acquisition_input(**args)
     from app.report_v22.capability_finding_status import PUBLIC_RULESET
-    assert manifest.ruleset_version == PUBLIC_RULESET == "v22_capability_public_v9"
+    assert manifest.ruleset_version == PUBLIC_RULESET == "v22_capability_public_v10"
     with patch("app.report_v22.capability_public.build_public_findings", wraps=build_public_findings) as build:
         report = build_public_capability_report(manifest, request)
-    assert build.call_args.kwargs == {"text_patterns": True, "reviewed_evidence": True, "rendered_pages": False, "resource_limits": True}
+    assert build.call_args.kwargs == {"text_patterns": True, "reviewed_evidence": True, "rendered_pages": False, "resource_limits": True, "sampling_quality": True}
     assert report.input_manifest == manifest
 
 

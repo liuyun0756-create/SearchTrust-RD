@@ -189,7 +189,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -209,7 +209,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             identifiers.setdefault(source.kind, set()).add(source.binding.snapshot_id)
         if any(len(values) > 1 for values in identifiers.values()):
             raise FindingsError("INPUT_INVALID")
-        evidence = build_evidence_index(inputs)
+        evidence = build_evidence_index(inputs, **({"locality_fields": True} if sampling_quality else {}))
         alignment = None
         resource_pages = []
         if request.business_identity is not None:
@@ -240,6 +240,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 public_source=public_source,
                 evidence=evidence,
                 limits=request.site_gbp_alignment_limits,
+                **({"name_quality": True} if sampling_quality else {}),
             )
             verify_site_gbp_alignment(
                 extra,
@@ -251,6 +252,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 public_source=public_source,
                 evidence=evidence,
                 limits=request.site_gbp_alignment_limits,
+                **({"name_quality": True} if sampling_quality else {}),
             )
             if rendered_pages:
                 from app.report_v22.rendered_alignment import supplement_alignment
@@ -266,13 +268,13 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
         view = EvidenceView(inputs, evidence)
         gbp = (public_gbp_findings.evaluate(view) if alignment is None
                else public_gbp_findings.evaluate(view, alignment, reviewed_evidence=reviewed_evidence))
-        market = (market_findings.evaluate(view, reviewed_evidence=True) if reviewed_evidence
+        market = (market_findings.evaluate(view, reviewed_evidence=True, **({"sampling_quality": True} if sampling_quality else {})) if reviewed_evidence
                   else market_findings.evaluate(view))
         outcomes, findings, encoded_findings = {}, {}, {}
         retained_bytes = len(canonical_json_bytes(evidence))
         if retained_bytes > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
-        for proposed in chain(site_findings.evaluate(view), market, competitor_findings.evaluate(view), gbp):
+        for proposed in chain(site_findings.evaluate(view, **({"sampling_quality": True} if sampling_quality else {})), market, competitor_findings.evaluate(view), gbp):
             outcome = RuleOutcome.model_validate(proposed.model_dump(mode="python"))
             _validate_outcome(view, outcome, alignment, reviewed_evidence=reviewed_evidence)
             if outcome.finding:

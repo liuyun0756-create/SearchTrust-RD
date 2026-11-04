@@ -79,7 +79,8 @@ def validate_truth(truth, site_id):
             keys.add(key)
 
 
-def generate(descriptor, directory, private_root):
+def generate(descriptor, directory, private_root, *, ruleset=None):
+    ruleset = ruleset or PUBLIC_RULESET
     for reference in descriptor["snapshot_files"]:
         read_ref(reference, directory, private_root)
     generation = descriptor.get("generation")
@@ -109,14 +110,15 @@ def generate(descriptor, directory, private_root):
         raise ValueError("unsupported_generation_kind")
 
     # Only a new in-memory manifest changes version. No file is ever written.
-    manifest["ruleset_version"] = PUBLIC_RULESET
+    manifest["ruleset_version"] = ruleset
     manifest["input_checksum"] = verified_request_digest({k: v for k, v in manifest.items() if k != "input_checksum"})
     report = build_public_capability_report(manifest, request)
     request = PublicFindingsInput.model_validate_json(canonical_json_bytes(request))
     if str(request.evidence_input.context.site_url) != descriptor["site_url"]:
         raise ValueError("case_site_url_mismatch")
     result = build_public_findings(request, text_patterns=True, reviewed_evidence=True,
-                                   rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2", resource_limits=True)
+                                   rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2", resource_limits=True,
+                                   **({"sampling_quality": True} if ruleset == "v22_capability_public_v10" else {}))
     skeletons = select_public_action_skeletons(PublicActionPlanInput(
         findings_result=result, planning_date=instant(manifest["evaluated_at"]).date()), all_candidates=True, candidate_only=True)
     templates = {item.action_id: item.template_key for item in skeletons}
@@ -274,7 +276,7 @@ def compare_other_checks(truth, request, actions, *, unavailable=None):
     return rows
 
 
-def evaluate_case(directory, private_root):
+def evaluate_case(directory, private_root, *, ruleset=None):
     descriptor = read_json(directory / "input.json")
     truth = read_json(directory / "truth.json")
     validate_truth(truth, descriptor["site_id"])
@@ -288,7 +290,7 @@ def evaluate_case(directory, private_root):
             pass
     error_code = None
     try:
-        report, result, request, templates, revision, frozen_equal = generate(descriptor, directory, private_root)
+        report, result, request, templates, revision, frozen_equal = generate(descriptor, directory, private_root, **({"ruleset": ruleset} if ruleset else {}))
         evaluations = [e.model_dump(mode="json") for e in result.rule_evaluations]
     except InputUnavailable as exc:
         unavailable = str(exc)
@@ -300,8 +302,13 @@ def evaluate_case(directory, private_root):
     findings = [f.model_dump(mode="json") for f in report.findings] if report else []
     rows = compare_findings(truth, findings, evaluations, unavailable=unavailable)
     actions = action_metrics(report, templates, revision)
-    return dict(site_id=descriptor["site_id"], status="无法判断" if unavailable else "已生成",
-                reason=unavailable, error_code=error_code, ruleset=PUBLIC_RULESET, frozen_replay_byte_identical=frozen_equal,
+    audit = {}
+    if request is not None and (ruleset or PUBLIC_RULESET) == "v22_capability_public_v10":
+        from app.report_v22.sample_locality import audit_source
+        source = next((s for s in request.evidence_input.sources if s.kind == "serp"), None)
+        audit = {"locality_audit": audit_source(source, request.evidence_input.context.target_market) if source else []}
+    return dict(**audit, site_id=descriptor["site_id"], status="无法判断" if unavailable else "已生成",
+                reason=unavailable, error_code=error_code, ruleset=ruleset or PUBLIC_RULESET, frozen_replay_byte_identical=frozen_equal,
                 findings=rows, finding_metrics=finding_metrics(rows),
                 field_metrics=field_metrics(truth, result, unavailable=unavailable), action_metrics=actions,
                 checks=compare_other_checks(truth, request, actions, unavailable=unavailable),
@@ -310,14 +317,14 @@ def evaluate_case(directory, private_root):
                                  for url in result._resource_limited_pages] if result else [])
 
 
-def evaluate_all(root, private_root, sites=None):
+def evaluate_all(root, private_root, sites=None, *, ruleset=None):
     cases, errors = [], []
     directories = [root / name for name in sites] if sites else sorted(p.parent for p in root.glob("*/truth.json"))
     if not directories:
         raise ValueError("no_gold_cases")
     for directory in directories:
         try:
-            cases.append(evaluate_case(directory, private_root))
+            cases.append(evaluate_case(directory, private_root, **({"ruleset": ruleset} if ruleset else {})))
         except (ValueError, KeyError, OSError, TypeError) as exc:
             # Keep bad input visible, without dumping private source payloads.
             errors.append(dict(site_id=directory.name, error_type=type(exc).__name__, reason="输入无效，不能评估"))
@@ -338,8 +345,9 @@ def main(argv=None):
     parser.add_argument("--gold-dir", type=Path, default=ROOT / "tests/fixtures/gold")
     parser.add_argument("--private-root", type=Path, default=ROOT.parent / ".release-private/2026-10-29")
     parser.add_argument("--site", action="append", help="Select a site directory; may be repeated")
+    parser.add_argument("--ruleset", choices=["v22_capability_public_v9", "v22_capability_public_v10"], default=PUBLIC_RULESET)
     args = parser.parse_args(argv)
-    result = evaluate_all(args.gold_dir, args.private_root, args.site)
+    result = evaluate_all(args.gold_dir, args.private_root, args.site, ruleset=args.ruleset)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 1 if result["errors"] else 0
 

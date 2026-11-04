@@ -12,7 +12,7 @@ from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
-from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, annotate_findings
+from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, annotate_findings
 from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, GBP_RULES, HTTP, NOINDEX, TITLE
 
 LEGACY_RULESET = "v22_capability_public_v1"
@@ -69,7 +69,7 @@ def _bound_public_sources(manifest, value):
     context = request.evidence_input.context
     refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
-    if manifest.ruleset_version != LABELLED_RULESET and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
+    if manifest.ruleset_version not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
         raise CapabilityPublicError()
     if (context.case_id != manifest.case_id or context.report_type != "prospect"
             or str(context.site_url) != manifest.business.site_url
@@ -126,9 +126,11 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         request = _bound_public_sources(manifest, value)
         labelled = manifest.ruleset_version in LABELLED_RULESETS
         reviewed = labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
-        resource_limits = manifest.ruleset_version == LABELLED_RULESET
+        resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
+        sampling_quality = manifest.ruleset_version == LABELLED_RULESET
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
-                    rendered_pages=manifest.schema_version == "v22_analysis_input_v2", resource_limits=True)
+                    rendered_pages=manifest.schema_version == "v22_analysis_input_v2", resource_limits=True,
+                    **({"sampling_quality": True} if sampling_quality else {}))
                   if resource_limits else build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
                   if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version == "v22_analysis_input_v2")
                   else build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)

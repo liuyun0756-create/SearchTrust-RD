@@ -771,7 +771,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             # executors retain their original stage and cached snapshot schemas.
             from copy import copy
             acquisition_collector = copy(prospect_executor)
-            acquisition_collector.site_stage = build_site_inventory_stage(settings, resource_limits=True)
+            acquisition_collector.site_stage = build_site_inventory_stage(settings, resource_limits=True, sampling_quality=True)
             acquisition_collector.competitor_stage = CheckpointedCompetitorCollectionStage(
                 site_stage=CheckpointedCompetitorSiteStage(acquisition_collector.site_stage),
                 profile_stage=prospect_executor.competitor_stage.profile_stage)

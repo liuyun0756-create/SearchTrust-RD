@@ -18,7 +18,7 @@ def market_target(view, query, kind, source=None):
                       device=view.context.search_device)
 
 
-def evaluate(view, *, reviewed_evidence=False):
+def evaluate(view, *, reviewed_evidence=False, sampling_quality=False):
     if not view.available("serp"):
         for query in view.context.queries:
             for kind in RESULT_TYPES:
@@ -60,10 +60,21 @@ def evaluate(view, *, reviewed_evidence=False):
                 yield decision(view, DOMAIN, target, "not_checked", "identity_unresolved", evidence=call_refs)
             else:
                 absent = client not in domains
-                yield decision(view, DOMAIN, target, "triggered" if absent else "not_triggered",
-                               "condition_met" if absent else "condition_not_met", evidence=call_refs + all_url_refs,
-                               statement=f"The saved {kind} result sample for query {run.query!r} did not contain the client site domain {client!r}.",
-                               notes=["This is domain matching within returned records, not proof of business absence, zero exposure or an absolute ranking."])
+                locality = None
+                if sampling_quality and kind == "organic" and absent:
+                    from app.report_v22.sample_locality import audit_sample
+                    locality = audit_sample([r for _, r in records], view.context.target_market)
+                if locality and locality["non_local_majority"]:
+                    from app.report_v22.sample_locality import LOCALITY_NOTE
+                    refs = [key for i, _ in records for key in view.field_refs(snapshot,
+                            f"{prefix}/results/{i}", "display_name", "snippet", "address", "url")]
+                    yield decision(view, DOMAIN, target, "not_checked", "sample_not_local",
+                                   evidence=call_refs + refs, notes=[LOCALITY_NOTE])
+                else:
+                    yield decision(view, DOMAIN, target, "triggered" if absent else "not_triggered",
+                                   "condition_met" if absent else "condition_not_met", evidence=call_refs + all_url_refs,
+                                   statement=f"The saved {kind} result sample for query {run.query!r} did not contain the client site domain {client!r}.",
+                                   notes=["This is domain matching within returned records, not proof of business absence, zero exposure or an absolute ranking."])
 
             positions = {}
             conflicting = set()

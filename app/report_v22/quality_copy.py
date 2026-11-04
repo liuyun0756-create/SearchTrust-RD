@@ -8,6 +8,12 @@ def unchecked_limits(evaluations):
     for evaluation in evaluations:
         if evaluation.state != "not_checked":
             continue
+        if evaluation.reason == "sample_not_local":
+            from app.report_v22.sample_locality import LOCALITY_NOTE
+            limits.add(LOCALITY_NOTE)
+            continue
+        if evaluation.reason == "page_out_of_scope":
+            continue
         if evaluation.rule_id in labels:
             limits.add(f"{labels[evaluation.rule_id]}: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.")
         elif evaluation.rule_id in {AHEAD, DOMAIN}:

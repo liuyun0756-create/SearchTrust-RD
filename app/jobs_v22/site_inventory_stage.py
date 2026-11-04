@@ -287,11 +287,13 @@ class CheckpointedSiteInventoryStage:
         config: SiteInventoryStageConfig,
         clock: Any | None = None,
         resource_limits: bool = False,
+        sampling_quality: bool = False,
     ) -> None:
         self.fetcher = fetcher
         self.firecrawl = firecrawl
         self.config = config
         self.resource_limits = resource_limits
+        self.sampling_quality = sampling_quality
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     async def collect(
@@ -320,7 +322,7 @@ class CheckpointedSiteInventoryStage:
             ],
         }
         input_digest = request_digest(identity)
-        version = "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        version = "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
         final_key = f"{version}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -351,6 +353,7 @@ class CheckpointedSiteInventoryStage:
                 batch_size=self.config.batch_size,
                 clock=self.clock,
                 resource_limits=self.resource_limits,
+                sampling_quality=self.sampling_quality,
             )
             scope = SiteScope.from_root(str(request.business_identity.site_url))
             gsc_priorities = gsc_priorities_from_snapshots(
@@ -443,7 +446,7 @@ class CheckpointedSiteInventoryStage:
             "checkpoint_namespace": checkpoint_namespace,
         }
         input_digest = request_digest(identity)
-        version = "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        version = "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
         final_key = f"{version}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -474,6 +477,7 @@ class CheckpointedSiteInventoryStage:
                 batch_size=self.config.batch_size,
                 clock=self.clock,
                 resource_limits=self.resource_limits,
+                sampling_quality=self.sampling_quality,
             )
             try:
                 snapshot = await collector.collect(
@@ -499,7 +503,7 @@ async def _return_value(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = False) -> CheckpointedSiteInventoryStage:
+def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = False, sampling_quality: bool = False) -> CheckpointedSiteInventoryStage:
     fetcher = BoundedSiteFetcher(
         connect_timeout=settings.V22_SITE_INVENTORY_CONNECT_TIMEOUT_SECONDS,
         read_timeout=settings.V22_SITE_INVENTORY_READ_TIMEOUT_SECONDS,
@@ -516,6 +520,7 @@ def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = Fa
     )
     return CheckpointedSiteInventoryStage(
         resource_limits=resource_limits,
+        sampling_quality=sampling_quality,
         fetcher=fetcher,
         firecrawl=firecrawl,
         config=SiteInventoryStageConfig(

@@ -935,7 +935,8 @@
                 "ruleset_version": {
                   "enum": [
                     "v22_capability_public_v8",
-                    "v22_capability_public_v9"
+                    "v22_capability_public_v9",
+                    "v22_capability_public_v10"
                   ]
                 }
               },
@@ -1943,6 +1944,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.7 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
+  "title": "SearchTrust capability contracts 2.2.8 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
   "type": "object"
 }

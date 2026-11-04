@@ -203,7 +203,7 @@ class SiteGbpFieldResult(StrictModel):
 
 
 class SiteGbpAlignmentResult(StrictModel):
-    alignment_version: Literal["site_gbp_alignment_v1", "site_gbp_alignment_v2"] = ALIGNMENT_VERSION
+    alignment_version: Literal["site_gbp_alignment_v1", "site_gbp_alignment_v2", "site_gbp_alignment_v3"] = ALIGNMENT_VERSION
     case_id: UUID
     site_snapshot_id: UUID | None = None
     public_gbp_snapshot_id: UUID | None = None

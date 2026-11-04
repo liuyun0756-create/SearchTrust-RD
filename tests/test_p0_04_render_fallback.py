@@ -264,7 +264,7 @@ def test_acquisition_bridge_keeps_rendered_manifest_separate_with_current_rulese
         reason='static_not_checked',static_text_characters=0,limitation='render_unavailable')],limitations=[RENDER_FAILURE])
     manifest,value = build_acquisition_input(**args,rendered=rendered)
     report = build_public_capability_report(manifest,value)
-    assert manifest.schema_version == 'v22_analysis_input_v2' and manifest.ruleset_version == 'v22_capability_public_v9'
+    assert manifest.schema_version == 'v22_analysis_input_v2' and manifest.ruleset_version == 'v22_capability_public_v10'
     assert report.schema_version == '2.2.5' and RENDER_FAILURE in report.limitations
     again, unchanged = build_acquisition_input(**args,rendered=None)
     assert (again,unchanged)==(old_manifest,old_value)

@@ -12,6 +12,7 @@ from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits, Sit
 
 EvaluationState = Literal["triggered", "not_triggered", "not_checked"]
 EvaluationReason = Literal[
+    "sample_not_local", "page_out_of_scope",
     "condition_met", "condition_not_met", "source_missing", "source_ineligible",
     "field_not_observed", "insufficient_sample", "identity_unresolved",
     "rank_basis_mismatch", "comparison_time_gap", "ambiguous_page_observations",

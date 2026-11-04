@@ -269,7 +269,7 @@ def test_six_real_sites_run_offline_without_editing_frozen_inputs(monkeypatch, t
             return read_json(path)
         monkeypatch.setattr(eval_gold, "read_json", read_with_blank_truth)
     deny_network(monkeypatch)
-    result = evaluate_all(GOLD, private)
+    result = evaluate_all(GOLD, private, ruleset="v22_capability_public_v9")
     assert all(path.read_bytes() == content for path, content in before_truth.items())
     assert not result["errors"]
     assert len(result["cases"]) == 6

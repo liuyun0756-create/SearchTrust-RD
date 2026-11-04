@@ -9,7 +9,7 @@ from app.report_v22.findings_models import RuleTarget
 from app.report_v22.public_rule_catalog import HTTP, NOINDEX, TITLE
 
 
-def evaluate(view):
+def evaluate(view, *, sampling_quality=False):
     if not view.available("site"):
         for rule in (HTTP, NOINDEX, TITLE):
             yield decision(view, rule, RuleTarget(kind="site"), "not_checked", view.missing_reason("site"))
@@ -21,10 +21,17 @@ def evaluate(view):
     for index, page in enumerate(source.payload.pages):
         path = f"/payload/pages/{index}"
         target = RuleTarget(kind="page", snapshot_id=snapshot, urls=[page.url])
+        out_of_scope = False
+        if sampling_quality:
+            from app.collectors.site_page_scope import is_admin_page
+            out_of_scope = is_admin_page(page.url) or is_admin_page(page.final_url)
         if page.check_status != "checked" or page.status_code is None:
-            for rule in (HTTP, NOINDEX):
-                yield decision(view, rule, target, "not_checked", "field_not_observed")
-            missing_titles = True
+            yield decision(view, HTTP, target, "not_checked", "field_not_observed")
+            yield decision(view, NOINDEX, target, "not_checked",
+                           "page_out_of_scope" if out_of_scope else "field_not_observed",
+                           evidence=view.field_refs(snapshot, path, "url", "final_url") if out_of_scope else [])
+            if not out_of_scope:
+                missing_titles = True
             continue
         refs = view.refs(snapshot, f"{path}/status_code", f"{path}/check_status", required=True)
         triggered = 400 <= page.status_code <= 599
@@ -33,6 +40,10 @@ def evaluate(view):
                        statement=f"The saved response for {page.url} had HTTP status {page.status_code}.",
                        severity="high" if page.status_code >= 500 else "medium",
                        notes=["A saved HTTP error is not proof that the URL is permanently inaccessible."])
+        if out_of_scope:
+            yield decision(view, NOINDEX, target, "not_checked", "page_out_of_scope",
+                           evidence=view.field_refs(snapshot, path, "url", "final_url"))
+            continue
         if not eligible_html(page):
             yield decision(view, NOINDEX, target, "not_checked", "field_not_observed")
             missing_titles = True

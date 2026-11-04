@@ -103,6 +103,7 @@ class SiteInventoryCollector:
         batch_size: int,
         deep_max_bytes: int = 2_000_000,
         resource_limits: bool = False,
+        sampling_quality: bool = False,
         clock: Clock = _utc_now,
     ) -> None:
         self.fetcher = fetcher
@@ -115,6 +116,7 @@ class SiteInventoryCollector:
         self.batch_size = batch_size
         self.deep_max_bytes = deep_max_bytes
         self.resource_limits = resource_limits
+        self.sampling_quality = sampling_quality
         self.clock = clock
 
     async def collect(
@@ -178,6 +180,13 @@ class SiteInventoryCollector:
             prefetched: SiteFetchResponse | None = None,
         ) -> bool:
             nonlocal truncated
+            if self.sampling_quality:
+                from app.collectors.site_page_scope import is_admin_page
+                if is_admin_page(raw_url):
+                    note = "An administrative URL was excluded from the public page sample."
+                    if note not in limitations:
+                        limitations.append(note)
+                    return False
             normalized = canonicalize_inventory_url(
                 raw_url,
                 base_url=base_url,
@@ -497,6 +506,10 @@ class SiteInventoryCollector:
         ] = []
         success_count = 0
         for rank, ranked in enumerate(ranked_pages, start=1):
+            if self.sampling_quality:
+                from app.collectors.site_page_scope import is_admin_page
+                if is_admin_page(ranked.page.url) or is_admin_page(ranked.page.final_url):
+                    continue
             if success_count >= limit:
                 break
             try:

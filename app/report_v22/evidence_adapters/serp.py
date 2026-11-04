@@ -5,7 +5,7 @@ from app.report_v22.evidence_adapters.common import coverage, fields, observe
 from app.report_v22.models import SourceLocator
 
 
-def observations(source):
+def observations(source, *, locality_fields=False):
     p = source.payload
     for index, count in enumerate(p.result_counts):
         yield observe(source,"serp_field",["result_count",count.result_type],"count",count.count,
@@ -28,7 +28,7 @@ def observations(source):
         for result_index, result in enumerate(run.results):
             locator=SourceLocator(url=result.url,query=result.query,latitude=result.latitude,longitude=result.longitude,language=result.language,device=result.device)
             yield from fields(source,"serp_field",[result.call_id,result.record_id,result.result_type],result,f"{path}/results/{result_index}",
-                ("result_type","position","rank_source","display_name","url","rating","review_count"),
+                ("result_type","position","rank_source","display_name","url","rating","review_count") + (("address","snippet") if locality_fields else ()),
                 locator=locator,dimensions=[DimensionValue(key="country_code",value=result.country_code)],limitations=notes,collected_at=result.observed_at)
         if not run.complete:
             yield coverage(source,run.query,"complete","partial",run.complete,f"{path}/complete",locator=SourceLocator(query=run.query),limitations=notes,health_status="healthy")

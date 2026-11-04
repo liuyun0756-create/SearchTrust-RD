@@ -98,8 +98,9 @@ def normalize_business_name(value: str, country_code: str) -> NormalizedValue:
                            transformations=changes, valid=bool(key))
 
 
-def compare_business_names(left: str, right: str, country_code: str) -> ValueComparison:
-    a, b = normalize_business_name(left, country_code), normalize_business_name(right, country_code)
+def compare_business_names(left: str, right: str, country_code: str, *, name_quality=False, city=None) -> ValueComparison:
+    normalize = (lambda value, country: normalize_business_name_v2(value, country, city)) if name_quality else normalize_business_name
+    a, b = normalize(left, country_code), normalize(right, country_code)
     if not a.valid or not b.valid:
         state = "incomparable"
     elif a.original_key == b.original_key:
@@ -287,3 +288,32 @@ def compare_service_areas(site_values: Sequence[str], gbp_values: Sequence[str],
         site_only=sorted(site - gbp),
         gbp_only=sorted(gbp - site),
     )
+
+
+def normalize_business_name_v2(value: str, country_code: str, city: str | None) -> NormalizedValue:
+    """Only legal suffixes and whole boundary city qualifiers; no fuzzy brands."""
+    original = _display(value)
+    normalized = _words(original).replace("&", " and ")
+    tokens = normalized.split()
+    city_tokens = _words(city or "").split()
+    changes = ["unicode_case_punctuation_whitespace"]
+    suffixes = {("llc",), ("l", "l", "c"), ("inc",), ("incorporated",),
+                ("corp",), ("corporation",), ("ltd",), ("l", "t", "d"), ("limited",)}
+    while tokens:
+        previous = list(tokens)
+        for suffix in sorted(suffixes, key=lambda s: (-len(s), s)):
+            if tuple(tokens[-len(suffix):]) == suffix:
+                tokens = tokens[:-len(suffix)]
+                changes.append("legal_suffix_removed")
+                break
+        n = len(city_tokens)
+        if n and len(tokens) - n >= 2:
+            if tokens[-n:] == city_tokens:
+                tokens = tokens[:-n]; changes.append("boundary_city_removed")
+            elif tokens[:n] == city_tokens:
+                tokens = tokens[n:]; changes.append("boundary_city_removed")
+        if tokens == previous:
+            break
+    return NormalizedValue(field="business_name", original_key=original, normalized_key=" ".join(tokens) or None,
+                           version="business_name_normalization_v2", country_code=country_code,
+                           transformations=changes, valid=bool(tokens))

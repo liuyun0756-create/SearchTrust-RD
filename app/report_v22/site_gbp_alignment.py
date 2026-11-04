@@ -179,9 +179,9 @@ def _coverage(side: str, field: str, identity: BusinessIdentity,
     return item, trace
 
 
-def _pair(candidate: SiteBusinessCandidate, gbp_value, gbp_id: str, country: str):
+def _pair(candidate: SiteBusinessCandidate, gbp_value, gbp_id: str, country: str, *, name_quality=False, city=None):
     if candidate.field == "business_name":
-        result = compare_business_names(candidate.scalar_value, gbp_value, country)
+        result = compare_business_names(candidate.scalar_value, gbp_value, country, **({"city": city, "name_quality": True} if name_quality else {}))
     elif candidate.field == "phone":
         result = compare_phones(candidate.scalar_value, gbp_value, country)
     elif candidate.field == "address":
@@ -256,11 +256,12 @@ def build_site_gbp_alignment(
     public_source: PublicGbpEvidenceSource | None,
     evidence: EvidenceBuildResult,
     limits: SiteGbpAlignmentLimits | None = None,
+    name_quality: bool = False,
 ) -> SiteGbpAlignmentBuildResult:
     limits = limits or SiteGbpAlignmentLimits()
     _validate_identity(context, identity, site_source, public_source, facts)
     text_patterns = facts.extraction_version == "site_business_extraction_v2"
-    version = TEXT_PATTERN_ALIGNMENT_VERSION if text_patterns else ALIGNMENT_VERSION
+    version = "site_gbp_alignment_v3" if name_quality else TEXT_PATTERN_ALIGNMENT_VERSION if text_patterns else ALIGNMENT_VERSION
     candidates = {item.candidate_id: item for item in facts.candidates}
     eligible = defaultdict(list)
     unresolved = defaultdict(list)
@@ -393,7 +394,7 @@ def build_site_gbp_alignment(
         pairs, matches, incomparable = [], [], []
         for candidate in site_values:
             for value, gbp_id in gbp_values:
-                compared, pair = _pair(candidate, value, gbp_id, identity.primary_location.country_code)
+                compared, pair = _pair(candidate, value, gbp_id, identity.primary_location.country_code, name_quality=name_quality, city=context.target_market.city)
                 pairs.append(pair)
                 if compared.state in {"exact_match", "semantic_match"}:
                     matches.append(pair)
