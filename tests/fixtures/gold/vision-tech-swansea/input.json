@@ -2,7 +2,7 @@
   "schema_version": "gold_input_v1",
   "site_id": "vision-tech-swansea",
   "group": "B",
-  "site_url": "https://visiontechav.com/swansea/",
+  "site_url": "https://visiontechav.com/",
   "snapshot_files": [
     {
       "path": "page.html",
@@ -13,8 +13,25 @@
       "path": "capture.json",
       "base": "case",
       "sha256": "4cd359ccea8ce5a848bdb6ff563dfa0340ff1df73ec6b14a16e919ac2895d36e"
+    },
+    {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "286279d4289fece07d392ec56dbe9c448b015adf010ea1598b61b18efdd4d773",
+      "encoding": "gzip"
     }
   ],
-  "generation": null,
-  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+  "generation": {
+    "kind": "bound_input",
+    "input": {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "286279d4289fece07d392ec56dbe9c448b015adf010ea1598b61b18efdd4d773",
+      "encoding": "gzip"
+    }
+  },
+  "saved_page_url": "https://visiontechav.com/swansea/",
+  "target_pages": [
+    "https://visiontechav.com/swansea/"
+  ]
 }

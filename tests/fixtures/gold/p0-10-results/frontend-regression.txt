@@ -1,0 +1,11 @@
+(node:57746) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.1.11 /Users/liuyun3/Documents/SearchTurst前后端/search-trust
+
+
+ Test Files  44 passed (44)
+      Tests  407 passed | 3 skipped (410)
+   Start at  19:08:34
+   Duration  3.28s (transform 3.09s, setup 6.80s, import 11.00s, tests 14.43s, environment 13.13s)
+

@@ -57,7 +57,7 @@ class _BoundedClient:
                     raise ValueError("public profile provider response exceeded its safe limit")
             return httpx.Response(
                 response.status_code,
-                headers=response.headers,
+                headers={k: v for k, v in response.headers.items() if k.lower() not in {"content-encoding", "content-length"}},
                 content=bytes(body),
                 request=response.request,
             )

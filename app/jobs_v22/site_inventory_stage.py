@@ -28,7 +28,7 @@ from app.collectors.site_inventory_firecrawl import (
     FirecrawlMapAdapter,
     FirecrawlMapResult,
 )
-from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot
+from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot, SiteInventorySnapshotV2
 from app.collectors.site_inventory_selection import gsc_priorities_from_snapshots
 from app.collectors.site_inventory_urls import (
     SiteScope,
@@ -75,6 +75,11 @@ class _FetchCheckpoint(StrictModel):
     content_type: str = Field(max_length=200)
     body_base64: str = Field(max_length=7_000_000)
     body_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+
+
+class _FetchCheckpointV2(_FetchCheckpoint):
+    schema_version: str = Field(pattern=r"^site_inventory_fetch_v2$")
+    truncated: bool
 
 
 class _FirecrawlCheckpoint(StrictModel):
@@ -148,6 +153,7 @@ class CheckpointedSiteFetcher:
         scope: SiteScope,
         max_bytes: int,
         accepted_media_types: set[str] | None = None,
+        allow_prefix: bool = False,
     ) -> SiteFetchResponse:
         key = self.checkpoint_key(
             url,
@@ -155,15 +161,21 @@ class CheckpointedSiteFetcher:
             accepted_media_types=accepted_media_types,
         )
 
+        if allow_prefix:
+            key = key.replace("site_inventory_v1:", "site_inventory_v2:prefix:")
+
         async def operation() -> dict[str, Any]:
             response = await self.delegate.fetch(
                 url,
                 scope=scope,
                 max_bytes=max_bytes,
                 accepted_media_types=accepted_media_types,
+                **({"allow_prefix": True} if allow_prefix else {}),
             )
-            checkpoint = _FetchCheckpoint(
-                schema_version="site_inventory_fetch_v1",
+            model = _FetchCheckpointV2 if allow_prefix else _FetchCheckpoint
+            checkpoint = model(
+                **({"truncated": response.truncated} if allow_prefix else {}),
+                schema_version="site_inventory_fetch_v2" if allow_prefix else "site_inventory_fetch_v1",
                 requested_url=response.requested_url,
                 final_url=response.final_url,
                 status_code=response.status_code,
@@ -174,7 +186,7 @@ class CheckpointedSiteFetcher:
             return checkpoint.model_dump(mode="json")
 
         raw = await self.checkpoints.run_once(self.job_id, key, operation)
-        checkpoint = _validate_model(_FetchCheckpoint, raw)
+        checkpoint = _validate_model(_FetchCheckpointV2 if allow_prefix else _FetchCheckpoint, raw)
         if checkpoint.requested_url != url:
             raise SiteInventoryCheckpointError()
         try:
@@ -201,6 +213,7 @@ class CheckpointedSiteFetcher:
             status_code=checkpoint.status_code,
             content_type=checkpoint.content_type,
             body=body,
+            truncated=getattr(checkpoint, "truncated", False),
         )
 
     def apply_crawl_delay(self, seconds: float | None) -> None:
@@ -273,10 +286,12 @@ class CheckpointedSiteInventoryStage:
         firecrawl: FirecrawlMapper | None,
         config: SiteInventoryStageConfig,
         clock: Any | None = None,
+        resource_limits: bool = False,
     ) -> None:
         self.fetcher = fetcher
         self.firecrawl = firecrawl
         self.config = config
+        self.resource_limits = resource_limits
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     async def collect(
@@ -305,7 +320,8 @@ class CheckpointedSiteInventoryStage:
             ],
         }
         input_digest = request_digest(identity)
-        final_key = f"{_CHECKPOINT_VERSION}:snapshot:{input_digest[7:]}"
+        version = "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        final_key = f"{version}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
             checkpointed_fetcher = CheckpointedSiteFetcher(
@@ -334,6 +350,7 @@ class CheckpointedSiteInventoryStage:
                 sitemap_max_depth=self.config.sitemap_max_depth,
                 batch_size=self.config.batch_size,
                 clock=self.clock,
+                resource_limits=self.resource_limits,
             )
             scope = SiteScope.from_root(str(request.business_identity.site_url))
             gsc_priorities = gsc_priorities_from_snapshots(
@@ -383,12 +400,12 @@ class CheckpointedSiteInventoryStage:
             )
             manifest_raw = await checkpoints.run_once(
                 job_id,
-                f"{_CHECKPOINT_VERSION}:manifest:{input_digest[7:]}",
+                f"{version}:manifest:{input_digest[7:]}",
                 lambda: _return_value(manifest.model_dump(mode="json")),
             )
             selection_raw = await checkpoints.run_once(
                 job_id,
-                f"{_CHECKPOINT_VERSION}:selection:{input_digest[7:]}",
+                f"{version}:selection:{input_digest[7:]}",
                 lambda: _return_value(selection.model_dump(mode="json")),
             )
             persisted_manifest = _validate_model(_InventoryManifestCheckpoint, manifest_raw)
@@ -398,7 +415,7 @@ class CheckpointedSiteInventoryStage:
             return snapshot.model_dump(mode="json")
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
-        return _validate_model(SiteInventorySnapshot, raw)
+        return _validate_model(SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
 
     async def collect_inventory_for_site(
         self,
@@ -426,7 +443,8 @@ class CheckpointedSiteInventoryStage:
             "checkpoint_namespace": checkpoint_namespace,
         }
         input_digest = request_digest(identity)
-        final_key = f"{_CHECKPOINT_VERSION}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
+        version = "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        final_key = f"{version}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
             checkpointed_fetcher = CheckpointedSiteFetcher(
@@ -455,6 +473,7 @@ class CheckpointedSiteInventoryStage:
                 sitemap_max_depth=self.config.sitemap_max_depth,
                 batch_size=self.config.batch_size,
                 clock=self.clock,
+                resource_limits=self.resource_limits,
             )
             try:
                 snapshot = await collector.collect(
@@ -473,14 +492,14 @@ class CheckpointedSiteInventoryStage:
             return snapshot.model_dump(mode="json")
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
-        return _validate_model(SiteInventorySnapshot, raw)
+        return _validate_model(SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
 
 
 async def _return_value(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def build_site_inventory_stage(settings: Settings) -> CheckpointedSiteInventoryStage:
+def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = False) -> CheckpointedSiteInventoryStage:
     fetcher = BoundedSiteFetcher(
         connect_timeout=settings.V22_SITE_INVENTORY_CONNECT_TIMEOUT_SECONDS,
         read_timeout=settings.V22_SITE_INVENTORY_READ_TIMEOUT_SECONDS,
@@ -496,6 +515,7 @@ def build_site_inventory_stage(settings: Settings) -> CheckpointedSiteInventoryS
         timeout_seconds=settings.V22_SITE_INVENTORY_READ_TIMEOUT_SECONDS,
     )
     return CheckpointedSiteInventoryStage(
+        resource_limits=resource_limits,
         fetcher=fetcher,
         firecrawl=firecrawl,
         config=SiteInventoryStageConfig(

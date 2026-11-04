@@ -20,7 +20,7 @@ Digest = Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
 CandidateId = Annotated[str, Field(pattern=r"^sf_[a-f0-9]{64}$")]
 DiagnosticCode = Literal[
     "no_snapshot", "source_expired", "source_unavailable", "source_identity_mismatch", "page_not_checked",
-    "deep_snapshot_missing", "http_error", "content_unsupported", "out_of_scope_redirect", "html_missing",
+    "resource_limit", "deep_snapshot_missing", "http_error", "content_unsupported", "out_of_scope_redirect", "html_missing",
     "html_parse_failed", "jsonld_parse_failed", "duplicate_json_key", "unsupported_context",
     "unsupported_field_shape", "invalid_field_value", "external_entity_hint", "ownership_unresolved",
 ]

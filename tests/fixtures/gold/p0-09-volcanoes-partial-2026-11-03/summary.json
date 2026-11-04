@@ -1,0 +1,11 @@
+{
+  "serpapi_attempts": 95,
+  "firecrawl_attempts": 11,
+  "firecrawl_credits_reserved": 11,
+  "usd_usage_reserve": "2.430",
+  "actual_invoice_usd": null,
+  "remaining_serpapi_attempts": 90,
+  "remaining_firecrawl_credits": 19,
+  "remaining_usd_reserve": "2.570",
+  "render_status": "not_run_no_static_inventory_not_forced"
+}

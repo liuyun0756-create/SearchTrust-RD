@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from app.api.v2.models import ConfirmedCompetitor
-from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot
+from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot, InventorySnapshot
 from app.competitors_v22.models import (
     COMPETITOR_MAX_COUNT,
     COMPETITOR_MIN_COUNT,
@@ -43,7 +43,7 @@ class SiteCollector(Protocol):
 class CompetitorSiteInventoryResult(StrictModel):
     competitor_id: CompetitorId
     status: Literal["available", "partial", "unavailable"]
-    inventory: SiteInventorySnapshot | None = None
+    inventory: InventorySnapshot | None = None
     limitations: list[str] = Field(default_factory=list, max_length=20)
 
     @model_validator(mode="after")
@@ -103,7 +103,7 @@ class CheckpointedCompetitorSiteStage:
                     checkpoint_namespace=f"competitor:{competitor.competitor_id}",
                     cost_ledger=cost_ledger,
                 )
-                if inventory.canonical_host != normalize_domain(str(competitor.website_url)):
+                if normalize_domain("https://" + inventory.canonical_host) != normalize_domain(str(competitor.website_url)):
                     raise ValueError("competitor inventory crossed its canonical website boundary")
             except asyncio.CancelledError:
                 raise

@@ -1,0 +1,361 @@
+{
+  "sites": [
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "90b5761b77d979342d7ef2bbf4eb3b850d6004427c1e1a1a535aa5b0bfc79793",
+      "findings": 5,
+      "actions": 3,
+      "candidates": 3,
+      "resource_checks": [],
+      "omitted_evidence_notes": [
+        "Another 6 similar evidence items are not listed."
+      ],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Domain coverage for 'Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "A service-label difference is a title-review prompt, not proof that the title is inaccurate or that rankings or enquiries are affected. Confirm the intended page and wording before editing.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "business_name",
+          "status": "confirmed",
+          "result": "mismatch"
+        },
+        {
+          "field": "phone",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "service_area",
+          "status": "not_assessed",
+          "result": "none"
+        }
+      ]
+    },
+    {
+      "site_id": "nova-service",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "527f3543a276208ed1bb2e14ab5cf858cf31b1601825aa6eeb9573d38451f38a",
+      "findings": 5,
+      "actions": 2,
+      "candidates": 2,
+      "resource_checks": [],
+      "omitted_evidence_notes": [],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Domain coverage for 'Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Service areas: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "A service-label difference is a title-review prompt, not proof that the title is inaccurate or that rankings or enquiries are affected. Confirm the intended page and wording before editing.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "not_assessed",
+          "result": "none"
+        },
+        {
+          "field": "business_name",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "phone",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "service_area",
+          "status": "not_checked",
+          "result": "none"
+        }
+      ]
+    },
+    {
+      "site_id": "pr-plumbing-fresno",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "27ada98da26685cdc1294b85f28b69cab23aab2f17d00c98616d81a5565b26ff",
+      "findings": 7,
+      "actions": 3,
+      "candidates": 3,
+      "resource_checks": [],
+      "omitted_evidence_notes": [],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Address: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Business name: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Domain coverage for 'Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Plumbing repair near me' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'best Plumbing repair Fresno' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Phone number: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Plumbing repair near me' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'best Plumbing repair Fresno' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "business_name",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "phone",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "service_area",
+          "status": "not_assessed",
+          "result": "none"
+        }
+      ]
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "d510ce01a57d37e6ec5fe147c68a4de39b0553193abb2a3c5e86c18cbf61dcd9",
+      "findings": 17,
+      "actions": 3,
+      "candidates": 4,
+      "resource_checks": [
+        {
+          "url": "https://seamlessgutterspensacola.com/privacy-policy-v1",
+          "status": "not_checked",
+          "reason": "resource_limit"
+        },
+        {
+          "url": "https://seamlessgutterspensacola.com/tag/gutter-installation-services",
+          "status": "not_checked",
+          "reason": "resource_limit"
+        }
+      ],
+      "omitted_evidence_notes": [],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Content on 2 saved pages was not checked because it exceeded the processing limits. This does not establish that information is missing.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Based on a rendered page. This corroborates the stated contact detail only; it does not establish a complete business identity or a mismatch.",
+        "Domain coverage for 'gutter installation Pensacola' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'gutter installation Pensacola' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'gutter installation near me' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'gutter installation near me' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'seamless gutters Pensacola' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'seamless gutters Pensacola' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'seamless gutters Pensacola' (organic) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Service areas: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+        "The full competitor-position comparison for 'gutter installation Pensacola' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'gutter installation Pensacola' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'gutter installation near me' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'gutter installation near me' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'gutter installation near me' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'seamless gutters Pensacola' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'seamless gutters Pensacola' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "not_assessed",
+          "result": "none"
+        },
+        {
+          "field": "business_name",
+          "status": "confirmed",
+          "result": "mismatch"
+        },
+        {
+          "field": "phone",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "service_area",
+          "status": "not_checked",
+          "result": "none"
+        }
+      ]
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "7fd1d3e884f879265a2dc9db2622ed0e1eb1a565520969dc6fe0e12a7055de75",
+      "findings": 7,
+      "actions": 3,
+      "candidates": 3,
+      "resource_checks": [],
+      "omitted_evidence_notes": [],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Based on a rendered page. This corroborates the stated contact detail only; it does not establish a complete business identity or a mismatch.",
+        "Domain coverage for 'AV installation Swansea' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'AV installation Swansea' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'audio visual company Swansea' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'audio visual company Swansea' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'commercial AV integration Swansea' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+        "The full competitor-position comparison for 'AV installation Swansea' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'AV installation Swansea' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'AV installation Swansea' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'audio visual company Swansea' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'audio visual company Swansea' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'audio visual company Swansea' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'commercial AV integration Swansea' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'commercial AV integration Swansea' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "confirmed",
+          "result": "partial_match"
+        },
+        {
+          "field": "business_name",
+          "status": "confirmed",
+          "result": "mismatch"
+        },
+        {
+          "field": "phone",
+          "status": "confirmed",
+          "result": "match"
+        },
+        {
+          "field": "service_area",
+          "status": "not_assessed",
+          "result": "none"
+        }
+      ]
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "ruleset": "v22_capability_public_v9",
+      "report_sha256": "10174ad493866cb59b6a362f461e928baef43d5113e4faea8fad33d8a3e75563",
+      "findings": 4,
+      "actions": 1,
+      "candidates": 1,
+      "resource_checks": [
+        {
+          "url": "https://www.volcanoeshikingguides.com/",
+          "status": "not_checked",
+          "reason": "resource_limit"
+        }
+      ],
+      "omitted_evidence_notes": [],
+      "limitations": [
+        "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+        "Content on 1 saved pages was not checked because it exceeded the processing limits. This does not establish that information is missing.",
+        "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+        "Address: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Business name: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Domain coverage for 'Hawaii Volcanoes National Park tour' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'Hawaii Volcanoes National Park tour' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'guided volcano hike Hawaii' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'guided volcano hike Hawaii' (maps) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Domain coverage for 'volcano tours Big Island' (local pack) remains unverified: the returned sample did not support a reliable absence/presence judgment. This does not establish absence or a ranking problem.",
+        "Phone number: the saved sources do not support a reliable website/profile comparison. Confirm the current details before proposing a correction.",
+        "Some checks could not be completed within the saved evidence. Confirm their scope before deciding on changes.",
+        "The full competitor-position comparison for 'Hawaii Volcanoes National Park tour' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Hawaii Volcanoes National Park tour' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'Hawaii Volcanoes National Park tour' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'guided volcano hike Hawaii' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'guided volcano hike Hawaii' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'guided volcano hike Hawaii' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'volcano tours Big Island' (local pack) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'volcano tours Big Island' (maps) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The full competitor-position comparison for 'volcano tours Big Island' (organic) could not be completed. Use only the supported same-context positions shown in the findings; do not infer an absolute ranking.",
+        "The saved page samples do not establish a service-page gap. Check the existing pages and confirmed offering before proposing a new page.",
+        "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+      ],
+      "contact_checks": [
+        {
+          "field": "address",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "business_name",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "phone",
+          "status": "not_checked",
+          "result": "none"
+        },
+        {
+          "field": "service_area",
+          "status": "not_assessed",
+          "result": "none"
+        }
+      ]
+    }
+  ],
+  "competitor_sites": {
+    "partial": 7,
+    "unavailable": 7
+  },
+  "competitor_reviews": {
+    "unavailable": 14
+  },
+  "external_calls": 0,
+  "additional_cost_usd": 0,
+  "truth_modified": false
+}

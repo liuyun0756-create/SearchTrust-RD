@@ -96,6 +96,7 @@ class FindingsRollup(StrictModel):
 
 class PublicFindingsResult(StrictModel):
     # Internal handoff only: never exported into frozen findings contracts.
+    _resource_limited_pages: list[str] = PrivateAttr(default_factory=list)
     _contact_alignment: SiteGbpAlignmentResult | None = PrivateAttr(default=None)
     ruleset_version: Literal["v22_public_findings_v1"] = "v22_public_findings_v1"
     evidence_result: EvidenceBuildResult

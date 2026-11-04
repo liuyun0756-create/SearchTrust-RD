@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, Field, HttpUrl, model_validator
+from pydantic import AwareDatetime, Field, HttpUrl, TypeAdapter, model_validator
 
 from app.report_v22.models import StrictModel
 
@@ -239,3 +239,22 @@ class SiteInventorySnapshot(StrictModel):
         if len(set(source_labels)) != len(source_labels):
             raise ValueError("source count labels must be unique")
         return self
+
+
+class InventoryPageRecordV2(InventoryPageRecord):
+    structural_truncated: bool = False
+
+    @model_validator(mode="after")
+    def prefix_has_no_content_facts(self):
+        if self.structural_truncated and any((self.title, self.h1, self.canonical_url, self.meta_robots, self.schema_types)):
+            raise ValueError("structural prefixes cannot carry content facts")
+        return self
+
+
+class SiteInventorySnapshotV2(SiteInventorySnapshot):
+    schema_version: Literal["site_inventory_snapshot_v2"]
+    pages: list[InventoryPageRecordV2] = Field(min_length=1, max_length=500)
+
+
+InventorySnapshot = Annotated[SiteInventorySnapshot | SiteInventorySnapshotV2, Field(discriminator="schema_version")]
+INVENTORY_ADAPTER = TypeAdapter(InventorySnapshot)

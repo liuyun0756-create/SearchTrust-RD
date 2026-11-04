@@ -189,7 +189,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -211,6 +211,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             raise FindingsError("INPUT_INVALID")
         evidence = build_evidence_index(inputs)
         alignment = None
+        resource_pages = []
         if request.business_identity is not None:
             site_source = next((source for source in inputs.sources if source.kind == "site"), None)
             public_source = next((source for source in inputs.sources if source.kind == "public_gbp"), None)
@@ -227,7 +228,8 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 source=site_source,
                 limits=request.site_business_limits,
             ), text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address,
-                country=request.business_identity.primary_location.country_code)
+                country=request.business_identity.primary_location.country_code, resource_limits=resource_limits)
+            resource_pages = [str(p.requested_url) for p in facts.pages if any(d.code == "resource_limit" for d in p.diagnostics)]
             selection = select_site_business_candidates(facts, request.business_identity, request.site_gbp_alignment_limits)
             extra = build_site_gbp_alignment(
                 context=inputs.context,
@@ -299,6 +301,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
         if len(canonical_json_bytes(result)) > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
         result._contact_alignment = alignment
+        result._resource_limited_pages = resource_pages
         return result
     except EvidenceError as exc:
         if not alignment_enabled:

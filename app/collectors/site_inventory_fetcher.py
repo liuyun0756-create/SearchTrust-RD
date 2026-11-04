@@ -38,6 +38,7 @@ class SiteFetchResponse:
     status_code: int
     content_type: str
     body: bytes
+    truncated: bool = False
 
     @property
     def response_bytes(self) -> int:
@@ -135,6 +136,7 @@ class BoundedSiteFetcher:
         scope: SiteScope,
         max_bytes: int,
         accepted_media_types: set[str] | None = None,
+        allow_prefix: bool = False,
     ) -> SiteFetchResponse:
         async with self._semaphore:
             try:
@@ -144,6 +146,7 @@ class BoundedSiteFetcher:
                         scope=scope,
                         max_bytes=max_bytes,
                         accepted_media_types=accepted_media_types,
+                        allow_prefix=allow_prefix,
                     ),
                     timeout=self.total_timeout,
                 )
@@ -161,6 +164,7 @@ class BoundedSiteFetcher:
         scope: SiteScope,
         max_bytes: int,
         accepted_media_types: set[str] | None,
+        allow_prefix: bool = False,
     ) -> SiteFetchResponse:
         current_url = initial_url
         for redirect_count in range(self.max_redirects + 1):
@@ -203,16 +207,21 @@ class BoundedSiteFetcher:
                             "The page returned an unsupported content type.",
                         )
                     content_length = response.headers.get("content-length", "").strip()
-                    if content_length.isdigit() and int(content_length) > max_bytes:
+                    if not allow_prefix and content_length.isdigit() and int(content_length) > max_bytes:
                         raise SiteFetchError(
                             "response_too_large",
                             "The page response exceeded the size limit.",
                         )
 
                     body = bytearray()
+                    truncated = False
                     async for chunk in response.aiter_bytes(chunk_size=65_536):
                         body.extend(chunk)
                         if len(body) > max_bytes:
+                            if allow_prefix:
+                                del body[max_bytes:]
+                                truncated = True
+                                break
                             raise SiteFetchError(
                                 "response_too_large",
                                 "The page response exceeded the size limit.",
@@ -223,5 +232,6 @@ class BoundedSiteFetcher:
                         status_code=response.status_code,
                         content_type=content_type,
                         body=bytes(body),
+                        truncated=truncated,
                     )
         raise SiteFetchError("http_error", "The page exceeded the redirect limit.")

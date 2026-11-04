@@ -13,7 +13,7 @@ from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 from app.api.v2.models import ConfirmedCompetitor, DimensionValue, FirstPartySnapshotEnvelope, ProviderRequestContext
 from app.collectors.serp_market_models import SerpMarketSnapshot
-from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.collectors.site_inventory_models import SiteInventorySnapshot, InventorySnapshot
 from app.collectors.site_render_models import RenderedSiteSnapshot
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
@@ -83,7 +83,7 @@ class SnapshotBinding(StrictModel):
 class SiteEvidenceSource(StrictModel):
     kind: Literal["site"] = "site"
     binding: SnapshotBinding
-    payload: SiteInventorySnapshot
+    payload: InventorySnapshot
 
 
 class RenderedEvidenceSource(StrictModel):

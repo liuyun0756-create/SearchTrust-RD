@@ -34,7 +34,7 @@ def test_saved_inputs_match_recorded_checksums(site_id):
         body = (directory / capture["file"]).read_bytes()
         assert capture["status"] == "captured"
         assert capture["http_status"] == 200
-        assert capture["requested_url"] == descriptor["site_url"]
+        assert capture["requested_url"] == descriptor.get("saved_page_url", descriptor["site_url"])
         assert len(body) == capture["response_bytes"]
         assert hashlib.sha256(body).hexdigest() == capture["sha256"]
 
@@ -127,7 +127,15 @@ def test_offline_actual_generation_counts_false_positive_and_false_negative(tmp_
 
 def test_blank_truth_missing_input_and_unimplemented_rules_do_not_score_as_correct(tmp_path):
     from scripts.eval_gold import compare_findings, finding_metrics, evaluate_case
-    case = evaluate_case(GOLD / "seamless-gutters-pensacola", tmp_path)
+    # P0-09 now supplies real generation input. Keep the missing-input coverage
+    # with an explicit missing-input descriptor instead of assuming a real gap.
+    directory = tmp_path / "missing"
+    directory.mkdir()
+    descriptor = json.loads((GOLD / "seamless-gutters-pensacola/input.json").read_text())
+    descriptor.update(generation=None, snapshot_files=[])
+    (directory / "input.json").write_text(json.dumps(descriptor))
+    (directory / "truth.json").write_bytes((GOLD / "seamless-gutters-pensacola/truth.json").read_bytes())
+    case = evaluate_case(directory, tmp_path)
     assert case["reason"] == "generation_input_missing"
     assert all(row["reason"] == "未标注" for row in case["findings"] + case["checks"])
     assert case["finding_metrics"]["false_positive_rate"] is None
@@ -244,5 +252,7 @@ def test_six_real_sites_run_offline_without_editing_frozen_inputs(monkeypatch):
     assert nova["action_metrics"]["visible_weak_only_actions"] == 0
     assert result["summary"]["finding_metrics"]["false_positive_rate"] is None
     assert result["summary"]["field_metrics"]["not_checked_rate"] is None
-    assert result["summary"]["action_cases_evaluated"] == 1
-    assert result["summary"]["action_cases_unavailable"] == 5
+    assert result["summary"]["action_cases_evaluated"] == 6
+    assert result["summary"]["action_cases_unavailable"] == 0
+    assert all(c["status"] == "已生成" for c in result["cases"])
+    assert result["summary"]["incomplete"] is False

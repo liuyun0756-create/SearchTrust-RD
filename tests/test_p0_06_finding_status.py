@@ -1,6 +1,6 @@
 import pytest
 
-from app.report_v22.capability_finding_status import alignment_status, gbp_status
+from app.report_v22.capability_finding_status import PRIOR_PUBLIC_RULESET, alignment_status, gbp_status
 
 
 @pytest.mark.parametrize("state,expected", [
@@ -30,10 +30,9 @@ def test_missing_alignment_state_requires_provider_provenance(state):
     assert alignment_status(state, gbp_field_state="returned_empty") == "not_detected"
 
 
-def labelled_public_fixture(*, search_gap=False):
+def labelled_public_fixture(*, search_gap=False, ruleset=PRIOR_PUBLIC_RULESET):
     from app.report_v22.capability import AnalysisInputManifest
     from app.report_v22.capability_public import build_public_capability_report
-    from app.report_v22.capability_finding_status import PUBLIC_RULESET
     from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
     from test_v22_capability_public import inputs
     if search_gap:
@@ -47,7 +46,7 @@ def labelled_public_fixture(*, search_gap=False):
     else:
         manifest, request = inputs([{"status_code":503}])
     raw = manifest.model_dump(mode="json")
-    raw["ruleset_version"] = PUBLIC_RULESET
+    raw["ruleset_version"] = ruleset
     raw["input_checksum"] = verified_request_digest({k:v for k,v in raw.items() if k!="input_checksum"})
     manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw))
     return manifest, request, build_public_capability_report(manifest, request)
@@ -126,11 +125,10 @@ def test_completion_reference_uses_actual_report_version():
     assert state_to_public(state).report_reference.schema_version=="2.2.5"
 
 
-def contact_report_fixture(case):
+def contact_report_fixture(case, *, ruleset=PRIOR_PUBLIC_RULESET):
     from unittest.mock import patch
     from app.report_v22.capability import AnalysisInputManifest
     from app.report_v22.capability_public import build_public_capability_report
-    from app.report_v22.capability_finding_status import PUBLIC_RULESET
     from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
     if case == 'rendered':
         from test_p0_04_render_fallback import versioned_report_fixture
@@ -146,7 +144,7 @@ def contact_report_fixture(case):
         legacy = build_public_capability_report(manifest, request)
     before = canonical_json_bytes(request)
     raw = manifest.model_dump(mode='json')
-    raw['ruleset_version'] = PUBLIC_RULESET
+    raw['ruleset_version'] = ruleset
     raw['input_checksum'] = verified_request_digest({k:v for k,v in raw.items() if k!='input_checksum'})
     report = build_public_capability_report(AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw)), request)
     assert canonical_json_bytes(request) == before

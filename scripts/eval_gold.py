@@ -6,6 +6,7 @@ import argparse
 from collections import Counter
 from copy import deepcopy
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import sys
@@ -42,7 +43,7 @@ def read_ref(reference, directory, private_root):
     data = path.read_bytes()
     if hashlib.sha256(data).hexdigest() != reference["sha256"]:
         raise ValueError("snapshot_checksum_mismatch")
-    return data
+    return gzip.decompress(data) if reference.get("encoding") == "gzip" else data
 
 
 def target_key(rule_id, target):
@@ -115,9 +116,9 @@ def generate(descriptor, directory, private_root):
     if str(request.evidence_input.context.site_url) != descriptor["site_url"]:
         raise ValueError("case_site_url_mismatch")
     result = build_public_findings(request, text_patterns=True, reviewed_evidence=True,
-                                   rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2")
+                                   rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2", resource_limits=True)
     skeletons = select_public_action_skeletons(PublicActionPlanInput(
-        findings_result=result, planning_date=instant(manifest["evaluated_at"]).date()), all_candidates=True)
+        findings_result=result, planning_date=instant(manifest["evaluated_at"]).date()), all_candidates=True, candidate_only=True)
     templates = {item.action_id: item.template_key for item in skeletons}
     finding_rules = {item.id: item.rule_id for item in report.findings}
     for action in report.actions:
@@ -279,20 +280,34 @@ def evaluate_case(directory, private_root):
     validate_truth(truth, descriptor["site_id"])
     report = result = request = revision = frozen_equal = None
     templates, unavailable, evaluations = {}, None, []
+    # Integrity failures remain explicit input errors rather than generation results.
+    for reference in descriptor["snapshot_files"]:
+        try:
+            read_ref(reference, directory, private_root)
+        except InputUnavailable:
+            pass
+    error_code = None
     try:
         report, result, request, templates, revision, frozen_equal = generate(descriptor, directory, private_root)
         evaluations = [e.model_dump(mode="json") for e in result.rule_evaluations]
     except InputUnavailable as exc:
         unavailable = str(exc)
+    except Exception as exc:
+        # Isolate generation failures; no raw exception text or provider payloads.
+        unavailable = "generation_error"
+        candidate = getattr(exc, "error_code", None)
+        error_code = candidate if isinstance(candidate, str) and candidate.startswith(("V22_", "CAPABILITY_")) else "GENERATION_FAILED"
     findings = [f.model_dump(mode="json") for f in report.findings] if report else []
     rows = compare_findings(truth, findings, evaluations, unavailable=unavailable)
     actions = action_metrics(report, templates, revision)
     return dict(site_id=descriptor["site_id"], status="无法判断" if unavailable else "已生成",
-                reason=unavailable, ruleset=PUBLIC_RULESET, frozen_replay_byte_identical=frozen_equal,
+                reason=unavailable, error_code=error_code, ruleset=PUBLIC_RULESET, frozen_replay_byte_identical=frozen_equal,
                 findings=rows, finding_metrics=finding_metrics(rows),
                 field_metrics=field_metrics(truth, result, unavailable=unavailable), action_metrics=actions,
                 checks=compare_other_checks(truth, request, actions, unavailable=unavailable),
-                evaluation_catalog=evaluations)
+                evaluation_catalog=evaluations,
+                resource_checks=[dict(url=url, status="not_checked", reason="resource_limit")
+                                 for url in result._resource_limited_pages] if result else [])
 
 
 def evaluate_all(root, private_root, sites=None):

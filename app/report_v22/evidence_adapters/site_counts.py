@@ -11,7 +11,7 @@ ASSET_PAGE_TYPES = ("service_detail", "service_area", "location")
 
 def eligible_html(page: InventoryPageRecord) -> bool:
     media_type = (page.content_type or "").split(";", 1)[0].strip().lower()
-    return (page.check_status == "checked" and page.status_code is not None
+    return (not getattr(page, "structural_truncated", False) and page.check_status == "checked" and page.status_code is not None
             and 200 <= page.status_code < 300
             and media_type in {"text/html", "application/xhtml+xml"})
 

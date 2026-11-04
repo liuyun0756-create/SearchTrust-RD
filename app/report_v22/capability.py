@@ -142,7 +142,7 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("snapshot order is not canonical")
         required = set(SOURCE_ORDER[:4 if self.mode == "acquisition" else 6])
         if self.schema_version == "v22_analysis_input_v2":
-            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8"}:
+            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9"}:
                 raise ValueError("rendered inputs require their own acquisition ruleset")
             required.add("rendered")
         elif "rendered" in kinds or self.ruleset_version == "v22_capability_public_v7":
@@ -151,7 +151,8 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("required sources missing or private acquisition source")
         for source in self.snapshots:
             if source.schema_version != SOURCE_SCHEMAS[source.source_kind] and not (
-                    source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2"):
+                    (source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2")
+                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version == "v22_capability_public_v9")):
                 raise ValueError("source schema mismatch")
             if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evaluated_at) < instant(source.expires_at):
                 raise ValueError("source Case or freshness mismatch")
@@ -330,7 +331,7 @@ class CapabilityReport(StrictModel):
         "if": {"properties": {"schema_version": {"const": "2.2.5"}}, "required": ["schema_version"]},
         "then": {
             "if": {"properties": {"input_manifest": {"type": "object", "properties": {
-                "ruleset_version": {"const": "v22_capability_public_v8"}}, "required": ["ruleset_version"]}},
+                "ruleset_version": {"enum": ["v22_capability_public_v8", "v22_capability_public_v9"]}}, "required": ["ruleset_version"]}},
                 "required": ["input_manifest"]},
             "then": {"properties": {"contact_checks": {"type": "array"}}, "required": ["contact_checks"]},
             "else": {"not": {"properties": {"contact_checks": {}}, "required": ["contact_checks"]}},
@@ -377,7 +378,7 @@ class CapabilityReport(StrictModel):
     def validate_references(self):
         manifest = self.input_manifest
         labelled = self.schema_version == "2.2.5"
-        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_service_v5"}):
+        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"}):
             raise ValueError("finding labels require a versioned ruleset")
         if any((f.kind is not None) != labelled for f in self.findings):
             raise ValueError("finding labels require the new report version")
@@ -397,7 +398,7 @@ class CapabilityReport(StrictModel):
         snapshots = {s.snapshot_id: s for s in manifest.snapshots}
         evidence = {e.id: e for e in self.evidence}
         findings = {f.id: f for f in self.findings}
-        has_checks = manifest.ruleset_version == "v22_capability_public_v8"
+        has_checks = manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9"}
         if has_checks != (self.contact_checks is not None) or (not has_checks and "contact_checks" in self.model_fields_set):
             raise ValueError("contact checks require public v8")
         checks = self.contact_checks or []
@@ -433,7 +434,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_service_v5"}
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -441,7 +442,7 @@ class CapabilityReport(StrictModel):
         if self.prioritization is not None:
             from app.report_v22.capability_priority import candidate_input, prioritize
             trace = self.prioritization.model_dump(mode="json")
-            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8")) else "v22_business_priority_v1"
+            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9")) else "v22_business_priority_v1"
             if trace["rules_version"] != expected_version:
                 raise ValueError("priority version mismatch")
             replay = prioritize([entry["input"] for entry in trace["candidates"]],

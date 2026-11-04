@@ -1,23 +1,23 @@
-# P0-08 金标准输入与离线评估
+# P0-08 ～ P0-10 金标准输入与离线评估
 
-本目录保存真实网页快照和空白标注模板。`scripts/eval_gold.py` 只读运行当前规则的发现生成，并比对人工答案；不把空白答案、缺少生成输入或未抓到信息解释为“没有”。这是内部评估工具，不修改客户报告或生产生成逻辑。
+本目录保存真实网页快照、可离线重放的完整输入和空白标注模板。P0-10 后六站均可生成；人工答案仍为空，因此准确率指标仍为 null。`scripts/eval_gold.py` 只读运行当前规则的发现生成，并比对人工答案；不把空白答案、缺少生成输入或未抓到信息解释为“没有”。这是内部评估工具，不修改客户报告或生产生成逻辑。
 
 ## 六站输入
 
 | 目录 | 组 | 保存范围 | 完整发现生成输入 |
 | --- | --- | --- | --- |
 | nova-service | A | 引用原始 v5 报告、快照、生成配方；三个文件的 SHA-256 写入 input.json | 本机可用，依赖仓库外的私有冻结文件 |
-| pr-plumbing-fresno | A | 2026-11-03 官网首页静态 HTTP 响应 | 待提供 |
-| all-star-plumbing-fresno | A | 2026-11-03 官网首页静态 HTTP 响应 | 待提供 |
-| vision-tech-swansea | B | 原 P0-03 保存的 Swansea 页面 HTML，逐字节复制 | 待提供，未复制测试中的虚构 GBP 和身份绑定 |
-| seamless-gutters-pensacola | B | 2026-11-03 gutter-installation 页面静态 HTTP 响应 | 待提供 |
-| volcanoes-hiking-guides | B | 2026-11-03 官网首页静态 HTTP 响应 | 待提供 |
+| pr-plumbing-fresno | A | 2026-11-03 官网首页静态 HTTP 响应 | P0-10 bound 输入（无损 gzip） |
+| all-star-plumbing-fresno | A | 2026-11-03 官网首页静态 HTTP 响应 | P0-10 bound 输入（无损 gzip） |
+| vision-tech-swansea | B | 原 P0-03 保存的 Swansea 页面 HTML，逐字节复制 | P0-10 bound 输入（真实 GBP 和确认绑定） |
+| seamless-gutters-pensacola | B | 2026-11-03 gutter-installation 页面静态 HTTP 响应 | P0-10 bound 输入（无损 gzip） |
+| volcanoes-hiking-guides | B | 2026-11-03 官网首页静态 HTTP 响应 | P0-10 bound 输入（无损 gzip） |
 
 Vision-Tech 的网址为 https://visiontechav.com/swansea/；Volcanoes 的网址为 https://www.volcanoeshikingguides.com/。其余网址按任务卡。`capture.json` 记录抓取时间、最终 URL、HTTP 状态、字节数和校验值；Volcanoes 首次因 2 MB 上限失败，原记录保留，成功重试记录为 `capture-retry.json`，页面为 2,141,616 字节。未截断页面，也未增加生产抽取器的输入上限。
 
 `page.html` 是 HTTP 响应正文原始字节，不代表渲染后的页面。`input.json.snapshot_files` 中 `base=case` 相对于该站目录；`base=private` 相对于工作区 `.release-private/2026-10-29/`。Nova 的冻结文件不复制入版本库、不改写；在缺少私有文件的机器上不可宣称该站已完成重放。
 
-只有 Nova 有完整的既有生成上下文。生产发现生成器还要求服务、目标市场、查询词和已确认竞品；仅凭一个 HTML 不能填造这些输入。没有为其他五站伪造生成配方、GBP、经营身份或身份确认。
+P0-08 初始只有 Nova 有完整上下文。P0-09 已保存其余五站的真实 GBP、已裁定市场和竞品；P0-10 使用这些来源离线构建五站 bound 输入，未填造经营事实。Volcanoes 的首页来自 P0-08 真实快照，其余来源来自 P0-09，分别保留时间及哈希，详见该站 `p0-10-provenance.json`。
 
 ## truth.json 填写约定
 
@@ -45,7 +45,7 @@ Vision-Tech 模板已有电话、地址和营业时间三个反馈槽位；Volca
 .venv/bin/python -m pytest -q -s tests/test_p0_08_gold.py::test_offline_actual_generation_counts_false_positive_and_false_negative
 ```
 
-输出为 JSON。缺完整输入的五站按负责人答复输出 `status=无法判断`、`reason=generation_input_missing`，对应行动数为 null；这些站不混入“已生成报告”的行动总数。文件校验失败、错误输入和标注冲突列入 `errors` 并以非零退出码退出。仅仅缺输入不代表脚本运行失败，但 `summary.incomplete=true` 明确保留未完成覆盖。
+输出为 JSON。缺完整输入时输出 `status=无法判断`、`reason=generation_input_missing`，对应行动数为 null；缺输入站点不混入“已生成报告”的行动总数。文件校验失败、错误输入和标注冲突列入 `errors` 并以非零退出码退出。仅仅缺输入不代表脚本运行失败，但 `summary.incomplete=true` 明确保留未完成覆盖。
 
 `evaluation_catalog` 包含实际规则检查和完整目标。标注者从中复制 `rule_id` 与 `target` 到检查槽位，判断该范围内是否应生成发现后填写 `expected_triggered`；同一规则不同 URL、查询词、设备等不能共用答案。重复目标标注会被拒绝。`site_fields.present=true` 用于未检查率，不自动推导“对齐规则应不应触发”：页面有电话与电话是否正确对齐是不同问题，后者需比较人工确认的 GBP 值。
 
@@ -63,4 +63,23 @@ Vision-Tech 模板已有电话、地址和营业时间三个反馈槽位；Volca
 - `visible_weak_only_actions`：可见行动的全部依据都未确认或低置信的数量，应由 P0-07 默认隐藏。`visible_actions_with_any_weak_basis` 另报混合依据数量；混合中只要有 confirmed 且非 low 的依据仍保留，沿用负责人已确认的 P0-07 口径。手工交付选择可以显式显示弱依据行动，统计会如实反映。
 - 汇总 `action_totals_available_cases` 只统计有生成结果的站点，并同时输出已评估/不可评估站点数，不把五站未知值计作五个 0。
 
-Nova 先用旧规则重放并验证其规范 JSON 字节与冻结 v5 报告相同，再只在内存中派生当前 v8 输入；旧文件不改变。脚本不请求网络、Firecrawl、搜索服务或模型。测试禁用 socket 连接和 DNS 后执行完整六站入口，并另外用手工合成输入证明 1 误报 / 2 可判定生成发现＝0.5，另有 1 漏报；合成数据不写入真实站点答案。
+Nova 先用旧规则重放并验证其规范 JSON 字节与冻结 v5 报告相同，再只在内存中派生当前 v9 输入；旧文件不改变。脚本不请求网络、Firecrawl、搜索服务或模型。测试禁用 socket 连接和 DNS 后执行完整六站入口，并另外用手工合成输入证明 1 误报 / 2 可判定生成发现＝0.5，另有 1 漏报；合成数据不写入真实站点答案。
+
+
+## P0-10 版本、资源限制与存储
+
+- 新获客规则集为 `v22_capability_public_v9`；v3/v4/v5 及已保存 v8 报告沿用原计算路径。超过展示上限的证据按来源轮流取样，再按 ID 排序，最多 20 条；省略数在发现 limitations 显示。
+- 页面总量、单页或解析资源超限的内容为 `not_checked/resource_limit`。`eval_gold.py` 的 `resource_checks` 列出具体页面；报告 limitations 显示未检查的页面数。结构前缀仅发现完整标签中的链接，不作为标题、联系方式或不存在的证据。
+- 单站生成异常输出 `reason=generation_error` 和静态错误码，其余站继续；生成失败使 `summary.incomplete=true`。输入完整性错误仍列入 errors 并非零退出。完整六站重放应退出 0、六站已生成、incomplete=false；这不表示人工标注已完成。
+- 五站 `bound-p0-10.json.gz` 是新的派生输入；描述文件引用 `encoding=gzip`，SHA-256 校验压缩文件字节后才解压。解压后的 SHA-256、原始来源哈希、各来源时间和恢复的竞品库存写入各站 `p0-10-provenance.json`。原有 bound 文件不改写。
+- P0-09 原始 checkpoint、HTML 合集和重复 bound 等留档到工作区 `.release-private/2026-11-03-gold/`，保留相对路径和原字节。仓库留下 bound、摘要、原校验清单以及 `p0-10-storage-manifest.json` 的完整迁移映射（原路径、归档路径、大小和 SHA-256）。原清单里的相对路径在私有留档根目录解析；旧校验清单未重写。
+- 下列工具只使用本地保存文件；prepare 禁用网络连接和 DNS，archive 逐文件验证复制后的 SHA-256 才移出仓库。缺少私有留档时不能重建派生输入，但五站已保存的 gzip bound 仍可直接评估。Nova 仍需要原有私有 v5 文件。
+
+```bash
+.venv/bin/python scripts/p0_10_gold.py prepare
+.venv/bin/python scripts/p0_10_gold.py archive
+.venv/bin/python scripts/eval_gold.py
+.venv/bin/python -m pytest -q tests/test_p0_08_gold.py tests/test_p0_10_resources.py
+```
+
+14 条竞品观察中，P0-10 从原 checkpoint 恢复 5 份 www 域名误拒绝的库存，原有 2 份 partial 保留。评论没有可离线恢复的成功响应，仍全部 unavailable；重复解压修复由无网络压缩响应测试验证，不代表真实评论已采到。任何新付费验证仍需先报告调用次数与费用。

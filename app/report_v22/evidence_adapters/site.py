@@ -28,7 +28,13 @@ def observations(source, *, inventory=None, prefix="/payload", competitor_id=Non
             yield coverage(source,url,"check_status","unavailable",page.check_status,f"{path}/check_status",
                 locator=locator,health_status="unavailable",**kwargs)
             continue
-        yield from fields(source,"site_field",url,page,path,
+        if getattr(page, "structural_truncated", False):
+            yield from fields(source,"site_field",url,page,path,
+                ("check_status", "status_code", "final_url", "content_type", "response_bytes"),locator=locator,**kwargs)
+            yield coverage(source,url,"structural_truncated","partial",True,f"{path}/structural_truncated",
+                locator=locator,health_status="healthy",**kwargs)
+        else:
+            yield from fields(source,"site_field",url,page,path,
             ("check_status","status_code","final_url","content_type","response_bytes","title","h1","canonical_url","meta_robots","schema_types","page_type"),locator=locator,**kwargs)
         position, selected_page = selected.get(url,(None,None))
         if selected_page is None or selected_page.deep_snapshot is None:

@@ -1,0 +1,2490 @@
+{
+  "private_root": ".release-private/2026-11-03-gold",
+  "files": [
+    {
+      "original_path": "all-star-plumbing-fresno/bound-p0-09-2026-11-03.json",
+      "archive_path": "all-star-plumbing-fresno/bound-p0-09-2026-11-03.json",
+      "sha256": "25a6d9c7614b3e9d30df7e5dc84fd4b41c576f78faa0d6b7eed20c30e2e9ca4d",
+      "bytes": 1828512,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/adjudication-review.md",
+      "archive_path": "p0-09-adjudication-2026-11-03/adjudication-review.md",
+      "sha256": "c44aa9fec06a7adfea921c072d73d8f3f0e19a29345c4daa63c7d4f5102fcf8d",
+      "bytes": 8801,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/all-star-plumbing-fresno/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/all-star-plumbing-fresno/market-snapshot.json",
+      "sha256": "b5e3bb3813c0b3c68c9d7268693e39d3e78b1862c83eb279532c1022e0405a72",
+      "bytes": 130218,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/all-star-plumbing-fresno/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/all-star-plumbing-fresno/result.json",
+      "sha256": "48c7c0074e8935c637e31e83a7d70112d2d76589c858df308a58c7fea5be3c8e",
+      "bytes": 34186,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-035.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-035.json",
+      "sha256": "e5135581d41e06564eba1fb30172e4ef853d4cb7bac2443103092e1d3b85829d",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-036.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-036.json",
+      "sha256": "1232b5d5b1d032a5f843b3d21018f551f4e4b41633645cbd240be3bae5faa697",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-037.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-037.json",
+      "sha256": "82640af485a3877c7288027ed58b81a12ca072c3dea54f1e540078ea7f650323",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-038.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-038.json",
+      "sha256": "45a09760c1385cbcb4df8d8e2f6d30b84d4f7b52577cd4e05d235ac226e962de",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-039.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-039.json",
+      "sha256": "d69a02d017171757df20512ffdbf3e37464a6a1ddc4a353b85625abf8eaa9bc0",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-040.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-040.json",
+      "sha256": "36412d3ad5f6571d6ea5e9d491941d500b80271f9f0d5d231d4b412e995dcc11",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-041.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-041.json",
+      "sha256": "dc849d439fb604dd511e5e4dd7bcc59bc8123f1ab17bf01f37a2b2d04763be7c",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-042.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-042.json",
+      "sha256": "a86761957a4fd781d4cd086d9ce741a12897bb06cc52c9901a6a8e1188f673c4",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-043.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-043.json",
+      "sha256": "a7a6d252fd9daa56cb7b57a1c616c455b822391d5b2db599387791d409306734",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-044.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-044.json",
+      "sha256": "b6b98e8ffa758996c6148d54a6e01ea861fd09e975cbd51a319dd9c99697ccc1",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-045.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-045.json",
+      "sha256": "5fd96471b66e180204706c6a2c9f247d81cdc059a8ac9309b495ed7cf0db42e2",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-046.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-046.json",
+      "sha256": "0077ce7bb849bb0390f078d011182f209395ed5249488e7c996f1ef35ac81ac7",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-047.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-047.json",
+      "sha256": "6a0d65583c4325a02994ce574c0bfa087c149d40a4079c1afa146571be029f67",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-048.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-048.json",
+      "sha256": "854c0a6182a89b4a9c317a20dd13a09c2b9c3f48a615fa02a9b7f4d8360a7438",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-049.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-049.json",
+      "sha256": "bccefdfec4254e0ba64f1ae0832583328ef6ce674afe0881077b24f1b34f920c",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-050.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-050.json",
+      "sha256": "b220c6f4a1e84f1e4d36fada7ef99e06d74d49b0f491d416340adb38f85ae5de",
+      "bytes": 174,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-051.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-051.json",
+      "sha256": "d8a48bd5f899977c3e7dee7900433eff85f79b8408dd9d8c29e66ea3da884e83",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-052.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-052.json",
+      "sha256": "d2d856e984289ef05837463d2401ea193bf38a85e96737d741e39b647eae81d8",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-053.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-053.json",
+      "sha256": "425afaa8d4710dd72351cda772b263db5dc9fbbdb25fa993e15e4c3a605182bb",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-054.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-054.json",
+      "sha256": "fb629629f8aee5b10cfab0e7f99c2a5acaced8e9639d706ede878f56adede8d9",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-055.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-055.json",
+      "sha256": "254423e8299e0e4c8ee5b2055fc049fabf26c47365396ddd4cb0fb669fc43703",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-056.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-056.json",
+      "sha256": "e514e5c00112034d42ddf792e3fcc613a872c2e7b49d3f629b160bc28d8d987c",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-057.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-057.json",
+      "sha256": "e5c2949725f60d8e042b6a79977232ee446e9b2b1b4282c2a273a439ef91c662",
+      "bytes": 174,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-058.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-058.json",
+      "sha256": "4e19d23a6071d3124b84eb9aff4bfa41d9d45874ec1843de09a3645e95004b44",
+      "bytes": 174,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-059.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-059.json",
+      "sha256": "a6f53dcf2b736df748825275779f55bfe2e7dbbc39939c12c73821d33df57914",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-060.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-060.json",
+      "sha256": "717ee045cb261160b0be282e3520b4367d98eb5a0dd42b97b80d1fb06a6f62dc",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-061.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-061.json",
+      "sha256": "4149df31d299801858bf7702a812ae8e36de65fdf9d55712a30c7663bdf738d7",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-062.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-062.json",
+      "sha256": "c263df0f5fa22df3aa159917876cc24c63cf02930323c89726602b700eef93cc",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-063.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-063.json",
+      "sha256": "421b018a14981dad13b12a9a00a4011fec1bee429a7420f1862341c5ba4be494",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-064.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-064.json",
+      "sha256": "a2dfe6c748cb240c6a3520d41c4c548c6ef51960acea611653f2a7eeab493575",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-065.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-065.json",
+      "sha256": "8e9cdea4e63196bd2444ea5a13e5e845fa4d973146a3b8ebb142d103dca6a50a",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-066.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-066.json",
+      "sha256": "17a5b772dce593815ced4db69ce9fb2eb1195b375762d19e0d1909505d7d206d",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-067.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-067.json",
+      "sha256": "535be2a92aba2eab965b1e7371f946f49d0456981a8a335caae6bcf0d8ea4bf0",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-068.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-068.json",
+      "sha256": "6d4a4d87c082d768206a3b7790697f88b92330e80b50392a1eff49f2db3d82fb",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-069.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-069.json",
+      "sha256": "9fab5ab7c9539dce126e64d44ea45f526ce48be5492425d943b2b4a804afca6e",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-070.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-070.json",
+      "sha256": "d6ed27163644418a5bfb24d74e2c9d555cb4eb1d454e46777a9bc4c1b3715084",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-071.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-071.json",
+      "sha256": "b0cabfdffe09d003bb453195f0130f8f7ebaf77dbf77297baf9506bf055b0d13",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-072.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-072.json",
+      "sha256": "42ad83156c0d5d1ba378272a85e79d56c64ffc1df5cbb2eef3a80cb860aa1089",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-073.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-073.json",
+      "sha256": "fe3cff159ea7f918c9aabd3afaaf0040a4384d9e4079c226327cb62aedccd4fe",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-074.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-074.json",
+      "sha256": "91c3e5425a68b8d81f9287855cec7b63feb609c5e4b7697d4b9bbcc643c10c9e",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-075.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-075.json",
+      "sha256": "a55125702969061b6d28db5b32937cebdfb86351faa50e4146df77d79bbb88e7",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/attempt-076.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/attempt-076.json",
+      "sha256": "280306c920d164b8c54a99bb37b2a00609f07e06e6dd8959a822bafc2ba65b70",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-0c19af4e-04e0-449a-bbc1-a2a86d2cde74.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-0c19af4e-04e0-449a-bbc1-a2a86d2cde74.json",
+      "sha256": "88744ef2f25861eac76dae9a94102df7cbd33a5bec5e16a5257ec1faac71f193",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-0fcbb4bc-6eae-436a-bd34-ca0eedc029b9.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-0fcbb4bc-6eae-436a-bd34-ca0eedc029b9.json",
+      "sha256": "ced5d4f9a174d196ed18350e199fcd615671a940da6fe673c30ec6c7c997a759",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-1dfa7a7c-6f68-41b8-a693-96f2f3876a99.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-1dfa7a7c-6f68-41b8-a693-96f2f3876a99.json",
+      "sha256": "c82b268f52348da6c449d44ee75222d187da5ef0f52c7117901a116ded7b6479",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-20f47182-b4ae-4781-b5b9-18f38e9f429b.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-20f47182-b4ae-4781-b5b9-18f38e9f429b.json",
+      "sha256": "a4b6b56819f7fe6a36f625c0fd0224b5231029cb1d23f5ddd0b83a3f3a600a56",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-3426b03e-863b-409f-8328-6c0041aeb028.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-3426b03e-863b-409f-8328-6c0041aeb028.json",
+      "sha256": "2b2b25ad53e428a3d9329c6ff88e74efac240db48e43042f633a05b111075b31",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-35573ecc-fe9d-4979-9792-f9794872881f.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-35573ecc-fe9d-4979-9792-f9794872881f.json",
+      "sha256": "65b2555ff62b3550f1ccd4233c975066a6ca6b0444d4b1bf666980dc133f1459",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-45e33ba0-ed0b-4081-a113-cf70ab696f72.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-45e33ba0-ed0b-4081-a113-cf70ab696f72.json",
+      "sha256": "18f8996271e2954d7436aa53b7ddfaea1ae8f0543816230a0cb4d29742026348",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-48c2966e-98e6-49e3-a39d-15541dd8cbfc.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-48c2966e-98e6-49e3-a39d-15541dd8cbfc.json",
+      "sha256": "4e7b2ea5093972fbdbd1a64793ce3269ed167f5d17543835e5f8a73072513204",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-5a241c34-c141-48a9-86f4-caea84ffb225.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-5a241c34-c141-48a9-86f4-caea84ffb225.json",
+      "sha256": "8190a6b9051acc99ee047bec7474431b2cc39e0061711e1ce42f87e1f42a30d0",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-5a50a566-c389-488b-b309-289027b8e388.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-5a50a566-c389-488b-b309-289027b8e388.json",
+      "sha256": "c508f793e145806ab7af3d3678706ee22e71ea9858522bf161f6e4d493ebdce2",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-61e2d255-4d9f-45f4-b518-1ed50230931f.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-61e2d255-4d9f-45f4-b518-1ed50230931f.json",
+      "sha256": "fe7fcfb81176a9b0170697a5dc7e4de5fbf1d7e26b8641928d433f977d41fb3d",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-63abf6f7-27f6-4840-87ee-d4ffc38a0674.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-63abf6f7-27f6-4840-87ee-d4ffc38a0674.json",
+      "sha256": "a9acc85c03c0318a5fd406494f6d777573e40eec3e29f751a4c3ca5aabcb52b7",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-6c49eb58-95a4-4664-9351-31ca73ca1baa.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-6c49eb58-95a4-4664-9351-31ca73ca1baa.json",
+      "sha256": "7ff883b716d703329d57bdf5119abc75a6bbcc1408ce2c1c15a6394ab4618abb",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-6f8bc239-a0f0-49ff-809b-007fdc36d42e.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-6f8bc239-a0f0-49ff-809b-007fdc36d42e.json",
+      "sha256": "5e9f11d5b8c21b196f5ab3d5b9549641d2bc9b2e973663d66f94ee8a5f5d176c",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-780e87ae-facd-4bb7-87c6-154ad8dc313f.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-780e87ae-facd-4bb7-87c6-154ad8dc313f.json",
+      "sha256": "234faa7ad9cb3c55a11b812857253de9e6d87c929f57303ab0edaa0d8be2aced",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-7f06a0b6-4b5b-4617-b079-1500344e1fe2.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-7f06a0b6-4b5b-4617-b079-1500344e1fe2.json",
+      "sha256": "b5b059f23c74f45af2b92ca79a4e4f92f82eb51ba7e62896a44b89778699355b",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-93b85e57-6a8a-46e7-9bc6-887a13ae9794.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-93b85e57-6a8a-46e7-9bc6-887a13ae9794.json",
+      "sha256": "ca055beb14cf2693f710a74b2c24eca26c146fc45f13303510c1f66b9e28bbde",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-94f57dfc-25ad-4034-a6da-81471bf1d21a.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-94f57dfc-25ad-4034-a6da-81471bf1d21a.json",
+      "sha256": "31316ec6833227a82760455500d1e6f35c6dd7d51971b8d69192b797e6b53036",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-a035e19a-f462-403f-a769-3e3cc1074737.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-a035e19a-f462-403f-a769-3e3cc1074737.json",
+      "sha256": "d734a38ab4f86487ece576f4b34a0aeb3881da2bc3105d26f05a57313494e25a",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-aac9fb81-42c9-4fe1-b458-b695141212ca.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-aac9fb81-42c9-4fe1-b458-b695141212ca.json",
+      "sha256": "372e0fae73a5d48c2d98d4f2c4639da2286799ae91edb881b8ab73c803834a65",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-abc9e1cd-b495-451f-9392-18d32a1631ae.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-abc9e1cd-b495-451f-9392-18d32a1631ae.json",
+      "sha256": "5417702ee99b08453f8e6c407db48589817a7336c8c2e52636e3d7573b9eb75a",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-ae049ed8-04b5-494e-be3f-5f5df12858b4.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-ae049ed8-04b5-494e-be3f-5f5df12858b4.json",
+      "sha256": "0ed3dc2daf5c0af2e9ceeb9f3becca6c840b2d65751a2b7580be6b28272380a2",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-b8f27f0b-d1b8-4059-b287-433663c92845.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-b8f27f0b-d1b8-4059-b287-433663c92845.json",
+      "sha256": "f65fd83a2b037cb966af7d526865e56754640b0fc83732f15f8a8efa64bd1d69",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-ba91494b-1097-4377-bb9f-da8d6601ae82.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-ba91494b-1097-4377-bb9f-da8d6601ae82.json",
+      "sha256": "c276fa32b2f6fb905fca8d626cedf9d9e9cb354a9c1b1734fb6ea44037eb327c",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-bbb31502-fa1c-49d0-b432-904f9174bf37.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-bbb31502-fa1c-49d0-b432-904f9174bf37.json",
+      "sha256": "678745bb61ed97321650c6191225932d723dbe8b2cf72cda205cfdd5b5508c63",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-c0bce3b5-f3ae-437d-b3e5-916cca2191d7.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-c0bce3b5-f3ae-437d-b3e5-916cca2191d7.json",
+      "sha256": "e94baff74fcc8b823363ef976bf630d1d81c61732c87f05fee31c5778bd942f1",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-c6cdcbab-2d6c-40af-923f-fa9f01bd8392.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-c6cdcbab-2d6c-40af-923f-fa9f01bd8392.json",
+      "sha256": "f6f8af0a588c66046d0b37d96c250698499a233e9a658bfb3d9b93c6514c711e",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-c7c7fca4-e2fb-4151-a43b-f38df4871dce.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-c7c7fca4-e2fb-4151-a43b-f38df4871dce.json",
+      "sha256": "8dbfdd89c1639f14f01648a0682652e2489755b5636fe515b238b51eae4a037b",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-ca8664e5-43bd-4dde-8740-7231ed700c97.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-ca8664e5-43bd-4dde-8740-7231ed700c97.json",
+      "sha256": "ba25ec11832c4292856a2d8fd1fbcf5a0528aec5f5403cb67174cc4c727fe88f",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-d4166e08-06dc-44ac-a7e0-8545de1cdff8.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-d4166e08-06dc-44ac-a7e0-8545de1cdff8.json",
+      "sha256": "9335949cf12ed5a59a0f3453a26fe796db170e837062749bc9de26d4f9652a7f",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-de286f48-1cf1-4bd4-b0f8-d8a0afff043f.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-de286f48-1cf1-4bd4-b0f8-d8a0afff043f.json",
+      "sha256": "52cce37ab2e34b36ced834275ef701f5f5b4479d540da0c8c8f9ae090e29d8c2",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-e0eb05a7-1af3-4506-894e-f39ff6553f25.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-e0eb05a7-1af3-4506-894e-f39ff6553f25.json",
+      "sha256": "9838c0e94c21f46b480d2db25dfed195271d7fb5bfc5a6162cf7fd20eb73677e",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-e39361a3-42e3-4c04-8e30-a605686bc7ec.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-e39361a3-42e3-4c04-8e30-a605686bc7ec.json",
+      "sha256": "1d3b378614abae5e1cc6e7b1f3bf5e98f288fb6241bb74b011b85ae40a843896",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-e60e844b-a411-4174-8ef0-60fac6548ae7.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-e60e844b-a411-4174-8ef0-60fac6548ae7.json",
+      "sha256": "a6c59268270f6301e3e7f8828becd38f1688279cc23e3b7430c3e75505e8ae75",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-f93a27cb-8976-49b0-b851-d7be53b85627.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-f93a27cb-8976-49b0-b851-d7be53b85627.json",
+      "sha256": "3bd2e7e9a5ea950784cda620c4b70cf65fabfa7a7c42d301d2601e36fc9cb0a7",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/attempts/completed-fd6d0b8c-ae57-4155-b07b-d50bfd874a44.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/attempts/completed-fd6d0b8c-ae57-4155-b07b-d50bfd874a44.json",
+      "sha256": "05890892b9ef3996eaa4e4755dbbea3c24727bfc670f5fb435c6a05b8fb75b28",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/checksums.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/checksums.json",
+      "sha256": "3be36bf2ae217140aa5a384b18c753ab4e5322cb5b19f9474b02ce2c5e8bb19e",
+      "bytes": 10496,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/city-point-audit.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/city-point-audit.json",
+      "sha256": "ede4e4d6f34707be3163ea9c23ac35d9cf1b39bdbea52b286d2c5e9da0f8449e",
+      "bytes": 4020,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/delivery-checksums.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/delivery-checksums.json",
+      "sha256": "09ce911b3eab4e3cbd7ffe34cc7397f5c034c5d045bd9e00faca9990476f940c",
+      "bytes": 10680,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/nova-service/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/nova-service/market-snapshot.json",
+      "sha256": "a167bbdfe955cc97bc61f12fbc691189c1bbc9c61d3fa6b7af9a2e562497edb0",
+      "bytes": 130218,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/nova-service/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/nova-service/result.json",
+      "sha256": "f8f31978ef868c0d0859244334f61742eba0b0a15ea7571fc0d834eaa5b79cb1",
+      "bytes": 33291,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/pr-plumbing-fresno/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/pr-plumbing-fresno/market-snapshot.json",
+      "sha256": "bbdb697ed66b08574713ea1a479b17b12b9e553f3a4dcb86ba9eb5320a5ec4ca",
+      "bytes": 130218,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/pr-plumbing-fresno/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/pr-plumbing-fresno/result.json",
+      "sha256": "1f7ff23d4e55f44d6a99536b40bb2472c69d994d7957bda12ad78166718cddda",
+      "bytes": 34215,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/market-snapshot.json",
+      "sha256": "ac4e1d14f6275e97532da701646a0f7b09532af58104b84326058f2d3fbbb90f",
+      "bytes": 119434,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/result.json",
+      "sha256": "291bc8ef19239fe0151ece7b7feecbd674533776e7839686660b42b291870469",
+      "bytes": 43282,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/summary.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/summary.json",
+      "sha256": "5633ea489f724bd14bd26ee80b84d777aca53cd0a5a951c61ea219a9ae57d3e1",
+      "bytes": 1659,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/vision-tech-swansea/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/vision-tech-swansea/market-snapshot.json",
+      "sha256": "6a36e65d7a03360649ea90abaf60b25a8c03f9c6c1f82574587aaa961d741409",
+      "bytes": 114520,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/vision-tech-swansea/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/vision-tech-swansea/result.json",
+      "sha256": "e6a40e52e6e8fdc2724d1cc8aa42fefa277067d3c713f70b65092b4f7d8f1597",
+      "bytes": 35956,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/market-snapshot.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/market-snapshot.json",
+      "sha256": "75126097c4508e4684ec52f88642a5dcec2b40fe72175dd2c66a2bfe8b0a3366",
+      "bytes": 107084,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/result.json",
+      "archive_path": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/result.json",
+      "sha256": "b4ca81eef70f84a9858ee7e86d35653a2fe2ffd518875584e0fa68e35a6fdddb",
+      "bytes": 10701,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/all-star-plumbing-fresno/candidates.json",
+      "archive_path": "p0-09-candidates-2026-11-03/all-star-plumbing-fresno/candidates.json",
+      "sha256": "554b232ba578046c28421042b575629fcfcfa54719a9f0bdaa545a616bed71bf",
+      "bytes": 43753,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/all-star-plumbing-fresno/market-snapshot.json",
+      "archive_path": "p0-09-candidates-2026-11-03/all-star-plumbing-fresno/market-snapshot.json",
+      "sha256": "32493198cc387b02c76f26add7736dd5a08f536eb6dd77e41b37848d4e1a2b1e",
+      "bytes": 128177,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-001.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-001.json",
+      "sha256": "ae094d39e9c3b20e5b4d31f3d3e52eb73d002328ddf0fa7d416d8cd88d252bad",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-002.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-002.json",
+      "sha256": "581ac160aa86a51ae5d7df164c7548ff1efb8881d94f99943371bd4e8946c0d5",
+      "bytes": 164,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-003.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-003.json",
+      "sha256": "46f45ec8e850c7e9b4c65a278dda82530c83b070cfb73472a5be77341a44a2f8",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-004.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-004.json",
+      "sha256": "5bfd1da05f8957681e2e8b4ffcb48e8192bffc0445f3407ede238d9e65eb796b",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-005.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-005.json",
+      "sha256": "9347dad4ead39d26602f5fc16d6aa983bdc1cfbc533e6d5fd06efa693932d930",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-006.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-006.json",
+      "sha256": "1f184492ef407f53d848e78cd7297b745e1fe60cd44cad8f89e3d22ae3877a4f",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-007.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-007.json",
+      "sha256": "9f976c98d20916e78e940d25b388569aa97cb523686cf9f3803820d340cd9a49",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-008.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-008.json",
+      "sha256": "92bcf73aa19af5504cc1bf630ef0e74b1f83dd65f4ebc784a4db485b6afb49a7",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-009.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-009.json",
+      "sha256": "d84c650e92fb82c97e480cdd2d29a8864763e5be07884ea25ca28701620ca4a3",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-010.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-010.json",
+      "sha256": "e48d2b74a2f46a16a1013cdb27bd314ba7596d01b30f4094117580e3070b94ec",
+      "bytes": 164,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-011.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-011.json",
+      "sha256": "b9f68368defdf1e7283f02350f2913dc41273dd2953449759cbb0f53e84637f1",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-012.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-012.json",
+      "sha256": "4650a91d11daa6c3e75f4fccc54e75163295fc17097235c3232e5df16534401b",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-013.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-013.json",
+      "sha256": "a0f934cb5827b6c9431657155e05fd2fbe8f36d37935386d5795914f3750e98b",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-014.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-014.json",
+      "sha256": "53e6a784ccbea7cc0fffa8cb9c59c7a2a7da0747cc5dc74dee9251a3a77b3804",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-015.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-015.json",
+      "sha256": "f36b501f720e9bf0ef800c9a1e5e587d290687633bfdec7cf383ffdfa5db51ab",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-016.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-016.json",
+      "sha256": "a7b879bdd08d8be204397a39105a61c04ceb337b5073e537e8477533cdf608f5",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-017.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-017.json",
+      "sha256": "3cb92b0e6ee89fc9159230156d89ff6e55aa5dc81b9e92d19196dbf6624d321c",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-018.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-018.json",
+      "sha256": "41d65e9a079426e283d7b8fc4d3eecfac6b6dc492b2b912875c77079e1928521",
+      "bytes": 164,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-019.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-019.json",
+      "sha256": "eba2b2844573ccf4014a38b72b53c910c37080d6aec5ab51387589a431d295c9",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-020.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-020.json",
+      "sha256": "50acb16d16deb60fc65f4d0ae8fe93f30c75dbecfeffaa1db7b0bae7f20799ce",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-021.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-021.json",
+      "sha256": "0d65839c264e737b3db94e667339fbd84b3992a15e4556cc2be48b472651e316",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-022.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-022.json",
+      "sha256": "592ac363199cc1cfcbb1d767a3b20f1fec4b2f86fe22df9f4c2e4b13de165fa6",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-023.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-023.json",
+      "sha256": "098090b4aed70b1de756e0b59504c9993f761c21d5c61fd92a1d9680b5bca282",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-024.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-024.json",
+      "sha256": "6dac12fdde2d42989db2483e95a5e10d2db806b2d682d2f341bd525a04af63bb",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-025.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-025.json",
+      "sha256": "b28d8cad02bca6bc304716ec80fee232d0d0ec4b93c53852dbbce25edbe82b8b",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-026.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-026.json",
+      "sha256": "655a13fa8bd9fd713bdf26292a259f7217c7205ae92a0549659fc9163ce582c5",
+      "bytes": 164,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-027.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-027.json",
+      "sha256": "5a40fb01326cb4e045fe535270a4c94d6efb065c03c36495891d383f8d92158a",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-028.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-028.json",
+      "sha256": "58d50fcb70157af86d66009ae637f5130f4c30ec35261a12180068204491e0b6",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-029.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-029.json",
+      "sha256": "ef75f8347ddffc6a66f2c1fd51e1a692b0560193ce96ee4b33a5719742db688c",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-030.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-030.json",
+      "sha256": "7c890b0a6cd95b9b41362ca4e6b59b96717047e2cae030ddab5a8c372b5a3ed5",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-031.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-031.json",
+      "sha256": "43a13052a36ca981fdb9f471f616380009ec9e98b0324d9ffa34452a50eebc64",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-032.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-032.json",
+      "sha256": "f120e4e5d0d5b7011198aea11a8f83907a30aa3508672d6e2666b4bd5bf19d2e",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-033.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-033.json",
+      "sha256": "e72881ff49ea650eab4ad58e8ea27d7accc50dd9d3a73e7c6a59e0d95e5e5a27",
+      "bytes": 169,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/attempt-034.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/attempt-034.json",
+      "sha256": "0399561420ffcdd77a8c9be8df8698f5dbe1efd84b327f248fcba570511dc08c",
+      "bytes": 164,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-07ad59fc-38d5-4f65-ae10-5b76cab6b493.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-07ad59fc-38d5-4f65-ae10-5b76cab6b493.json",
+      "sha256": "c83b8f5f5b6fc962b2754ec02a7e0bdf54e7201dfd3abe45bda49d126abaa5e8",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-092790d4-f0ac-4bc2-9043-9b51a689b64c.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-092790d4-f0ac-4bc2-9043-9b51a689b64c.json",
+      "sha256": "de6734b26587bd3b0f6dfb042dd3c5cd31766890f9593422f8d162c6f867ba43",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-109efd2e-a02c-47ea-a445-ebaced730dc7.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-109efd2e-a02c-47ea-a445-ebaced730dc7.json",
+      "sha256": "11af80c5b4cb9447a6fe48a913a14e9d15928899b80ae2a4a90a4184f3fbf043",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-16e3fb16-2f72-43ad-b49d-e9ce45845185.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-16e3fb16-2f72-43ad-b49d-e9ce45845185.json",
+      "sha256": "62e11ca49a4348e44e109445080696fc6e522935dbb5e0aa72554f2f3657530a",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-1ac454de-6849-4741-a256-1915b3c2884e.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-1ac454de-6849-4741-a256-1915b3c2884e.json",
+      "sha256": "728675d7d24cfb044064712477e71a649dc3cca5cfed36e22e4fa1a5180e436d",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-2a700c25-4792-4cf0-bfe8-ac7c876b7671.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-2a700c25-4792-4cf0-bfe8-ac7c876b7671.json",
+      "sha256": "e15391b5f28b46b20695ecf619c26b430f67753c0252283b7c00547bb0c655ba",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-33419b20-63c3-4d26-a98d-b5e4e89e04a8.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-33419b20-63c3-4d26-a98d-b5e4e89e04a8.json",
+      "sha256": "cb4dc5b8da9e1abd6ff1899eeca03012850b19f331b2d3fd36c255ee1e470453",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-3424ba72-d329-4d56-adf0-7b1aa5369fc7.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-3424ba72-d329-4d56-adf0-7b1aa5369fc7.json",
+      "sha256": "580274fd9d5a3b9a7e6c33c360e4c5cbb164bfc3d14612930ccc87b4e7c5349f",
+      "bytes": 185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-36c97594-4256-44ce-90e2-ff9f3a54cc85.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-36c97594-4256-44ce-90e2-ff9f3a54cc85.json",
+      "sha256": "8d9bfda93867326e5bcff73fbd1b5ef141092d9ce7d16dbc21138d7a191504eb",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-38154693-3d3f-4406-ac1a-83c777682f17.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-38154693-3d3f-4406-ac1a-83c777682f17.json",
+      "sha256": "0270f5e945d33acceadedf9ad0f3bca1764a943ee009c6e5a846edfdf1d8386e",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-39b5f929-391d-429f-854f-d6e2337ebbb1.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-39b5f929-391d-429f-854f-d6e2337ebbb1.json",
+      "sha256": "fe6e2585d020b1d6c80193dc06fe7bc7effa3f6c8011b10378b5e8a85da2791c",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-4e17458b-2abb-4e10-af47-a74da93d8ebe.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-4e17458b-2abb-4e10-af47-a74da93d8ebe.json",
+      "sha256": "6877fd05a6d95e14143c676df6f9794ede07eb3d3d276e01b76b5496dec08634",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-4fea7b5c-a8fa-4f5c-a512-5aa9e32edbb0.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-4fea7b5c-a8fa-4f5c-a512-5aa9e32edbb0.json",
+      "sha256": "475e6f73a03b2c543a97efb67cfbdfe91466b5733e0c4dfbfbf0fc410c2ee82e",
+      "bytes": 185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-5180e628-30b4-4226-b7e9-14ffaaa56b13.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-5180e628-30b4-4226-b7e9-14ffaaa56b13.json",
+      "sha256": "d625f5f5ac3a9a7b11ef1223a1322a94bff3eb409c780e7e01dccb0726112d7a",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-549c2ed7-70b2-4c08-9efc-93089868d396.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-549c2ed7-70b2-4c08-9efc-93089868d396.json",
+      "sha256": "8f22e1fc229100659034167d596012519245f689b2b6d94536874bb1a16886c9",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-54a72c97-39d8-43f8-b2b9-8dc51ce5d0bc.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-54a72c97-39d8-43f8-b2b9-8dc51ce5d0bc.json",
+      "sha256": "d9f0532703dca21762b19dd7ac97cffacc7f9dbb10f84826a5f88090b6e9a475",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-71edcccc-4171-4b69-82bc-d61cb6838f3b.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-71edcccc-4171-4b69-82bc-d61cb6838f3b.json",
+      "sha256": "307681288987807f322d2454666936ad20872e8dcd776a38b85b214d4a11c48b",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-8bdb6d25-f03b-4fe9-bc31-aa323c987674.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-8bdb6d25-f03b-4fe9-bc31-aa323c987674.json",
+      "sha256": "b7df4ba1958b8a5a44711bd1d823c4dfbdabbb6c194105ae3a7594e24cf68607",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-8dbc493d-686f-447c-9106-452a9284a456.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-8dbc493d-686f-447c-9106-452a9284a456.json",
+      "sha256": "2fe9f3c6b3cbc1c7a72201e6848942778fdf5c96c6979fde9c7387c285b5e833",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-b8f3e667-f68d-477b-9878-6616f50c145a.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-b8f3e667-f68d-477b-9878-6616f50c145a.json",
+      "sha256": "60f07c6bea9f063a992106fcbb1f7c7a2b0eb21f9c3782af5dc0aee6899ae623",
+      "bytes": 185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-bf8c8281-81fb-4473-9023-92a77a02d60d.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-bf8c8281-81fb-4473-9023-92a77a02d60d.json",
+      "sha256": "839dbc2a3ef4b11ec40a8b7d775e71dedd7d223ec8a3c715ee81f57bb91561bd",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-c01f527e-784a-4eab-b448-2a9696041093.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-c01f527e-784a-4eab-b448-2a9696041093.json",
+      "sha256": "b4ebc88620c0be5e8ef9e97ea769d445ec419db2378714f8724b1fc70740461c",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-cdf88e2a-69e8-436f-96a7-e91eddc71bbf.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-cdf88e2a-69e8-436f-96a7-e91eddc71bbf.json",
+      "sha256": "32fd5fc76a0ff4a978c1f8665448724cea317f3cbeb6174377c554799fa0ff36",
+      "bytes": 185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-e1588c60-583d-45a1-9fca-a5c483034df8.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-e1588c60-583d-45a1-9fca-a5c483034df8.json",
+      "sha256": "fddf2c659e5053e651d3d1d2eccfc196de41a300fdc6ffbc5474d4889585807a",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-e93b0aea-4a0d-4166-aa35-d4738ab14ad4.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-e93b0aea-4a0d-4166-aa35-d4738ab14ad4.json",
+      "sha256": "a913bde3eb78db4cf54a44cfe42fccb89221632ba129d5fbae5dc25a86581a28",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-ebfb08cb-444a-4bf4-9e37-091d27f6202f.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-ebfb08cb-444a-4bf4-9e37-091d27f6202f.json",
+      "sha256": "010fc74b36ec168a3a82d9fdce5d7e64532c5523a1aa71585b895165d69f5ac9",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-f1e110a8-c42d-4d67-b28a-9fb8ee83a2b8.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-f1e110a8-c42d-4d67-b28a-9fb8ee83a2b8.json",
+      "sha256": "db359b019632c705deb2556c7672ba9982b4ec3766f8f5f2f4f7ebf64bca52a3",
+      "bytes": 191,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-f9238c7c-f33f-49f5-9edf-66bc5029af14.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-f9238c7c-f33f-49f5-9edf-66bc5029af14.json",
+      "sha256": "d846ca5d96b14bb892715a30757a79d31d64be0bce25b141a6699034a64de7c0",
+      "bytes": 185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/attempts/completed-fad10537-a72b-4af2-b5dd-d0289f737aaa.json",
+      "archive_path": "p0-09-candidates-2026-11-03/attempts/completed-fad10537-a72b-4af2-b5dd-d0289f737aaa.json",
+      "sha256": "8c38c67ae5362b20b7a2ba01210f87a2d1a022c0d86cdafc409ab537d1afc537",
+      "bytes": 190,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/candidate-review.md",
+      "archive_path": "p0-09-candidates-2026-11-03/candidate-review.md",
+      "sha256": "ac8756deabc45a66ea8228f985386bcecba5404a8ce4e6cfcc40ba381c489e24",
+      "bytes": 19818,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/checksums.json",
+      "archive_path": "p0-09-candidates-2026-11-03/checksums.json",
+      "sha256": "fd33d7944f2a1d2006dfe765bbab3ce1b2792c817a420c98e4f126ae149d9a93",
+      "bytes": 8461,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/pr-plumbing-fresno/candidates.json",
+      "archive_path": "p0-09-candidates-2026-11-03/pr-plumbing-fresno/candidates.json",
+      "sha256": "79336b0a288a81f799f033e8aaa98bcc37da76683ab875193fcb0635cde8a883",
+      "bytes": 43542,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/pr-plumbing-fresno/market-snapshot.json",
+      "archive_path": "p0-09-candidates-2026-11-03/pr-plumbing-fresno/market-snapshot.json",
+      "sha256": "47df150871a65496637153304a8653fecdf280d38f27126864872838dadfbda6",
+      "bytes": 128177,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/candidates.json",
+      "archive_path": "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/candidates.json",
+      "sha256": "72526ad06b343c81736517433fd07124c555bae92b0c0f37c26113389262533c",
+      "bytes": 45905,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/market-snapshot.json",
+      "archive_path": "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/market-snapshot.json",
+      "sha256": "7f24c3d788e1ade21e61673e9e4bfa1d837088300438577f7de6b06a8ac26b27",
+      "bytes": 122920,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/summary.json",
+      "archive_path": "p0-09-candidates-2026-11-03/summary.json",
+      "sha256": "85dc501f0af1dbc3ae9d4b9eda7ae1eacd574ac19e2b4087b64491a1a8f9fec8",
+      "bytes": 1308,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/vision-tech-swansea/candidates.json",
+      "archive_path": "p0-09-candidates-2026-11-03/vision-tech-swansea/candidates.json",
+      "sha256": "9ebf302e7afefbe07c04d3b3f279359a69dd4f9aa7feef85d0912dccc91c4607",
+      "bytes": 47264,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/vision-tech-swansea/market-snapshot.json",
+      "archive_path": "p0-09-candidates-2026-11-03/vision-tech-swansea/market-snapshot.json",
+      "sha256": "94a74977a4bf6260aaa6b0384002dc7952b96627cb464a4f599faac36240c404",
+      "bytes": 114624,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-candidates-2026-11-03/volcanoes-hiking-guides/candidates.json",
+      "archive_path": "p0-09-candidates-2026-11-03/volcanoes-hiking-guides/candidates.json",
+      "sha256": "81bac38e07a9b8aeacbb43a1b103dab217e4b95f438131c2adf336f5f2753650",
+      "bytes": 2337,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/all-star-validation.json",
+      "archive_path": "p0-09-delivery-2026-11-03/all-star-validation.json",
+      "sha256": "d816515cb8b7f275c9c26e1c076cc71b2b51c5046c6c405f12849820ffaa4edb",
+      "bytes": 280,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/checksums-v2.json",
+      "archive_path": "p0-09-delivery-2026-11-03/checksums-v2.json",
+      "sha256": "a3fccf389066babcd6faeda9b20cd3b96c1feb47ad86d25dad0daebc3ebc7702",
+      "bytes": 842,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/checksums.json",
+      "archive_path": "p0-09-delivery-2026-11-03/checksums.json",
+      "sha256": "c785de35281d65c16bc046fb645be746aeedf18ccda5f2fd48f389f980a9524f",
+      "bytes": 562,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/eval-available-subset.json",
+      "archive_path": "p0-09-delivery-2026-11-03/eval-available-subset.json",
+      "sha256": "a3d28a728be37dc9acfa3377599c0fac26a31b285c5a344d656f6362245f7e85",
+      "bytes": 884542,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/eval-full-final.stderr",
+      "archive_path": "p0-09-delivery-2026-11-03/eval-full-final.stderr",
+      "sha256": "bb4b8a35535c6184630845bb2369973f626e4fbbaa4e8c915d5a4857ea728eb1",
+      "bytes": 2147,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/eval-full-final.stdout",
+      "archive_path": "p0-09-delivery-2026-11-03/eval-full-final.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/eval-full.stderr",
+      "archive_path": "p0-09-delivery-2026-11-03/eval-full.stderr",
+      "sha256": "bb4b8a35535c6184630845bb2369973f626e4fbbaa4e8c915d5a4857ea728eb1",
+      "bytes": 2147,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/eval-full.stdout",
+      "archive_path": "p0-09-delivery-2026-11-03/eval-full.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/gold-test-results.txt",
+      "archive_path": "p0-09-delivery-2026-11-03/gold-test-results.txt",
+      "sha256": "c5a62f2689d3287edbe1c43da21ac46a95416d0ff3cc1a8ddfeb58d8ded19054",
+      "bytes": 19518,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-delivery-2026-11-03/summary.json",
+      "archive_path": "p0-09-delivery-2026-11-03/summary.json",
+      "sha256": "def0d56b1b0dccd2dc6ffb595e4cd85c6dd043e677b16589dde9cf58a1d6c03a",
+      "bytes": 910,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/all-star-plumbing-fresno/result.json",
+      "archive_path": "p0-09-frozen-2026-11-03/all-star-plumbing-fresno/result.json",
+      "sha256": "7f7c0143e546f1afc431a20bd029a3427a9b3cc02fba2e3b79922344e0b6094e",
+      "bytes": 114,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/checksums.json",
+      "archive_path": "p0-09-frozen-2026-11-03/checksums.json",
+      "sha256": "18320aa3fb8dd0d7dde73504bb1258c61c6832526101fadbd9d42beb1d0b3a9d",
+      "bytes": 629,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/pr-plumbing-fresno/result.json",
+      "archive_path": "p0-09-frozen-2026-11-03/pr-plumbing-fresno/result.json",
+      "sha256": "3866289494b11e58d704645325ad6c58cd8f67f33f0d34bba76a1ffe0993d0c2",
+      "bytes": 108,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/seamless-gutters-pensacola/result.json",
+      "archive_path": "p0-09-frozen-2026-11-03/seamless-gutters-pensacola/result.json",
+      "sha256": "c06b19ddcfe54146c1e636b7324232d9876457734717994fe60eb479fe585c08",
+      "bytes": 116,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/summary.json",
+      "archive_path": "p0-09-frozen-2026-11-03/summary.json",
+      "sha256": "dc465afec8b32550f0987f5c74ca9e553dfcc08f06ac1450c4bda7f92a823803",
+      "bytes": 636,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/vision-tech-swansea/result.json",
+      "archive_path": "p0-09-frozen-2026-11-03/vision-tech-swansea/result.json",
+      "sha256": "de79a98f286bcef625cd4006a83608e3f6932b9aaa5e4765c13f14738627d7cb",
+      "bytes": 109,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-2026-11-03/volcanoes-hiking-guides/result.json",
+      "archive_path": "p0-09-frozen-2026-11-03/volcanoes-hiking-guides/result.json",
+      "sha256": "fa1d676a28aebb763811a51a5cf933e3f19e98cba33376771a2e5aaee98a693f",
+      "bytes": 121,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/binding-provenance.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/binding-provenance.json",
+      "sha256": "dc20dec55d9148b07f3123fa8e4b2fb5bd83951c9217209753d63ccac8b046cb",
+      "bytes": 669,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/bound.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/bound.json",
+      "sha256": "25a6d9c7614b3e9d30df7e5dc84fd4b41c576f78faa0d6b7eed20c30e2e9ca4d",
+      "bytes": 1828512,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/confirmed-discovery.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/confirmed-discovery.json",
+      "sha256": "528f7dd5245c11579c4e3bce25f6bef4304fe37eb0b2e6f17676747c9a5baa49",
+      "bytes": 2102,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/confirmed-request.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/confirmed-request.json",
+      "sha256": "76650a81c433c97a51e5eed0665322985d67998a0a1b9b3d1398e93a782324f7",
+      "bytes": 2178,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/previous-input-descriptor.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/previous-input-descriptor.json",
+      "sha256": "24b9a999dab6cea7eeb9b748e999f03f44b984308092caa579d1a4d6a9b1e280",
+      "bytes": 633,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/result.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/all-star-plumbing-fresno/result.json",
+      "sha256": "fe368b6aea324687f42065410fd7f93c4166bf16da0015b1455ede7579eddb83",
+      "bytes": 184,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/checksums.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/checksums.json",
+      "sha256": "f14b18316e1d8c3b12600692282b715a3c6fcf4fa003159eca69d58614b1f3c9",
+      "bytes": 3209,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/binding-provenance.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/binding-provenance.json",
+      "sha256": "7b96a1499c012f5e1ac5d7cb682f6c4eef3a78c3316b4a23bb2147ef25e508b7",
+      "bytes": 663,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/bound.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/bound.json",
+      "sha256": "97664881ae6e19dac509faadd7965d3913030f00443175820b3a62f3bb4fb878",
+      "bytes": 4365350,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/confirmed-discovery.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/confirmed-discovery.json",
+      "sha256": "bf322412c2158f595581261d3df0e07ffb22b9720acce0c4cb2aa786cc6ee6ec",
+      "bytes": 2088,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/confirmed-request.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/confirmed-request.json",
+      "sha256": "d5e0f36891c56515b76705c890ee24092959cdee0f56015eb24ba034382f1bff",
+      "bytes": 2178,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/previous-input-descriptor.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/previous-input-descriptor.json",
+      "sha256": "80670dbc5ad24efb600c09fd9fd5dc579dcdcd67789bb49dbd33ffced71ed43d",
+      "bytes": 626,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/report.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/report.json",
+      "sha256": "d7d76d48cfb6c7fc1c7ae3c48ce39cf2e670a4e2dbcea116c6169185efecde0d",
+      "bytes": 67787,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/result.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/pr-plumbing-fresno/result.json",
+      "sha256": "c0cb3f0226abf0c8a7899637af31cdf099a5c4c080edd7c5a0b92688274dc5c5",
+      "bytes": 114,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/binding-provenance.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/binding-provenance.json",
+      "sha256": "f77bd70637e7791015ca426a3f29cf9b44346d57a6d899c98c76993cc658146e",
+      "bytes": 671,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/bound.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/bound.json",
+      "sha256": "7c354c7d9b9a46b028e640c18754ed9bc796d9bfd01e53f091648fb5a5963087",
+      "bytes": 14248182,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/confirmed-discovery.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/confirmed-discovery.json",
+      "sha256": "f450abf317463de7bfac112ffc9dde687bfa3f5e6d3c5daf1ac301527e848938",
+      "bytes": 2111,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/confirmed-request.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/confirmed-request.json",
+      "sha256": "021c9eb3463891cc3e6dbc4939796e4ab7e25ec5c06e0612fc521e4a40e51be3",
+      "bytes": 2255,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/previous-input-descriptor.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/previous-input-descriptor.json",
+      "sha256": "a040c09dcfd7ee21acd73964a7765a551ecc9f799c927073cc20245fc56afdb8",
+      "bytes": 658,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/result.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/seamless-gutters-pensacola/result.json",
+      "sha256": "306f6d8d92278762b7cb361aeccb39c89034dccd383ab5daf0d0152019db0041",
+      "bytes": 203,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/summary.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/summary.json",
+      "sha256": "3af3fb3797e5cb06134cf0cebe7c96978665cf8b5d2d28d114cc04111efadc21",
+      "bytes": 813,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/binding-provenance.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/binding-provenance.json",
+      "sha256": "3ebb0be334d56b042533f93f43e93115a91f9708940e6e451d7bc539e9472cc6",
+      "bytes": 664,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/bound.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/bound.json",
+      "sha256": "f123d7580041e685bdaa0170cedf83358fba1411c6da4ec9ce02609bb069d5a2",
+      "bytes": 8506552,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/confirmed-discovery.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/confirmed-discovery.json",
+      "sha256": "da3d193295384bb264d31d3d405549af755860e1030e6c79559ceda960ba50e6",
+      "bytes": 2055,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/confirmed-request.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/confirmed-request.json",
+      "sha256": "cb20cd49943b6f39e1c4d05cc5e302c4e45ef05fa25b259e01cd32b1ca94b182",
+      "bytes": 2134,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/previous-input-descriptor.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/previous-input-descriptor.json",
+      "sha256": "e78ba602f1b2d1dec30920b9349e078303d1c2b8e60065aca112238bcc6021ac",
+      "bytes": 627,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/report.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/report.json",
+      "sha256": "d8065b522607806ea6459048b234e9fc2c4baae410549782c6a9f5351bb95df1",
+      "bytes": 197845,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/result.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/vision-tech-swansea/result.json",
+      "sha256": "19d6a4c1e506ea4e7ce4176d53975a84660d8888828589dbfcf55f51fbdc8627",
+      "bytes": 115,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-frozen-v2-2026-11-03/volcanoes-hiking-guides/result.json",
+      "archive_path": "p0-09-frozen-v2-2026-11-03/volcanoes-hiking-guides/result.json",
+      "sha256": "fa1d676a28aebb763811a51a5cf933e3f19e98cba33376771a2e5aaee98a693f",
+      "bytes": 121,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/customer-gbp.json",
+      "archive_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/customer-gbp.json",
+      "sha256": "b98107545d8b0eb62714ab6c53e7b89d563cd5dd330c90abe15d8714f2bed42c",
+      "bytes": 3772,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/identity-observation.json",
+      "archive_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/identity-observation.json",
+      "sha256": "083bd9b3b4e04a39e99ed2c393ae57daf08ab323304cac3809482e633ea80712",
+      "bytes": 662,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/result.json",
+      "archive_path": "p0-09-full-2026-11-03/all-star-plumbing-fresno/result.json",
+      "sha256": "12e928010f2dd277321490abe6dc7b215646073a0d0ade647673c1a759ddbc81",
+      "bytes": 347,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/attempt-077.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/attempt-077.json",
+      "sha256": "58e4e44ea44d3fd0bf61cae17229e046fa38942cc3478b66bedbf3688fc61200",
+      "bytes": 197,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/attempt-078.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/attempt-078.json",
+      "sha256": "5171e8f3abbf3c45a201c595455f8e229d0963c9cbff6767e2c9a20b1b359ad4",
+      "bytes": 197,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/attempt-079.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/attempt-079.json",
+      "sha256": "64606e1573ccfafe40320496feb843fb33cafbaa3db14295887d86fb6f53e8ee",
+      "bytes": 197,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/attempt-080.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/attempt-080.json",
+      "sha256": "81ce8b5161cec260486715c72e7ba70adbd8735af5c718f48328b9b325ecc43c",
+      "bytes": 197,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/attempt-081.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/attempt-081.json",
+      "sha256": "eb6554297a111f7d32ae0ae15244a70548a9505b2cefd9247072332f69866c4a",
+      "bytes": 197,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/completed-03e0a2d0-4082-4643-af8c-75dc47a6e7d1.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/completed-03e0a2d0-4082-4643-af8c-75dc47a6e7d1.json",
+      "sha256": "b86490583deb4213c918e1441ddc14532213aafef779806016566334e9b22550",
+      "bytes": 97,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/completed-17f13d84-8c61-4ceb-9ab1-4d66e5f95eff.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/completed-17f13d84-8c61-4ceb-9ab1-4d66e5f95eff.json",
+      "sha256": "4ef545b73de3409c84d4c8e0d793d2b6b0017bc78daf068083b4abfe9b6325a3",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/completed-4e908c2c-80e8-4068-ba42-ce9d3a12e88f.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/completed-4e908c2c-80e8-4068-ba42-ce9d3a12e88f.json",
+      "sha256": "fda575d972ff36ec57e1e7cb19d4cc39c504588426b570f2f8a600173e735f64",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/completed-cb6b2fc0-b4d7-4904-bd20-e2a1a149b397.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/completed-cb6b2fc0-b4d7-4904-bd20-e2a1a149b397.json",
+      "sha256": "cbe763d42b364d97cf17b340c4942f0d2436f075f3d483dacf8beed3b379955f",
+      "bytes": 97,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/attempts/completed-f203044b-7264-44c8-b258-a634364a9b0b.json",
+      "archive_path": "p0-09-full-2026-11-03/attempts/completed-f203044b-7264-44c8-b258-a634364a9b0b.json",
+      "sha256": "58a1f676ca33bccb0547aaf14b89c60c763de86998b1b75b696900dee8921565",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/checksums-v2.json",
+      "archive_path": "p0-09-full-2026-11-03/checksums-v2.json",
+      "sha256": "2cf3b4abfb2fc3570275152b1b692bcfc6ba804abdfda578a38322e1dc00935e",
+      "bytes": 3337,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/checksums.json",
+      "archive_path": "p0-09-full-2026-11-03/checksums.json",
+      "sha256": "1b9735ac4c13656f30e87444de5bd711d35023424dbddb555a4504b4ba608171",
+      "bytes": 3337,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/final-budget.json",
+      "archive_path": "p0-09-full-2026-11-03/final-budget.json",
+      "sha256": "73271931078daa880ece723a2b067143ffa47f34ed8a58cbd0a90b0dad66dfc5",
+      "bytes": 2230,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/local-checkpoints.json",
+      "archive_path": "p0-09-full-2026-11-03/local-checkpoints.json",
+      "sha256": "731e35ba9571775b4bdada24a26c5ce10c56a7843f89be2c0135a78a611df370",
+      "bytes": 16284,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/customer-gbp.json",
+      "archive_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/customer-gbp.json",
+      "sha256": "98d1ce6159419b6aeee9a96075b6a255b28cc793422f14a12cbb68be4f81728b",
+      "bytes": 3861,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/identity-observation.json",
+      "archive_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/identity-observation.json",
+      "sha256": "373ddc3ecc4bc7d43c5e30a95ed4bb10d145c86b909b838c9427e305e1cce03d",
+      "bytes": 855,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/result.json",
+      "archive_path": "p0-09-full-2026-11-03/pr-plumbing-fresno/result.json",
+      "sha256": "0943b30c94e253626104f102c97c01ea4a35f97540434e07c9cac140782afbae",
+      "bytes": 341,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/preflight.json",
+      "archive_path": "p0-09-full-2026-11-03/preflight.json",
+      "sha256": "c798a24b9a6657eee1cee00100b813ed9f41012e482177557c28ab24fff42f77",
+      "bytes": 181,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/customer-gbp.json",
+      "archive_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/customer-gbp.json",
+      "sha256": "6e63de039faa1cbf839ae1b5e8e11ce4a67acf2f342842bc3d98bc2842146aee",
+      "bytes": 3814,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/identity-observation.json",
+      "archive_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/identity-observation.json",
+      "sha256": "11d21ab5b4e5d26be2169d6ccd76a8cb59a48414e080b55f0a669544144a6938",
+      "bytes": 675,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/result.json",
+      "archive_path": "p0-09-full-2026-11-03/seamless-gutters-pensacola/result.json",
+      "sha256": "73ace2a714f2289ccd3481b5f42b7b87e353b7e3cc022aa118b2d2978abd609d",
+      "bytes": 349,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/summary.json",
+      "archive_path": "p0-09-full-2026-11-03/summary.json",
+      "sha256": "73271931078daa880ece723a2b067143ffa47f34ed8a58cbd0a90b0dad66dfc5",
+      "bytes": 2230,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/vision-tech-swansea/customer-gbp.json",
+      "archive_path": "p0-09-full-2026-11-03/vision-tech-swansea/customer-gbp.json",
+      "sha256": "4e3811660b1fa88d6f16aabcfed0a36539b380b2b1bed785f01e3ac9e53c9802",
+      "bytes": 3724,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/vision-tech-swansea/identity-observation.json",
+      "archive_path": "p0-09-full-2026-11-03/vision-tech-swansea/identity-observation.json",
+      "sha256": "52f97263679f6ce2d91766f1812e1ba2718dfbb873d4e491120de1d2285c9898",
+      "bytes": 617,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/vision-tech-swansea/result.json",
+      "archive_path": "p0-09-full-2026-11-03/vision-tech-swansea/result.json",
+      "sha256": "4e10fa66e75ee3c14903b47d5a75867f12c8d7fe4e4905e5d032a0d8925e34a6",
+      "bytes": 342,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/customer-gbp.json",
+      "archive_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/customer-gbp.json",
+      "sha256": "59df5543d32765391672b120f3ef97c9312f3782fbec7610aedf14948ac21591",
+      "bytes": 3647,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/identity-observation.json",
+      "archive_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/identity-observation.json",
+      "sha256": "2787f4af00842194592fc59496d4287efee6f4c78190cde72c8cf0a907b23877",
+      "bytes": 691,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/result.json",
+      "archive_path": "p0-09-full-2026-11-03/volcanoes-hiking-guides/result.json",
+      "sha256": "a178365e0c42ac00f7db410b82b0f3fbf8500e662480966dbefaf49215627a5f",
+      "bytes": 346,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/competitors.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/competitors.json",
+      "sha256": "468234ead427e2466c37d4b54456701f943aa2a68900f9acee2a3bdd5f5951f1",
+      "bytes": 5659,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/confirmed-request.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/confirmed-request.json",
+      "sha256": "409af1bfeca3a616ffda09a85654b7b6e35839669756480da49042890dcbcf1d",
+      "bytes": 2211,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/customer-gbp.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/customer-gbp.json",
+      "sha256": "b98107545d8b0eb62714ab6c53e7b89d563cd5dd330c90abe15d8714f2bed42c",
+      "bytes": 3772,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/discovery.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/discovery.json",
+      "sha256": "6fe04cd5dfee1d4ec8922f3c114e1e918e063ea43142d5bcf477149f3714ee95",
+      "bytes": 2102,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/identity-observation.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/identity-observation.json",
+      "sha256": "083bd9b3b4e04a39e99ed2c393ae57daf08ab323304cac3809482e633ea80712",
+      "bytes": 662,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/rendered.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/rendered.json",
+      "sha256": "c5d62aa9a93e6610b828097ba0969ab059a8629cca3ea643ffd5b82914e9a9a9",
+      "bytes": 62,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/result.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/result.json",
+      "sha256": "48d58a060563ed0f11036e8d4feee1d3e2c4e8cacc67876d3e9f7ab1937d243c",
+      "bytes": 372,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/shared-market.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/shared-market.json",
+      "sha256": "855648d15d79f6a5659050b1751b7e5e11224e86b60e5d098ac4b9e1fca8b3e4",
+      "bytes": 136542,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/site-inventory.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/all-star-plumbing-fresno/site-inventory.json",
+      "sha256": "152437dbf4b2035059a5c18487653a7c79f96e6a7985e50d1fa7b6cc2fe2d188",
+      "bytes": 1455483,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-082.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-082.json",
+      "sha256": "d492def7dc69e3003a06f7717781029758b59e8824480a598585144a9dce32d3",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-083.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-083.json",
+      "sha256": "1b56ea89d13b6448f073cf0d45837aa3f95ed0992faf1d2cbbca6e6b4f3eeab0",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-084.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-084.json",
+      "sha256": "cd5fc3ee038b5786500b3b891adb1b5fca6cc5b85559beb0935ac28034ee79aa",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-085.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-085.json",
+      "sha256": "615864da7d31cd0c977a8bbee0ba05d7228315f4fcb93dca8aa5465a211afe35",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-086.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-086.json",
+      "sha256": "e327b66d71e30cd064240f4b7eb79594467273d54fb26f46d0b38ed14e2d7967",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-087.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-087.json",
+      "sha256": "33de443f0ae15b59ee8624a20c18617f178b47b603adc7c54c0ccdfe7098c6e4",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-088.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-088.json",
+      "sha256": "e1b53e0177238242a470664aa15fb48cbc461e12e57b8afb2653e9d6cea318d6",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-089.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-089.json",
+      "sha256": "29d662d9852f9e0df6608c8d541ac839214e1f5337de4ac452ddbe851759adcd",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-090.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-090.json",
+      "sha256": "9ca3ef1238edf4b9f2d305f0d8e88a3bb711ebbd023d65137f093d7e990c4243",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-091.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-091.json",
+      "sha256": "84e439739394154f8ba026f1b3b34aef51f9829fa290686721cd705b0a03ffaa",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-092.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-092.json",
+      "sha256": "28c28f40243699787121af635e2e3bfb3891721a57d1cca920fc00798ddd0e5f",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-093.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-093.json",
+      "sha256": "588a7ada41e556f7c5cb6ffccfdb934aea1e1bdfca49d0b47af04da5fb001a74",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-094.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-094.json",
+      "sha256": "c45a907d550763eb15a6ad7dc95c1ea22595e975663215305000f51c3aca52e9",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-095.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-095.json",
+      "sha256": "f791143408551ed52d77ba1fb765ec13796a2483544c5beda9b031684041f4db",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-096.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-096.json",
+      "sha256": "b4967da3aa44071024eb63a76dcc6b4c017a61f3e086f3daf1d55f6d82d58200",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-097.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-097.json",
+      "sha256": "1685638c013f82708d70f951730e60df70c690f4da10da69828695112041817a",
+      "bytes": 186,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-098.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-098.json",
+      "sha256": "745df94f075eac7c14638c31ba4fa99e1c57480393193792de0224a897809cb8",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-099.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-099.json",
+      "sha256": "1895891758ee89488906503ec1707e22bd12ef9e5f7d84741e15230c709a6f36",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-100.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-100.json",
+      "sha256": "7b882eac4b0bc4c7802281b525ae7e7f08f4e387e2c8ecd011a69e834b800419",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-101.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-101.json",
+      "sha256": "e986b05858de7b9928c850a10c3dfaf8fe303f4b1df3a21a1970fc0023866a99",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-102.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/attempt-102.json",
+      "sha256": "4d4170eae292a9cfa678261758593094d0dabeeb35e36c2d7690a738ff678566",
+      "bytes": 186,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-0aa94086-f95e-43a8-96be-430d65003629.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-0aa94086-f95e-43a8-96be-430d65003629.json",
+      "sha256": "34bba510c1ca025b5d72732e765b8ff4c4f7802b6f37607f55d753666cdbd800",
+      "bytes": 97,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-18ce7b15-daf4-4028-b74e-2d81f05f8601.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-18ce7b15-daf4-4028-b74e-2d81f05f8601.json",
+      "sha256": "95002e3a859b2319e2b2fb12611a7d222309de5933610d8935ad87485acf9366",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-19385478-b81d-4457-935f-6f6b8ea10693.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-19385478-b81d-4457-935f-6f6b8ea10693.json",
+      "sha256": "cb3432b3693a244553000b1c6c2f8f4db285c57d542c348cdb5656087bcdbb91",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-2c69d5aa-d728-4fda-9f26-6f36defd14b5.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-2c69d5aa-d728-4fda-9f26-6f36defd14b5.json",
+      "sha256": "634479caff6256c83b8bf912ea945980bcdd14ed9f41ec226d142b611dcb87e3",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-3a0ec5d6-1034-41f1-901b-f0a7f9ba1cf9.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-3a0ec5d6-1034-41f1-901b-f0a7f9ba1cf9.json",
+      "sha256": "01e84ad1262634b971be593f59db69e09e8c507e9f609813ab917fb6cc612e2e",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-418254cd-653a-4c19-911a-6ed67800d411.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-418254cd-653a-4c19-911a-6ed67800d411.json",
+      "sha256": "a8ac98b03b0679879672bba796047022ee6eb1a378beaa95c25641ab4724af5c",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-4a15f5ef-333d-4b40-9a5b-ea65987912df.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-4a15f5ef-333d-4b40-9a5b-ea65987912df.json",
+      "sha256": "8620a0a3809f78a253b75e46f09ea7692a688da8214388ed26d176e0870e2733",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-54444e15-5ded-43de-801d-302fed28e4f4.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-54444e15-5ded-43de-801d-302fed28e4f4.json",
+      "sha256": "8a378018e30de0c35d217f45bb89a8cf429a90ad16d3e39886251f07b1df6d37",
+      "bytes": 99,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-5759643a-3ea0-46cc-bed4-62b04a6501f2.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-5759643a-3ea0-46cc-bed4-62b04a6501f2.json",
+      "sha256": "bdd34c487114e37d8fcd6f87693fbd6e3ae55144647be01de2de112d2379a8a0",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-58e3c341-0cdc-416d-8523-56823b7c6cae.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-58e3c341-0cdc-416d-8523-56823b7c6cae.json",
+      "sha256": "bac8a76e47e0882c7060bc46f67539c2c14ba82094b684453bb9bd6d00f6e551",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-5f948ded-56bb-407c-8f30-ab9d5fd6dd43.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-5f948ded-56bb-407c-8f30-ab9d5fd6dd43.json",
+      "sha256": "c56101e90a1aa1c5f29bd70b829b1cbdba9938e66367580346be8b8aebf13462",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-666ab006-f5fc-4260-a536-4803ea11ebfd.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-666ab006-f5fc-4260-a536-4803ea11ebfd.json",
+      "sha256": "746f6007d0f44c73e2e8262431dfda15624e6ec67715b763bf0d9da3522560ef",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-82c17b16-9d0f-4106-ba58-a2067822e9c1.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-82c17b16-9d0f-4106-ba58-a2067822e9c1.json",
+      "sha256": "76d655e2e6d7967e4d9f91965af635f040eb2cbcf888c1745b2d7f6f5f1cdafc",
+      "bytes": 97,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-88f9ffc9-d58f-4cc9-8a74-733c9ddd6c0e.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-88f9ffc9-d58f-4cc9-8a74-733c9ddd6c0e.json",
+      "sha256": "d596648c1b07c6d821f59e3729426bbf29ba67e524941248866b8a22fdec4f9d",
+      "bytes": 99,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-beaa7578-97d8-4bf8-9d74-996ff0f890ef.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-beaa7578-97d8-4bf8-9d74-996ff0f890ef.json",
+      "sha256": "5a073cc5f922037bfb01bfdaa474ab9128bfd0d8841bd6f7ab27b540d901eee1",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-ce3b8aff-385d-412f-aefc-e75dbe3691d4.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-ce3b8aff-385d-412f-aefc-e75dbe3691d4.json",
+      "sha256": "4cfc7d387d12564a0bf9a8e32f21e3614c38943b30bfe289c3144b85f8b904f5",
+      "bytes": 97,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-d0c112b3-b4cd-4155-b05d-93a2c4cc32ca.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-d0c112b3-b4cd-4155-b05d-93a2c4cc32ca.json",
+      "sha256": "f61647a23994d976f06c3bb980712754f6f6409eb79d49a786141bd3f2c364a2",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-e67a12cf-03ad-41c8-bca5-2b54fe3d5fef.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-e67a12cf-03ad-41c8-bca5-2b54fe3d5fef.json",
+      "sha256": "4ed76b7ff6aca2bd0f1d4e987d2a8ebded064b2f6a1f78da1dca4feade009cd0",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f2dd6a10-797e-45ae-b865-468d4ab970f0.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f2dd6a10-797e-45ae-b865-468d4ab970f0.json",
+      "sha256": "79cd9fe4b0d841c4745ecfd8e0be6e43ccc8437c3c9117f91d0d647e8641417a",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f753115e-6941-4fcd-8a87-3d6009de9e1b.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f753115e-6941-4fcd-8a87-3d6009de9e1b.json",
+      "sha256": "3f71007a27ad14fb286e4a9d479b3b365723ba6dc17ad465303ac21b77390243",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f852587f-16b7-4c86-ba65-bfe6057f09af.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/attempts/completed-f852587f-16b7-4c86-ba65-bfe6057f09af.json",
+      "sha256": "a14d09b778b37b2920b44de0f40868573c16fc892c9176990e558927cb56963f",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/checksums-v2.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/checksums-v2.json",
+      "sha256": "26ac82be64ede34d6846ee95bf4edf02d962ad449c808d45f55084ad026e84e7",
+      "bytes": 10143,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/checksums.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/checksums.json",
+      "sha256": "94f3190a7bc8a3140d0abdf7015f1a55e6853e19f44d4507f7172bc2beffcdd2",
+      "bytes": 10143,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/final-budget.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/final-budget.json",
+      "sha256": "28c3ab923b77b0895924b8f5bd7f677ec2562e5e81e074eae29ed1f050157a4d",
+      "bytes": 2368,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/local-checkpoints.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/local-checkpoints.json",
+      "sha256": "1932de262a7706f4f333576b60aa53fb4911f905c64e89a16e6fa1268c082879",
+      "bytes": 124343017,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/competitors.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/competitors.json",
+      "sha256": "3db7a0798445d45f1d102b08d2b7acfc38e32712ef7b6634ec4ea8a749dd443a",
+      "bytes": 5661,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/confirmed-request.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/confirmed-request.json",
+      "sha256": "e8d0ed33e386aa484bafe54244af8145a0e1cccf8274c02a144d64ba0c686ba4",
+      "bytes": 2181,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/customer-gbp.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/customer-gbp.json",
+      "sha256": "98d1ce6159419b6aeee9a96075b6a255b28cc793422f14a12cbb68be4f81728b",
+      "bytes": 3861,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/discovery.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/discovery.json",
+      "sha256": "6bd6dc8e7f7c7b3254fa5cbc00a9b0f21374da51fb2c4e0b00cc37d1cd0650dc",
+      "bytes": 2088,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/identity-observation.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/identity-observation.json",
+      "sha256": "373ddc3ecc4bc7d43c5e30a95ed4bb10d145c86b909b838c9427e305e1cce03d",
+      "bytes": 855,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/rendered.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/rendered.json",
+      "sha256": "c5d62aa9a93e6610b828097ba0969ab059a8629cca3ea643ffd5b82914e9a9a9",
+      "bytes": 62,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/result.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/result.json",
+      "sha256": "1e4c14059481aee4bd24fe35d3e493b6bc3b51a77fea54d81fa226193e899041",
+      "bytes": 366,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/shared-market.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/shared-market.json",
+      "sha256": "bd4873e5e0adebab44e691d1682ef0625cd01efd85cc437203e45d148fef6a74",
+      "bytes": 136542,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/site-inventory.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/pr-plumbing-fresno/site-inventory.json",
+      "sha256": "1d6834fb736011f7a9258caa143e9256e4236b7c1771103022e819d66a3ed562",
+      "bytes": 3851724,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/preflight.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/preflight.json",
+      "sha256": "b3aa15f8aabe12f022125dfdd3d5f33207d3e1903dd0caf4e34b072478fa5cf7",
+      "bytes": 181,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/competitors.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/competitors.json",
+      "sha256": "22e44e0dda101c08b3b021b3c0fc69c8ee06f9855eb12efe6a926aae38d0375e",
+      "bytes": 2103695,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/confirmed-request.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/confirmed-request.json",
+      "sha256": "eb1764bb4e1c00771b645f0acfaf672fc3991763e66c93d80bcef359d06b063b",
+      "bytes": 2240,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/customer-gbp.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/customer-gbp.json",
+      "sha256": "6e63de039faa1cbf839ae1b5e8e11ce4a67acf2f342842bc3d98bc2842146aee",
+      "bytes": 3814,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/discovery.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/discovery.json",
+      "sha256": "14427f86f29511c0b4bb865e6b932f28df084caa2e458f803d6ae4f1036a4226",
+      "bytes": 2111,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/identity-observation.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/identity-observation.json",
+      "sha256": "11d21ab5b4e5d26be2169d6ccd76a8cb59a48414e080b55f0a669544144a6938",
+      "bytes": 675,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/rendered.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/rendered.json",
+      "sha256": "dc76ae26af1cf7e8679db5ff85576e83700aa834389ac105d4d7400f09077521",
+      "bytes": 156166,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/result.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/result.json",
+      "sha256": "69c61697ae0c28fccd0ed8d089d34eb64dcc39444f133703009c331c7e1c726f",
+      "bytes": 373,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/shared-market.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/shared-market.json",
+      "sha256": "0160dd996fbb197af04fa3efaafe49cb4aa7b3c924cc7cbc635544c16ab950e5",
+      "bytes": 125162,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/site-inventory.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/seamless-gutters-pensacola/site-inventory.json",
+      "sha256": "72ae98509480ad3fe70540f67c32aeee0e4a3d8506f46aedbec2ec67666214d5",
+      "bytes": 11478612,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/summary.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/summary.json",
+      "sha256": "28c3ab923b77b0895924b8f5bd7f677ec2562e5e81e074eae29ed1f050157a4d",
+      "bytes": 2368,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/competitors.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/competitors.json",
+      "sha256": "76655f43d44d1ebe3732cf547f5a3c0d87a875ec8b805182aff0ff0b7d168c99",
+      "bytes": 5487,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/confirmed-request.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/confirmed-request.json",
+      "sha256": "23ec60f308256486a5c09ddfd2e3277d57b7794a207aa644a7ab843b2c3b2fbb",
+      "bytes": 2185,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/customer-gbp.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/customer-gbp.json",
+      "sha256": "4e3811660b1fa88d6f16aabcfed0a36539b380b2b1bed785f01e3ac9e53c9802",
+      "bytes": 3724,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/discovery.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/discovery.json",
+      "sha256": "4137c50dd00833a56015c5cc7c974d95599e45d29bedd3d939212fd188cbe2e1",
+      "bytes": 2055,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/identity-observation.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/identity-observation.json",
+      "sha256": "52f97263679f6ce2d91766f1812e1ba2718dfbb873d4e491120de1d2285c9898",
+      "bytes": 617,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/rendered.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/rendered.json",
+      "sha256": "b79e57af5f8df69744097f9a7aa149a58103e898efbc3790decb29cba3a9906d",
+      "bytes": 101015,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/result.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/result.json",
+      "sha256": "22127b73cdb54afa2a2b976043f7fd642eb282f6a86624f41882395fcab57f67",
+      "bytes": 367,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/shared-market.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/shared-market.json",
+      "sha256": "7477720f3fd940695a55491109f3c955a3efc930c987b1d551b5144c3be774de",
+      "bytes": 120046,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/site-inventory.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/vision-tech-swansea/site-inventory.json",
+      "sha256": "5d5baeccf0b4369218bca64c7ab627cb3709e523fec95caf110b3a1d4a91c44c",
+      "bytes": 8029876,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/confirmed-request.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/confirmed-request.json",
+      "sha256": "f76a2f2b8b6f137ab427e5ccbb74aad44f82c91c1dbc14d79d0e12679ba1644e",
+      "bytes": 1885,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/customer-gbp.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/customer-gbp.json",
+      "sha256": "59df5543d32765391672b120f3ef97c9312f3782fbec7610aedf14948ac21591",
+      "bytes": 3647,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/discovery.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/discovery.json",
+      "sha256": "e43c7195db440c7c6853d4afea21e359acc40419e499ba5b7ab5f2dad4912077",
+      "bytes": 1613,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/identity-observation.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/identity-observation.json",
+      "sha256": "2787f4af00842194592fc59496d4287efee6f4c78190cde72c8cf0a907b23877",
+      "bytes": 691,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/result.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/result.json",
+      "sha256": "e93082988304fce509183fc15bd74a7f070f0d2f129f333ab88b13b524f9494e",
+      "bytes": 386,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/shared-market.json",
+      "archive_path": "p0-09-full-continuation-2026-11-03/volcanoes-hiking-guides/shared-market.json",
+      "sha256": "c15b768976ba84b9f45a78ce202e734387844af2e9ee781e4a306a061e156fad",
+      "bytes": 112342,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-103.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-103.json",
+      "sha256": "671a89baf3755b5dd7de175fba0634538e63087b0e81a59530dc74190259f267",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-104.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-104.json",
+      "sha256": "88a708edb4aa2fdd03eadb08e1c015b6c655272ba34a6e95efbf3b52585821d8",
+      "bytes": 183,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-105.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-105.json",
+      "sha256": "6b1ec6d3a5ee8bcab9e0d20a4b0164ad72a57f346fc8b866c79a92f47ce3e29a",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-106.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/attempt-106.json",
+      "sha256": "f1e019d2d45ba285c28a8b9230de4defce0ee959fcbc05148b8156f8264f3d53",
+      "bytes": 192,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-2b4dd53a-412d-470b-b339-e06416b04456.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-2b4dd53a-412d-470b-b339-e06416b04456.json",
+      "sha256": "2015d50b8eb70ac52d9d903fa2b7a9dbdc880f318b19733eff4b47d86a5b2425",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-31c8b97a-e47d-4470-8804-5dc47f0185e8.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-31c8b97a-e47d-4470-8804-5dc47f0185e8.json",
+      "sha256": "48732ee9900a14362aa7135d9e590bd9f6eededdad3002bc8d91d767f102a6cf",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-609db35d-d21c-4975-8d36-48845bc52d18.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-609db35d-d21c-4975-8d36-48845bc52d18.json",
+      "sha256": "b46dd348a626ff326a15b59142861557fc9fb87743e932b96024cbbaf3191a79",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-96917ed5-09a8-4565-99cc-35329a904822.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/attempts/completed-96917ed5-09a8-4565-99cc-35329a904822.json",
+      "sha256": "7fd9e78d04c8389d8b19cc682a6034a24da906f94b759b5bb5adcf0a4d6a0966",
+      "bytes": 98,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/checksums-v2.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/checksums-v2.json",
+      "sha256": "1098598130a9c852e07ac4e124eb7d01d6e699e1dd8675a275868890c21a678f",
+      "bytes": 1392,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/checksums.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/checksums.json",
+      "sha256": "2a8a8bd948506715c3de9f12ff2d93741e770a7da5836e332e968ac298008b6e",
+      "bytes": 1392,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/competitors.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/competitors.json",
+      "sha256": "575e2646c97a4cddcee95f2bb7e671dd565d16b96ea7cbe0d0b1cece1640927d",
+      "bytes": 10528,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/profile-provider-failures.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/profile-provider-failures.json",
+      "sha256": "af7fe48dab90339fc6fa711f1bd38178ba28f4a8e6bc1827ac8a480156ee0376",
+      "bytes": 229,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/root-probe.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/root-probe.json",
+      "sha256": "7d9612bdaefae426557b326ce8acccac0872ba2c6b501033489788a117fcc630",
+      "bytes": 110,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "p0-09-volcanoes-partial-2026-11-03/summary.json",
+      "archive_path": "p0-09-volcanoes-partial-2026-11-03/summary.json",
+      "sha256": "5d13b320594f7782a1b1d448857986db513b2a41c4475057be11cbd08aa036f2",
+      "bytes": 325,
+      "retained_in_repo": true
+    },
+    {
+      "original_path": "pr-plumbing-fresno/bound-p0-09-2026-11-03.json",
+      "archive_path": "pr-plumbing-fresno/bound-p0-09-2026-11-03.json",
+      "sha256": "97664881ae6e19dac509faadd7965d3913030f00443175820b3a62f3bb4fb878",
+      "bytes": 4365350,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "seamless-gutters-pensacola/bound-p0-09-2026-11-03.json",
+      "archive_path": "seamless-gutters-pensacola/bound-p0-09-2026-11-03.json",
+      "sha256": "7c354c7d9b9a46b028e640c18754ed9bc796d9bfd01e53f091648fb5a5963087",
+      "bytes": 14248182,
+      "retained_in_repo": false
+    },
+    {
+      "original_path": "vision-tech-swansea/bound-p0-09-2026-11-03.json",
+      "archive_path": "vision-tech-swansea/bound-p0-09-2026-11-03.json",
+      "sha256": "f123d7580041e685bdaa0170cedf83358fba1411c6da4ec9ce02609bb069d5a2",
+      "bytes": 8506552,
+      "retained_in_repo": false
+    }
+  ]
+}

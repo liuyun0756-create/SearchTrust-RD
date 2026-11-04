@@ -1,0 +1,8 @@
+{
+  "summary.json": "def0d56b1b0dccd2dc6ffb595e4cd85c6dd043e677b16589dde9cf58a1d6c03a",
+  "all-star-validation.json": "d816515cb8b7f275c9c26e1c076cc71b2b51c5046c6c405f12849820ffaa4edb",
+  "gold-test-results.txt": "c5a62f2689d3287edbe1c43da21ac46a95416d0ff3cc1a8ddfeb58d8ded19054",
+  "eval-full.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "eval-full.stderr": "bb4b8a35535c6184630845bb2369973f626e4fbbaa4e8c915d5a4857ea728eb1",
+  "eval-available-subset.json": "a3d28a728be37dc9acfa3377599c0fac26a31b285c5a344d656f6362245f7e85"
+}

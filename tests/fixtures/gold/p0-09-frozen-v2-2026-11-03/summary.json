@@ -1,0 +1,36 @@
+[
+  {
+    "site_id": "pr-plumbing-fresno",
+    "frozen": true,
+    "generation": "passed",
+    "descriptor_installed": true
+  },
+  {
+    "site_id": "all-star-plumbing-fresno",
+    "frozen": true,
+    "generation": "blocked",
+    "error_type": "CapabilityPublicError",
+    "error_code": null,
+    "descriptor_installed": true
+  },
+  {
+    "site_id": "vision-tech-swansea",
+    "frozen": true,
+    "generation": "passed",
+    "descriptor_installed": true
+  },
+  {
+    "site_id": "seamless-gutters-pensacola",
+    "frozen": true,
+    "generation": "blocked",
+    "error_type": "FindingsError",
+    "error_code": "V22_FINDINGS_LIMIT_EXCEEDED",
+    "descriptor_installed": true
+  },
+  {
+    "site_id": "volcanoes-hiking-guides",
+    "frozen": false,
+    "error_type": "FileNotFoundError",
+    "error_code": null
+  }
+]

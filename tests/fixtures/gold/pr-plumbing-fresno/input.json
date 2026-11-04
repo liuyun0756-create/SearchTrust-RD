@@ -13,8 +13,21 @@
       "path": "capture.json",
       "base": "case",
       "sha256": "b18bfc217fbdab5b306615c04ebbc1a0b080543d4a432414b68660fbea0b28a8"
+    },
+    {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "e21cd4381383141687587f2f14867971b6567a65fe69eed68bd9c24cea83f7a9",
+      "encoding": "gzip"
     }
   ],
-  "generation": null,
-  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+  "generation": {
+    "kind": "bound_input",
+    "input": {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "e21cd4381383141687587f2f14867971b6567a65fe69eed68bd9c24cea83f7a9",
+      "encoding": "gzip"
+    }
+  }
 }

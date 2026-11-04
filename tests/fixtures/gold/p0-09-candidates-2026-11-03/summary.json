@@ -1,0 +1,49 @@
+{
+  "status": "STOPPED_AWAITING_CONFIRMATION",
+  "sites": [
+    {
+      "site_id": "pr-plumbing-fresno",
+      "serpapi_attempts": 8,
+      "gbp_candidates": 1,
+      "q1_observations": 28,
+      "market_error_type": null
+    },
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "serpapi_attempts": 8,
+      "gbp_candidates": 1,
+      "q1_observations": 28,
+      "market_error_type": null
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "serpapi_attempts": 8,
+      "gbp_candidates": 2,
+      "q1_observations": 30,
+      "market_error_type": null
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "serpapi_attempts": 8,
+      "gbp_candidates": 1,
+      "q1_observations": 29,
+      "market_error_type": null
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "serpapi_attempts": 2,
+      "gbp_candidates": 2,
+      "q1_observations": 0,
+      "market_error_type": "DeterministicJobError"
+    }
+  ],
+  "serpapi_attempts": 34,
+  "firecrawl_calls": 0,
+  "firecrawl_credits": 0,
+  "usd_usage_reserve": "0.850",
+  "actual_invoice_usd": null,
+  "billing_note": "Request attempts counted; successful billing units and shared-account invoice not queried.",
+  "remaining_serpapi_attempts": 151,
+  "remaining_firecrawl_credits": 30,
+  "remaining_usd_reserve": "4.150"
+}

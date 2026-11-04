@@ -4,7 +4,7 @@ from uuid import NAMESPACE_URL, uuid5
 from pydantic import TypeAdapter
 
 from app.api.v2.models import AnalyzeRequest
-from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.collectors.site_inventory_models import SiteInventorySnapshot, INVENTORY_ADAPTER
 from app.competitors_v22.models import CompetitorCollectionSnapshot, SharedMarketSnapshot
 from app.jobs_v22.capability_inputs import validate_generation_input
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
@@ -43,7 +43,7 @@ def _build_collected_input(*, user_id, job_id, business, request, collected,
         else:
             from app.jobs_v22.first_service_collection_models import FirstServiceCollectionRequest
             req = FirstServiceCollectionRequest.model_validate_json(canonical_json_bytes(request))
-        site = SiteInventorySnapshot.model_validate_json(canonical_json_bytes(collected.site_inventory))
+        site = INVENTORY_ADAPTER.validate_json(canonical_json_bytes(collected.site_inventory))
         market = SharedMarketSnapshot.model_validate_json(canonical_json_bytes(collected.shared_market))
         rivals = CompetitorCollectionSnapshot.model_validate_json(canonical_json_bytes(collected.competitor_collection))
         gbp = TypeAdapter(CustomerPublicGbpSnapshotValue).validate_json(canonical_json_bytes(collected.customer_public_gbp.snapshot))

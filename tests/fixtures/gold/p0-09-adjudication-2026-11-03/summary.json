@@ -1,0 +1,56 @@
+{
+  "status": "STOPPED_AFTER_ADJUDICATION",
+  "sites": [
+    {
+      "site_id": "pr-plumbing-fresno",
+      "gbp_status": "confirmed_by_reviewer",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 3,
+      "attempts_this_site": 6
+    },
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "gbp_status": "confirmed_by_reviewer",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 3,
+      "attempts_this_site": 6
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "gbp_status": "confirmed_by_matching_rule",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 3,
+      "attempts_this_site": 7
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "gbp_status": "gbp_not_found",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 3,
+      "attempts_this_site": 8
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "gbp_status": "confirmed_by_reviewer",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 2,
+      "attempts_this_site": 6
+    },
+    {
+      "site_id": "nova-service",
+      "gbp_status": "not_requeried_existing_frozen_report",
+      "market_status": "recollected_at_city_point",
+      "selected_competitors": 3,
+      "attempts_this_site": 6
+    }
+  ],
+  "prior_attempts": 34,
+  "additional_attempts": 42,
+  "serpapi_attempts_cumulative": 76,
+  "firecrawl_credits_cumulative": 0,
+  "usd_usage_reserve": "1.900",
+  "remaining_serpapi_attempts": 109,
+  "remaining_firecrawl_credits": 30,
+  "remaining_usd_reserve": "3.100",
+  "actual_invoice_usd": null
+}

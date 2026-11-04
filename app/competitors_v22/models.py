@@ -17,7 +17,7 @@ from app.api.v2.competitor_models import (
 )
 from app.api.v2.models import CompetitorCandidate, ConfirmedCompetitor, DataGap
 from app.collectors.serp_market_models import SerpMarketSnapshot
-from app.collectors.site_inventory_models import SiteInventorySnapshot
+from app.collectors.site_inventory_models import SiteInventorySnapshot, InventorySnapshot
 from app.competitors_v22.limits import (
     COMPETITOR_COUNT,
     COMPETITOR_DISCOVERY_CANDIDATE_LIMIT,
@@ -259,7 +259,7 @@ class CompetitorSnapshot(StrictModel):
     site_status: CompetitorSourceStatus
     public_gbp_status: CompetitorSourceStatus
     reviews_status: CompetitorSourceStatus
-    site_inventory: SiteInventorySnapshot | None = None
+    site_inventory: InventorySnapshot | None = None
     public_gbp: PublicGbpProfile | None = None
     reviews: list[PublicReviewRecord] = Field(default_factory=list, max_length=COMPETITOR_REVIEW_SAMPLE_LIMIT)
     limitations: list[BoundedLimitation] = Field(default_factory=list, max_length=100)
@@ -275,7 +275,7 @@ class CompetitorSnapshot(StrictModel):
             if self.site_inventory.deep_analyzed_count != self.analyzed_page_count:
                 raise ValueError("analyzed page count must match site inventory")
             host = (urlsplit(str(self.competitor.website_url)).hostname or "").casefold().removeprefix("www.")
-            if self.site_inventory.canonical_host != host:
+            if self.site_inventory.canonical_host.casefold().removeprefix("www.") != host:
                 raise ValueError("site inventory must belong to the competitor website")
         if self.public_gbp is None and self.public_gbp_status == "available":
             raise ValueError("available public GBP status requires a profile")

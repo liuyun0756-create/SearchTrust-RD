@@ -31,9 +31,11 @@ def alignment_status(state: str, *, gbp_field_state: str | None = None) -> str:
     return ALIGNMENT_STATUSES[state]
 
 # New rulesets only. Historical generation continues to use its frozen branch.
-PUBLIC_RULESET = "v22_capability_public_v8"
+PRIOR_PUBLIC_RULESET = "v22_capability_public_v8"
+PUBLIC_RULESET = "v22_capability_public_v9"
+PUBLIC_LABELLED_RULESETS = {PRIOR_PUBLIC_RULESET, PUBLIC_RULESET}
 SERVICE_RULESET = "v22_capability_service_v5"
-LABELLED_RULESETS = {PUBLIC_RULESET, SERVICE_RULESET}
+LABELLED_RULESETS = {*PUBLIC_LABELLED_RULESETS, SERVICE_RULESET}
 COVERAGE_SOURCES = ("site", "gbp", "serp", "competitor", "citation", "gsc", "ga4", "rendered")
 
 

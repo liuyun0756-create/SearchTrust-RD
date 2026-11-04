@@ -933,7 +933,10 @@
             "input_manifest": {
               "properties": {
                 "ruleset_version": {
-                  "const": "v22_capability_public_v8"
+                  "enum": [
+                    "v22_capability_public_v8",
+                    "v22_capability_public_v9"
+                  ]
                 }
               },
               "required": [
@@ -1940,6 +1943,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.6 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
+  "title": "SearchTrust capability contracts 2.2.7 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
   "type": "object"
 }

@@ -2,7 +2,7 @@
   "schema_version": "gold_input_v1",
   "site_id": "seamless-gutters-pensacola",
   "group": "B",
-  "site_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+  "site_url": "https://seamlessgutterspensacola.com/",
   "snapshot_files": [
     {
       "path": "page.html",
@@ -13,8 +13,25 @@
       "path": "capture.json",
       "base": "case",
       "sha256": "c749608ffed59e66715fcd0929fd5870ce526b3f67c27a1b44607a3ca0162b3b"
+    },
+    {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "bb5222e719b3edc64b78f9c9f9a437f3878070070efa659932473f0337eab61e",
+      "encoding": "gzip"
     }
   ],
-  "generation": null,
-  "pending_input": "缺少可验证的完整报告生成输入；网页快照不等于已确认的经营身份、GBP、查询词或竞品。"
+  "generation": {
+    "kind": "bound_input",
+    "input": {
+      "base": "case",
+      "path": "bound-p0-10.json.gz",
+      "sha256": "bb5222e719b3edc64b78f9c9f9a437f3878070070efa659932473f0337eab61e",
+      "encoding": "gzip"
+    }
+  },
+  "saved_page_url": "https://seamlessgutterspensacola.com/gutter-installation/",
+  "target_pages": [
+    "https://seamlessgutterspensacola.com/gutter-installation/"
+  ]
 }

@@ -33,7 +33,7 @@ from app.collectors.site_inventory_models import (
     InventoryErrorCode,
     InventoryPageRecord,
     SelectedPageRecord,
-    SiteInventorySnapshot,
+    SiteInventorySnapshot, SiteInventorySnapshotV2, InventoryPageRecordV2,
 )
 from app.collectors.site_inventory_selection import RankedPage, classify_page, select_key_pages
 from app.collectors.site_inventory_urls import SiteScope, canonicalize_inventory_url
@@ -102,6 +102,7 @@ class SiteInventoryCollector:
         sitemap_max_depth: int,
         batch_size: int,
         deep_max_bytes: int = 2_000_000,
+        resource_limits: bool = False,
         clock: Clock = _utc_now,
     ) -> None:
         self.fetcher = fetcher
@@ -113,6 +114,7 @@ class SiteInventoryCollector:
         self.sitemap_max_depth = sitemap_max_depth
         self.batch_size = batch_size
         self.deep_max_bytes = deep_max_bytes
+        self.resource_limits = resource_limits
         self.clock = clock
 
     async def collect(
@@ -135,6 +137,7 @@ class SiteInventoryCollector:
                 scope=initial_scope,
                 max_bytes=self.structural_max_bytes,
                 accepted_media_types=_HTML_TYPES,
+                **({"allow_prefix": True} if self.resource_limits else {}),
             )
         except (SiteFetchError, UrlUnreachableError) as exc:
             raise SiteInventoryCollectionError(
@@ -308,8 +311,12 @@ class SiteInventoryCollector:
         for page in pages:
             sources.update(page.discovery_sources)
         unique_limitations = list(dict.fromkeys(limitations))
-        return SiteInventorySnapshot(
-            schema_version="site_inventory_snapshot_v1",
+        if self.resource_limits and any(getattr(p, "structural_truncated", False) for p in pages):
+            limitations.append("Some page content was not checked because only a bounded prefix was available for link discovery.")
+            unique_limitations = list(dict.fromkeys(limitations))
+        model = SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot
+        return model(
+            schema_version="site_inventory_snapshot_v2" if self.resource_limits else "site_inventory_snapshot_v1",
             root_url=scope.root_url,
             canonical_host=scope.canonical_host,
             started_at=started_at,
@@ -319,7 +326,7 @@ class SiteInventoryCollector:
             discovered_url_count=len(pages),
             structurally_checked_count=len(checked_pages),
             deep_analyzed_count=sum(page.deep_analyzed for page in selected_pages),
-            pages=pages,
+            pages=[InventoryPageRecordV2.model_validate(p.model_dump()) for p in pages] if self.resource_limits else pages,
             selected_pages=selected_pages,
             deep_attempts=deep_attempts,
             page_type_counts=[
@@ -421,18 +428,27 @@ class SiteInventoryCollector:
                 scope=scope,
                 max_bytes=self.structural_max_bytes,
                 accepted_media_types=_HTML_TYPES,
+                **({"allow_prefix": True} if self.resource_limits else {}),
             )
+            text = response.decode()
+            if response.truncated:
+                from app.collectors.site_inventory_prefix import complete_tag_prefix
+                text = complete_tag_prefix(text)
             structure = extract_html_structure(
-                response.decode(),
+                text,
                 page_url=response.final_url,
                 scope=scope,
             )
+            if response.truncated:
+                structure = HtmlStructure(None, None, None, (), (), structure.internal_links, "")
             classification = classify_page(
                 url=candidate.url,
                 root_url=scope.root_url,
                 structure=structure,
             )
-            record = InventoryPageRecord(
+            model = InventoryPageRecordV2 if self.resource_limits else InventoryPageRecord
+            record = model(
+                **({"structural_truncated": response.truncated} if self.resource_limits else {}),
                 url=candidate.url,
                 discovery_sources=candidate.sources,
                 crawl_depth=candidate.crawl_depth,
@@ -540,6 +556,7 @@ class SiteInventoryCollector:
         response = cached
         if (
             response is None
+            or response.truncated
             or response.response_bytes >= self.structural_max_bytes
             or response.status_code >= 400
         ):

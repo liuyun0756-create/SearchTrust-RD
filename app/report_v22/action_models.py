@@ -158,6 +158,11 @@ class ActionPriority(StrictModel):
     impact_scope: int = Field(ge=0, le=15)
 
 
+class PublicActionCandidate(ActionSkeleton):
+    """Internal v9 candidate order, before the final three-action selection."""
+    sequence: int = Field(ge=1)
+
+
 class ActionSelectionAudit(StrictModel):
     candidate_key: str = Field(min_length=1, max_length=200)
     action_id: ActionId

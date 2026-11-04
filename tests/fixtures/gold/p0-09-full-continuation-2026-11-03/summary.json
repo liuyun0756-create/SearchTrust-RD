@@ -1,0 +1,67 @@
+{
+  "sites": [
+    {
+      "site_id": "pr-plumbing-fresno",
+      "job_id": "c05c7e59-60f8-4816-88a1-ec6d74777c82",
+      "case_id": "9e76fd99-4c07-5de7-9fad-3a8d37a3ae83",
+      "started_at": "2026-11-03T09:48:23.879708Z",
+      "status": "blocked",
+      "error_type": "FindingsError",
+      "error_code": "V22_FINDINGS_BINDING_INVALID",
+      "completed_at": "2026-11-03T09:51:52.114754Z",
+      "attempts_added": 5
+    },
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "job_id": "0bd5f3f8-65f7-4b18-b563-ff954755a924",
+      "case_id": "94b5a91a-83cc-55b4-889f-6a92a4082956",
+      "started_at": "2026-11-03T09:48:25.350762Z",
+      "status": "blocked",
+      "error_type": "FindingsError",
+      "error_code": "V22_FINDINGS_BINDING_INVALID",
+      "completed_at": "2026-11-03T09:52:39.163807Z",
+      "attempts_added": 5
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "job_id": "65c80652-9b33-4cee-ba2e-cd884f9be5b1",
+      "case_id": "ba75416f-8f70-5000-ae43-3675d2d27fcb",
+      "started_at": "2026-11-03T09:48:26.463417Z",
+      "status": "blocked",
+      "error_type": "FindingsError",
+      "error_code": "V22_FINDINGS_BINDING_INVALID",
+      "completed_at": "2026-11-03T09:54:58.013374Z",
+      "attempts_added": 6
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "job_id": "17b0ca81-125d-4f5d-9b39-4c7d73deac4e",
+      "case_id": "28d09bc6-3579-5229-ba9b-2b26afbac65f",
+      "started_at": "2026-11-03T09:48:27.407334Z",
+      "status": "blocked",
+      "error_type": "FindingsError",
+      "error_code": "V22_FINDINGS_LIMIT_EXCEEDED",
+      "completed_at": "2026-11-03T10:04:13.031847Z",
+      "attempts_added": 5
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "job_id": "5323340c-15fb-47c2-a082-c3b716224ae3",
+      "case_id": "997167c1-ec7e-54a2-9219-515cf73b45f8",
+      "started_at": "2026-11-03T09:48:28.724605Z",
+      "status": "blocked",
+      "error_type": "DeterministicJobError",
+      "error_code": "V22_SITE_INVENTORY_ROOT_UNREACHABLE",
+      "completed_at": "2026-11-03T10:04:15.293130Z",
+      "attempts_added": 0
+    }
+  ],
+  "serpapi_attempts": 93,
+  "firecrawl_attempts": 9,
+  "firecrawl_credits_reserved": 9,
+  "usd_usage_reserve": "2.370",
+  "actual_invoice_usd": null,
+  "remaining_serpapi_attempts": 92,
+  "remaining_firecrawl_credits": 21,
+  "remaining_usd_reserve": "2.630"
+}

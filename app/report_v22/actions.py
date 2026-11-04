@@ -14,7 +14,7 @@ from app.report_v22.action_models import (
     ActionCopyRequirements,
     ActionPriority,
     ActionSelectionAudit,
-    ActionSkeleton,
+    ActionSkeleton, PublicActionCandidate,
     ActionTarget,
     ActionValidationMetric,
     PublicActionPlan,
@@ -385,6 +385,7 @@ def _build_action(
     sequence: int,
     review_date: Any,
     limits: Any,
+    candidate_only: bool = False,
 ) -> ActionSkeleton:
     template = candidate.template
     finding_ids = sorted(finding.finding_id for finding, _ in candidate.entries)
@@ -408,7 +409,8 @@ def _build_action(
     if not metric_sources:
         raise PublicActionError("REFERENCE_INVALID")
     try:
-        return ActionSkeleton(
+        model = PublicActionCandidate if candidate_only else ActionSkeleton
+        return model(
             action_id=candidate.action_id,
             sequence=sequence,
             finding_ids=finding_ids,
@@ -524,7 +526,7 @@ def build_public_action_plan(
     return plan
 
 
-def select_public_action_skeletons(value: PublicActionPlanInput | dict[str, Any], *, all_candidates: bool = False) -> list[ActionSkeleton]:
+def select_public_action_skeletons(value: PublicActionPlanInput | dict[str, Any], *, all_candidates: bool = False, candidate_only: bool = False) -> list[ActionSkeleton]:
     """2.2.2 selection: reuse proven grouping/priority without padding to three.
 
     The legacy builder deliberately remains exactly-three for 2.2.1 consumers.
@@ -548,5 +550,5 @@ def select_public_action_skeletons(value: PublicActionPlanInput | dict[str, Any]
             review_date = request.planning_date + timedelta(days=30 * sequence)
         except OverflowError:
             raise PublicActionError("DATE_INVALID") from None
-        actions.append(_build_action(candidate, sequence=sequence, review_date=review_date, limits=request.limits))
+        actions.append(_build_action(candidate, sequence=sequence, review_date=review_date, limits=request.limits, candidate_only=candidate_only))
     return actions

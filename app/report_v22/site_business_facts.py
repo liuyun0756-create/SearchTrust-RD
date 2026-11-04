@@ -46,7 +46,7 @@ def field_states(candidates, diagnostics, checked):
     return fields
 
 
-def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patterns=False, gbp_phone=None, gbp_address=None, country="") -> SiteBusinessFactsResult:
+def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patterns=False, gbp_phone=None, gbp_address=None, country="", resource_limits=False) -> SiteBusinessFactsResult:
     try:
         reject_nonfinite(value)
         raw = unpack_models(value)
@@ -68,7 +68,10 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patt
         budget = ParseBudget(limits)
         if reason is None:
             selected = {str(s.url): (index, s.deep_snapshot) for index, s in enumerate(source.payload.selected_pages)}
-            for page in sorted(source.payload.pages, key=lambda p: str(p.url)):
+            exhausted = False
+            limited_deep = {str(a.url) for a in source.payload.deep_attempts if a.error_code in {"response_too_large", "resource_limit"}}
+            ordered_pages = source.payload.pages if resource_limits else sorted(source.payload.pages, key=lambda p: str(p.url))
+            for page in ordered_pages:
                 position, deep = selected.get(str(page.url), (None, None))
                 page_record = CandidatePage(requested_url=page.url, page_type=page.page_type,
                     inventory_check_status=page.check_status, inventory_error_code=page.error_code, status="not_checked",
@@ -76,12 +79,27 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patt
                     **(dict(final_url=deep.final_url, collected_at=deep.collected_at, response_status=deep.status_code,
                             content_type=deep.content_type, content_checksum=deep.content_checksum) if deep else {}))
                 unavailable = page_reason(page, deep, scope)
+                if resource_limits:
+                    size = len(deep.html.encode("utf-8")) if deep else 0
+                    if deep and budget.html_bytes + size > limits.max_html_bytes_total:
+                        exhausted = True
+                    if (deep and (exhausted or size > limits.max_html_bytes_per_page)) or (deep is None and str(page.url) in limited_deep):
+                        unavailable = "resource_limit"
                 page_candidates = {}
                 if unavailable:
                     page_record.diagnostics = [CandidateDiagnostic(code=unavailable, fields=list(FIELD_NAMES), scope="availability")]
                 else:
                     path = f"/payload/selected_pages/{position}/deep_snapshot/html"
-                    tree = parse_html(deep.html, path, budget)
+                    try:
+                        tree = parse_html(deep.html, path, budget)
+                    except SiteBusinessError as exc:
+                        if not resource_limits or not exc.error_code.endswith("LIMIT_EXCEEDED"):
+                            raise
+                        page_record.diagnostics = [CandidateDiagnostic(code="resource_limit", fields=list(FIELD_NAMES), scope="availability")]
+                        pages.append(page_record)
+                        retained += len(canonical_json_bytes(page_record))
+                        require(retained <= limits.max_output_bytes, "LIMIT_EXCEEDED")
+                        continue
                     structured, diagnostics, documents = jsonld_candidates(tree, page.url, deep.final_url, scope)
                     dom, dom_diagnostics = dom_candidates(tree, text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address, country=country)
                     diagnostics.extend(dom_diagnostics)

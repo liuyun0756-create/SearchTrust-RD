@@ -767,8 +767,16 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                         service_role_key=storage_key, http_client=capability_http_client),
                     store=first_service_discovery_store, market_store=market_store,
                     redis=pool, queue_name=settings.V22_QUEUE_NAME)
+            # Public v9 owns the new collection contract. Legacy and first-service
+            # executors retain their original stage and cached snapshot schemas.
+            from copy import copy
+            acquisition_collector = copy(prospect_executor)
+            acquisition_collector.site_stage = build_site_inventory_stage(settings, resource_limits=True)
+            acquisition_collector.competitor_stage = CheckpointedCompetitorCollectionStage(
+                site_stage=CheckpointedCompetitorSiteStage(acquisition_collector.site_stage),
+                profile_stage=prospect_executor.competitor_stage.profile_stage)
             ctx["capability_acquisition_preparer"] = CapabilityAcquisitionPreparer(
-                repository=capability_executor.resolver, collector=prospect_executor,
+                repository=capability_executor.resolver, collector=acquisition_collector,
                 render_stage=build_site_render_stage(settings),
                 discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))
             ctx["capability_first_service_preparer"] = CapabilityFirstServicePreparer(

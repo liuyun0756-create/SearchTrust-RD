@@ -1,0 +1,33 @@
+{
+  "status": "BLOCKED_BY_RECORDED_GENERATION_OR_COLLECTION_LIMITS",
+  "operations": {
+    "serpapi_market_search": 60,
+    "serpapi_location": 5,
+    "serpapi_gbp_candidate": 5,
+    "serpapi_city_location": 3,
+    "serpapi_gbp_bounded_lookup": 3,
+    "serpapi_customer_public_gbp": 5,
+    "firecrawl_scrape": 2,
+    "serpapi_public_profile": 14,
+    "firecrawl_map": 9
+  },
+  "serpapi_attempts": 95,
+  "firecrawl_attempts": 11,
+  "firecrawl_basic_credits_reserved": 11,
+  "usd_usage_reserve": "2.430",
+  "actual_invoice_usd": null,
+  "remaining_serpapi_attempts": 90,
+  "remaining_firecrawl_credits": 19,
+  "remaining_usd_reserve": "2.570",
+  "bound_sites": 4,
+  "new_successful_reports": [
+    "pr-plumbing-fresno",
+    "vision-tech-swansea"
+  ],
+  "blocked_sites": [
+    "all-star-plumbing-fresno",
+    "seamless-gutters-pensacola",
+    "volcanoes-hiking-guides"
+  ],
+  "truth_annotations_written": false
+}
