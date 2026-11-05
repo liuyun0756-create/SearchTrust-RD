@@ -152,8 +152,12 @@
     }
   },
   "operating_model": {
-    "value": null,
+    "value": "service_area",
     "evidence_refs": [
+      {
+        "file": "负责人人工核对",
+        "locator": "2026-11-05 负责人确认：上门服务；公开地址只是办公室（可有接待），维修必须到客户家完成，因此为 service_area 而非 storefront/hybrid"
+      },
       {
         "file": "nova-v5-snapshots.json",
         "base": "private",

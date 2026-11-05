@@ -44,6 +44,8 @@ NotCheckedReason = Literal[
     "site_content_not_checked",
     "comparison_time_gap",
     "comparator_unsupported",
+    "operating_model_unresolved",
+    "operating_location_unresolved",
 ]
 PairState = Literal["exact_match", "semantic_match", "mismatch", "incomparable"]
 ServiceAreaState = Literal["exact_match", "partial_match", "mismatch"]
@@ -203,7 +205,7 @@ class SiteGbpFieldResult(StrictModel):
 
 
 class SiteGbpAlignmentResult(StrictModel):
-    alignment_version: Literal["site_gbp_alignment_v1", "site_gbp_alignment_v2", "site_gbp_alignment_v3"] = ALIGNMENT_VERSION
+    alignment_version: Literal["site_gbp_alignment_v1", "site_gbp_alignment_v2", "site_gbp_alignment_v3", "site_gbp_alignment_v4"] = ALIGNMENT_VERSION
     case_id: UUID
     site_snapshot_id: UUID | None = None
     public_gbp_snapshot_id: UUID | None = None

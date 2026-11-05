@@ -46,6 +46,8 @@ _NOT_APPLICABLE = {
     "storefront": {"service_area"},
     "service_area": {"address"},
     "hybrid": set(),
+    "meeting_point": {"address"},
+    None: set(),
 }
 _COVERAGE_NOTE = (
     "This evidence records a missing field in the saved, approved sample after required checks; "
@@ -64,7 +66,7 @@ def _validate_identity(context: EvidenceBuildContext, identity: BusinessIdentity
     )
     reference = context.customer_public_gbp
     if (identity.site_url != context.site_url
-            or identity.primary_location != context.target_market
+            or (getattr(identity, "target_market", identity.primary_location) != context.target_market)
             or normalized_host(identity.normalized_domain) != source_domain
             or facts.case_id != context.case_id
             or facts.site_url != context.site_url):
@@ -261,7 +263,7 @@ def build_site_gbp_alignment(
     limits = limits or SiteGbpAlignmentLimits()
     _validate_identity(context, identity, site_source, public_source, facts)
     text_patterns = facts.extraction_version == "site_business_extraction_v2"
-    version = "site_gbp_alignment_v3" if name_quality else TEXT_PATTERN_ALIGNMENT_VERSION if text_patterns else ALIGNMENT_VERSION
+    version = "site_gbp_alignment_v4" if hasattr(identity, "identity") else "site_gbp_alignment_v3" if name_quality else TEXT_PATTERN_ALIGNMENT_VERSION if text_patterns else ALIGNMENT_VERSION
     candidates = {item.candidate_id: item for item in facts.candidates}
     eligible = defaultdict(list)
     unresolved = defaultdict(list)
@@ -288,6 +290,9 @@ def build_site_gbp_alignment(
     for field in FIELD_NAMES:
         inspection = inspections[field]
         field_urls = sorted(urls[field], key=str)
+        if identity.operating_model is None and field in {"address", "service_area"}:
+            results.append(_not_checked(field, "operating_model_unresolved", unresolved=unresolved[field], urls=field_urls))
+            continue
         if field in _NOT_APPLICABLE[identity.operating_model]:
             gbp_ids = [] if public_source is None else [key for _, key in _gbp_items(evidence, public_source.binding.snapshot_id, _GBP_FIELD[field])]
             results.append(SiteGbpFieldResult(
@@ -299,6 +304,14 @@ def build_site_gbp_alignment(
                 urls=field_urls,
             ))
             continue
+        if hasattr(identity, "identity"):
+            if field == "address" and (identity.address_location is None or identity.identity.identity_match.state != "matched"
+                    or identity.identity.operating_location.role != "customer_facing" or identity.identity.selected_branch_ref is None):
+                results.append(_not_checked(field, "operating_location_unresolved", unresolved=unresolved[field], urls=field_urls))
+                continue
+            if identity.identity.country_code is None:
+                results.append(_not_checked(field, "comparator_unsupported", unresolved=unresolved[field], urls=field_urls))
+                continue
         if site_source is None or public_source is None:
             results.append(_not_checked(field, "source_missing", unresolved=unresolved[field], urls=field_urls))
             continue
@@ -441,7 +454,7 @@ def build_site_gbp_alignment(
         public_gbp_snapshot_id=public_source.binding.snapshot_id if public_source else None,
         site_payload_checksum=site_source.binding.payload_checksum if site_source else None,
         public_gbp_payload_checksum=public_source.binding.payload_checksum if public_source else None,
-        identity_summary_checksum=request_digest(identity),
+        identity_summary_checksum=request_digest(identity.model_dump(mode="json")),
         eligibility=selection.eligibility,
         inspections=selection.inspections,
         fields=results,

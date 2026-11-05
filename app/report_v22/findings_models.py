@@ -2,11 +2,12 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, HttpUrl, PrivateAttr, model_validator
+from pydantic import Field, HttpUrl, PrivateAttr, model_validator, model_serializer
 
 from app.collectors.site_inventory_models import SitePageType
 from app.report_v22.evidence_models import EvidenceBuildInput, EvidenceBuildResult
 from app.report_v22.models import BusinessIdentity, CompetitorId, EvidenceId, Finding, FindingId, LayerAssessment, StrictModel
+from app.report_v22.business_identity_v2 import BusinessIdentityV2
 from app.report_v22.site_business_models import SiteBusinessLimits
 from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits, SiteGbpAlignmentResult
 
@@ -19,7 +20,7 @@ EvaluationReason = Literal[
     "customer_public_gbp_missing", "semantic_rules_not_implemented", "gbp_alignment_not_implemented",
     "exact_match", "semantic_match", "partial_match", "value_mismatch",
     "site_field_missing", "gbp_field_missing", "both_fields_missing", "field_not_applicable",
-    "site_content_not_checked", "comparator_unsupported",
+    "site_content_not_checked", "comparator_unsupported", "operating_model_unresolved", "operating_location_unresolved",
 ]
 
 
@@ -30,8 +31,26 @@ class PublicFindingsLimits(StrictModel):
 
 
 class PublicFindingsInput(StrictModel):
+    schema_version: Literal["public_findings_input_v2"] | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_input(self, handler):
+        result = handler(self)
+        if self.schema_version is None:
+            result.pop("schema_version", None)
+        return result
+
+    @model_validator(mode="after")
+    def versioned_identity(self):
+        v2 = isinstance(self.business_identity, BusinessIdentityV2)
+        if v2 != (self.schema_version == "public_findings_input_v2"):
+            raise ValueError("identity and request version mismatch")
+        if not v2 and "schema_version" in self.model_fields_set:
+            raise ValueError("historical request must not carry version metadata")
+        return self
+
     evidence_input: EvidenceBuildInput
-    business_identity: BusinessIdentity | None = None
+    business_identity: BusinessIdentity | BusinessIdentityV2 | None = None
     site_business_limits: SiteBusinessLimits = Field(default_factory=SiteBusinessLimits)
     site_gbp_alignment_limits: SiteGbpAlignmentLimits = Field(default_factory=SiteGbpAlignmentLimits)
     limits: PublicFindingsLimits = Field(default_factory=PublicFindingsLimits)

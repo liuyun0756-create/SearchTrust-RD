@@ -1,0 +1,62 @@
+{
+  "vision-tech-swansea": {
+    "value": "service_area",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "visiontechav.com",
+    "selected_branch_ref": "3467016953362037400",
+    "evidence_checksum": "sha256:c25c56c1e56a82d135a53186a7a8c4d9c4f20e3a05d87372517c350bf885a8f8",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  },
+  "volcanoes-hiking-guides": {
+    "value": "meeting_point",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "volcanoeshikingguides.com",
+    "selected_branch_ref": "16906567364961418758",
+    "evidence_checksum": "sha256:19b324a9db6951854265b8481be6f4e6fd146437cfec362560f6ebf15b0aca28",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  },
+  "pr-plumbing-fresno": {
+    "value": "hybrid",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "prplumbingfresno.com",
+    "selected_branch_ref": "9308775580876614598",
+    "evidence_checksum": "sha256:1ee0c7f9092d5f2915a74640c16bacdf13ff3e77b6b0824b625d460dff4c58e0",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  },
+  "all-star-plumbing-fresno": {
+    "value": "service_area",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "allstarplumbingfresno.com",
+    "selected_branch_ref": "3959786852779329755",
+    "evidence_checksum": "sha256:156a87e8a1b453190c158f9660aba45ba1b4136e416b9822e0653b7a9213edcc",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  },
+  "nova-service": {
+    "value": "service_area",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "novaservice.pro",
+    "selected_branch_ref": "35635639726340544",
+    "evidence_checksum": "sha256:f27b2304bb977a586e24e3658628a0b61cbdff21e5b65630bcc401cdd7a620c1",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  },
+  "seamless-gutters-pensacola": {
+    "value": "service_area",
+    "confirmed_by": "负责人确认（2026-11-05）",
+    "confirmed_at": "2026-11-05T00:00:00Z",
+    "reason": "负责人确认经营模式；公开办公地址不等于接待门店。",
+    "normalized_domain": "seamlessgutterspensacola.com",
+    "selected_branch_ref": "16921898606511158364",
+    "evidence_checksum": "sha256:194e1f9e698b498be32467884c0b12bef63dcf2bc0a04a3cb41ae1d71c23c410",
+    "source_ref": "docs/acquisition-plan/reviews/P1-05-design.md#设计确认"
+  }
+}

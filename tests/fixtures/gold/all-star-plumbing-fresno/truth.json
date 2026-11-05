@@ -182,8 +182,12 @@
     }
   },
   "operating_model": {
-    "value": null,
+    "value": "service_area",
     "evidence_refs": [
+      {
+        "file": "负责人人工核对",
+        "locator": "2026-11-05 负责人确认：上门服务；公开地址只是办公室（可有接待），维修必须到客户家完成，因此为 service_area 而非 storefront/hybrid"
+      },
       {
         "file": "page.html",
         "locator": "页面有上门服务描述 'we will rush out to you and fix it FREE'、'Schedule Service' 预约上门；同时页脚公开展示门牌地址"

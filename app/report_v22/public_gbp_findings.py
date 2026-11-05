@@ -3,7 +3,7 @@ from app.report_v22.evidence_adapters.public_gbp import record_context
 from app.report_v22.findings_common import decision
 from app.report_v22.findings_errors import FindingsError
 from app.report_v22.findings_models import RuleTarget
-from app.report_v22.public_rule_catalog import GBP_ALIGNMENT_RULE_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION, GBP_RULES
+from app.report_v22.public_rule_catalog import GBP_ALIGNMENT_RULE_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION, IDENTITY_GBP_ALIGNMENT_RULE_VERSION, GBP_RULES
 
 RULE_FIELDS = dict(zip(GBP_RULES, ("business_name", "address", "phone", "service_areas")))
 ALIGNMENT_FIELDS = dict(zip(GBP_RULES, ("business_name", "address", "phone", "service_area")))
@@ -62,6 +62,8 @@ def expected_scope(view, rule):
 
 
 def alignment_rule_version(alignment):
+    if alignment.alignment_version == "site_gbp_alignment_v4":
+        return IDENTITY_GBP_ALIGNMENT_RULE_VERSION
     if alignment.alignment_version == "site_gbp_alignment_v3":
         return NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION
     return (TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION if alignment.alignment_version == "site_gbp_alignment_v2"
@@ -92,7 +94,7 @@ def _alignment_outcome(view, alignment, rule, *, reviewed_evidence=False):
                         notes=[*field.limitations, f"{label} could not be compared because one or both saved sources lack usable values. Missing observations do not establish a mismatch or a missing business detail. Confirm the actual details before proposing a correction."],
                         rule_version=rule_version)
     state = "triggered" if field.state in {"partial_match", "mismatch", "site_missing", "gbp_missing", "both_missing"} else "not_triggered"
-    if alignment.alignment_version in {"site_gbp_alignment_v2", "site_gbp_alignment_v3"} and field.field == "address" and field.state == "partial_match":
+    if alignment.alignment_version in {"site_gbp_alignment_v2", "site_gbp_alignment_v3", "site_gbp_alignment_v4"} and field.field == "address" and field.state == "partial_match":
         state = "not_triggered"
     return decision(
         view,

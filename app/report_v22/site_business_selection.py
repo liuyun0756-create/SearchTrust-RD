@@ -63,6 +63,11 @@ def _external(candidate: SiteBusinessCandidate, identity: BusinessIdentity) -> b
 
 def _market_anchor(candidate: SiteBusinessCandidate, identity: BusinessIdentity) -> bool:
     target = identity.primary_location
+    if hasattr(identity, "address_location") and candidate.field == "address":
+        place = identity.address_location
+        if place is None:
+            return False
+        target = target.model_copy(update={"display_name": place.city or place.address, "city": place.city, "region": place.region})
     region_code = target_region(target.display_name, target.region, target.country_code)
     values = [target.city, target.display_name]
     anchors = {

@@ -18,6 +18,20 @@
           "title": "Evaluated At",
           "type": "string"
         },
+        "evidence_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence As Of"
+        },
         "generation_input_checksum": {
           "pattern": "^sha256:[a-f0-9]{64}$",
           "title": "Generation Input Checksum",
@@ -28,6 +42,33 @@
           "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "title": "Id",
           "type": "string"
+        },
+        "identity_checksum": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Identity Checksum"
+        },
+        "identity_version_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Identity Version Id"
         },
         "implementation": {
           "anyOf": [
@@ -80,7 +121,8 @@
         "schema_version": {
           "enum": [
             "v22_analysis_input_v1",
-            "v22_analysis_input_v2"
+            "v22_analysis_input_v2",
+            "v22_analysis_input_v3"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -93,6 +135,17 @@
           "minItems": 4,
           "title": "Snapshots",
           "type": "array"
+        },
+        "target_market": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetMarket"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "user_id": {
           "format": "uuid",
@@ -118,6 +171,95 @@
         "input_checksum"
       ],
       "title": "AnalysisInputManifest",
+      "type": "object"
+    },
+    "BusinessIdentityV2": {
+      "additionalProperties": false,
+      "properties": {
+        "business_name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Business Name",
+          "type": "string"
+        },
+        "country_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z]{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country Code"
+        },
+        "identity_match": {
+          "$ref": "#/$defs/IdentityMatch"
+        },
+        "normalized_domain": {
+          "maxLength": 253,
+          "minLength": 1,
+          "title": "Normalized Domain",
+          "type": "string"
+        },
+        "operating_location": {
+          "$ref": "#/$defs/OperatingLocation"
+        },
+        "operating_model": {
+          "$ref": "#/$defs/OperatingModeAssessment"
+        },
+        "public_gbp_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Public Gbp Url"
+        },
+        "schema_version": {
+          "const": "business_identity_v2",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_branch_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Branch Ref"
+        },
+        "site_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Site Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "business_name",
+        "site_url",
+        "normalized_domain",
+        "operating_model",
+        "operating_location",
+        "selected_branch_ref",
+        "identity_match"
+      ],
+      "title": "BusinessIdentityV2",
       "type": "object"
     },
     "BusinessScope": {
@@ -749,6 +891,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.8"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v13"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -762,7 +925,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.7"
+                "enum": [
+                  "2.2.7",
+                  "2.2.8"
+                ]
               }
             }
           },
@@ -804,7 +970,8 @@
               "schema_version": {
                 "enum": [
                   "2.2.6",
-                  "2.2.7"
+                  "2.2.7",
+                  "2.2.8"
                 ]
               }
             }
@@ -863,7 +1030,8 @@
             "enum": [
               "2.2.5",
               "2.2.6",
-              "2.2.7"
+              "2.2.7",
+              "2.2.8"
             ]
           }
         },
@@ -998,7 +1166,8 @@
             "2.2.4",
             "2.2.5",
             "2.2.6",
-            "2.2.7"
+            "2.2.7",
+            "2.2.8"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1066,7 +1235,8 @@
                     "v22_capability_public_v9",
                     "v22_capability_public_v10",
                     "v22_capability_public_v11",
-                    "v22_capability_public_v12"
+                    "v22_capability_public_v12",
+                    "v22_capability_public_v13"
                   ]
                 }
               },
@@ -1622,6 +1792,58 @@
       "title": "FindingCoverage",
       "type": "object"
     },
+    "IdentityMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "matched_on": {
+          "items": {
+            "enum": [
+              "domain",
+              "phone",
+              "reviewed_saved_identity"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Matched On",
+          "type": "array"
+        },
+        "rejected_candidates": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Rejected Candidates",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "matched",
+            "unresolved",
+            "not_found",
+            "not_checked"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "matched_on",
+        "source_refs",
+        "rejected_candidates"
+      ],
+      "title": "IdentityMatch",
+      "type": "object"
+    },
     "ImplementationReference": {
       "additionalProperties": false,
       "properties": {
@@ -1648,6 +1870,351 @@
         "checksum"
       ],
       "title": "ImplementationReference",
+      "type": "object"
+    },
+    "ModeConfirmation": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmed_at": {
+          "minLength": 1,
+          "title": "Confirmed At",
+          "type": "string"
+        },
+        "confirmed_by": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Confirmed By",
+          "type": "string"
+        },
+        "evidence_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Evidence Checksum",
+          "type": "string"
+        },
+        "normalized_domain": {
+          "minLength": 1,
+          "title": "Normalized Domain",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "selected_branch_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Branch Ref"
+        },
+        "source_ref": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "value": {
+          "enum": [
+            "storefront",
+            "service_area",
+            "hybrid",
+            "meeting_point"
+          ],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "confirmed_by",
+        "confirmed_at",
+        "reason",
+        "normalized_domain",
+        "selected_branch_ref",
+        "evidence_checksum",
+        "source_ref"
+      ],
+      "title": "ModeConfirmation",
+      "type": "object"
+    },
+    "ModeEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "visiting",
+            "onsite",
+            "meeting",
+            "auxiliary",
+            "gbp_service_area"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "payload_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Payload Checksum",
+          "type": "string"
+        },
+        "quote": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "selector": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Selector",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "quote",
+        "url",
+        "selector",
+        "payload_checksum"
+      ],
+      "title": "ModeEvidence",
+      "type": "object"
+    },
+    "OperatingLocation": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OperatingPlace"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "enum": [
+            "customer_facing",
+            "office",
+            "registered",
+            "unknown"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "observed",
+            "seo_confirmed",
+            "not_checked"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "location",
+        "role",
+        "source_refs"
+      ],
+      "title": "OperatingLocation",
+      "type": "object"
+    },
+    "OperatingModeAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "enum": [
+              "storefront",
+              "service_area",
+              "hybrid",
+              "meeting_point"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "confirmation_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModeConfirmation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "conflicts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Conflicts",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/ModeEvidence"
+          },
+          "maxItems": 100,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "source": {
+          "enum": [
+            "explicit_confirmation",
+            "website",
+            "gbp",
+            "insufficient_evidence"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "resolved",
+            "needs_confirmation",
+            "unresolved"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "suggested_value": {
+          "anyOf": [
+            {
+              "enum": [
+                "storefront",
+                "service_area",
+                "hybrid",
+                "meeting_point"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Suggested Value"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "enum": [
+                "storefront",
+                "service_area",
+                "hybrid",
+                "meeting_point"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "value",
+        "state",
+        "suggested_value",
+        "alternatives",
+        "source",
+        "evidence_refs",
+        "conflicts"
+      ],
+      "title": "OperatingModeAssessment",
+      "type": "object"
+    },
+    "OperatingPlace": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Address",
+          "type": "string"
+        },
+        "city": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "country_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z]{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country Code"
+        },
+        "postal_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Postal Code"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        }
+      },
+      "required": [
+        "address"
+      ],
+      "title": "OperatingPlace",
       "type": "object"
     },
     "PrioritizationTrace": {
@@ -2146,6 +2713,97 @@
       "title": "SnapshotReference",
       "type": "object"
     },
+    "TargetMarket": {
+      "additionalProperties": false,
+      "properties": {
+        "city": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "country_code": {
+          "maxLength": 2,
+          "minLength": 2,
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country Code",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "maximum": 90.0,
+              "minimum": -90.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "maximum": 180.0,
+              "minimum": -180.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "postal_code": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Postal Code"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        }
+      },
+      "required": [
+        "display_name",
+        "country_code"
+      ],
+      "title": "TargetMarket",
+      "type": "object"
+    },
     "TechnicalOmissionConfirmation": {
       "additionalProperties": false,
       "properties": {
@@ -2202,6 +2860,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "business_identity_v2": {
+      "$ref": "#/$defs/BusinessIdentityV2"
+    },
     "delivery_revision": {
       "$ref": "#/$defs/DeliveryRevision"
     },
@@ -2210,9 +2871,10 @@
     }
   },
   "required": [
+    "business_identity_v2",
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.10 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.11 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8, delivery v1/v2/v3)",
   "type": "object"
 }

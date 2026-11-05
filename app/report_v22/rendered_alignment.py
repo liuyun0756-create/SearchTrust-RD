@@ -87,7 +87,11 @@ def supplement_alignment(extra, *, facts, request, evidence):
     fields = gbp.payload.record.fields
     phone = fields.phone.value if fields.phone.state == 'observed' else None
     address = fields.address.value if fields.address.state == 'observed' else None
-    country = request.business_identity.primary_location.country_code
+    from app.report_v22.business_identity_v2 import BusinessIdentityV2
+    country = (request.business_identity.country_code if isinstance(request.business_identity, BusinessIdentityV2)
+               else request.business_identity.primary_location.country_code)
+    if country is None:
+        return extra
     candidates, items, traces, notes = rendered_candidates(rendered, limits=request.site_business_limits,
                                                           phone=phone, address=address, country=country)
     updated = []

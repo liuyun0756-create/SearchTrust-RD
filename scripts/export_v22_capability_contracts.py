@@ -22,12 +22,12 @@ def artifacts():
             for child in value: canonical_identifiers(child)
     canonical_identifiers(schema)
     schema["$schema"]="https://json-schema.org/draft/2020-12/schema"
-    schema["title"]="SearchTrust capability contracts 2.2.10 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7, delivery v1/v2/v3)"
+    schema["title"]="SearchTrust capability contracts 2.2.11 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8, delivery v1/v2/v3)"
     values={"capability.schema.json":schema,"fixtures/rejected.json":invalid_examples(),"fixtures/microseconds.json":microsecond_example()}
     for mode in ("acquisition","first_service","after_acquisition","review"):
         for count in range(4): values[f"fixtures/{mode}-{count}.json"]=example_report(mode,count)
     payloads={name:(json.dumps(value,ensure_ascii=False,indent=2,sort_keys=True)+"\n").encode() for name,value in values.items()}
-    manifest={"contract_version":"2.2.10","files":{name:"sha256:"+hashlib.sha256(raw).hexdigest() for name,raw in sorted(payloads.items())}}
+    manifest={"contract_version":"2.2.11","files":{name:"sha256:"+hashlib.sha256(raw).hexdigest() for name,raw in sorted(payloads.items())}}
     payloads["manifest.json"]=(json.dumps(manifest,indent=2,sort_keys=True)+"\n").encode()
     return payloads
 

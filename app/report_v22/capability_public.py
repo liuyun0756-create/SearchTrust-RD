@@ -12,7 +12,7 @@ from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
-from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, annotate_findings
+from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, IDENTITY_RULESET, annotate_findings
 from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
 
 LEGACY_RULESET = "v22_capability_public_v1"
@@ -68,9 +68,28 @@ def _bound_public_sources(manifest, value):
     # JSON round-trip revalidates model_copy mutations in nested legacy models.
     request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
     context = request.evidence_input.context
+    from app.report_v22.business_identity_v2 import BusinessIdentityV2
+    v2 = isinstance(request.business_identity, BusinessIdentityV2)
+    if v2 != (manifest.ruleset_version == IDENTITY_RULESET):
+        raise CapabilityPublicError()
+    if v2 and (manifest.identity_checksum != request_digest(request.business_identity)
+            or manifest.target_market != context.target_market):
+        raise CapabilityPublicError()
+    if v2:
+        reference = context.customer_public_gbp
+        branch_keys = {key.value for key in reference.entity_keys} if reference else set()
+        if request.business_identity.selected_branch_ref is not None and request.business_identity.selected_branch_ref not in branch_keys:
+            raise CapabilityPublicError()
+        from app.report_v22.operating_model import inspect_operating_model
+        from app.report_v22.identity_input import source_set_checksum
+        auto, _ = inspect_operating_model(request)
+        confirmation = request.business_identity.operating_model.confirmation_ref
+        expected = auto.model_copy(update={"value": confirmation.value, "state": "resolved", "source": "explicit_confirmation", "confirmation_ref": confirmation}) if confirmation else auto
+        if expected != request.business_identity.operating_model or (confirmation and confirmation.evidence_checksum != source_set_checksum(request)):
+            raise CapabilityPublicError()
     refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
-    if manifest.ruleset_version not in {HOURS_RULESET, LABELLED_RULESET} and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
+    if manifest.ruleset_version not in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET} and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
         raise ValueError("v11 inventory requires v11 rules")
     if manifest.ruleset_version not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
         raise CapabilityPublicError()
@@ -130,14 +149,15 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         labelled = manifest.ruleset_version in LABELLED_RULESETS
         reviewed = labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
         resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
-        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET}
-        opening_hours = manifest.ruleset_version in {HOURS_RULESET, LABELLED_RULESET}
+        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET}
+        opening_hours = manifest.ruleset_version in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET}
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
-                    rendered_pages=manifest.schema_version == "v22_analysis_input_v2", resource_limits=True,
+                    rendered_pages=manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"}, resource_limits=True,
                     **({"sampling_quality": True} if sampling_quality else {}),
-                    **({"opening_hours": True} if opening_hours else {}))
+                    **({"opening_hours": True} if opening_hours else {}),
+                    **({"identity_v2": True} if manifest.ruleset_version == IDENTITY_RULESET else {}))
                   if resource_limits else build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
-                  if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version == "v22_analysis_input_v2")
+                  if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"})
                   else build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)
                   if manifest.ruleset_version == RULESET or (labelled and manifest.mode == "acquisition")
                   else build_public_findings(request, reviewed_evidence=reviewed))
@@ -178,7 +198,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 comparison_scope="Saved public sample only", judgment="No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
                 interpretation="needs_verification", impact_path="No business impact or healthy-site conclusion is established.",
                 evidence_ids=[e.evidence_id for e in sample], limitations=[_BOUNDARY]))
-        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version == "v22_analysis_input_v2"):
+        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"}):
             used.update(sorted(e.evidence_id for e in original.values() if refs[e.snapshot_id].source_kind == "rendered")[:50])
         contact_checks = None
         if manifest.ruleset_version in PUBLIC_LABELLED_RULESETS:
@@ -220,7 +240,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 limits.append(f"Content on {len(result._resource_limited_pages)} saved pages was not checked because it exceeded the processing limits. This does not establish that information is missing.")
         if manifest.mode == "acquisition":
             limits.append("Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.")
-        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version == "v22_analysis_input_v2"):
+        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"}):
             from app.report_v22.rendered_alignment import RENDER_NOTE
             limits.extend(sorted({note for source in request.evidence_input.sources if source.kind == "rendered" for note in source.payload.limitations}))
             if any(refs[original[key].snapshot_id].source_kind == "rendered" and original[key].source_type != "coverage" for key in used):
@@ -231,7 +251,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        raw = dict(schema_version="2.2.7" if manifest.ruleset_version == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.8" if manifest.ruleset_version == IDENTITY_RULESET else "2.2.7" if manifest.ruleset_version == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"} else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,

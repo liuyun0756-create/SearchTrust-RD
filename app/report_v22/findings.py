@@ -196,7 +196,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False, identity_v2=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -204,7 +204,12 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
         request = PublicFindingsInput.model_validate(raw)
         if any(s.kind == "rendered" for s in request.evidence_input.sources) and not rendered_pages:
             raise FindingsError("INPUT_INVALID")
-        alignment_enabled = request.business_identity is not None
+        from app.report_v22.business_identity_v2 import BusinessIdentityV2, AlignmentIdentityV2
+        is_v2 = isinstance(request.business_identity, BusinessIdentityV2)
+        if is_v2 != identity_v2:
+            raise FindingsError("INPUT_INVALID")
+        identity = AlignmentIdentityV2(request.business_identity, request.evidence_input.context.target_market) if is_v2 else request.business_identity
+        alignment_enabled = identity is not None
         inputs = request.evidence_input
         if inputs.context.report_type != "prospect" or any(s.kind == "first_party" for s in inputs.sources):
             raise FindingsError("INPUT_INVALID")
@@ -245,12 +250,12 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 source=site_source,
                 limits=request.site_business_limits,
             ), text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address,
-                country=request.business_identity.primary_location.country_code, resource_limits=resource_limits)
+                country=identity.primary_location.country_code, resource_limits=resource_limits)
             resource_pages = [str(p.requested_url) for p in facts.pages if any(d.code == "resource_limit" for d in p.diagnostics)]
-            selection = select_site_business_candidates(facts, request.business_identity, request.site_gbp_alignment_limits)
+            selection = select_site_business_candidates(facts, identity, request.site_gbp_alignment_limits)
             extra = build_site_gbp_alignment(
                 context=inputs.context,
-                identity=request.business_identity,
+                identity=identity,
                 facts=facts,
                 selection=selection,
                 site_source=site_source,
@@ -262,7 +267,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             verify_site_gbp_alignment(
                 extra,
                 context=inputs.context,
-                identity=request.business_identity,
+                identity=identity,
                 facts=facts,
                 selection=selection,
                 site_source=site_source,
