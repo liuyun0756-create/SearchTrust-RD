@@ -28,7 +28,7 @@ def artifacts():
     CapabilityRequestEnvelope.model_validate_json(json.dumps(values["request.json"]))
     CapabilityTaskStatusResponse.model_validate_json(json.dumps(values["completed.json"]))
     out={name:(json.dumps(value,ensure_ascii=False,sort_keys=True,indent=2)+"\n").encode() for name,value in values.items()}
-    out["manifest.json"]=(json.dumps({"version":"v22_capability_runtime_v2","files":{
+    out["manifest.json"]=(json.dumps({"version":"v22_capability_runtime_v3","files":{
         name:"sha256:"+hashlib.sha256(raw).hexdigest() for name,raw in sorted(out.items())}},sort_keys=True,indent=2)+"\n").encode()
     return out
 

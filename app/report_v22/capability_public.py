@@ -12,7 +12,7 @@ from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
-from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, annotate_findings
+from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, annotate_findings
 from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
 
 LEGACY_RULESET = "v22_capability_public_v1"
@@ -70,7 +70,7 @@ def _bound_public_sources(manifest, value):
     context = request.evidence_input.context
     refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
-    if manifest.ruleset_version != LABELLED_RULESET and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
+    if manifest.ruleset_version not in {HOURS_RULESET, LABELLED_RULESET} and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
         raise ValueError("v11 inventory requires v11 rules")
     if manifest.ruleset_version not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
         raise CapabilityPublicError()
@@ -130,8 +130,8 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         labelled = manifest.ruleset_version in LABELLED_RULESETS
         reviewed = labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
         resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
-        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, LABELLED_RULESET}
-        opening_hours = manifest.ruleset_version == LABELLED_RULESET
+        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET}
+        opening_hours = manifest.ruleset_version in {HOURS_RULESET, LABELLED_RULESET}
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
                     rendered_pages=manifest.schema_version == "v22_analysis_input_v2", resource_limits=True,
                     **({"sampling_quality": True} if sampling_quality else {}),
@@ -231,7 +231,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        raw = dict(schema_version="2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.7" if manifest.ruleset_version == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,

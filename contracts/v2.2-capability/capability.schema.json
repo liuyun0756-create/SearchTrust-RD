@@ -707,6 +707,77 @@
       "additionalProperties": false,
       "allOf": [
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.6"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v11"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.7"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v12"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "properties": {
+                "action_candidates": {}
+              },
+              "required": [
+                "action_candidates"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.7"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "action_candidates": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "action_candidates"
+            ]
+          }
+        },
+        {
           "else": {
             "properties": {
               "contact_checks": {
@@ -731,19 +802,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.6"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "input_manifest": {
-                "properties": {
-                  "ruleset_version": {
-                    "const": "v22_capability_public_v11"
-                  }
-                },
-                "type": "object"
+                "enum": [
+                  "2.2.6",
+                  "2.2.7"
+                ]
               }
             }
           }
@@ -800,7 +862,8 @@
           "schema_version": {
             "enum": [
               "2.2.5",
-              "2.2.6"
+              "2.2.6",
+              "2.2.7"
             ]
           }
         },
@@ -809,6 +872,22 @@
         ]
       },
       "properties": {
+        "action_candidates": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CapabilityAction"
+              },
+              "maxItems": 1000,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Candidates"
+        },
         "action_state": {
           "enum": [
             "actions_supported",
@@ -918,7 +997,8 @@
             "2.2.2",
             "2.2.4",
             "2.2.5",
-            "2.2.6"
+            "2.2.6",
+            "2.2.7"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -985,7 +1065,8 @@
                     "v22_capability_public_v8",
                     "v22_capability_public_v9",
                     "v22_capability_public_v10",
-                    "v22_capability_public_v11"
+                    "v22_capability_public_v11",
+                    "v22_capability_public_v12"
                   ]
                 }
               },
@@ -1140,67 +1221,56 @@
       "allOf": [
         {
           "else": {
-            "properties": {
-              "contact_checks": {
-                "items": {
-                  "properties": {
-                    "field": {
-                      "enum": [
-                        "phone",
-                        "address",
-                        "business_name",
-                        "service_area"
-                      ]
-                    }
-                  },
-                  "type": "object"
-                },
-                "maxItems": 4,
-                "type": "array"
-              }
+            "not": {
+              "properties": {
+                "client_action_ids": {}
+              },
+              "required": [
+                "client_action_ids"
+              ]
             }
           },
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.6"
+                "enum": [
+                  "v22_delivery_revision_v2",
+                  "v22_delivery_revision_v3"
+                ]
               }
             }
           },
           "then": {
             "properties": {
-              "input_manifest": {
-                "properties": {
-                  "ruleset_version": {
-                    "const": "v22_capability_public_v11"
-                  }
-                },
-                "type": "object"
+              "client_action_ids": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "client_action_ids"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "properties": {
+                "technical_omission_confirmation": {}
+              },
+              "required": [
+                "technical_omission_confirmation"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "v22_delivery_revision_v3"
               }
             }
           }
         }
       ],
-      "else": {
-        "not": {
-          "properties": {
-            "client_action_ids": {}
-          },
-          "required": [
-            "client_action_ids"
-          ]
-        }
-      },
-      "if": {
-        "properties": {
-          "schema_version": {
-            "const": "v22_delivery_revision_v2"
-          }
-        },
-        "required": [
-          "schema_version"
-        ]
-      },
       "properties": {
         "actions": {
           "items": {
@@ -1263,7 +1333,8 @@
         "schema_version": {
           "enum": [
             "v22_delivery_revision_v1",
-            "v22_delivery_revision_v2"
+            "v22_delivery_revision_v2",
+            "v22_delivery_revision_v3"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1287,6 +1358,17 @@
           "pattern": "\\S",
           "title": "Summary",
           "type": "string"
+        },
+        "technical_omission_confirmation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TechnicalOmissionConfirmation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "title": {
           "maxLength": 200,
@@ -1315,16 +1397,6 @@
         "client_note",
         "actions"
       ],
-      "then": {
-        "properties": {
-          "client_action_ids": {
-            "type": "array"
-          }
-        },
-        "required": [
-          "client_action_ids"
-        ]
-      },
       "title": "DeliveryRevision",
       "type": "object"
     },
@@ -1606,6 +1678,25 @@
           ],
           "title": "Business Priority"
         },
+        "candidate_order": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 1000,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Order"
+        },
         "candidates": {
           "items": {
             "$ref": "#/$defs/PriorityDecision"
@@ -1634,7 +1725,8 @@
         "rules_version": {
           "enum": [
             "v22_business_priority_v1",
-            "v22_business_priority_v2"
+            "v22_business_priority_v2",
+            "v22_business_priority_v3"
           ],
           "title": "Rules Version",
           "type": "string"
@@ -1777,6 +1869,18 @@
           "title": "Confidence",
           "type": "string"
         },
+        "default_visible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default Visible"
+        },
         "evidence_support": {
           "enum": [
             "supported",
@@ -1860,6 +1964,25 @@
           ],
           "title": "Severity",
           "type": "string"
+        },
+        "technical_finding_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Technical Finding Ids"
         }
       },
       "required": [
@@ -2022,6 +2145,58 @@
       ],
       "title": "SnapshotReference",
       "type": "object"
+    },
+    "TechnicalOmissionConfirmation": {
+      "additionalProperties": false,
+      "properties": {
+        "client_action_ids": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Client Action Ids",
+          "type": "array"
+        },
+        "confirmed": {
+          "const": true,
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "omitted_action_ids": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Omitted Action Ids",
+          "type": "array"
+        },
+        "selected_action_ids": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Selected Action Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "confirmed",
+        "omitted_action_ids",
+        "selected_action_ids",
+        "client_action_ids"
+      ],
+      "title": "TechnicalOmissionConfirmation",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2038,6 +2213,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.9 (reports 2.2.2/2.2.4/2.2.5/2.2.6, delivery v1/v2)",
+  "title": "SearchTrust capability contracts 2.2.10 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7, delivery v1/v2/v3)",
   "type": "object"
 }

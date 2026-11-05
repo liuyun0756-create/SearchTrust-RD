@@ -55,6 +55,9 @@ def prioritize(inputs, findings, business, input_checksum, *, rules_version=VERS
     confidence, execution conditions, then exact stable action identity.
     Candidate enumeration order and caller wording never break a tie.
     """
+    if rules_version == "v22_business_priority_v3":
+        from app.report_v22.candidate_priority import prioritize_candidates
+        return prioritize_candidates(inputs, findings, business, input_checksum)
     inputs = deepcopy(inputs)
     if rules_version not in {VERSION, "v22_business_priority_v2"}:
         raise ValueError("unknown priority version")
@@ -146,9 +149,13 @@ def apply_priority(raw, manifest):
     candidates = raw["actions"]
     trace = prioritize([candidate_input(a) for a in candidates], raw["findings"],
         manifest.business.model_dump(mode="json"), manifest.input_checksum,
-        rules_version="v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else VERSION)
+        rules_version="v22_business_priority_v3" if manifest.ruleset_version == "v22_capability_public_v12" else "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else VERSION)
     by_id = {a["id"]: a for a in candidates}
+    if manifest.ruleset_version == "v22_capability_public_v12":
+        raw["action_candidates"] = [by_id[key] for key in trace["candidate_order"]]
     raw["actions"] = [by_id[key] for key in trace["action_order"]]
+    if manifest.ruleset_version == "v22_capability_public_v12":
+        raw["action_state"] = "actions_supported" if raw["actions"] else "insufficient_basis"
     raw["prioritization"] = trace
     raw["limitations"] = list(dict.fromkeys([*raw["limitations"], LIMIT]))
     if raw["actions"]:

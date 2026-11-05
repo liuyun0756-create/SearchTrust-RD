@@ -169,6 +169,6 @@ def test_current_acquisition_binds_v3_inventory_and_old_rules_reject_it():
  args['collected']=replace(args['collected'],site_inventory=SiteInventorySnapshotV3.model_validate_json(json.dumps(raw)))
  manifest,request=build_acquisition_input(**args)
  assert manifest.snapshots[0].schema_version=='site_inventory_snapshot_v3'
- assert build_public_capability_report(manifest,request).schema_version=='2.2.6'
+ assert build_public_capability_report(manifest,request).schema_version=='2.2.7'
  old=manifest.model_dump(mode='json');old['ruleset_version']='v22_capability_public_v10';old['input_checksum']=verified_request_digest({k:v for k,v in old.items() if k!='input_checksum'})
  with pytest.raises(ValueError):AnalysisInputManifest.model_validate_json(json.dumps(old))

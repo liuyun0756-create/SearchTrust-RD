@@ -142,7 +142,7 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("snapshot order is not canonical")
         required = set(SOURCE_ORDER[:4 if self.mode == "acquisition" else 6])
         if self.schema_version == "v22_analysis_input_v2":
-            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"}:
+            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"}:
                 raise ValueError("rendered inputs require their own acquisition ruleset")
             required.add("rendered")
         elif "rendered" in kinds or self.ruleset_version == "v22_capability_public_v7":
@@ -152,8 +152,8 @@ class AnalysisInputManifest(StrictModel):
         for source in self.snapshots:
             if source.schema_version != SOURCE_SCHEMAS[source.source_kind] and not (
                     (source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2")
-                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.ruleset_version == "v22_capability_public_v11")
-                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"})):
+                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.ruleset_version in {"v22_capability_public_v11", "v22_capability_public_v12"})
+                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"})):
                 raise ValueError("source schema mismatch")
             if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evaluated_at) < instant(source.expires_at):
                 raise ValueError("source Case or freshness mismatch")
@@ -286,6 +286,16 @@ class PriorityCandidateInput(StrictModel):
 
 
 class PriorityDecision(StrictModel):
+    technical_finding_ids: list[Label] | None = Field(default=None, max_length=20)
+    default_visible: bool | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_old(self, handler):
+        result = handler(self)
+        for key in ("technical_finding_ids", "default_visible"):
+            if getattr(self, key) is None: result.pop(key, None)
+        return result
+
     input: PriorityCandidateInput
     prerequisite: Literal["access_indexing", "measurement", "none"]
     business_match: Literal["confirmed_target", "confirmed_objective", "not_matched", "unknown"]
@@ -301,13 +311,32 @@ class PriorityDecision(StrictModel):
 
 
 class PrioritizationTrace(StrictModel):
-    rules_version: Literal["v22_business_priority_v1", "v22_business_priority_v2"]
+    candidate_order: list[Label] | None = Field(default=None, max_length=1000)
+
+    @model_serializer(mode="wrap")
+    def preserve_old(self, handler):
+        result = handler(self)
+        if self.candidate_order is None: result.pop("candidate_order", None)
+        return result
+
+    rules_version: Literal["v22_business_priority_v1", "v22_business_priority_v2", "v22_business_priority_v3"]
     input_checksum: Checksum
     business_priority: Label | None
     target_pages: list[Text] = Field(max_length=20)
     action_order: list[Label] = Field(max_length=3)
     candidates: list[PriorityDecision] = Field(max_length=1000)
     limitations: list[Text] = Field(min_length=1, max_length=5)
+
+
+    @model_validator(mode="after")
+    def versioned_candidate_metadata(self):
+        v3 = self.rules_version == "v22_business_priority_v3"
+        if v3:
+            if self.candidate_order is None or any(e.technical_finding_ids is None or e.default_visible is None for e in self.candidates):
+                raise ValueError("v3 requires complete candidate metadata")
+        elif "candidate_order" in self.model_fields_set or any({"technical_finding_ids", "default_visible"} & e.model_fields_set for e in self.candidates):
+            raise ValueError("new candidate metadata requires v3")
+        return self
 
 
 class ContactCheck(StrictModel):
@@ -329,14 +358,20 @@ class ContactCheck(StrictModel):
 
 class CapabilityReport(StrictModel):
     model_config = ConfigDict(json_schema_extra={
-        "allOf": [{"if": {"properties": {"schema_version": {"const": "2.2.6"}}},
-          "then": {"properties": {"input_manifest": {"type": "object", "properties": {"ruleset_version": {"const": "v22_capability_public_v11"}}}}},
-          "else": {"properties": {"contact_checks": {"type": "array", "maxItems": 4, "items": {"type": "object", "properties": {
-            "field": {"enum": ["phone", "address", "business_name", "service_area"]}}}}}}}],
-        "if": {"properties": {"schema_version": {"enum": ["2.2.5", "2.2.6"]}}, "required": ["schema_version"]},
+        "allOf": [
+            {"if": {"properties": {"schema_version": {"const": version}}},
+             "then": {"properties": {"input_manifest": {"type": "object", "properties": {"ruleset_version": {"const": rules}}}}}}
+            for version, rules in (("2.2.6", "v22_capability_public_v11"), ("2.2.7", "v22_capability_public_v12"))
+        ] + [{"if": {"properties": {"schema_version": {"const": "2.2.7"}}},
+              "then": {"required": ["action_candidates"], "properties": {"action_candidates": {"type": "array"}}},
+              "else": {"not": {"properties": {"action_candidates": {}}, "required": ["action_candidates"]}}},
+             {"if": {"properties": {"schema_version": {"enum": ["2.2.6", "2.2.7"]}}},
+              "else": {"properties": {"contact_checks": {"type": "array", "maxItems": 4, "items": {"type": "object", "properties": {
+                "field": {"enum": ["phone", "address", "business_name", "service_area"]}}}}}}}],
+        "if": {"properties": {"schema_version": {"enum": ["2.2.5", "2.2.6", "2.2.7"]}}, "required": ["schema_version"]},
         "then": {
             "if": {"properties": {"input_manifest": {"type": "object", "properties": {
-                "ruleset_version": {"enum": ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"]}}, "required": ["ruleset_version"]}},
+                "ruleset_version": {"enum": ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"]}}, "required": ["ruleset_version"]}},
                 "required": ["input_manifest"]},
             "then": {"properties": {"contact_checks": {"type": "array"}}, "required": ["contact_checks"]},
             "else": {"not": {"properties": {"contact_checks": {}}, "required": ["contact_checks"]}},
@@ -351,7 +386,7 @@ class CapabilityReport(StrictModel):
             "type": "object", "not": {"anyOf": [{"properties": {name: {}}, "required": [name]} for name in ("kind", "status", "coverage")]}
         }}}}
     })
-    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6"]
+    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7"]
     id: UUID
     report_type: Literal["prospect", "verified_execution"]
     version: int = Field(ge=1)
@@ -363,6 +398,7 @@ class CapabilityReport(StrictModel):
     findings: list[CapabilityFinding] = Field(min_length=1, max_length=50)
     contact_checks: list[ContactCheck] | None = Field(default=None, max_length=5)
     action_state: Literal["actions_supported", "insufficient_basis"]
+    action_candidates: list[CapabilityAction] | None = Field(default=None, max_length=1000)
     actions: list[CapabilityAction] = Field(max_length=3)
     limitations: list[Text] = Field(min_length=1, max_length=40)
     changes: list[CapabilityChange] = Field(max_length=50)
@@ -377,15 +413,22 @@ class CapabilityReport(StrictModel):
             result.pop("prioritization", None)
         if self.contact_checks is None:
             result.pop("contact_checks", None)
+        if self.action_candidates is None:
+            result.pop("action_candidates", None)
         return result
 
     @model_validator(mode="after")
     def validate_references(self):
         manifest = self.input_manifest
-        labelled = self.schema_version in {"2.2.5", "2.2.6"}
+        v12 = manifest.ruleset_version == "v22_capability_public_v12"
+        if (self.schema_version == "2.2.7") != v12 or v12 != (self.action_candidates is not None):
+            raise ValueError("candidate pool requires v12")
+        if not v12 and "action_candidates" in self.model_fields_set:
+            raise ValueError("historical report cannot contain candidate pool")
+        labelled = self.schema_version in {"2.2.5", "2.2.6", "2.2.7"}
         if (self.schema_version == "2.2.6") != (manifest.ruleset_version == "v22_capability_public_v11"):
             raise ValueError("hours require v11")
-        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_service_v5"}):
+        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_service_v5"}):
             raise ValueError("finding labels require a versioned ruleset")
         if any((f.kind is not None) != labelled for f in self.findings):
             raise ValueError("finding labels require the new report version")
@@ -405,11 +448,11 @@ class CapabilityReport(StrictModel):
         snapshots = {s.snapshot_id: s for s in manifest.snapshots}
         evidence = {e.id: e for e in self.evidence}
         findings = {f.id: f for f in self.findings}
-        has_checks = manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"}
+        has_checks = manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"}
         if has_checks != (self.contact_checks is not None) or (not has_checks and "contact_checks" in self.model_fields_set):
             raise ValueError("contact checks require public v8")
         checks = self.contact_checks or []
-        if manifest.ruleset_version != "v22_capability_public_v11" and (len(checks)>4 or any(c.field=="opening_hours" for c in checks)):
+        if manifest.ruleset_version not in {"v22_capability_public_v11", "v22_capability_public_v12"} and (len(checks)>4 or any(c.field=="opening_hours" for c in checks)):
             raise ValueError("hours require v11")
         if len({c.field for c in checks}) != len(checks):
             raise ValueError("duplicate contact check field")
@@ -425,7 +468,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("finding references unknown or duplicate evidence")
             if instant(finding.observed_at) != max(instant(evidence[key].observed_at) for key in finding.evidence_ids):
                 raise ValueError("finding observation time mismatch")
-        for action in self.actions:
+        for action in (self.action_candidates if v12 else self.actions):
             if not set(action.finding_ids) <= findings.keys() or len(set(action.finding_ids)) != len(action.finding_ids):
                 raise ValueError("action references unknown or duplicate findings")
             if not set(action.dependencies) <= prior or len(set(action.dependencies)) != len(action.dependencies):
@@ -436,6 +479,14 @@ class CapabilityReport(StrictModel):
             if any(not set(item.evidence_ids) <= allowed_evidence for item in action.materials):
                 raise ValueError("material references evidence outside its action")
             prior.add(action.id)
+        if v12:
+            pool = {a.id: a for a in self.action_candidates}
+            if len(pool) != len(self.action_candidates) or any(pool.get(a.id) != a for a in self.actions):
+                raise ValueError("selected action must equal frozen candidate")
+            seen = set()
+            for a in self.actions:
+                if not set(a.dependencies) <= seen: raise ValueError("selected dependencies missing")
+                seen.add(a.id)
         for change in self.changes:
             if manifest.previous_report is None or change.finding_id not in findings or change.previous_fingerprint == change.current_fingerprint:
                 raise ValueError("invalid or unchanged history badge")
@@ -443,7 +494,7 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_service_v5"}
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_service_v5"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -451,7 +502,7 @@ class CapabilityReport(StrictModel):
         if self.prioritization is not None:
             from app.report_v22.capability_priority import candidate_input, prioritize
             trace = self.prioritization.model_dump(mode="json")
-            expected_version = "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else "v22_business_priority_v1"
+            expected_version = "v22_business_priority_v3" if v12 else "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else "v22_business_priority_v1"
             if trace["rules_version"] != expected_version:
                 raise ValueError("priority version mismatch")
             replay = prioritize([entry["input"] for entry in trace["candidates"]],
@@ -460,8 +511,10 @@ class CapabilityReport(StrictModel):
             if trace != replay or trace["action_order"] != [a.id for a in self.actions]:
                 raise ValueError("priority trace does not reproduce report order")
             inputs = {e["input"]["action_id"]: e["input"] for e in trace["candidates"]}
-            if any(inputs.get(a.id) != candidate_input(a.model_dump(mode="json")) for a in self.actions):
+            if any(inputs.get(a.id) != candidate_input(a.model_dump(mode="json")) for a in (self.action_candidates if v12 else self.actions)):
                 raise ValueError("priority inputs do not match delivered action")
+            if v12 and trace.get("candidate_order") != [a.id for a in self.action_candidates]:
+                raise ValueError("candidate pool order or completeness mismatch")
         return self
 
     def validate_previous_report(self, previous: "CapabilityReport"):
@@ -488,34 +541,53 @@ class EditableAction(StrictModel):
     materials: list[ExecutionMaterial] = Field(max_length=3)
 
 
+class TechnicalOmissionConfirmation(StrictModel):
+    @field_validator("confirmed", mode="before")
+    @classmethod
+    def explicit_boolean_confirmation(cls, value):
+        if value is not True:
+            raise ValueError("confirmation must be explicit true")
+        return value
+
+    confirmed: Literal[True]
+    omitted_action_ids: list[Label] = Field(min_length=1, max_length=1000)
+    selected_action_ids: list[Label] = Field(max_length=3)
+    client_action_ids: list[Label] = Field(max_length=3)
+
+
 class DeliveryRevision(StrictModel):
     model_config = ConfigDict(json_schema_extra={
-        "allOf": [{"if": {"properties": {"schema_version": {"const": "2.2.6"}}},
-          "then": {"properties": {"input_manifest": {"type": "object", "properties": {"ruleset_version": {"const": "v22_capability_public_v11"}}}}},
-          "else": {"properties": {"contact_checks": {"type": "array", "maxItems": 4, "items": {"type": "object", "properties": {
-            "field": {"enum": ["phone", "address", "business_name", "service_area"]}}}}}}}],
-        "if": {"properties": {"schema_version": {"const": "v22_delivery_revision_v2"}}, "required": ["schema_version"]},
-        "then": {"properties": {"client_action_ids": {"type": "array"}}, "required": ["client_action_ids"]},
-        "else": {"not": {"properties": {"client_action_ids": {}}, "required": ["client_action_ids"]}}
+        "allOf": [
+            {"if": {"properties": {"schema_version": {"enum": ["v22_delivery_revision_v2", "v22_delivery_revision_v3"]}}},
+             "then": {"required": ["client_action_ids"], "properties": {"client_action_ids": {"type": "array"}}},
+             "else": {"not": {"properties": {"client_action_ids": {}}, "required": ["client_action_ids"]}}},
+            {"if": {"properties": {"schema_version": {"const": "v22_delivery_revision_v3"}}},
+             "else": {"not": {"properties": {"technical_omission_confirmation": {}}, "required": ["technical_omission_confirmation"]}}}
+        ]
     })
-    schema_version: Literal["v22_delivery_revision_v1", "v22_delivery_revision_v2"]
+    schema_version: Literal["v22_delivery_revision_v1", "v22_delivery_revision_v2", "v22_delivery_revision_v3"]
     client_action_ids: list[Label] | None = Field(default=None, max_length=3)
+    technical_omission_confirmation: TechnicalOmissionConfirmation | None = None
 
     @model_serializer(mode="wrap")
     def preserve_v1(self, handler):
         result = handler(self)
-        if self.client_action_ids is None:
-            result.pop("client_action_ids", None)
+        for key in ("client_action_ids", "technical_omission_confirmation"):
+            if getattr(self, key) is None: result.pop(key, None)
         return result
 
     @model_validator(mode="after")
     def visibility_version(self):
-        if self.schema_version == "v22_delivery_revision_v2":
+        if self.schema_version in {"v22_delivery_revision_v2", "v22_delivery_revision_v3"}:
             ids = self.client_action_ids
             if ids is None or len(set(ids)) != len(ids) or not set(ids) <= {a.id for a in self.actions}:
                 raise ValueError("client action selection must reference unique delivery actions")
         elif "client_action_ids" in self.model_fields_set:
             raise ValueError("client action selection requires revision v2")
+        if self.schema_version != "v22_delivery_revision_v3" and "technical_omission_confirmation" in self.model_fields_set:
+            raise ValueError("technical confirmation requires v3")
+        if "technical_omission_confirmation" in self.model_fields_set and self.technical_omission_confirmation is None:
+            raise ValueError("absent confirmation must not be null")
         return self
     report_id: UUID
     user_id: UUID
@@ -531,15 +603,23 @@ class DeliveryRevision(StrictModel):
     def validate_report(self, report: CapabilityReport):
         report = CapabilityReport.model_validate(report)
         manifest = report.input_manifest
+        v3 = self.schema_version == "v22_delivery_revision_v3"
+        if v3 != (report.schema_version == "2.2.7"):
+            raise ValueError("v12 report requires revision v3")
         if self.schema_version == "v22_delivery_revision_v2" and report.schema_version not in {"2.2.5", "2.2.6"}:
             raise ValueError("visibility edits require labelled findings")
         if (self.report_id != report.id or self.user_id != manifest.user_id or self.case_id != manifest.case_id
                 or self.source_checksum != verified_request_digest(report.model_dump(mode="json"))):
             raise ValueError("delivery source binding mismatch")
         ids = [a.id for a in self.actions]
-        if len(set(ids)) != len(ids) or set(ids) != {a.id for a in report.actions}:
+        if len(set(ids)) != len(ids) or len(ids) != len(report.actions) or (not v3 and set(ids) != {a.id for a in report.actions}):
             raise ValueError("delivery must preserve system action identities")
-        originals = {a.id: a for a in report.actions}
+        originals = {a.id: a for a in (report.action_candidates if v3 else report.actions)}
+        if not set(ids) <= originals.keys(): raise ValueError("unknown frozen candidate")
+        if v3:
+            from app.report_v22.candidate_delivery import validate_selection
+            validate_selection(report, ids, self.client_action_ids,
+                self.technical_omission_confirmation.model_dump(mode="json") if self.technical_omission_confirmation else None)
         if report.prioritization and report.prioritization.rules_version == "v22_business_priority_v2":
             from app.report_v22.capability_priority import valid_delivery_order
             if not valid_delivery_order(ids, report.prioritization.model_dump(mode="json")):

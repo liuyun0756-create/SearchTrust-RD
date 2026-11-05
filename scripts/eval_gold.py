@@ -18,7 +18,7 @@ from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
 from app.report_v22.action_models import PublicActionPlanInput
 from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import DeliveryRevision, instant
-from app.report_v22.capability_finding_status import PUBLIC_RULESET
+from app.report_v22.capability_finding_status import HOURS_RULESET as PUBLIC_RULESET
 from app.report_v22.capability_public import build_public_capability_report
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput, RuleTarget
@@ -162,8 +162,8 @@ def generate(descriptor, directory, private_root, *, ruleset=None):
         raise ValueError("case_site_url_mismatch")
     result = build_public_findings(request, text_patterns=True, reviewed_evidence=True,
                                    rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2", resource_limits=True,
-                                   **({"sampling_quality": True} if ruleset in {"v22_capability_public_v10", "v22_capability_public_v11"} else {}),
-                                   **({"opening_hours": True} if ruleset == "v22_capability_public_v11" else {}))
+                                   **({"sampling_quality": True} if ruleset in {"v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"} else {}),
+                                   **({"opening_hours": True} if ruleset in {"v22_capability_public_v11", "v22_capability_public_v12"} else {}))
     skeletons = select_public_action_skeletons(PublicActionPlanInput(
         findings_result=result, planning_date=instant(manifest["evaluated_at"]).date()), all_candidates=True, candidate_only=True)
     templates = {item.action_id: item.template_key for item in skeletons}
@@ -283,10 +283,12 @@ def action_metrics(report, templates, revision=None):
         return dict(basis="generation_unavailable", visible_actions=None, visible_resampling_actions=None,
                     visible_weak_only_actions=None, visible_actions_with_any_weak_basis=None, actions=[])
     findings = {f.id: f for f in report.findings}
-    labelled = report.schema_version in {"2.2.5", "2.2.6"}
-    explicit = revision is not None and labelled and revision.schema_version == "v22_delivery_revision_v2"
+    labelled = report.schema_version in {"2.2.5", "2.2.6", "2.2.7"}
+    explicit = revision is not None and labelled and revision.schema_version in {"v22_delivery_revision_v2", "v22_delivery_revision_v3"}
     rows = []
-    for action in report.actions:
+    for action in (revision.actions if explicit and revision.schema_version == "v22_delivery_revision_v3" else report.actions):
+        if explicit and revision.schema_version == "v22_delivery_revision_v3":
+            action = next(a for a in report.action_candidates if a.id == action.id)
         weak = [findings[key].status != "confirmed" or findings[key].confidence == "low" for key in action.finding_ids] if labelled else None
         all_weak = all(weak) if weak is not None else None
         visible = action.id in revision.client_action_ids if explicit else not (labelled and all_weak)
@@ -356,7 +358,7 @@ def evaluate_case(directory, private_root, *, ruleset=None, truth_overlay=None):
     rows = compare_findings(truth, findings, evaluations, unavailable=unavailable)
     actions = action_metrics(report, templates, revision)
     audit = {}
-    if request is not None and (ruleset or PUBLIC_RULESET) in {"v22_capability_public_v10", "v22_capability_public_v11"}:
+    if request is not None and (ruleset or PUBLIC_RULESET) in {"v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"}:
         from app.report_v22.sample_locality import audit_source
         source = next((s for s in request.evidence_input.sources if s.kind == "serp"), None)
         audit = {"locality_audit": audit_source(source, request.evidence_input.context.target_market) if source else []}
@@ -406,7 +408,7 @@ def main(argv=None):
     parser.add_argument("--gold-dir", type=Path, default=ROOT / "tests/fixtures/gold")
     parser.add_argument("--private-root", type=Path, default=ROOT.parent / ".release-private/2026-10-29")
     parser.add_argument("--site", action="append", help="Select a site directory; may be repeated")
-    parser.add_argument("--ruleset", choices=["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"], default=PUBLIC_RULESET)
+    parser.add_argument("--ruleset", choices=["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"], default=PUBLIC_RULESET)
     parser.add_argument("--truth-overlay", type=Path, help="Explicit reviewed, version-bound labels; original truth files remain unchanged")
     args = parser.parse_args(argv)
     result = evaluate_all(args.gold_dir, args.private_root, args.site, ruleset=args.ruleset,
