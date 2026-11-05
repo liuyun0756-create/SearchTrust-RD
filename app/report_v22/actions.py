@@ -30,7 +30,7 @@ from app.report_v22.public_action_catalog import (
     RULE_ACTIONS,
     ActionTemplate,
 )
-from app.report_v22.public_rule_catalog import ASSET, GBP_RULES, RULESET_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION
+from app.report_v22.public_rule_catalog import ASSET, HOURS, GBP_RULES, RULESET_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION
 
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -203,7 +203,7 @@ def _build_targets(candidate: _Candidate, *, site_url: Any) -> list[ActionTarget
             if evaluation.target.page_type is None:
                 raise PublicActionError("REFERENCE_INVALID")
             add("page_type", evaluation.target.page_type, finding.finding_id)
-        if finding.rule_id in GBP_RULES:
+        if finding.rule_id in {*GBP_RULES, HOURS}:
             field_name = RULE_ACTIONS[finding.rule_id].gbp_field
             if field_name is None:
                 raise PublicActionError("REFERENCE_INVALID")

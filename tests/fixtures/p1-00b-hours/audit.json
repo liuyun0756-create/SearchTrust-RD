@@ -1,0 +1,1275 @@
+{
+  "schema_version": "p1_00b_hours_audit_v1",
+  "v10": {
+    "finding_metrics": {
+      "verdict_counts": {
+        "正确": 42,
+        "无法判断": 23
+      },
+      "false_positives": 0,
+      "judged_generated_findings": 33,
+      "false_negatives": 0,
+      "false_positive_rate": 0.0
+    },
+    "field_metrics": {
+      "fields": [
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "semantic_rules_not_implemented",
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "exact_match",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "semantic_rules_not_implemented",
+          "site_id": "nova-service"
+        },
+        {
+          "field": "service_area",
+          "truth_present": null,
+          "state": null,
+          "reason": "未标注",
+          "site_id": "nova-service"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": false,
+          "state": "not_checked",
+          "reason": "semantic_rules_not_implemented",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "mismatch",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": null,
+          "state": null,
+          "reason": "未标注",
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "both_missing",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "partial_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "semantic_rules_not_implemented",
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "address",
+          "truth_present": false,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "semantic_rules_not_implemented",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "volcanoes-hiking-guides"
+        }
+      ],
+      "confirmed_present_fields": 26,
+      "not_checked_fields": 9,
+      "unavailable_present_fields": 0,
+      "not_checked_rate": 0.34615384615384615,
+      "not_checked_by_reason": {
+        "semantic_rules_not_implemented": 4,
+        "site_content_not_checked": 5
+      }
+    },
+    "action_totals_available_cases": {
+      "visible_actions": 9,
+      "visible_resampling_actions": 3,
+      "visible_weak_only_actions": 0,
+      "visible_actions_with_any_weak_basis": 3
+    },
+    "action_cases_evaluated": 6,
+    "action_cases_unavailable": 0,
+    "incomplete": false
+  },
+  "v11": {
+    "finding_metrics": {
+      "verdict_counts": {
+        "无法判断": 25,
+        "正确": 42
+      },
+      "false_positives": 0,
+      "judged_generated_findings": 33,
+      "false_negatives": 0,
+      "false_positive_rate": 0.0
+    },
+    "field_metrics": {
+      "fields": [
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "mismatch",
+          "reason": "value_mismatch",
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "all-star-plumbing-fresno"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "exact_match",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "nova-service"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "hours_not_comparable",
+          "site_id": "nova-service"
+        },
+        {
+          "field": "service_area",
+          "truth_present": null,
+          "state": null,
+          "reason": "未标注",
+          "site_id": "nova-service"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": false,
+          "state": "not_checked",
+          "reason": "field_not_observed",
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "pr-plumbing-fresno"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "mismatch",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": null,
+          "state": null,
+          "reason": "未标注",
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "both_missing",
+          "reason": null,
+          "site_id": "seamless-gutters-pensacola"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "address",
+          "truth_present": true,
+          "state": "partial_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "semantic_match",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "mismatch",
+          "reason": "value_mismatch",
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "vision-tech-swansea"
+        },
+        {
+          "field": "business_name",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "address",
+          "truth_present": false,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "phone",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "site_content_not_checked",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "opening_hours",
+          "truth_present": true,
+          "state": "not_checked",
+          "reason": "field_not_observed",
+          "site_id": "volcanoes-hiking-guides"
+        },
+        {
+          "field": "service_area",
+          "truth_present": true,
+          "state": "not_applicable",
+          "reason": null,
+          "site_id": "volcanoes-hiking-guides"
+        }
+      ],
+      "confirmed_present_fields": 26,
+      "not_checked_fields": 7,
+      "unavailable_present_fields": 0,
+      "not_checked_rate": 0.2692307692307692,
+      "not_checked_by_reason": {
+        "hours_not_comparable": 1,
+        "site_content_not_checked": 5,
+        "field_not_observed": 1
+      }
+    },
+    "action_totals_available_cases": {
+      "visible_actions": 11,
+      "visible_resampling_actions": 3,
+      "visible_weak_only_actions": 0,
+      "visible_actions_with_any_weak_basis": 3
+    },
+    "action_cases_evaluated": 6,
+    "action_cases_unavailable": 0,
+    "incomplete": false
+  },
+  "external_calls": 0,
+  "cases": [
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "opening_hours_audit": {
+        "state": "mismatch",
+        "reason": "value_mismatch",
+        "compared_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "omitted_days": [],
+        "site_candidates": [
+          {
+            "raw": "{\"@type\": \"OpeningHoursSpecification\", \"closes\": \"23:59\", \"dayOfWeek\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\", \"Sunday\"], \"opens\": \"00:00\"}",
+            "url": "https://allstarplumbingfresno.com/",
+            "path": "/payload/selected_pages/0/deep_snapshot/html",
+            "start": 1633,
+            "end": 5071,
+            "json_pointer": "/openingHoursSpecification",
+            "basis": "structured",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "0": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "1": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "2": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "3": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "4": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "5": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "6": [
+                [
+                  0,
+                  1440
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": [
+              "structured_full_day_2359"
+            ]
+          },
+          {
+            "raw": "24 Hour Emergency Plumber // Call Now (559) 445-9999",
+            "url": "https://allstarplumbingfresno.com/",
+            "path": "/payload/selected_pages/0/deep_snapshot/html",
+            "start": 8470,
+            "end": 8733,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "emergency",
+            "purpose": "emergency",
+            "days": {},
+            "reason": "not_regular_hours"
+          },
+          {
+            "raw": "{\"@type\": \"OpeningHoursSpecification\", \"closes\": \"23:59\", \"dayOfWeek\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\", \"Sunday\"], \"opens\": \"00:00\"}",
+            "url": "https://allstarplumbingfresno.com/contact",
+            "path": "/payload/selected_pages/3/deep_snapshot/html",
+            "start": 1633,
+            "end": 5071,
+            "json_pointer": "/openingHoursSpecification",
+            "basis": "structured",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "0": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "1": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "2": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "3": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "4": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "5": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "6": [
+                [
+                  0,
+                  1440
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": [
+              "structured_full_day_2359"
+            ]
+          },
+          {
+            "raw": "24 Hour Emergency Plumber // Call Now (559) 445-9999",
+            "url": "https://allstarplumbingfresno.com/contact",
+            "path": "/payload/selected_pages/3/deep_snapshot/html",
+            "start": 8204,
+            "end": 8467,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "emergency",
+            "purpose": "emergency",
+            "days": {},
+            "reason": "not_regular_hours"
+          }
+        ],
+        "gbp_candidates": [
+          {
+            "raw": "tuesday: 7 am–7 pm\nwednesday: 7 am–7 pm\nthursday: 7 am–7 pm\nfriday: 7 am–7 pm\nsaturday: Closed\nsunday: Closed\nmonday: 7 am–7 pm",
+            "url": "",
+            "path": "/payload/record/fields/hours/value",
+            "basis": "structured",
+            "alias": "hours",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "1": [
+                [
+                  420,
+                  1140
+                ]
+              ],
+              "2": [
+                [
+                  420,
+                  1140
+                ]
+              ],
+              "3": [
+                [
+                  420,
+                  1140
+                ]
+              ],
+              "4": [
+                [
+                  420,
+                  1140
+                ]
+              ],
+              "5": [],
+              "6": [],
+              "0": [
+                [
+                  420,
+                  1140
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "counts": {
+          "parsed": 3,
+          "parse_ambiguous": 0,
+          "tour_schedule": 0,
+          "emergency": 2,
+          "appointment_only": 0,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_28374e795d8ab0502384b464a48ca417471e5b54d5caf0a5c7495d305619123f",
+          "ev_b18918c3fe59390d19a777e37bebe006c2458fa504b3f19db486f3bb8e23ac92",
+          "ev_e0e12992b069912dff67009f57c9d7a6c2df1a506b5389b129fc01efd2f6ba37"
+        ],
+        "basis": "structured"
+      }
+    },
+    {
+      "site_id": "nova-service",
+      "opening_hours_audit": {
+        "state": "not_checked",
+        "reason": "hours_not_comparable",
+        "compared_days": [],
+        "omitted_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "site_candidates": [
+          {
+            "raw": "Business Hours 24/7/365",
+            "url": "https://novaservice.pro/",
+            "path": "/payload/selected_pages/0/deep_snapshot/html",
+            "start": 218092,
+            "end": 218167,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "parse_ambiguous",
+            "purpose": "regular_business",
+            "days": {},
+            "reason": "unparsed_hours_condition"
+          },
+          {
+            "raw": "Business Hours Mon – Thu: 8:00am – 5:00pm",
+            "url": "https://novaservice.pro/contact-us/",
+            "path": "/payload/selected_pages/1/deep_snapshot/html",
+            "start": 172181,
+            "end": 172490,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "0": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "1": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "2": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "3": [
+                [
+                  480,
+                  1020
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          },
+          {
+            "raw": "Business Hours Fri: 8:00am – 4:00pm",
+            "url": "https://novaservice.pro/contact-us/",
+            "path": "/payload/selected_pages/1/deep_snapshot/html",
+            "start": 172181,
+            "end": 172490,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "4": [
+                [
+                  480,
+                  960
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          },
+          {
+            "raw": "Business Hours Sat – Sun: Appointment Only",
+            "url": "https://novaservice.pro/contact-us/",
+            "path": "/payload/selected_pages/1/deep_snapshot/html",
+            "start": 172181,
+            "end": 172490,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "appointment_only",
+            "purpose": "appointment_only",
+            "days": {},
+            "reason": "appointment_condition"
+          },
+          {
+            "raw": "Business Hours Emergency Services Available 24/7/365",
+            "url": "https://novaservice.pro/contact-us/",
+            "path": "/payload/selected_pages/1/deep_snapshot/html",
+            "start": 172181,
+            "end": 172490,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "emergency",
+            "purpose": "emergency",
+            "days": {},
+            "reason": "not_regular_hours"
+          },
+          {
+            "raw": "Business Hours 24/7/365",
+            "url": "https://novaservice.pro/contact-us/",
+            "path": "/payload/selected_pages/1/deep_snapshot/html",
+            "start": 188084,
+            "end": 188159,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "parse_ambiguous",
+            "purpose": "regular_business",
+            "days": {},
+            "reason": "unparsed_hours_condition"
+          }
+        ],
+        "gbp_candidates": [],
+        "counts": {
+          "parsed": 2,
+          "parse_ambiguous": 2,
+          "tour_schedule": 0,
+          "emergency": 1,
+          "appointment_only": 1,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_0a519e09e2f938b5f41c3a05cd69c1a7e0d48e1782d40900df4ef6fb42415c01",
+          "ev_d12307dd0e62afaa3dda9ea174ef3a17880accdc6a7c04186dcba4fdd1fc0dc8"
+        ],
+        "basis": "text_pattern"
+      }
+    },
+    {
+      "site_id": "pr-plumbing-fresno",
+      "opening_hours_audit": {
+        "state": "not_checked",
+        "reason": "field_not_observed",
+        "compared_days": [],
+        "omitted_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "site_candidates": [],
+        "gbp_candidates": [
+          {
+            "raw": "tuesday: Open 24 hours\nwednesday: Open 24 hours\nthursday: Open 24 hours\nfriday: Open 24 hours\nsaturday: Open 24 hours\nsunday: Open 24 hours\nmonday: Open 24 hours",
+            "url": "",
+            "path": "/payload/record/fields/hours/value",
+            "basis": "structured",
+            "alias": "hours",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "1": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "2": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "3": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "4": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "5": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "6": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "0": [
+                [
+                  0,
+                  1440
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "counts": {
+          "parsed": 1,
+          "parse_ambiguous": 0,
+          "tour_schedule": 0,
+          "emergency": 0,
+          "appointment_only": 0,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_453b97e1b6d1460b091e000fb7231dcfd6354642a92ea9bf80ca8ed1e47169a0"
+        ],
+        "basis": "text_pattern"
+      }
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "opening_hours_audit": {
+        "state": "not_checked",
+        "reason": "field_not_observed",
+        "compared_days": [],
+        "omitted_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "site_candidates": [],
+        "gbp_candidates": [
+          {
+            "raw": "tuesday: 7 AM–6 PM\nwednesday: 7 AM–6 PM\nthursday: 7 AM–6 PM\nfriday: 7 AM–6 PM\nsaturday: 9 AM–5 PM\nsunday: 9 AM–5 PM\nmonday: 7 AM–6 PM",
+            "url": "",
+            "path": "/payload/record/fields/hours/value",
+            "basis": "structured",
+            "alias": "hours",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "1": [
+                [
+                  420,
+                  1080
+                ]
+              ],
+              "2": [
+                [
+                  420,
+                  1080
+                ]
+              ],
+              "3": [
+                [
+                  420,
+                  1080
+                ]
+              ],
+              "4": [
+                [
+                  420,
+                  1080
+                ]
+              ],
+              "5": [
+                [
+                  540,
+                  1020
+                ]
+              ],
+              "6": [
+                [
+                  540,
+                  1020
+                ]
+              ],
+              "0": [
+                [
+                  420,
+                  1080
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "counts": {
+          "parsed": 1,
+          "parse_ambiguous": 0,
+          "tour_schedule": 0,
+          "emergency": 0,
+          "appointment_only": 0,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_1517707bf00ce19f00b9280082c0a166b384a68fd555ebd0c2a113f3e24fbebf"
+        ],
+        "basis": "text_pattern"
+      }
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "opening_hours_audit": {
+        "state": "mismatch",
+        "reason": "value_mismatch",
+        "compared_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday"
+        ],
+        "omitted_days": [
+          "saturday",
+          "sunday"
+        ],
+        "site_candidates": [
+          {
+            "raw": "Opening Hours Mon - Fri: 09:00 - 17:30",
+            "url": "https://visiontechav.com/contact-us/",
+            "path": "/payload/selected_pages/2/deep_snapshot/html",
+            "start": 63257,
+            "end": 63519,
+            "json_pointer": null,
+            "basis": "text_pattern",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "0": [
+                [
+                  540,
+                  1050
+                ]
+              ],
+              "1": [
+                [
+                  540,
+                  1050
+                ]
+              ],
+              "2": [
+                [
+                  540,
+                  1050
+                ]
+              ],
+              "3": [
+                [
+                  540,
+                  1050
+                ]
+              ],
+              "4": [
+                [
+                  540,
+                  1050
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "gbp_candidates": [
+          {
+            "raw": "tuesday: Open 24 hours\nwednesday: Open 24 hours\nthursday: Open 24 hours\nfriday: Open 24 hours\nsaturday: Open 24 hours\nsunday: Open 24 hours\nmonday: Open 24 hours",
+            "url": "",
+            "path": "/payload/record/fields/hours/value",
+            "basis": "structured",
+            "alias": "hours",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "1": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "2": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "3": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "4": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "5": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "6": [
+                [
+                  0,
+                  1440
+                ]
+              ],
+              "0": [
+                [
+                  0,
+                  1440
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "counts": {
+          "parsed": 2,
+          "parse_ambiguous": 0,
+          "tour_schedule": 0,
+          "emergency": 0,
+          "appointment_only": 0,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_d3237460bd229e805237d73e511e8193871210dc6dd409541cf3687dffdbfa66",
+          "ev_dfddcc650b0a04a64c05744ae905a8a0676ae24cef3c6c8c9213ba0665511239"
+        ],
+        "basis": "text_pattern"
+      }
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "opening_hours_audit": {
+        "state": "not_checked",
+        "reason": "field_not_observed",
+        "compared_days": [],
+        "omitted_days": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "site_candidates": [],
+        "gbp_candidates": [
+          {
+            "raw": "monday: 8 AM–5 PM\ntuesday: 8 AM–5 PM\nwednesday: 8 AM–5 PM\nthursday: 8 AM–5 PM\nfriday: 8 AM–5 PM\nsaturday: 8 AM–5 PM\nsunday: 8 AM–5 PM",
+            "url": "",
+            "path": "/payload/record/fields/hours/value",
+            "basis": "structured",
+            "alias": "hours",
+            "classification": "parsed",
+            "purpose": "regular_business",
+            "days": {
+              "0": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "1": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "2": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "3": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "4": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "5": [
+                [
+                  480,
+                  1020
+                ]
+              ],
+              "6": [
+                [
+                  480,
+                  1020
+                ]
+              ]
+            },
+            "reason": null,
+            "transformations": []
+          }
+        ],
+        "counts": {
+          "parsed": 1,
+          "parse_ambiguous": 0,
+          "tour_schedule": 0,
+          "emergency": 0,
+          "appointment_only": 0,
+          "other": 0
+        },
+        "evidence_ids": [
+          "ev_17202e7937b50815536341ead69c8b3299db7919b375f4e9d189d8a38512dae7"
+        ],
+        "basis": "text_pattern"
+      }
+    }
+  ],
+  "v10_before_commit": "65b15a5dc6d95ab90928c6c86b5daa78981aa5d3",
+  "v10_before_sha256": {
+    "all-star-plumbing-fresno": "628098b5beb8cc1b8697b43b74cf843b37231314cb68ca45accd2a39f36fdab6",
+    "nova-service": "ac64cc2370d38652e19382742c334bd66e55563b3a6167c40369498f29d7bf84",
+    "pr-plumbing-fresno": "0be24bc0ca98465a1608a0025cac81d656d44b32f83dcfa342736300d7b5cb8b",
+    "seamless-gutters-pensacola": "2969c8429fd1afcd2958c25edfa6fa64b3eb74f8e278c852579d20edd84dd3b5",
+    "vision-tech-swansea": "1dff173daa18ce0c2b862c47d5bfb417e1c0802506c18cd43d89eece97880b86",
+    "volcanoes-hiking-guides": "2523924eed1d75e46fb1d785316739ca8ba1342818072cba3783def7c699bf1d"
+  },
+  "v10_after_sha256": {
+    "all-star-plumbing-fresno": "628098b5beb8cc1b8697b43b74cf843b37231314cb68ca45accd2a39f36fdab6",
+    "nova-service": "ac64cc2370d38652e19382742c334bd66e55563b3a6167c40369498f29d7bf84",
+    "pr-plumbing-fresno": "0be24bc0ca98465a1608a0025cac81d656d44b32f83dcfa342736300d7b5cb8b",
+    "seamless-gutters-pensacola": "2969c8429fd1afcd2958c25edfa6fa64b3eb74f8e278c852579d20edd84dd3b5",
+    "vision-tech-swansea": "1dff173daa18ce0c2b862c47d5bfb417e1c0802506c18cd43d89eece97880b86",
+    "volcanoes-hiking-guides": "2523924eed1d75e46fb1d785316739ca8ba1342818072cba3783def7c699bf1d"
+  }
+}

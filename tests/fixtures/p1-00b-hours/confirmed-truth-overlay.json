@@ -1,0 +1,60 @@
+{
+  "schema_version": "gold_truth_overlay_v1",
+  "ruleset_version": "v22_capability_public_v11",
+  "reviewed_by": "负责人确认（2026-11-04）",
+  "checks": [
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "681d634f-3bbf-5a07-8f82-9b1514d0ae58",
+        "urls": [
+          "https://allstarplumbingfresno.com/",
+          "https://allstarplumbingfresno.com/contact"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "id": "opening-hours-v11-confirmed",
+      "kind": "rule",
+      "expected_triggered": true,
+      "reviewed_by": "负责人确认（2026-11-04）"
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/contact-us/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "id": "opening-hours-v11-confirmed",
+      "kind": "rule",
+      "expected_triggered": true,
+      "reviewed_by": "负责人确认（2026-11-04）"
+    }
+  ]
+}

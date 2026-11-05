@@ -1,0 +1,23 @@
+{
+  "schema_version": "p1_00b_contact_capture_v1",
+  "started_at": "2026-11-04T10:34:27.660767+00:00",
+  "status": "stopped",
+  "logical_fetches": 1,
+  "http_requests": [
+    {
+      "url": "https://www.volcanoeshikingguides.com/robots.txt",
+      "requested_at": "2026-11-04T10:34:27.689105+00:00",
+      "status_code": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "location": null
+    }
+  ],
+  "responses": [],
+  "serpapi_calls": 0,
+  "firecrawl_credits": 0,
+  "llm_calls": 0,
+  "api_cost_usd": 0,
+  "current_step": "robots",
+  "reason": "ValueError",
+  "completed_at": "2026-11-04T10:34:28.342589+00:00"
+}

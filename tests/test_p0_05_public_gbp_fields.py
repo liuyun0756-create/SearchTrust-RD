@@ -210,7 +210,7 @@ def test_live_v2_snapshot_crosses_acquisition_bridge_and_verified_reader():
         schema_version=CHECKPOINT_VERSION,reference=original.reference,snapshot=snapshot))
     manifest,value=build_acquisition_input(**args)
     assert manifest.snapshots[3].schema_version==snapshot.schema_version
-    assert build_public_capability_report(manifest,value).schema_version=='2.2.5'
+    assert build_public_capability_report(manifest,value).schema_version=='2.2.6'
     row=VerifiedPublicGbpSnapshotRow(snapshot_id=JOB_ID,case_id=original.reference.case_id,source_type='gbp',
         schema_version=snapshot.schema_version,normalized_payload=snapshot,payload_checksum=request_digest(snapshot),
         created_at=snapshot.completed_at,fetched_at=snapshot.completed_at,expires_at=snapshot.expires_at,reference=original.reference)

@@ -705,6 +705,50 @@
     },
     "CapabilityReport": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "contact_checks": {
+                "items": {
+                  "properties": {
+                    "field": {
+                      "enum": [
+                        "phone",
+                        "address",
+                        "business_name",
+                        "service_area"
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                "maxItems": 4,
+                "type": "array"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.6"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v11"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
       "else": {
         "not": {
           "properties": {
@@ -754,7 +798,10 @@
       "if": {
         "properties": {
           "schema_version": {
-            "const": "2.2.5"
+            "enum": [
+              "2.2.5",
+              "2.2.6"
+            ]
           }
         },
         "required": [
@@ -792,7 +839,7 @@
               "items": {
                 "$ref": "#/$defs/ContactCheck"
               },
-              "maxItems": 4,
+              "maxItems": 5,
               "type": "array"
             },
             {
@@ -870,7 +917,8 @@
           "enum": [
             "2.2.2",
             "2.2.4",
-            "2.2.5"
+            "2.2.5",
+            "2.2.6"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -936,7 +984,8 @@
                   "enum": [
                     "v22_capability_public_v8",
                     "v22_capability_public_v9",
-                    "v22_capability_public_v10"
+                    "v22_capability_public_v10",
+                    "v22_capability_public_v11"
                   ]
                 }
               },
@@ -1036,7 +1085,8 @@
             "phone",
             "address",
             "business_name",
-            "service_area"
+            "service_area",
+            "opening_hours"
           ],
           "title": "Field",
           "type": "string"
@@ -1087,6 +1137,50 @@
     },
     "DeliveryRevision": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "contact_checks": {
+                "items": {
+                  "properties": {
+                    "field": {
+                      "enum": [
+                        "phone",
+                        "address",
+                        "business_name",
+                        "service_area"
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                "maxItems": 4,
+                "type": "array"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.6"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v11"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
       "else": {
         "not": {
           "properties": {
@@ -1944,6 +2038,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.8 (reports 2.2.2/2.2.4/2.2.5, delivery v1/v2)",
+  "title": "SearchTrust capability contracts 2.2.9 (reports 2.2.2/2.2.4/2.2.5/2.2.6, delivery v1/v2)",
   "type": "object"
 }

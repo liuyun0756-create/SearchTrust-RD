@@ -20,7 +20,7 @@ from app.report_v22.models import (
 )
 
 
-GbpActionField = Literal["business_name", "address", "phone", "service_area"]
+GbpActionField = Literal["business_name", "address", "phone", "service_area", "opening_hours"]
 ActionTargetKind = Literal["url", "query", "page_type", "gbp_field", "site"]
 AllowedFactField = Literal[
     "finding.statement",

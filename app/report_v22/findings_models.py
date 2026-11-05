@@ -12,7 +12,7 @@ from app.report_v22.site_gbp_alignment_models import SiteGbpAlignmentLimits, Sit
 
 EvaluationState = Literal["triggered", "not_triggered", "not_checked"]
 EvaluationReason = Literal[
-    "sample_not_local", "page_out_of_scope",
+    "sample_not_local", "page_out_of_scope", "hours_not_comparable", "conflicting_hours_sources",
     "condition_met", "condition_not_met", "source_missing", "source_ineligible",
     "field_not_observed", "insufficient_sample", "identity_unresolved",
     "rank_basis_mismatch", "comparison_time_gap", "ambiguous_page_observations",
@@ -98,6 +98,7 @@ class FindingsRollup(StrictModel):
 class PublicFindingsResult(StrictModel):
     # Internal handoff only: never exported into frozen findings contracts.
     _resource_limited_pages: list[str] = PrivateAttr(default_factory=list)
+    _hours_alignment: dict | None = PrivateAttr(default=None)
     _contact_alignment: SiteGbpAlignmentResult | None = PrivateAttr(default=None)
     ruleset_version: Literal["v22_public_findings_v1"] = "v22_public_findings_v1"
     evidence_result: EvidenceBuildResult

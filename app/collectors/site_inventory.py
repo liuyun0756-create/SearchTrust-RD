@@ -33,7 +33,7 @@ from app.collectors.site_inventory_models import (
     InventoryErrorCode,
     InventoryPageRecord,
     SelectedPageRecord,
-    SiteInventorySnapshot, SiteInventorySnapshotV2, InventoryPageRecordV2,
+    SiteInventorySnapshot, SiteInventorySnapshotV2, SiteInventorySnapshotV3, InventoryPageRecordV2,
 )
 from app.collectors.site_inventory_selection import RankedPage, classify_page, select_key_pages
 from app.collectors.site_inventory_urls import SiteScope, canonicalize_inventory_url
@@ -104,6 +104,7 @@ class SiteInventoryCollector:
         deep_max_bytes: int = 2_000_000,
         resource_limits: bool = False,
         sampling_quality: bool = False,
+        contact_coverage: bool = False,
         clock: Clock = _utc_now,
     ) -> None:
         self.fetcher = fetcher
@@ -117,6 +118,9 @@ class SiteInventoryCollector:
         self.deep_max_bytes = deep_max_bytes
         self.resource_limits = resource_limits
         self.sampling_quality = sampling_quality
+        self.contact_coverage = contact_coverage
+        self.contact_urls: list[str] = []
+        self._contact_structural_success = False
         self.clock = clock
 
     async def collect(
@@ -170,6 +174,8 @@ class SiteInventoryCollector:
         records: dict[str, InventoryPageRecord] = {}
         structural_responses: dict[str, SiteFetchResponse] = {}
         truncated = False
+        known_urls: set[str] = set()
+        home_contact = False
 
         def add_candidate(
             raw_url: str,
@@ -180,6 +186,8 @@ class SiteInventoryCollector:
             prefetched: SiteFetchResponse | None = None,
         ) -> bool:
             nonlocal truncated
+            if self.contact_coverage and raw_url in self.contact_urls[1:] and self._contact_structural_success:
+                return False
             if self.sampling_quality:
                 from app.collectors.site_page_scope import is_admin_page
                 if is_admin_page(raw_url):
@@ -221,7 +229,30 @@ class SiteInventoryCollector:
             queue.append(normalized)
             return True
 
+        # The v11 discovery scan only provides links; incomplete text is never evidence.
+        if self.contact_coverage:
+            from app.collectors.site_contact_coverage import discover_contacts
+            contact_links, known_urls = discover_contacts(root_response.decode(), scope)
+            if not contact_links and root_response.truncated and discovery_limit >= 2 and deep_analysis_limit >= 2 and robots.allowed(scope.root_url):
+                try:
+                    scan = await self.fetcher.fetch(scope.root_url, scope=scope,
+                        max_bytes=4_000_000, accepted_media_types=_HTML_TYPES)
+                    if scan.status_code < 400 and not scan.truncated:
+                        root_response = scan
+                        contact_links, known_urls = discover_contacts(scan.decode(), scope)
+                    else:
+                        limitations.append("contact_discovery_incomplete")
+                except (SiteFetchError, UrlSafetyError, UrlUnreachableError):
+                    limitations.append("contact_discovery_incomplete")
+            from app.collectors.site_contact_coverage import home_contact_complete
+            home_contact = not root_response.truncated and home_contact_complete(root_response.decode(), scope)
+            self.contact_urls = [u for u in contact_links if robots.allowed(u)][:2] if len(known_urls | {scope.root_url}) <= 20 and not home_contact else []
+            if discovery_limit < 2 or deep_analysis_limit < 2:
+                self.contact_urls = []
+                limitations.append("contact_not_checked:budget_limit")
         add_candidate(scope.root_url, "seed", 0, prefetched=root_response)
+        for url in self.contact_urls:
+            add_candidate(url, "internal_link", 1)
 
         declared_sitemaps = list(robots.sitemaps)
         if declared_sitemaps and len(candidates) < discovery_limit:
@@ -234,10 +265,17 @@ class SiteInventoryCollector:
                 max_depth=self.sitemap_max_depth,
                 max_bytes=self.sitemap_max_bytes,
                 max_decompressed_bytes=self.sitemap_decompressed_max_bytes,
-                page_limit=discovery_limit,
+                page_limit=max(discovery_limit, 21) if self.contact_coverage else discovery_limit,
             )
             limitations.extend(result.limitations)
-            for url in result.page_urls:
+            sitemap_urls = result.page_urls
+            if self.contact_coverage and not home_contact and len(set(sitemap_urls) | set(candidates) | known_urls) <= 20 and discovery_limit >= 2 and deep_analysis_limit >= 2:
+                from app.collectors.site_contact_coverage import contact_path
+                sitemap_contacts = sorted(u for u in sitemap_urls if contact_path(u) and robots.allowed(u))
+                self.contact_urls = list(dict.fromkeys(self.contact_urls + sitemap_contacts))[:2]
+                sitemap_urls = tuple(self.contact_urls) + tuple(u for u in sitemap_urls if u not in self.contact_urls)
+            known_urls.update(sitemap_urls)
+            for url in sitemap_urls:
                 add_candidate(url, "robots_sitemap", 1)
 
         default_sitemap = f"{scope.root_url.rstrip('/')}/sitemap.xml"
@@ -251,10 +289,17 @@ class SiteInventoryCollector:
                 max_depth=self.sitemap_max_depth,
                 max_bytes=self.sitemap_max_bytes,
                 max_decompressed_bytes=self.sitemap_decompressed_max_bytes,
-                page_limit=discovery_limit,
+                page_limit=max(discovery_limit, 21) if self.contact_coverage else discovery_limit,
             )
             limitations.extend(result.limitations)
-            for url in result.page_urls:
+            sitemap_urls = result.page_urls
+            if self.contact_coverage and not home_contact and len(set(sitemap_urls) | set(candidates) | known_urls) <= 20 and discovery_limit >= 2 and deep_analysis_limit >= 2:
+                from app.collectors.site_contact_coverage import contact_path
+                sitemap_contacts = sorted(u for u in sitemap_urls if contact_path(u) and robots.allowed(u))
+                self.contact_urls = list(dict.fromkeys(self.contact_urls + sitemap_contacts))[:2]
+                sitemap_urls = tuple(self.contact_urls) + tuple(u for u in sitemap_urls if u not in self.contact_urls)
+            known_urls.update(sitemap_urls)
+            for url in sitemap_urls:
                 add_candidate(url, "default_sitemap", 1)
 
         await self._drain_candidates(
@@ -308,6 +353,9 @@ class SiteInventoryCollector:
             target_market=target_market,
             gsc_priorities=gsc_priorities or [],
         )
+        if self.contact_coverage and len(pages) <= 20 and deep_analysis_limit >= 2:
+            from app.collectors.site_contact_coverage import prioritize_contacts
+            ranked_pages = prioritize_contacts(ranked_pages, checked_pages, self.contact_urls)
         selected_pages, deep_attempts, deep_limitations = await self._collect_deep_pages(
             ranked_pages,
             scope=scope,
@@ -315,6 +363,8 @@ class SiteInventoryCollector:
             limit=deep_analysis_limit,
         )
         limitations.extend(deep_limitations)
+        if self.contact_coverage and not home_contact and not any(p.deep_analyzed and p.page_type == "contact" for p in selected_pages):
+            limitations.append("contact_not_checked:coverage_incomplete")
         page_types = Counter(page.page_type for page in checked_pages)
         sources: Counter[str] = Counter()
         for page in pages:
@@ -323,9 +373,9 @@ class SiteInventoryCollector:
         if self.resource_limits and any(getattr(p, "structural_truncated", False) for p in pages):
             limitations.append("Some page content was not checked because only a bounded prefix was available for link discovery.")
             unique_limitations = list(dict.fromkeys(limitations))
-        model = SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot
+        model = SiteInventorySnapshotV3 if self.contact_coverage else SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot
         return model(
-            schema_version="site_inventory_snapshot_v2" if self.resource_limits else "site_inventory_snapshot_v1",
+            schema_version="site_inventory_snapshot_v3" if self.contact_coverage else "site_inventory_snapshot_v2" if self.resource_limits else "site_inventory_snapshot_v1",
             root_url=scope.root_url,
             canonical_host=scope.canonical_host,
             started_at=started_at,
@@ -364,10 +414,12 @@ class SiteInventoryCollector:
     ) -> None:
         while queue:
             batch: list[_Candidate] = []
-            while queue and len(batch) < self.batch_size:
+            while queue and len(batch) < (1 if self.contact_coverage and self.contact_urls else self.batch_size):
                 url = queue.popleft()
                 candidate = candidates.pop(url, None)
                 if candidate is not None:
+                    if self.contact_coverage and self._contact_structural_success and url in self.contact_urls[1:]:
+                        continue
                     batch.append(candidate)
             if not batch:
                 continue
@@ -413,6 +465,8 @@ class SiteInventoryCollector:
                         update={"discovery_sources": sources, "crawl_depth": depth}
                     )
                 records[chosen_url] = record
+                if self.contact_coverage and candidate.url in self.contact_urls and record.page_type == "contact" and (record.status_code or 500) < 400 and checked.response and not checked.response.truncated:
+                    self._contact_structural_success = True
                 if checked.response is not None:
                     structural_responses[chosen_url] = checked.response
 
@@ -435,9 +489,9 @@ class SiteInventoryCollector:
             response = candidate.prefetched or await self.fetcher.fetch(
                 candidate.url,
                 scope=scope,
-                max_bytes=self.structural_max_bytes,
+                max_bytes=4_000_000 if self.contact_coverage and candidate.url in self.contact_urls else self.structural_max_bytes,
                 accepted_media_types=_HTML_TYPES,
-                **({"allow_prefix": True} if self.resource_limits else {}),
+                **({"allow_prefix": True} if self.resource_limits and candidate.url not in self.contact_urls else {}),
             )
             text = response.decode()
             if response.truncated:
@@ -455,6 +509,14 @@ class SiteInventoryCollector:
                 root_url=scope.root_url,
                 structure=structure,
             )
+            if self.contact_coverage and candidate.url in self.contact_urls and not response.truncated:
+                from app.collectors.site_contact_coverage import confirmed_contact
+                if confirmed_contact(structure):
+                    from app.collectors.site_inventory_selection import ClassificationResult
+                    classification = ClassificationResult("contact", ("verified_contact_role",))
+                elif classification.page_type == "contact":
+                    from app.collectors.site_inventory_selection import ClassificationResult
+                    classification = ClassificationResult("other", ("contact_role_unconfirmed",))
             model = InventoryPageRecordV2 if self.resource_limits else InventoryPageRecord
             record = model(
                 **({"structural_truncated": response.truncated} if self.resource_limits else {}),
@@ -505,6 +567,7 @@ class SiteInventoryCollector:
             tuple[int, RankedPage, DeepPageSnapshot | None, InventoryErrorCode | None]
         ] = []
         success_count = 0
+        contact_succeeded = False
         for rank, ranked in enumerate(ranked_pages, start=1):
             if self.sampling_quality:
                 from app.collectors.site_page_scope import is_admin_page
@@ -512,6 +575,8 @@ class SiteInventoryCollector:
                     continue
             if success_count >= limit:
                 break
+            if self.contact_coverage and "contact_reserved" in ranked.reasons and contact_succeeded:
+                continue
             try:
                 snapshot = await self._deep_snapshot(
                     ranked,
@@ -523,6 +588,7 @@ class SiteInventoryCollector:
             else:
                 outcomes.append((rank, ranked, snapshot, None))
                 success_count += 1
+                contact_succeeded |= ranked.page.page_type == "contact"
 
         successful = [outcome for outcome in outcomes if outcome[2] is not None]
         failed = [outcome for outcome in outcomes if outcome[2] is None]
@@ -570,17 +636,21 @@ class SiteInventoryCollector:
         if (
             response is None
             or response.truncated
-            or response.response_bytes >= self.structural_max_bytes
+            or (response.response_bytes >= self.structural_max_bytes and not self.contact_coverage)
             or response.status_code >= 400
         ):
             response = await self.fetcher.fetch(
                 str(ranked.page.url),
                 scope=scope,
-                max_bytes=self.deep_max_bytes,
+                max_bytes=4_000_000 if self.contact_coverage and ranked.page.page_type in {"home", "contact"} else self.deep_max_bytes,
                 accepted_media_types=_HTML_TYPES,
             )
         if response.status_code >= 400:
             raise SiteFetchError("http_error", "The deep page returned an HTTP error.")
+        if self.contact_coverage:
+            from app.collectors.site_page_scope import is_admin_page
+            if canonicalize_inventory_url(response.final_url, scope=scope) is None or is_admin_page(response.final_url) or response.truncated:
+                raise SiteFetchError("unsafe_target", "Contact evidence is outside the allowed page scope.")
         html = response.decode()
         structure = extract_html_structure(
             html,

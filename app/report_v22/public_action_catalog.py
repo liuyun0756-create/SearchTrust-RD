@@ -175,7 +175,10 @@ ACTION_TEMPLATES = {
 }
 
 
+from app.report_v22.public_rule_catalog import HOURS
+
 RULE_ACTIONS = {
+    HOURS: RuleActionBinding(RULE_VERSION, "align_public_gbp", "opening_hours"),
     HTTP: RuleActionBinding(RULE_VERSION, "restore_site_access_indexing"),
     NOINDEX: RuleActionBinding(RULE_VERSION, "restore_site_access_indexing"),
     TITLE: RuleActionBinding(RULE_VERSION, "differentiate_page_titles"),

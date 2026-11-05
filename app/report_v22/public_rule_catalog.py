@@ -8,6 +8,7 @@ RULE_VERSION = "1.0.0"
 GBP_ALIGNMENT_RULE_VERSION = "1.1.0"
 TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION = "1.2.0"
 NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION = "1.3.0"
+HOURS = "v22_public.gbp_opening_hours_alignment"
 HTTP = "v22_public.site_http_error"
 NOINDEX = "v22_public.site_explicit_noindex"
 TITLE = "v22_public.site_duplicate_title"
@@ -26,6 +27,7 @@ class RuleSpec:
 
 
 RULES = {
+    HOURS: RuleSpec("fact", "medium", "medium", "Check the published opening hours on both channels for the same business."),
     HTTP: RuleSpec("fact", "medium", "medium", "Obtain a new valid response snapshot for the affected URL and check its HTTP status again."),
     NOINDEX: RuleSpec("fact", "medium", "medium", "Confirm the intended indexing policy and inspect a new page snapshot for its explicit meta directives."),
     TITLE: RuleSpec("fact", "low", "medium", "Inspect new snapshots of the affected final URLs and compare their observed titles again."),

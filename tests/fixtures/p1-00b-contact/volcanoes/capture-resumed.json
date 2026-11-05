@@ -1,0 +1,88 @@
+{
+  "schema_version": "p1_00b_contact_capture_v1",
+  "started_at": "2026-11-04T10:34:27.660767+00:00",
+  "status": "captured_pending_content_review",
+  "logical_fetches": 4,
+  "http_requests": [
+    {
+      "url": "https://www.volcanoeshikingguides.com/robots.txt",
+      "requested_at": "2026-11-04T10:34:27.689105+00:00",
+      "status_code": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "location": null
+    },
+    {
+      "url": "https://www.volcanoeshikingguides.com/",
+      "requested_at": "2026-11-04T10:43:17.720734+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "location": null
+    },
+    {
+      "url": "https://www.volcanoeshikingguides.com/",
+      "requested_at": "2026-11-04T10:43:18.712782+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "location": null
+    },
+    {
+      "url": "https://www.volcanoeshikingguides.com/contact-us",
+      "requested_at": "2026-11-04T10:43:20.002515+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "location": null
+    }
+  ],
+  "responses": [
+    {
+      "name": "home-prefix",
+      "requested_url": "https://www.volcanoeshikingguides.com/",
+      "final_url": "https://www.volcanoeshikingguides.com/",
+      "collected_at": "2026-11-04T10:43:18.419243+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 256000,
+      "truncated": true,
+      "sha256": "sha256:9016f9903944bc836e5a49ab3b0fcf5908320c55edf999e8a9beb3871a06e950",
+      "private_file": ".release-private/2026-11-04-p1-00b-volcanoes/home-prefix.body"
+    },
+    {
+      "name": "home-link-scan",
+      "requested_url": "https://www.volcanoeshikingguides.com/",
+      "final_url": "https://www.volcanoeshikingguides.com/",
+      "collected_at": "2026-11-04T10:43:19.979181+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 2142153,
+      "truncated": false,
+      "sha256": "sha256:e9ec53e4a922792e9c9b708ce2f6ce40c084d414fe3824f9b2ea52a2a619943b",
+      "private_file": ".release-private/2026-11-04-p1-00b-volcanoes/home-link-scan.body"
+    },
+    {
+      "name": "contact",
+      "requested_url": "https://www.volcanoeshikingguides.com/contact-us",
+      "final_url": "https://www.volcanoeshikingguides.com/contact-us",
+      "collected_at": "2026-11-04T10:43:21.364302+00:00",
+      "status_code": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 1855993,
+      "truncated": false,
+      "sha256": "sha256:2054b8d177ca45a52f26bcfeb76d86a50a38ff012e431e99386e3fd4459612a9",
+      "private_file": ".release-private/2026-11-04-p1-00b-volcanoes/contact.body",
+      "snapshot_file": "contact.html.gz",
+      "snapshot_sha256": "sha256:5e30196b930b07cbb2b72a7e2caa4774c4c2c42f5d962393146e9c324e6d8a99"
+    }
+  ],
+  "serpapi_calls": 0,
+  "firecrawl_credits": 0,
+  "llm_calls": 0,
+  "api_cost_usd": 0,
+  "current_step": "contact",
+  "completed_at": "2026-11-04T10:43:21.395380+00:00",
+  "resumed_at": "2026-11-04T10:43:17.693351+00:00",
+  "reused_robots_sha256": "337644037c0ff226c7fd8ac4ec7369fdb9cc6ad46b9abe69cb981539f9c146c6",
+  "robots_checks": {
+    "https://www.volcanoeshikingguides.com/": true,
+    "https://www.volcanoeshikingguides.com/contact-us": true
+  }
+}

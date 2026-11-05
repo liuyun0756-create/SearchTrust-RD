@@ -256,5 +256,9 @@ class SiteInventorySnapshotV2(SiteInventorySnapshot):
     pages: list[InventoryPageRecordV2] = Field(min_length=1, max_length=500)
 
 
-InventorySnapshot = Annotated[SiteInventorySnapshot | SiteInventorySnapshotV2, Field(discriminator="schema_version")]
+class SiteInventorySnapshotV3(SiteInventorySnapshotV2):
+    schema_version: Literal["site_inventory_snapshot_v3"]
+
+
+InventorySnapshot = Annotated[SiteInventorySnapshot | SiteInventorySnapshotV2 | SiteInventorySnapshotV3, Field(discriminator="schema_version")]
 INVENTORY_ADAPTER = TypeAdapter(InventorySnapshot)

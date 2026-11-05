@@ -1,0 +1,150 @@
+{
+  "note": "Generated evaluation targets only; no human labels or expected answers are supplied.",
+  "targets": [
+    {
+      "site_id": "all-star-plumbing-fresno",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "681d634f-3bbf-5a07-8f82-9b1514d0ae58",
+        "urls": [
+          "https://allstarplumbingfresno.com/",
+          "https://allstarplumbingfresno.com/contact"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "triggered",
+      "reason": "value_mismatch"
+    },
+    {
+      "site_id": "nova-service",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "0d2052e3-e390-5dc2-8965-20001ad5b8cd",
+        "urls": [
+          "https://novaservice.pro/contact-us/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "not_checked",
+      "reason": "hours_not_comparable"
+    },
+    {
+      "site_id": "pr-plumbing-fresno",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "740b76bd-dffa-5b7d-a207-136f705f65ef",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "not_checked",
+      "reason": "field_not_observed"
+    },
+    {
+      "site_id": "seamless-gutters-pensacola",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "38bcd62c-bc0f-5b9e-83ba-ed62e48355ef",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "not_checked",
+      "reason": "field_not_observed"
+    },
+    {
+      "site_id": "vision-tech-swansea",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "9a6f7e38-d432-52c8-97df-952d731dd672",
+        "urls": [
+          "https://visiontechav.com/contact-us/"
+        ],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "triggered",
+      "reason": "value_mismatch"
+    },
+    {
+      "site_id": "volcanoes-hiking-guides",
+      "ruleset_version": "v22_capability_public_v11",
+      "rule_id": "v22_public.gbp_opening_hours_alignment",
+      "rule_version": "1.0.0",
+      "target": {
+        "kind": "customer_gbp",
+        "snapshot_id": "808f9c55-6284-570f-a95a-d7cac4275fe1",
+        "urls": [],
+        "title_key": null,
+        "query": null,
+        "result_type": null,
+        "latitude": null,
+        "longitude": null,
+        "country_code": null,
+        "language": null,
+        "device": null,
+        "page_type": null,
+        "competitor_ids": []
+      },
+      "state": "not_checked",
+      "reason": "field_not_observed"
+    }
+  ]
+}

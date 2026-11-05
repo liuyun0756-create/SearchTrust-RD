@@ -73,6 +73,13 @@ def _validate_outcome(view, outcome, alignment=None, *, reviewed_evidence=False)
     if finding is None:
         return
     rule = finding.rule_id
+    from app.report_v22.public_rule_catalog import HOURS
+    if rule == HOURS:
+        if {view.items[k].source_type for k in finding.evidence_ids} != {"site", "gbp"}:
+            raise FindingsError("REFERENCE_INVALID")
+        if any(view.traces[k].selector.record_context[0] != "opening_hours_v1" for k in finding.evidence_ids):
+            raise FindingsError("REFERENCE_INVALID")
+        return
     if rule in GBP_RULES:
         return
     for key in finding.evidence_ids:
@@ -189,7 +196,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -209,7 +216,17 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             identifiers.setdefault(source.kind, set()).add(source.binding.snapshot_id)
         if any(len(values) > 1 for values in identifiers.values()):
             raise FindingsError("INPUT_INVALID")
-        evidence = build_evidence_index(inputs, **({"locality_fields": True} if sampling_quality else {}))
+        hours = None
+        hours_observations = {}
+        if opening_hours:
+            from app.report_v22.opening_hours import inspect_hours, observations
+            hours = inspect_hours(request)
+            for source in inputs.sources:
+                if source.kind in {"site", "public_gbp"}:
+                    rows = hours["site_candidates" if source.kind == "site" else "gbp_candidates"]
+                    hours_observations[source.kind] = observations(source, rows)
+        evidence = build_evidence_index(inputs, **({"locality_fields": True} if sampling_quality else {}),
+            **({"hours_observations": hours_observations} if opening_hours else {}))
         alignment = None
         resource_pages = []
         if request.business_identity is not None:
@@ -270,11 +287,15 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                else public_gbp_findings.evaluate(view, alignment, reviewed_evidence=reviewed_evidence))
         market = (market_findings.evaluate(view, reviewed_evidence=True, **({"sampling_quality": True} if sampling_quality else {})) if reviewed_evidence
                   else market_findings.evaluate(view))
+        hours_outcomes = []
+        if hours is not None:
+            from app.report_v22.opening_hours import outcome
+            hours_outcomes = [outcome(view, hours)]
         outcomes, findings, encoded_findings = {}, {}, {}
         retained_bytes = len(canonical_json_bytes(evidence))
         if retained_bytes > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
-        for proposed in chain(site_findings.evaluate(view, **({"sampling_quality": True} if sampling_quality else {})), market, competitor_findings.evaluate(view), gbp):
+        for proposed in chain(site_findings.evaluate(view, **({"sampling_quality": True} if sampling_quality else {})), market, competitor_findings.evaluate(view), gbp, hours_outcomes):
             outcome = RuleOutcome.model_validate(proposed.model_dump(mode="python"))
             _validate_outcome(view, outcome, alignment, reviewed_evidence=reviewed_evidence)
             if outcome.finding:
@@ -302,6 +323,7 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
             rule_evaluations=[outcome.evaluation for outcome in ordered], site_rollup=site, cluster_rollups=clusters)
         if len(canonical_json_bytes(result)) > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
+        result._hours_alignment = hours
         result._contact_alignment = alignment
         result._resource_limited_pages = resource_pages
         return result

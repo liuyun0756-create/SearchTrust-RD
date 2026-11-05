@@ -12,8 +12,8 @@ from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
-from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, annotate_findings
-from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, GBP_RULES, HTTP, NOINDEX, TITLE
+from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, annotate_findings
+from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
 
 LEGACY_RULESET = "v22_capability_public_v1"
 PRIORITY_RULESET = "v22_capability_public_v2"
@@ -25,6 +25,7 @@ RENDERED_RULESET = "v22_capability_public_v7"
 _ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _BOUNDARY = "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
 _COPY = {
+    HOURS: ("The published hours on the two channels differ. Please check both channels.", "These public statements do not establish actual operating hours."),
     HTTP: ("Check the saved response before changing the page.", "An unintended HTTP error can prevent a visitor reaching the intended page."),
     NOINDEX: ("Confirm indexing intent before changing the directive.", "An unintended noindex directive can conflict with the intended search availability; actual indexing is not established here."),
     TITLE: ("Review whether each page needs a more distinct, accurate title.", "Distinct titles can clarify which page represents each offer; repeated titles do not prove duplicate body content."),
@@ -69,6 +70,8 @@ def _bound_public_sources(manifest, value):
     context = request.evidence_input.context
     refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
+    if manifest.ruleset_version != LABELLED_RULESET and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
+        raise ValueError("v11 inventory requires v11 rules")
     if manifest.ruleset_version not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
         raise CapabilityPublicError()
     if (context.case_id != manifest.case_id or context.report_type != "prospect"
@@ -127,10 +130,12 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         labelled = manifest.ruleset_version in LABELLED_RULESETS
         reviewed = labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
         resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
-        sampling_quality = manifest.ruleset_version == LABELLED_RULESET
+        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, LABELLED_RULESET}
+        opening_hours = manifest.ruleset_version == LABELLED_RULESET
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
                     rendered_pages=manifest.schema_version == "v22_analysis_input_v2", resource_limits=True,
-                    **({"sampling_quality": True} if sampling_quality else {}))
+                    **({"sampling_quality": True} if sampling_quality else {}),
+                    **({"opening_hours": True} if opening_hours else {}))
                   if resource_limits else build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
                   if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version == "v22_analysis_input_v2")
                   else build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)
@@ -179,6 +184,9 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         if manifest.ruleset_version in PUBLIC_LABELLED_RULESETS:
             from app.report_v22.capability_contact_checks import contact_checks_from_alignment
             contact_checks = contact_checks_from_alignment(result._contact_alignment, request, original)
+            if opening_hours:
+                from app.report_v22.opening_hours import contact_check
+                contact_checks.append(contact_check(result._hours_alignment))
             used.update(key for check in contact_checks for key in check["evidence_ids"])
         evidence = []
         for key in sorted(used):
@@ -223,7 +231,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        raw = dict(schema_version="2.2.5" if labelled else "2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version == "v22_analysis_input_v2" else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,

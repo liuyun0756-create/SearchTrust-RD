@@ -28,7 +28,7 @@ from app.collectors.site_inventory_firecrawl import (
     FirecrawlMapAdapter,
     FirecrawlMapResult,
 )
-from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot, SiteInventorySnapshotV2
+from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot, SiteInventorySnapshotV2, SiteInventorySnapshotV3
 from app.collectors.site_inventory_selection import gsc_priorities_from_snapshots
 from app.collectors.site_inventory_urls import (
     SiteScope,
@@ -288,12 +288,14 @@ class CheckpointedSiteInventoryStage:
         clock: Any | None = None,
         resource_limits: bool = False,
         sampling_quality: bool = False,
+        contact_coverage: bool = False,
     ) -> None:
         self.fetcher = fetcher
         self.firecrawl = firecrawl
         self.config = config
         self.resource_limits = resource_limits
         self.sampling_quality = sampling_quality
+        self.contact_coverage = contact_coverage
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     async def collect(
@@ -322,7 +324,7 @@ class CheckpointedSiteInventoryStage:
             ],
         }
         input_digest = request_digest(identity)
-        version = "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        version = "site_inventory_v4" if self.contact_coverage else "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
         final_key = f"{version}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -354,6 +356,7 @@ class CheckpointedSiteInventoryStage:
                 clock=self.clock,
                 resource_limits=self.resource_limits,
                 sampling_quality=self.sampling_quality,
+                contact_coverage=self.contact_coverage,
             )
             scope = SiteScope.from_root(str(request.business_identity.site_url))
             gsc_priorities = gsc_priorities_from_snapshots(
@@ -418,7 +421,7 @@ class CheckpointedSiteInventoryStage:
             return snapshot.model_dump(mode="json")
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
-        return _validate_model(SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
+        return _validate_model(SiteInventorySnapshotV3 if self.contact_coverage else SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
 
     async def collect_inventory_for_site(
         self,
@@ -446,7 +449,7 @@ class CheckpointedSiteInventoryStage:
             "checkpoint_namespace": checkpoint_namespace,
         }
         input_digest = request_digest(identity)
-        version = "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        version = "site_inventory_v4" if self.contact_coverage else "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
         final_key = f"{version}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -478,6 +481,7 @@ class CheckpointedSiteInventoryStage:
                 clock=self.clock,
                 resource_limits=self.resource_limits,
                 sampling_quality=self.sampling_quality,
+                contact_coverage=self.contact_coverage,
             )
             try:
                 snapshot = await collector.collect(
@@ -496,14 +500,14 @@ class CheckpointedSiteInventoryStage:
             return snapshot.model_dump(mode="json")
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
-        return _validate_model(SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
+        return _validate_model(SiteInventorySnapshotV3 if self.contact_coverage else SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
 
 
 async def _return_value(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = False, sampling_quality: bool = False) -> CheckpointedSiteInventoryStage:
+def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = False, sampling_quality: bool = False, contact_coverage: bool = False) -> CheckpointedSiteInventoryStage:
     fetcher = BoundedSiteFetcher(
         connect_timeout=settings.V22_SITE_INVENTORY_CONNECT_TIMEOUT_SECONDS,
         read_timeout=settings.V22_SITE_INVENTORY_READ_TIMEOUT_SECONDS,
@@ -521,6 +525,7 @@ def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = Fa
     return CheckpointedSiteInventoryStage(
         resource_limits=resource_limits,
         sampling_quality=sampling_quality,
+        contact_coverage=contact_coverage,
         fetcher=fetcher,
         firecrawl=firecrawl,
         config=SiteInventoryStageConfig(

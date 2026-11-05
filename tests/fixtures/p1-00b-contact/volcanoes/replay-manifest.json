@@ -1,0 +1,11 @@
+{
+  "source": "capture-resumed.json",
+  "purpose": "Offline production collector replay; no additional HTTP request",
+  "home": {
+    "file": "home.html.gz",
+    "encoding": "gzip",
+    "raw_sha256": "sha256:e9ec53e4a922792e9c9b708ce2f6ce40c084d414fe3824f9b2ea52a2a619943b",
+    "compressed_sha256": "sha256:1d096b70fe357ef949c8fd71425b2b6ab3af9bcc1d31789840d728c396243546",
+    "collected_at": "2026-11-04T10:43:19.979181+00:00"
+  }
+}

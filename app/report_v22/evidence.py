@@ -53,7 +53,7 @@ def _ineligible(source, reason, notes, competitor_id=None):
         health_status="expired" if reason=="expired" else b.health_status)
 
 
-def build_evidence_index(value: EvidenceBuildInput | dict, *, locality_fields=False) -> EvidenceBuildResult:
+def build_evidence_index(value: EvidenceBuildInput | dict, *, locality_fields=False, hours_observations=None) -> EvidenceBuildResult:
     try:
         # Revalidate nested models too: model_copy/update intentionally skips validators.
         reject_nonfinite(value)
@@ -80,6 +80,9 @@ def build_evidence_index(value: EvidenceBuildInput | dict, *, locality_fields=Fa
                 observations=public_gbp.observations(source,request.context.customer_public_gbp)
             else:
                 observations=adapters[source.kind].observations(source, **({"locality_fields": True} if locality_fields and source.kind == "serp" else {}))
+            if hours_observations and reason is None:
+                from itertools import chain
+                observations=chain(observations, hours_observations.get(source.kind, []))
             source_json=source.model_dump(mode="json")
             source_ids=set()
             for observation in observations:

@@ -1,0 +1,20 @@
+{
+  "schema_version": "p1_00b_offline_capture_recovery_v1",
+  "reason": "archive_relative_path_error",
+  "description": "HTTP response bytes were saved before relative_to received a relative path and an absolute base. No new request was made for this recovery.",
+  "original_capture_unchanged": true,
+  "raw_file": ".release-private/2026-11-04-p1-00b-volcanoes/robots.body",
+  "bytes": 503,
+  "sha256": "sha256:337644037c0ff226c7fd8ac4ec7369fdb9cc6ad46b9abe69cb981539f9c146c6",
+  "robots_checks": {
+    "https://www.volcanoeshikingguides.com/": true,
+    "https://www.volcanoeshikingguides.com/contact-us": true
+  },
+  "logical_fetches_used": 1,
+  "http_requests_attempted": 1,
+  "logical_fetches_remaining": 3,
+  "http_requests_remaining": 23,
+  "serpapi_calls": 0,
+  "firecrawl_credits": 0,
+  "api_cost_usd": 0
+}

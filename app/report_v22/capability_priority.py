@@ -146,7 +146,7 @@ def apply_priority(raw, manifest):
     candidates = raw["actions"]
     trace = prioritize([candidate_input(a) for a in candidates], raw["findings"],
         manifest.business.model_dump(mode="json"), manifest.input_checksum,
-        rules_version="v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10")) else VERSION)
+        rules_version="v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else VERSION)
     by_id = {a["id"]: a for a in candidates}
     raw["actions"] = [by_id[key] for key in trace["action_order"]]
     raw["prioritization"] = trace

@@ -79,6 +79,50 @@ def validate_truth(truth, site_id):
             keys.add(key)
 
 
+def load_truth_overlay(path, *, ruleset, root):
+    """Explicit, version-bound human labels; never discover overlays automatically."""
+    raw = path.read_bytes()
+    overlay = json.loads(raw)
+    if (not isinstance(overlay, dict) or overlay.get("schema_version") != "gold_truth_overlay_v1"
+            or overlay.get("ruleset_version") != ruleset
+            or ruleset != "v22_capability_public_v11"):
+        raise ValueError("truth_overlay_version_mismatch")
+    if not isinstance(overlay.get("reviewed_by"), str) or not overlay["reviewed_by"].strip():
+        raise ValueError("truth_overlay_reviewer_missing")
+    checks = overlay.get("checks")
+    if not isinstance(checks, list) or not checks:
+        raise ValueError("truth_overlay_checks_missing")
+    known_sites = {p.parent.name for p in root.glob("*/truth.json")}
+    keys, ids = set(), set()
+    for check in checks:
+        if (not isinstance(check, dict) or check.get("site_id") not in known_sites
+                or check.get("kind") != "rule"
+                or check.get("rule_id") != "v22_public.gbp_opening_hours_alignment"
+                or not isinstance(check.get("rule_version"), str) or not check["rule_version"]
+                or not isinstance(check.get("id"), str) or not check["id"]
+                or type(check.get("expected_triggered")) is not bool
+                or check.get("reviewed_by") != overlay["reviewed_by"]
+                or not isinstance(check.get("target"), dict)):
+            raise ValueError("truth_overlay_check_invalid")
+        key = (check["site_id"], target_key(check["rule_id"], check["target"]))
+        identity = (check["site_id"], check["id"])
+        if key in keys or identity in ids:
+            raise ValueError("duplicate_truth_overlay_label")
+        keys.add(key)
+        ids.add(identity)
+    overlay["_sha256"] = hashlib.sha256(raw).hexdigest()
+    return overlay
+
+
+def apply_truth_overlay(truth, overlay):
+    if overlay is None:
+        return truth
+    merged = deepcopy(truth)
+    merged["checks"].extend(deepcopy(c) for c in overlay["checks"] if c["site_id"] == truth["site_id"])
+    validate_truth(merged, truth["site_id"])
+    return merged
+
+
 def generate(descriptor, directory, private_root, *, ruleset=None):
     ruleset = ruleset or PUBLIC_RULESET
     for reference in descriptor["snapshot_files"]:
@@ -118,7 +162,8 @@ def generate(descriptor, directory, private_root, *, ruleset=None):
         raise ValueError("case_site_url_mismatch")
     result = build_public_findings(request, text_patterns=True, reviewed_evidence=True,
                                    rendered_pages=manifest["schema_version"] == "v22_analysis_input_v2", resource_limits=True,
-                                   **({"sampling_quality": True} if ruleset == "v22_capability_public_v10" else {}))
+                                   **({"sampling_quality": True} if ruleset in {"v22_capability_public_v10", "v22_capability_public_v11"} else {}),
+                                   **({"opening_hours": True} if ruleset == "v22_capability_public_v11" else {}))
     skeletons = select_public_action_skeletons(PublicActionPlanInput(
         findings_result=result, planning_date=instant(manifest["evaluated_at"]).date()), all_candidates=True, candidate_only=True)
     templates = {item.action_id: item.template_key for item in skeletons}
@@ -155,6 +200,8 @@ def compare_findings(truth, findings, evaluations, *, unavailable=None):
                    verdict="无法判断", reason="未标注")
         if evaluation:
             row["target"] = evaluation["target"]
+        if check and check.get("rule_version") not in (None, evaluation.get("rule_version")):
+            check = None
         if check:
             consumed.add(check["id"])
             row["check_id"] = check["id"]
@@ -172,6 +219,8 @@ def compare_findings(truth, findings, evaluations, *, unavailable=None):
         if check.get("expected_triggered") is not None:
             key = target_key(check["rule_id"], check["target"]) if check.get("rule_id") and check.get("target") is not None else None
             evaluation = by_target.get(key)
+            if evaluation and check.get("rule_version") not in (None, evaluation.get("rule_version")):
+                evaluation = None
             if unavailable:
                 row["reason"] = unavailable
             elif evaluation is None:
@@ -206,6 +255,9 @@ def field_metrics(truth, result, *, unavailable=None):
         if truth_field["present"] is not None:
             if unavailable:
                 row["reason"] = unavailable
+            elif name == "opening_hours" and result and result._hours_alignment is not None:
+                hours = result._hours_alignment
+                row.update(state=hours["state"], reason=hours["reason"])
             elif name in fields:
                 row.update(state=fields[name].state, reason=fields[name].not_checked_reason)
             else:
@@ -231,7 +283,7 @@ def action_metrics(report, templates, revision=None):
         return dict(basis="generation_unavailable", visible_actions=None, visible_resampling_actions=None,
                     visible_weak_only_actions=None, visible_actions_with_any_weak_basis=None, actions=[])
     findings = {f.id: f for f in report.findings}
-    labelled = report.schema_version == "2.2.5"
+    labelled = report.schema_version in {"2.2.5", "2.2.6"}
     explicit = revision is not None and labelled and revision.schema_version == "v22_delivery_revision_v2"
     rows = []
     for action in report.actions:
@@ -276,10 +328,11 @@ def compare_other_checks(truth, request, actions, *, unavailable=None):
     return rows
 
 
-def evaluate_case(directory, private_root, *, ruleset=None):
+def evaluate_case(directory, private_root, *, ruleset=None, truth_overlay=None):
     descriptor = read_json(directory / "input.json")
     truth = read_json(directory / "truth.json")
     validate_truth(truth, descriptor["site_id"])
+    truth = apply_truth_overlay(truth, truth_overlay)
     report = result = request = revision = frozen_equal = None
     templates, unavailable, evaluations = {}, None, []
     # Integrity failures remain explicit input errors rather than generation results.
@@ -303,10 +356,12 @@ def evaluate_case(directory, private_root, *, ruleset=None):
     rows = compare_findings(truth, findings, evaluations, unavailable=unavailable)
     actions = action_metrics(report, templates, revision)
     audit = {}
-    if request is not None and (ruleset or PUBLIC_RULESET) == "v22_capability_public_v10":
+    if request is not None and (ruleset or PUBLIC_RULESET) in {"v22_capability_public_v10", "v22_capability_public_v11"}:
         from app.report_v22.sample_locality import audit_source
         source = next((s for s in request.evidence_input.sources if s.kind == "serp"), None)
         audit = {"locality_audit": audit_source(source, request.evidence_input.context.target_market) if source else []}
+    if result is not None and result._hours_alignment is not None:
+        audit["opening_hours_audit"] = result._hours_alignment
     return dict(**audit, site_id=descriptor["site_id"], status="无法判断" if unavailable else "已生成",
                 reason=unavailable, error_code=error_code, ruleset=ruleset or PUBLIC_RULESET, frozen_replay_byte_identical=frozen_equal,
                 findings=rows, finding_metrics=finding_metrics(rows),
@@ -317,14 +372,16 @@ def evaluate_case(directory, private_root, *, ruleset=None):
                                  for url in result._resource_limited_pages] if result else [])
 
 
-def evaluate_all(root, private_root, sites=None, *, ruleset=None):
+def evaluate_all(root, private_root, sites=None, *, ruleset=None, truth_overlay=None):
+    overlay = load_truth_overlay(truth_overlay, ruleset=ruleset or PUBLIC_RULESET, root=root) if truth_overlay is not None else None
     cases, errors = [], []
     directories = [root / name for name in sites] if sites else sorted(p.parent for p in root.glob("*/truth.json"))
     if not directories:
         raise ValueError("no_gold_cases")
     for directory in directories:
         try:
-            cases.append(evaluate_case(directory, private_root, **({"ruleset": ruleset} if ruleset else {})))
+            cases.append(evaluate_case(directory, private_root, **({"ruleset": ruleset} if ruleset else {}),
+                                       **({"truth_overlay": overlay} if overlay is not None else {})))
         except (ValueError, KeyError, OSError, TypeError) as exc:
             # Keep bad input visible, without dumping private source payloads.
             errors.append(dict(site_id=directory.name, error_type=type(exc).__name__, reason="输入无效，不能评估"))
@@ -332,7 +389,11 @@ def evaluate_all(root, private_root, sites=None, *, ruleset=None):
     available_actions = [c["action_metrics"] for c in cases if c["action_metrics"]["visible_actions"] is not None]
     totals = {key: sum(a[key] for a in available_actions) if available_actions and all(a[key] is not None for a in available_actions) else None for key in (
         "visible_actions", "visible_resampling_actions", "visible_weak_only_actions", "visible_actions_with_any_weak_basis")}
-    return dict(schema_version="gold_evaluation_v1", external_calls=0, cases=cases, errors=errors,
+    provenance = {} if overlay is None else {"truth_overlay": {
+        "file": str(truth_overlay), "sha256": overlay["_sha256"],
+        "ruleset_version": overlay["ruleset_version"], "reviewed_by": overlay["reviewed_by"],
+        "selected_check_count": sum(c["site_id"] in {d.name for d in directories} for c in overlay["checks"])}}
+    return dict(**provenance, schema_version="gold_evaluation_v1", external_calls=0, cases=cases, errors=errors,
                 summary=dict(finding_metrics=finding_metrics([r for c in cases for r in c["findings"]]),
                              field_metrics=summarize_fields(fields), action_totals_available_cases=totals,
                              action_cases_evaluated=len(available_actions),
@@ -345,9 +406,11 @@ def main(argv=None):
     parser.add_argument("--gold-dir", type=Path, default=ROOT / "tests/fixtures/gold")
     parser.add_argument("--private-root", type=Path, default=ROOT.parent / ".release-private/2026-10-29")
     parser.add_argument("--site", action="append", help="Select a site directory; may be repeated")
-    parser.add_argument("--ruleset", choices=["v22_capability_public_v9", "v22_capability_public_v10"], default=PUBLIC_RULESET)
+    parser.add_argument("--ruleset", choices=["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"], default=PUBLIC_RULESET)
+    parser.add_argument("--truth-overlay", type=Path, help="Explicit reviewed, version-bound labels; original truth files remain unchanged")
     args = parser.parse_args(argv)
-    result = evaluate_all(args.gold_dir, args.private_root, args.site, ruleset=args.ruleset)
+    result = evaluate_all(args.gold_dir, args.private_root, args.site, ruleset=args.ruleset,
+                          **({"truth_overlay": args.truth_overlay} if args.truth_overlay is not None else {}))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 1 if result["errors"] else 0
 
