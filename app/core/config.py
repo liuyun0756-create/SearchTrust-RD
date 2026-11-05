@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     )
     SERPAPI_BASE_URL: str = "https://serpapi.com/search"
     SERPAPI_LOCATIONS_URL: str = "https://serpapi.com/locations.json"
+    # v13 identity discovery only; never enables the legacy preflight path.
+    V22_IDENTITY_GBP_INCREMENTAL_ENABLED: bool = False
 
     # ── Site collection ───────────────────────────────────────────────────────
     FIRECRAWL_API_KEY: str = Field(default="")

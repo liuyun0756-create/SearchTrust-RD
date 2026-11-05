@@ -1,0 +1,928 @@
+{
+  "vision-tech-swansea": {
+    "site": {
+      "id": "vision-tech-swansea",
+      "name": "Vision-Tech AV",
+      "url": "https://visiontechav.com/",
+      "target": "https://visiontechav.com/swansea/",
+      "service": "Commercial AV installation",
+      "city": "Swansea",
+      "region": null,
+      "country": "GB",
+      "queries": [
+        "AV installation Swansea",
+        "audio visual company Swansea",
+        "commercial AV integration Swansea"
+      ]
+    },
+    "phone_observations": [
+      "03333355510"
+    ],
+    "provenance": {
+      "p0-09-candidates-2026-11-03/vision-tech-swansea/candidates.json": "sha256:9ebf302e7afefbe07c04d3b3f279359a69dd4f9aa7feef85d0912dccc91c4607",
+      "p0-09-adjudication-2026-11-03/vision-tech-swansea/result.json": "sha256:e6a40e52e6e8fdc2724d1cc8aa42fefa277067d3c713f70b65092b4f7d8f1597"
+    },
+    "initial": {
+      "source": "p0-09-candidates-2026-11-03/vision-tech-swansea/candidates.json",
+      "selector": "/gbp_lookup/candidates",
+      "observed_at": "2026-11-03T08:06:59.657016+00:00",
+      "records": [
+        {
+          "business_name": "VisionTek Products LLC",
+          "website_url": "https://www.visiontek.com/",
+          "public_gbp_url": "https://www.google.com/maps?cid=8627505581910740021",
+          "phone": "(866) 883-5411",
+          "address": "3 W College Dr, Arlington Heights, IL 60004",
+          "categories": [
+            "Computer accessories store"
+          ]
+        },
+        {
+          "business_name": "AvTech Corporation",
+          "website_url": "http://www.avtechcorp.com/",
+          "public_gbp_url": "https://www.google.com/maps?cid=12233583714058911748",
+          "phone": "(224) 567-8843",
+          "address": "2126 S Wolf Rd, Des Plaines, IL 60018",
+          "categories": [
+            "Corporate office"
+          ]
+        }
+      ]
+    },
+    "market": {
+      "source": "p0-09-adjudication-2026-11-03/vision-tech-swansea/result.json",
+      "selector": "/q1_maps",
+      "observed_at": "2026-11-03T08:28:40.643801Z",
+      "expires_at": "2026-11-04T08:28:40.643801Z",
+      "records": [
+        {
+          "record_id": "sha256:dcafe8e9908c31df1b3af517306db093645e7178cc2df5c19df558d5cf47a758",
+          "display_name": "Pro Audio Visual",
+          "url": "http://www.pro-audio-visual.co.uk/",
+          "provider_cid": "12443407556994753755",
+          "provider_place_id": "ChIJb7Z-EBT1bkgR22QVvj7dr6w",
+          "address": "Unit 12b, Prospect Park, Fforest-fach, Swansea SA5 4ED",
+          "phone": "0800 772 0870",
+          "categories": [
+            "Audio Visual Equipment Hire Service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": "sha256:b7c28aa49009a344df0ad25ba2d16083867212b8370eb537dadcaffd74dc383d"
+        },
+        {
+          "record_id": "sha256:2715373253ce26b30ca6722b767c6fbd7c227d85452c13d2e38d4b6adfe15deb",
+          "display_name": "Audio T Swansea",
+          "url": "http://www.audiot.co.uk/storefinder/swansea/",
+          "provider_cid": "11476941075902233157",
+          "provider_place_id": "ChIJAcb1GUr1bkgRRfo94RlJRp8",
+          "address": "9 High St, Swansea, SA1 1LE",
+          "phone": "01792 474608",
+          "categories": [
+            "Audio visual consultant",
+            "Home audio shop",
+            "Audio visual equipment repair service",
+            "Home cinema installation",
+            "Home Theatre Shop"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": "sha256:b7c28aa49009a344df0ad25ba2d16083867212b8370eb537dadcaffd74dc383d"
+        },
+        {
+          "record_id": "sha256:1fa4a049210daedd19f5e1587e1d0e0955f99c3407da69913ef54b936b4bd552",
+          "display_name": "Asquith Electrical and Sons LTD",
+          "url": "http://www.asquithelectrical.co.uk/",
+          "provider_cid": "17932276471465453221",
+          "provider_place_id": "ChIJh4P1o_1ebkgRpSbLB3E-3Pg",
+          "address": "10, 11 Caer St, Swansea, SA1 3PP",
+          "phone": "07876 797999",
+          "categories": [
+            "Audio visual consultant",
+            "Electrician"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": "sha256:b7c28aa49009a344df0ad25ba2d16083867212b8370eb537dadcaffd74dc383d"
+        },
+        {
+          "record_id": "sha256:2635e77830f0e74c5885f9069438884878ad08ff0cdcd0b5502d061af6a3bf3a",
+          "display_name": "Wales & West Aerials",
+          "url": "https://waleswestinstallations.co.uk/",
+          "provider_cid": "15620751284320359518",
+          "provider_place_id": "ChIJ-8TbONX0bkgRXlSk4ocOyNg",
+          "address": "21 Bernard St, Uplands, Swansea, SA2 0HT",
+          "phone": "07779 602764",
+          "categories": [
+            "Television repair service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:176b0431ae2a790ffe3397e0a6d8453d6531f97aa00daac17a087e1ebdee1f11",
+          "display_name": "Logan Audio Visual",
+          "url": null,
+          "provider_cid": "12742364048685601315",
+          "provider_place_id": "ChIJaVvesJz1bkgRIxKdIJf41bA",
+          "address": "Swansea, SA1 5HF",
+          "phone": "07527 770004",
+          "categories": [
+            "Audio visual consultant",
+            "Electrical installation service",
+            "Home cinema installation"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:a9eda544853b12e7d71efa0de02d406dd77ef9a71d2213a5746f9e5fb2db0601",
+          "display_name": "Red Dragon AV",
+          "url": "https://www.waleswestaerials.co.uk/",
+          "provider_cid": "6794768927706014193",
+          "provider_place_id": "ChIJvWK0kuH1bkgR8WHH6lbeS14",
+          "address": "248 Cockett Rd, Cockett, Swansea, SA2 0FN",
+          "phone": "07779 602764",
+          "categories": [
+            "Audio visual consultant"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:d9ff9549643875ddad86466ce2a694199ec3e2fab81dbc448b314eaf5ff205c2",
+          "display_name": "Digital Solutions Wales",
+          "url": "https://www.digitalsolutions.wales/",
+          "provider_cid": "14271614637835926222",
+          "provider_place_id": "ChIJedp3lkXzbkgRzrp5G-b1DsY",
+          "address": "72 Bryn-Y-Mor Road, Gowerton, Swansea, SA4 3EZ",
+          "phone": "01792 680189",
+          "categories": [
+            "Cable provider",
+            "Engineer"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:9084bd323f60369596b7e94e98f6a81dd1f7a90a99f842cbb7338b6b5d9068e2",
+          "display_name": "Total Sound Solutions",
+          "url": "http://www.total-sound.com/",
+          "provider_cid": "622358218267438198",
+          "provider_place_id": "ChIJL-p82IP1bkgRdizgioAPowg",
+          "address": "Swansea Enterprise Park, Unit 12 St David's Industrial Estate Access Road 2, Swansea, SA6 8RX",
+          "phone": "01792 428181",
+          "categories": [
+            "Audio Visual Equipment Hire Service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:701c98b9d06e4c8b3616ccadb11f27e1eded198063cce5a58756d51c990c2225",
+          "display_name": "Avatar Business Solutions Ltd",
+          "url": null,
+          "provider_cid": "1924768315001631180",
+          "provider_place_id": "ChIJ47-PpgH1bkgRzHGZqpUmtho",
+          "address": "29 Ystrad Rd, Fforest-fach, Swansea, SA5 4LH",
+          "phone": null,
+          "categories": [
+            "Audio visual consultant"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:6f4d1a940614eb22ae6643b28193d0b8f9df56c40168ff2b5c97dc00b2e3683f",
+          "display_name": "Trusted Digital Services",
+          "url": "http://www.trusteddigitalservices.co.uk/",
+          "provider_cid": "3335303353691562821",
+          "provider_place_id": "ChIJLVQRt731bkgRRWP0nrpgSS4",
+          "address": "2 Fairview Rd, Llangyfelach, Morriston, Swansea, SA5 7JJ",
+          "phone": "07976 236377",
+          "categories": [
+            "Cable provider",
+            "Satellite communication service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:5c4456feaeb0ee86b20da8be2b47084297065b40ee20ef776daca267902d9aab",
+          "display_name": "Colliers Photographic Emporium & Services",
+          "url": "https://www.colliersphoto.com/",
+          "provider_cid": "9565029452578383252",
+          "provider_place_id": "ChIJh5ZMhSr1bkgRlGUVA5zPvYQ",
+          "address": "1a, Sketty Rd, Uplands, Swansea SA2 0EU",
+          "phone": "01792 473831",
+          "categories": [
+            "Camera shop",
+            "Photo lab"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:9f965bea6df7c1358d0cf9cfeb833b5021914641c835f13ec7d40a004092bef6",
+          "display_name": "VoiceBox",
+          "url": "https://www.voiceboxagency.co.uk/",
+          "provider_cid": "1792999498048490745",
+          "provider_place_id": "ChIJTQ_7BC31bkgR-UyiM4sD4hg",
+          "address": "Innovation Matrix, Kings Rd, Swansea, SA1 8FF",
+          "phone": "01792 450979",
+          "categories": [
+            "Audio visual consultant",
+            "Media consultant",
+            "Transcription service",
+            "Translation service",
+            "Video production service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:8856881a8805216d2dc94d0671b4026b35257aba04aeaf539db17bf3c5979011",
+          "display_name": "Camera Centre",
+          "url": "http://www.cameracentreswansea.co.uk/",
+          "provider_cid": "10858642601512994506",
+          "provider_place_id": "ChIJvQoMDUr1bkgRygYbHuqlsZY",
+          "address": "31 Castle St, Swansea, SA1 1HY",
+          "phone": "01792 476099",
+          "categories": [
+            "Camera shop"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:3e42a0d85f56a981d3998cb69e5280a9c734ed09fd7a3fe686d62b7b10368c4c",
+          "display_name": "Wattech LTD",
+          "url": "http://www.wattech.co.uk/",
+          "provider_cid": "8068546064674227813",
+          "provider_place_id": "ChIJr4-JtXn1bkgRZYbIluU7-W8",
+          "address": "Phoenix Way, Llansamlet, Swansea, SA7 9FP",
+          "phone": "0800 031 4338",
+          "categories": [
+            "Electrician"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:e8b408478f73cec66afc0e9e0675d9a382a4b575c87ef8d592217e97a1da7df2",
+          "display_name": "South Wales Audio Ltd.",
+          "url": null,
+          "provider_cid": "12202108020239703838",
+          "provider_place_id": "ChIJK5HPt4RfbkgRHh9VSZiYVqk",
+          "address": "C3, Phoenix Way, Llansamlet, Swansea SA7 9EH",
+          "phone": "07811 371267",
+          "categories": [
+            "Audio Visual Equipment Hire Service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:97430cee9ee9078cc2eb16e244b89bce941a78beeb461593f0bc7bb8c2651db1",
+          "display_name": "A & V Roofing Contractors",
+          "url": null,
+          "provider_cid": "10950431787579386833",
+          "provider_place_id": "ChIJg-0feeH0bkgR0avQY7G_95c",
+          "address": "26 Ravenhill Rd, Ravenhill, Fforest-fach, Swansea, SA5 5AW",
+          "phone": "07702 930256",
+          "categories": [
+            "Roofing Service"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:102e53bbd5820840e509db6f99106f94e8ea6681f05f86ec1e5b86560c5b3005",
+          "display_name": "Sony Centre",
+          "url": "http://www.centresdirect.co.uk/swanseasonycentre",
+          "provider_cid": "6239688625915313870",
+          "provider_place_id": "ChIJty02_4RfbkgRzj66-L7Tl1Y",
+          "address": "Swansea Enterprise Park, Castell Cl, Phoenix Way, Llansamlet, Swansea SA7 9EH",
+          "phone": "01792 795161",
+          "categories": [
+            "Audio visual consultant",
+            "Electrical products wholesaler",
+            "Electronics Retail and Repair Shop"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:84688a2876d1a921bd008a70191f4bfc52aea7c21c384ec3113834770c842732",
+          "display_name": "Alpha Safety",
+          "url": "https://www.alphasafety.co.uk/",
+          "provider_cid": "8965748111772336601",
+          "provider_place_id": "ChIJSUPqIu_0bkgR2cHRs2e8bHw",
+          "address": "Queensway, Fforest-fach, Swansea, SA5 4DJ",
+          "phone": "01792 585868",
+          "categories": [
+            "Consultant",
+            "Training provider",
+            "Fire protection consultant",
+            "Health consultant",
+            "Training consultant"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:07efddd89a916a8f2e78595c345a18ad1c824e4a534fef758a859a2b75e067eb",
+          "display_name": "Radio City 1386AM",
+          "url": "http://www.radiocity1386am.co.uk/",
+          "provider_cid": "2104070285014883814",
+          "provider_place_id": "ChIJMQYuPzGLbkgR5l3EwMYoMx0",
+          "address": "The Clive Thomas Studios c/o Singleton Hospital, Sketty Lane, Swansea, SA2 8QA",
+          "phone": "01792 285205",
+          "categories": [
+            "Radio broadcaster",
+            "Audio Visual Equipment Hire Service",
+            "Mobile disco service",
+            "Music management and promotion"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:5c8b164d95fb076b03511a246d42a22cf841f35a88fefd9d1f01eff0b1592e8a",
+          "display_name": "CeX",
+          "url": "https://uk.webuy.com/site/storeDetail/?branchId=222",
+          "provider_cid": "10152815265907450705",
+          "provider_place_id": "ChIJCzN9CzX1bkgRUaOTQrEL5ow",
+          "address": "805 Whitewalls, Swansea, SA1 3AF",
+          "phone": "0330 123 5986",
+          "categories": [
+            "Electronics Retail and Repair Shop",
+            "Mobile Phone Shop",
+            "Computer Shop",
+            "Video Game Shop"
+          ],
+          "observed_at": "2026-11-03T08:28:37.027730Z",
+          "response_checksum": "sha256:95e7086220fb0ade142de137cf87ff3ffa5f0b394b0f7a81f63c67f10c21c1f5",
+          "source_market_checksum": null
+        }
+      ]
+    },
+    "confirmed": {
+      "source": "p0-09-adjudication-2026-11-03/vision-tech-swansea/result.json",
+      "selector": "/gbp",
+      "observed_at": "2026-11-03T08:28:40.651459+00:00",
+      "record": {
+        "business_name": "Vision Tech AV LTD",
+        "website_url": "https://visiontechav.com/",
+        "public_gbp_url": "https://www.google.com/maps?cid=3467016953362037400",
+        "phone": "0333 335 5510",
+        "address": "Unit 9, Parc, Gelli Werdd, Cross Hands, Llanelli SA14 6EF",
+        "categories": [
+          "Audio-visual equipment supplier",
+          "Audio visual consultant"
+        ]
+      }
+    }
+  },
+  "seamless-gutters-pensacola": {
+    "site": {
+      "id": "seamless-gutters-pensacola",
+      "name": "Seamless Gutters",
+      "url": "https://seamlessgutterspensacola.com/",
+      "target": "https://seamlessgutterspensacola.com/gutter-installation/",
+      "service": "Seamless gutter installation",
+      "city": "Pensacola",
+      "region": "FL",
+      "country": "US",
+      "queries": [
+        "gutter installation Pensacola",
+        "seamless gutters Pensacola",
+        "gutter installation near me"
+      ],
+      "gbp": "https://maps.app.goo.gl/8MMJyNe2na4og54U7"
+    },
+    "phone_observations": [
+      "+18507761782",
+      "8507761782",
+      "(850) 776-1782",
+      "8504557246"
+    ],
+    "provenance": {
+      "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/candidates.json": "sha256:72526ad06b343c81736517433fd07124c555bae92b0c0f37c26113389262533c",
+      "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/result.json": "sha256:291bc8ef19239fe0151ece7b7feecbd674533776e7839686660b42b291870469"
+    },
+    "initial": {
+      "source": "p0-09-candidates-2026-11-03/seamless-gutters-pensacola/candidates.json",
+      "selector": "/gbp_lookup/candidates",
+      "observed_at": "2026-11-03T08:07:18.150759+00:00",
+      "records": [
+        {
+          "business_name": "10025 Ashton Brosnaham Dr",
+          "website_url": null,
+          "public_gbp_url": "https://www.google.com/maps?cid=10354290509108082871",
+          "phone": null,
+          "address": "10025 Ashton Brosnaham Dr, Pensacola, FL 32534",
+          "categories": [
+            "Building"
+          ]
+        }
+      ]
+    },
+    "market": {
+      "source": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/result.json",
+      "selector": "/q1_maps",
+      "observed_at": "2026-11-03T08:28:58.184896Z",
+      "expires_at": "2026-11-04T08:28:58.184896Z",
+      "records": [
+        {
+          "record_id": "sha256:d8816857a97c1357fcd4cf6a7d56f80fd7d28a9c1b7a9b15bc3c0f7d5e464160",
+          "display_name": "Martin's Seamless Gutters & Fencing",
+          "url": "https://www.martinsseamlessgutters.com/?utm_source=google&utm_medium=organic&utm_campaign=gbp&utm_content=website_button",
+          "provider_cid": "947287778014820969",
+          "provider_place_id": "ChIJXZSP5By-kIgRaXqkFDdxJQ0",
+          "address": "4601 W Jackson St, Pensacola, FL 32506",
+          "phone": "(850) 324-8000",
+          "categories": [
+            "Gutter cleaning service",
+            "Construction company",
+            "Drainage service",
+            "Fence contractor",
+            "Fence supply store",
+            "Gutter service",
+            "Roofing contractor",
+            "Sheet metal contractor",
+            "Waterproofing service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": "sha256:7b85acb2bc3b00bad6392b981e362d1592363e497bd3ee436a4db77f9ee86fa9"
+        },
+        {
+          "record_id": "sha256:c4e3f60dfaf9ed428bbe1b66d8eb7f5ba899417272b41b6a4131ac264c4e5bf2",
+          "display_name": "The Brothers That Just Do Gutters",
+          "url": "https://pensacola.brothersgutters.com/?utm_source=GMB&utm_medium=organic?utm_source=GMB&utm_medium=organic",
+          "provider_cid": "11020939739607606635",
+          "provider_place_id": "ChIJo65QiMS_kIgRayVMPk0-8pg",
+          "address": "540 E Fairfield Dr Suite A02, Pensacola, FL 32503",
+          "phone": "(850) 462-4680",
+          "categories": [
+            "Gutter service",
+            "Gutter cleaning service",
+            "Roofing contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": "sha256:7b85acb2bc3b00bad6392b981e362d1592363e497bd3ee436a4db77f9ee86fa9"
+        },
+        {
+          "record_id": "sha256:f7ccd1613b5dfc15f00e1de50f5f63fa2d843b3178db82d76927dc95a9ef602c",
+          "display_name": "Pensacola Seamless Gutters",
+          "url": "http://pensacolaseamlessgutters.com/",
+          "provider_cid": "14844947346199191292",
+          "provider_place_id": "ChIJU4KlNWzAkIgR_J6Un_XYA84",
+          "address": "4771 Bayou Blvd, Pensacola, FL 32503",
+          "phone": "(850) 898-9352",
+          "categories": [
+            "Cleaning service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": "sha256:7b85acb2bc3b00bad6392b981e362d1592363e497bd3ee436a4db77f9ee86fa9"
+        },
+        {
+          "record_id": "sha256:6827f4d0ceae112cc42f6baf289436dc890a2ed7d32e6160a659b244a3624caf",
+          "display_name": "Premier Gutters LLC",
+          "url": "http://www.premierguttersllc.com/",
+          "provider_cid": "9469502589999370721",
+          "provider_place_id": "ChIJD458-3-9kIgR4dGNHG9uaoM",
+          "address": "7280 Mobile Hwy, Pensacola, FL 32526",
+          "phone": "(850) 396-1835",
+          "categories": [
+            "Gutter cleaning service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:bf307fcdc26b8833de6f6ee3134e0aa4a6e201f7d36274c8c77a50d1164f9b63",
+          "display_name": "Into Gutters",
+          "url": "https://intogutters.com/",
+          "provider_cid": "18229171439294306682",
+          "provider_place_id": "ChIJqWZ7uBqdCocRelnVfNcG-_w",
+          "address": null,
+          "phone": "(850) 860-3606",
+          "categories": [
+            "Gutter service",
+            "Service establishment",
+            "Gutter cleaning service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:6b5c738167fd4293ed56d327109bd09fe7a7e8012d9676b2aa90359b47359e8a",
+          "display_name": "Gutter Lounge At Phoenix",
+          "url": "http://gutter-phoenix.edan.io/",
+          "provider_cid": "11870653153636979570",
+          "provider_place_id": "ChIJx2W3_3u_kIgRchNnWiYIvaQ",
+          "address": "3200 N Palafox St, Pensacola, FL 32501",
+          "phone": "(850) 438-0700",
+          "categories": [
+            "Bowling alley",
+            "Live music venue"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:ad73e9e08d33bcb93c5e049b266fea0c3f5eb80538c6764dea6a9158db14643e",
+          "display_name": "Lewis Roofing",
+          "url": "https://lewisroofingfl.com/",
+          "provider_cid": "5529388018345211694",
+          "provider_place_id": "ChIJmeqZXZq_kIgRLnfEUhtVvEw",
+          "address": "2775 North W Street Ste 315, Pensacola, FL 32505",
+          "phone": "(850) 466-4560",
+          "categories": [
+            "Roofing contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:9a38910f05bc89cfb046a611b1b06cce29c429f86b96602f6a6d42766caed156",
+          "display_name": "Guy Brothers Roofing and Siding",
+          "url": "http://www.guybrothersroofing.com/",
+          "provider_cid": "1726966563167198904",
+          "provider_place_id": "ChIJ6XwLfY-_kIgRuN6OePBq9xc",
+          "address": "218 Hewitt St, Pensacola, FL 32503",
+          "phone": "(850) 780-1439",
+          "categories": [
+            "Roofing contractor",
+            "Siding contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:35d09f1dec53e0212d8d7f4d6c2c055d878d28019f5e843613b025e3a037ac7a",
+          "display_name": "Grizzly Gutters and Groundworks",
+          "url": "http://gotgrizzly.com/",
+          "provider_cid": "8407529668972377457",
+          "provider_place_id": "ChIJF_nUcCyXkIgRcfWnXbCLrXQ",
+          "address": "8428 N Palafox St, Pensacola, FL 32534",
+          "phone": "(850) 787-8022",
+          "categories": [
+            "Construction company"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:cef93227a14c4ce3d3ec5409ea67d0bb351d216386cdf95b07b6bc0e82272fe9",
+          "display_name": "Buckworth Roofing LLC",
+          "url": "https://buckworthroofing.com/",
+          "provider_cid": "15517374385191657574",
+          "provider_place_id": "ChIJC-cAxaTBkIgRZiAY7MnJWNc",
+          "address": "4300 Bayou Blvd Ste 35B, Pensacola, FL 32503",
+          "phone": "(850) 852-1068",
+          "categories": [
+            "Roofing contractor",
+            "Siding contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:66108583ce927d348e1b173ee937ca332768b92b5912fd30f5765710ef05b9b9",
+          "display_name": "Right Now Roofing & Solar - Pensacola",
+          "url": "https://www.rnroof.com/pensacola",
+          "provider_cid": "496620404477767781",
+          "provider_place_id": "ChIJqyVoB5PBkIgRZbAbbaBZ5AY",
+          "address": "3890 Pasco St Building B, Pensacola, FL 32505",
+          "phone": "(850) 900-7663",
+          "categories": [
+            "Roofing contractor",
+            "General contractor",
+            "Gutter service",
+            "Solar energy company",
+            "Solar energy system service",
+            "Waterproofing service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:f8792a12325e565a40b59c0a2f1dea95c9bdc1c5cd07209c6910a1259ced7c9c",
+          "display_name": "Quality Roofing Solutions, LLC",
+          "url": "https://qualityroofingsolutions.com/roofing/pensacola/?utm_campaign=gmb&utm_source=gmb&utm_medium=businessprofile&utm_content=pns_gmb",
+          "provider_cid": "14566772030213848522",
+          "provider_place_id": "ChIJnUFHA-rokIgRyv39wPuRJ8o",
+          "address": "110 W Herman Ave, Pensacola, FL 32505",
+          "phone": "(850) 753-0851",
+          "categories": [
+            "Roofing contractor",
+            "Gutter service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:51c449cce101f87b394f026054b86cdedec3f76f03f409b651fee617dd0af429",
+          "display_name": "SunCoast Exterior Contracting",
+          "url": "http://www.suncoastexteriorcontracting.com/",
+          "provider_cid": "521038830179026275",
+          "provider_place_id": "ChIJAQDQGHu_kIgRY4UBMw4aOwc",
+          "address": "3003 N E St, Pensacola, FL 32501",
+          "phone": "(850) 776-1050",
+          "categories": [
+            "Roofing contractor",
+            "Siding contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:70c78eebb721ccb3bc9c100ac0536ed8d1368ac913d96f6784809d9c16bb89b5",
+          "display_name": "Legendary Gutter Pro's",
+          "url": null,
+          "provider_cid": "14045163030237946160",
+          "provider_place_id": "ChIJq6p2Nra-kIgRMCHIjVxx6sI",
+          "address": "111 Beech St, Pensacola, FL 32506",
+          "phone": "(850) 329-5505",
+          "categories": [
+            "Gutter cleaning service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:e34759cab30111d20e4da9ffb5b7b061a35d2a961679f2bb0588aaefa6bc16b5",
+          "display_name": "Total Home Exteriors of Florida",
+          "url": "https://totalhomeexteriorsflorida.com/",
+          "provider_cid": "2437298954388484780",
+          "provider_place_id": "ChIJNYddKki_kIgRrLLBU3wG0yE",
+          "address": "225 N Pace Blvd Suite 105, Pensacola, FL 32505",
+          "phone": "(850) 206-9669",
+          "categories": [
+            "Roofing contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:03d8aed41aefe5eca8c7e6bf4671ca9aa523134e8de7e165bd1ca134717df6e2",
+          "display_name": "Dude Wash",
+          "url": "https://calldudewash.com/",
+          "provider_cid": "14300748589965041022",
+          "provider_place_id": "ChIJ4RNJH2bBkIgRft0I7xJ3dsY",
+          "address": "3834 N Davis Hwy, Pensacola, FL 32503",
+          "phone": "(850) 633-7557",
+          "categories": [
+            "Pressure washing service"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:a5c4ad43c165a72cbea6f927a95fbd06e05843945db5ef1e4d41636696169769",
+          "display_name": "Duncan Custom Gutter & Copper Craft, Inc.",
+          "url": "https://duncancustomgutter.com/",
+          "provider_cid": "14476823032207782731",
+          "provider_place_id": "ChIJL-ovCY2UkIgRSzPwptgB6Mg",
+          "address": "1496 W Kingsfield Rd, Cantonment, FL 32533",
+          "phone": "(850) 455-7246",
+          "categories": [
+            "Gutter service",
+            "Metal fabricator"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:d485d63c8987a1e13fe82d7a505ebfdaf2cd4bcc0787af5e8096342914b38474",
+          "display_name": "Gutter Solutions & Home Improvements",
+          "url": "https://www.seamlessgutterspensacola.com/",
+          "provider_cid": "16921898606511158364",
+          "provider_place_id": "ChIJ84tnP9btkIgRXHRGZiCp1uo",
+          "address": null,
+          "phone": "(850) 776-1782",
+          "categories": [
+            "Gutter service",
+            "Concrete contractor",
+            "Service establishment",
+            "Fence contractor",
+            "Gutter cleaning service",
+            "Siding contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:372c60df2028aa20f8e4ae15f500683126f4a46ed99c349bb18312757906812c",
+          "display_name": "Senox Corporation",
+          "url": "http://www.senox.com/",
+          "provider_cid": "9081493163108626741",
+          "provider_place_id": "ChIJ_WkNIYW_kIgRNXE6gerxB34",
+          "address": "3855 N Palafox St, Pensacola, FL 32505",
+          "phone": "(850) 701-8192",
+          "categories": [
+            "Building materials supplier"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:dd961a7b63d8ea3af3908173bc3698ca7461c6160e9f234f9b870ad142a70cf3",
+          "display_name": "Weather Shield Roofing Systems | Pensacola, FL",
+          "url": "https://weathershieldusa.com/",
+          "provider_cid": "16629196905679818853",
+          "provider_place_id": "ChIJ7wtXXFe_kIgRZRAS_3rGxuY",
+          "address": "29 Stumpfield Rd, Pensacola, FL 32503",
+          "phone": "(850) 530-5823",
+          "categories": [
+            "Roofing contractor"
+          ],
+          "observed_at": "2026-11-03T08:28:45.840783Z",
+          "response_checksum": "sha256:60bcaf60b4c2d20dded885658dc28b51417b18380325e5387df5fb038838d946",
+          "source_market_checksum": null
+        }
+      ]
+    },
+    "confirmed": {
+      "source": "p0-09-adjudication-2026-11-03/seamless-gutters-pensacola/result.json",
+      "selector": "/gbp",
+      "observed_at": "2026-11-03T08:28:58.190636+00:00",
+      "record": null
+    }
+  },
+  "volcanoes-hiking-guides": {
+    "site": {
+      "id": "volcanoes-hiking-guides",
+      "name": "Volcanoes Hiking Guides",
+      "url": "https://www.volcanoeshikingguides.com/",
+      "service": "Guided volcano hiking tours",
+      "city": "Hilo",
+      "region": "HI",
+      "country": "US",
+      "queries": [
+        "volcano tours Big Island",
+        "guided volcano hike Hawaii",
+        "Hawaii Volcanoes National Park tour"
+      ]
+    },
+    "phone_observations": [
+      "+1-808-491-9022",
+      "+18084919022",
+      "(808) 491-9022"
+    ],
+    "provenance": {
+      "p0-09-candidates-2026-11-03/volcanoes-hiking-guides/candidates.json": "sha256:81bac38e07a9b8aeacbb43a1b103dab217e4b95f438131c2adf336f5f2753650",
+      "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/result.json": "sha256:b4ca81eef70f84a9858ee7e86d35653a2fe2ffd518875584e0fa68e35a6fdddb"
+    },
+    "initial": {
+      "source": "p0-09-candidates-2026-11-03/volcanoes-hiking-guides/candidates.json",
+      "selector": "/gbp_lookup/candidates",
+      "observed_at": "2026-11-03T08:07:20.904108+00:00",
+      "records": [
+        {
+          "business_name": "Volcanoes Hiking Guides",
+          "website_url": "https://www.volcanoeshikingguides.com/",
+          "public_gbp_url": "https://www.google.com/maps?cid=16906567364961418758",
+          "phone": "(808) 491-9022",
+          "address": "1515-55 11th Ave, Keaau, HI 96749",
+          "categories": [
+            "Tour operator"
+          ]
+        },
+        {
+          "business_name": "Volcanoes Hiking Guides",
+          "website_url": "http://volcanoeshikingguides.com/",
+          "public_gbp_url": "https://www.google.com/maps?cid=17234196230790564629",
+          "phone": "(808) 491-9022",
+          "address": null,
+          "categories": [
+            "Tour agency",
+            "Service establishment"
+          ]
+        }
+      ]
+    },
+    "market": {
+      "source": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/result.json",
+      "selector": "/q1_maps",
+      "observed_at": "2026-11-03T08:29:08.367243Z",
+      "expires_at": "2026-11-04T08:29:08.367243Z",
+      "records": [
+        {
+          "record_id": "sha256:fb72574d52a55247787644a96572719e3a54a758644e234705ff524e3290d82a",
+          "display_name": "Hawaii Volcano Tours",
+          "url": "http://www.tourvolcano.com/",
+          "provider_cid": "11781338984424290549",
+          "provider_place_id": "ChIJCejrIXFTUnkR9TgS2WK5f6M",
+          "address": "28-3087 Beach Rd, Pepeekeo, HI 96783",
+          "phone": "(808) 345-7063",
+          "categories": [
+            "Tour operator"
+          ],
+          "observed_at": "2026-11-03T08:28:59.325993Z",
+          "response_checksum": "sha256:5bd456d4e619de9a8a194f6013910f8aa235e2a3f70d7d38e509f46c82774d64",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:4aed6fb0e22cc82aec3197567853862d87ae9ad633af7d2169cca53f86428072",
+          "display_name": "Big Island Hilo Tours",
+          "url": "https://bigislandhilotours.com/",
+          "provider_cid": "13421160305445031640",
+          "provider_place_id": "ChIJueCgyJtMUnkR2M6ffzCKQbo",
+          "address": "301 Kamehameha Ave, Hilo, HI 96720",
+          "phone": "(808) 300-6261",
+          "categories": [
+            "Tour agency"
+          ],
+          "observed_at": "2026-11-03T08:28:59.325993Z",
+          "response_checksum": "sha256:5bd456d4e619de9a8a194f6013910f8aa235e2a3f70d7d38e509f46c82774d64",
+          "source_market_checksum": "sha256:cc5248400ddcd0ca54405b6de91459879e0b455326dcf43693ae8f8d9012bdec"
+        },
+        {
+          "record_id": "sha256:1c0f1aecab5031ea0d190ac7501b7827651188202560ebaf6b98a7b70dbecf72",
+          "display_name": "Big Island Volcano Tours",
+          "url": "https://bigislandvolcano.tours/",
+          "provider_cid": "9365601740159291841",
+          "provider_place_id": "ChIJ6e_QWwAPVHkRwZH5XSlN-YE",
+          "address": "Kona,Madhya, Kailua-Kona, HI 96740",
+          "phone": null,
+          "categories": [
+            "Tour operator"
+          ],
+          "observed_at": "2026-11-03T08:28:59.325993Z",
+          "response_checksum": "sha256:5bd456d4e619de9a8a194f6013910f8aa235e2a3f70d7d38e509f46c82774d64",
+          "source_market_checksum": null
+        },
+        {
+          "record_id": "sha256:bdb7382387ab252be95da779606757328f69aa45024ba06f14e40c37a6db38b5",
+          "display_name": "C Big Island Tours",
+          "url": "http://www.cbigisland.com/",
+          "provider_cid": "18034467433998025927",
+          "provider_place_id": "ChIJ6VLlrZ5MUnkRx4TNnJRMR_o",
+          "address": "71 Banyan Dr, Hilo, HI 96720",
+          "phone": "(800) 901-0468",
+          "categories": [
+            "Sightseeing tour agency",
+            "Boat tour agency",
+            "Tour operator"
+          ],
+          "observed_at": "2026-11-03T08:28:59.325993Z",
+          "response_checksum": "sha256:5bd456d4e619de9a8a194f6013910f8aa235e2a3f70d7d38e509f46c82774d64",
+          "source_market_checksum": "sha256:cc5248400ddcd0ca54405b6de91459879e0b455326dcf43693ae8f8d9012bdec"
+        }
+      ]
+    },
+    "confirmed": {
+      "source": "p0-09-adjudication-2026-11-03/volcanoes-hiking-guides/result.json",
+      "selector": "/gbp",
+      "observed_at": "2026-11-03T08:29:08.373989+00:00",
+      "record": {
+        "business_name": "Volcanoes Hiking Guides",
+        "website_url": "https://www.volcanoeshikingguides.com/",
+        "public_gbp_url": "https://www.google.com/maps?cid=16906567364961418758",
+        "phone": "(808) 491-9022",
+        "address": "1515-55 11th Ave, Keaau, HI 96749",
+        "categories": [
+          "Tour operator"
+        ]
+      }
+    }
+  }
+}
