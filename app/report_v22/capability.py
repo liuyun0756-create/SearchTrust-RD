@@ -131,10 +131,15 @@ class AnalysisInputManifest(StrictModel):
     identity_checksum: Checksum | None = None
     target_market: TargetMarket | None = None
     evidence_as_of: Timestamp | None = None
+    execution_type: Literal["public_reassessment"] | None = None
+    base_report_ref: ReportReference | None = None
 
     @model_serializer(mode="wrap")
     def preserve_historical_manifest(self, handler):
         result = handler(self)
+        if self.execution_type is None:
+            result.pop("execution_type", None)
+            result.pop("base_report_ref", None)
         if self.schema_version != "v22_analysis_input_v3":
             for key in ("identity_version_id", "identity_checksum", "target_market", "evidence_as_of"):
                 result.pop(key, None)
@@ -149,10 +154,19 @@ class AnalysisInputManifest(StrictModel):
         if v3:
             if any(getattr(self, key) is None for key in fields) or self.mode != "acquisition":
                 raise ValueError("identity binding required")
-            if self.target_market.display_name != self.business.target_market or self.evidence_as_of != self.evaluated_at:
-                raise ValueError("phase 1 cannot refresh saved evidence")
+            if self.target_market.display_name != self.business.target_market:
+                raise ValueError("target market mismatch")
+            if self.execution_type is None and self.evidence_as_of != self.evaluated_at:
+                raise ValueError("acquisition cannot refresh saved evidence")
         elif any(key in self.model_fields_set for key in fields):
             raise ValueError("historical manifest cannot carry v2 identity")
+        if self.execution_type:
+            if (not v3 or self.base_report_ref is None or self.base_report_ref.case_id != self.case_id
+                    or self.base_report_ref.report_type != "prospect" or self.base_report_ref.report_id == self.job_id
+                    or instant(self.evidence_as_of) > instant(self.evaluated_at)):
+                raise ValueError("public reassessment requires a separate saved public base")
+        elif any(key in self.model_fields_set for key in ("execution_type", "base_report_ref")):
+            raise ValueError("reassessment fields require public reassessment")
         if self.business.user_id != self.user_id or self.business.case_id != self.case_id:
             raise ValueError("business ownership mismatch")
         if instant(self.business.confirmed_at) > instant(self.evaluated_at):
@@ -179,7 +193,7 @@ class AnalysisInputManifest(StrictModel):
                     or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.ruleset_version in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13"})
                     or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13"})):
                 raise ValueError("source schema mismatch")
-            if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evaluated_at) < instant(source.expires_at):
+            if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evidence_as_of or self.evaluated_at) < instant(source.expires_at):
                 raise ValueError("source Case or freshness mismatch")
             if (source.source_kind in {"gsc", "ga4", "official_gbp"}) != (source.binding_id is not None):
                 raise ValueError("source binding mismatch")
@@ -426,7 +440,7 @@ class CapabilityReport(StrictModel):
     actions: list[CapabilityAction] = Field(max_length=3)
     limitations: list[Text] = Field(min_length=1, max_length=40)
     changes: list[CapabilityChange] = Field(max_length=50)
-    settlement_policy: Literal["one_credit_per_completed_analysis"]
+    settlement_policy: Literal["one_credit_per_completed_analysis", "no_charge_public_reassessment"]
     prioritization: PrioritizationTrace | None = None
 
     @model_serializer(mode="wrap")
@@ -464,8 +478,11 @@ class CapabilityReport(StrictModel):
             raise ValueError("report task or evaluation binding mismatch")
         if self.report_type != ("prospect" if manifest.mode == "acquisition" else "verified_execution"):
             raise ValueError("report type mismatch")
-        if self.version != (1 if manifest.previous_report is None else manifest.previous_report.version + 1):
+        reference = manifest.base_report_ref or manifest.previous_report
+        if self.version != (1 if reference is None else reference.version + 1):
             raise ValueError("report version mismatch")
+        if (self.settlement_policy == "no_charge_public_reassessment") != (manifest.execution_type == "public_reassessment"):
+            raise ValueError("reassessment settlement mismatch")
         if bool(self.actions) != (self.action_state == "actions_supported"):
             raise ValueError("action result state mismatch")
         for items in (self.evidence, self.findings, self.actions):

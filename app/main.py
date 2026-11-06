@@ -36,6 +36,7 @@ from app.api.v2.page_checks import router as v2_page_check_router
 from app.api.v2.review_evidence import router as v2_review_evidence_router
 from app.api.v2.review_decisions import router as v2_review_decisions_router
 from app.api.v2.review_generation import router as v2_review_generation_router
+from app.api.v2.identity_review import router as v2_identity_review_router
 from app.api.v2.ga4_evidence_reviews import router as v2_ga4_review_router
 from app.api.v2.ga4_session_readings import router as v2_ga4_session_router
 from app.api.v2.runtime import close_v22_runtime, create_v22_runtime, router as v2_runtime_router
@@ -136,6 +137,7 @@ def create_app() -> FastAPI:
     app.include_router(v2_review_evidence_router)
     app.include_router(v2_review_decisions_router)
     app.include_router(v2_review_generation_router)
+    app.include_router(v2_identity_review_router)
     app.include_router(v2_ga4_review_router)
     app.include_router(v2_ga4_session_router)
     app.include_router(v2_runtime_router)

@@ -3,6 +3,17 @@
     "AnalysisInputManifest": {
       "additionalProperties": false,
       "properties": {
+        "base_report_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportReference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "business": {
           "$ref": "#/$defs/BusinessScope"
         },
@@ -31,6 +42,19 @@
           ],
           "default": null,
           "title": "Evidence As Of"
+        },
+        "execution_type": {
+          "anyOf": [
+            {
+              "const": "public_reassessment",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Type"
         },
         "generation_input_checksum": {
           "pattern": "^sha256:[a-f0-9]{64}$",
@@ -1173,7 +1197,10 @@
           "type": "string"
         },
         "settlement_policy": {
-          "const": "one_credit_per_completed_analysis",
+          "enum": [
+            "one_credit_per_completed_analysis",
+            "no_charge_public_reassessment"
+          ],
           "title": "Settlement Policy",
           "type": "string"
         },
@@ -1872,6 +1899,49 @@
       "title": "ImplementationReference",
       "type": "object"
     },
+    "LocationConfirmation": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Address",
+          "type": "string"
+        },
+        "confirmed_at": {
+          "minLength": 1,
+          "title": "Confirmed At",
+          "type": "string"
+        },
+        "confirmed_by": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Confirmed By",
+          "type": "string"
+        },
+        "selected_branch_ref": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Selected Branch Ref",
+          "type": "string"
+        },
+        "source_ref": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "confirmed_by",
+        "confirmed_at",
+        "selected_branch_ref",
+        "address",
+        "source_ref"
+      ],
+      "title": "LocationConfirmation",
+      "type": "object"
+    },
     "ModeConfirmation": {
       "additionalProperties": false,
       "properties": {
@@ -1995,6 +2065,17 @@
     "OperatingLocation": {
       "additionalProperties": false,
       "properties": {
+        "confirmation_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocationConfirmation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "location": {
           "anyOf": [
             {
@@ -2875,6 +2956,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.11 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.13 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8, delivery v1/v2/v3)",
   "type": "object"
 }

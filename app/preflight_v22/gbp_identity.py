@@ -1,7 +1,7 @@
 """v13-only GBP discovery: saved evidence first, positive D/P gate, three attempts.
 
-This explicit entry is not wired to the legacy v12 preflight/default acquisition.
-The caller loads Case-scoped records and carries the returned ledger on resume.
+The authenticated identity review entry uses this lookup. Legacy v12 preflight
+is unchanged. The caller persists Case-scoped attempts before provider requests.
 """
 from __future__ import annotations
 
@@ -158,11 +158,13 @@ class _BudgetExhausted(Exception):
 
 class IdentityGbpLookup:
     def __init__(self, *, provider: CustomerPublicGbpProvider | None = None,
-                 incremental_enabled: bool = False, clock=None, timeout_seconds: float = 35):
+                 incremental_enabled: bool = False, clock=None, timeout_seconds: float = 35,
+                 persist_ledger=None):
         self.provider = provider
         self.incremental_enabled = incremental_enabled
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.timeout_seconds = timeout_seconds
+        self.persist_ledger = persist_ledger
         self._ledgers = {}
         self._locks = {}
 
@@ -289,9 +291,13 @@ class IdentityGbpLookup:
                 if len(ledger.attempts) >= 3:
                     raise _BudgetExhausted()
                 ledger.attempts.append(LookupAttempt(number=len(ledger.attempts) + 1, stage=stage))
+                if self.persist_ledger:
+                    await self.persist_ledger(ledger.model_copy(deep=True), reserve=True)
 
             async def after_attempt(slot, fingerprint, failure_kind):
                 ledger.attempts[-1].outcome = "failed" if failure_kind else "success"
+                if self.persist_ledger:
+                    await self.persist_ledger(ledger.model_copy(deep=True), reserve=False)
 
             try:
                 response = await asyncio.wait_for(self.provider.request(

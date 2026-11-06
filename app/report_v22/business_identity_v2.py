@@ -3,7 +3,7 @@
 Recognition and human confirmation are separate. This module performs no I/O.
 """
 from typing import Literal
-from pydantic import Field, HttpUrl, model_validator, field_validator
+from pydantic import Field, HttpUrl, model_validator, field_validator, model_serializer
 from app.report_v22.models import StrictModel, TargetMarket, BusinessIdentity
 
 IDENTITY_RULESET = "v22_capability_public_v13"
@@ -68,11 +68,32 @@ class OperatingPlace(StrictModel):
     postal_code: str | None = None
 
 
+class LocationConfirmation(StrictModel):
+    confirmed_by: str = Field(min_length=1, max_length=240)
+    confirmed_at: str = Field(min_length=1)
+    selected_branch_ref: str = Field(min_length=1, max_length=320)
+    address: str = Field(min_length=1, max_length=1000)
+    source_ref: str = Field(min_length=1, max_length=1000)
+
+    @field_validator("confirmed_at")
+    @classmethod
+    def timestamp(cls, value):
+        return ModeConfirmation.timestamp(value)
+
+
 class OperatingLocation(StrictModel):
     state: Literal["observed", "seo_confirmed", "not_checked"]
     location: OperatingPlace | None
     role: Literal["customer_facing", "office", "registered", "unknown"]
     source_refs: list[str] = Field(max_length=20)
+    confirmation_ref: LocationConfirmation | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_saved_locations(self, handler):
+        result = handler(self)
+        if self.confirmation_ref is None:
+            result.pop("confirmation_ref", None)
+        return result
 
     @model_validator(mode="after")
     def observed(self):
@@ -80,6 +101,9 @@ class OperatingLocation(StrictModel):
             raise ValueError("unobserved location must remain empty")
         if self.location and not self.source_refs:
             raise ValueError("observed location needs provenance")
+        if self.confirmation_ref and (self.state != "seo_confirmed" or self.role != "customer_facing"
+                or self.location is None or self.confirmation_ref.address != self.location.address):
+            raise ValueError("address confirmation does not match operating location")
         return self
 
 
@@ -112,6 +136,12 @@ class BusinessIdentityV2(StrictModel):
         if confirmation and (confirmation.normalized_domain != self.normalized_domain
                 or confirmation.selected_branch_ref != self.selected_branch_ref):
             raise ValueError("confirmation belongs to another entity or branch")
+        visit = self.operating_location.confirmation_ref
+        if visit and (self.operating_model.value not in {"storefront", "hybrid"}
+                or visit.selected_branch_ref != self.selected_branch_ref or not confirmation
+                or visit.confirmed_by != confirmation.confirmed_by
+                or visit.confirmed_at != confirmation.confirmed_at or visit.source_ref != confirmation.source_ref):
+            raise ValueError("address confirmation belongs to another review or branch")
         return self
 
 

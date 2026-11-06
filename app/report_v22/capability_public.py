@@ -97,7 +97,7 @@ def _bound_public_sources(manifest, value):
             or str(context.site_url) != manifest.business.site_url
             or context.primary_service != manifest.business.primary_service
             or context.target_market.display_name != manifest.business.target_market
-            or context.evaluated_at != instant(manifest.evaluated_at)
+            or context.evaluated_at != instant(manifest.evidence_as_of or manifest.evaluated_at)
             or set(_kind(s) for s in sources) != set(refs) or len(sources) != len(refs)
             or sorted(str(c.website_url) for c in context.competitors) != sorted(manifest.business.competitor_sites)):
         raise CapabilityPublicError()
@@ -162,7 +162,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                   if manifest.ruleset_version == RULESET or (labelled and manifest.mode == "acquisition")
                   else build_public_findings(request, reviewed_evidence=reviewed))
         skeletons = select_public_action_skeletons(PublicActionPlanInput(
-            findings_result=result, planning_date=instant(manifest.evaluated_at).date()),
+            findings_result=result, planning_date=instant(manifest.evidence_as_of or manifest.evaluated_at).date()),
             candidate_only=resource_limits, all_candidates=labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
         refs = {s.snapshot_id: s for s in manifest.snapshots}
         original = {e.evidence_id: e for e in result.evidence_result.evidence_index}
@@ -253,10 +253,14 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked)
         raw = dict(schema_version="2.2.8" if manifest.ruleset_version == IDENTITY_RULESET else "2.2.7" if manifest.ruleset_version == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"} else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
-            version=1 if manifest.previous_report is None else manifest.previous_report.version + 1,
+            version=(manifest.base_report_ref.version + 1 if manifest.base_report_ref else
+                1 if manifest.previous_report is None else manifest.previous_report.version + 1),
             generated_at=manifest.evaluated_at, input_manifest=manifest.model_dump(mode="json"), title=manifest.business.primary_service,
             summary=summary, evidence=evidence, findings=findings, action_state="actions_supported" if actions else "insufficient_basis",
-            actions=actions, limitations=limits, changes=[], settlement_policy="one_credit_per_completed_analysis")
+            actions=actions, limitations=limits, changes=[], settlement_policy=("no_charge_public_reassessment"
+                if manifest.execution_type else "one_credit_per_completed_analysis"))
+        if manifest.execution_type:
+            raw["limitations"].append("Reassessed from saved observations. No new pages or search results were collected.")
         if manifest.ruleset_version in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET}:
             from app.report_v22.page_title_review import extend_report
             extend_report(raw, manifest, request, result)
