@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,23 @@ class FakeProvider:
         return self.response
 
 
+class SavedFresnoProvider:
+    """Replay captured responses keyed by the actual outgoing query, offline."""
+
+    def __init__(self):
+        self.queries = []
+
+    async def search(self, query):
+        self.queries.append(query)
+        filenames = {
+            "93722": "locations-fresno-93722.json",
+            "Fresno, CA": "locations-fresno-ca.json",
+            "Fresno, California": "locations-fresno-california.json",
+        }
+        assert query in filenames, f"Unexpected query: {query}"
+        return FakeProvider(filenames[query]).response
+
+
 def market(**overrides: object) -> TargetMarket:
     values = {
         "display_name": "Austin, TX, US",
@@ -56,13 +74,92 @@ def market(**overrides: object) -> TargetMarket:
 
 
 def test_location_query_uses_one_provider_friendly_local_identifier() -> None:
-    assert build_location_query(market()) == "Austin, TX"
+    assert build_location_query(market()) == "Austin, Texas"
     assert build_location_query(market(postal_code="78701")) == "78701"
     assert build_location_query(market(
         display_name="Brooklyn, New York",
         city=None,
         region=None,
     )) == "Brooklyn, New York"
+
+
+@pytest.mark.parametrize("region", ["CA", "ca", "California"])
+def test_us_state_abbreviation_and_full_name_query_the_same_city(region):
+    assert build_location_query(market(city="Fresno", region=region, display_name=f"Fresno, {region}")) == "Fresno, California"
+    assert build_location_query(market(city=None, region=None, display_name="Fresno, CA")) == "Fresno, California"
+    assert build_location_query(market(country_code="GB", city="Example", region="CA")) == "Example, CA"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("city", [None, "Fresno"], ids=["postal-only", "postal-and-city"])
+async def test_saved_postal_response_does_not_require_city_text(city):
+    provider = SavedFresnoProvider()
+    point = await resolve_target_point(
+        market(display_name="93722" if city is None else "Fresno, CA, US", city=city, region="CA", postal_code="93722"),
+        provider=provider, clock=lambda: NOW,
+    )
+    assert provider.queries == ["93722"]
+    assert point.canonical_name == "93722,California,United States"
+    assert point.provider_location_id == "585069dbee19ad271e9c3fad"
+    assert (point.latitude, point.longitude) == (36.8353312, -119.8930904)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("region", ["CA", "California"], ids=["Fresno-CA", "Fresno-California"])
+async def test_saved_fresno_queries_choose_exact_city_not_dma_or_other_county_cities(region):
+    provider = SavedFresnoProvider()
+    point = await resolve_target_point(market(display_name=f"Fresno, {region}", city="Fresno", region=region),
+        provider=provider, clock=lambda: NOW)
+    assert provider.queries == ["Fresno, California"]
+    assert point.canonical_name == "Fresno,California,United States"
+    assert point.provider_location_id == "585069acee19ad271e9b78e0"
+    bound = json.loads(gzip.decompress((FIXTURES.parent / "gold/all-star-plumbing-fresno/bound-p0-10.json.gz").read_bytes()))
+    frozen_market = bound["request"]["evidence_input"]["context"]["target_market"]
+    assert (point.latitude, point.longitude) == (frozen_market["latitude"], frozen_market["longitude"]) == (36.7468422, -119.7725868)
+
+
+@pytest.mark.anyio
+async def test_saved_dma_only_response_is_not_a_city_fallback():
+    with pytest.raises(SerpLocationResolutionError, match="SERP_LOCATION_NOT_FOUND"):
+        await resolve_target_point(market(display_name="Fresno, CA", city="Fresno", region="CA"),
+            provider=FakeProvider("locations-fresno-ca.json"), clock=lambda: NOW)
+
+
+@pytest.mark.anyio
+async def test_nonexistent_city_cannot_match_saved_locations():
+    with pytest.raises(SerpLocationResolutionError, match="SERP_LOCATION_NOT_FOUND"):
+        await resolve_target_point(market(display_name="NoSuchCity, California", city="NoSuchCity", region="CA"),
+            provider=FakeProvider("locations-fresno-california.json"), clock=lambda: NOW)
+
+
+@pytest.mark.anyio
+async def test_postal_city_exception_requires_exact_postal_code_and_postal_type():
+    for postal, fixture in [("9372", "locations-fresno-93722.json"), ("93722", "locations-fresno-california.json")]:
+        with pytest.raises(SerpLocationResolutionError, match="SERP_LOCATION_NOT_FOUND"):
+            await resolve_target_point(market(city="Fresno", region="CA", postal_code=postal),
+                provider=FakeProvider(fixture), clock=lambda: NOW)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("site", [
+    "all-star-plumbing-fresno", "pr-plumbing-fresno", "vision-tech-swansea",
+    "volcanoes-hiking-guides", "seamless-gutters-pensacola",
+])
+async def test_frozen_gold_coordinates_remain_explicit_and_never_lookup(site):
+    path = FIXTURES.parent / "gold" / site / "bound-p0-10.json.gz"
+    bound = json.loads(gzip.decompress(path.read_bytes()))
+    raw = bound["request"]["evidence_input"]["context"]["target_market"]
+    target = TargetMarket.model_validate(raw)
+    assert target.latitude is not None and target.longitude is not None
+
+    class NeverLookup:
+        async def search(self, query):
+            pytest.fail("Frozen explicit coordinates must not call the location provider")
+
+    point = await resolve_target_point(target, provider=NeverLookup(), clock=lambda: NOW)
+    assert point.source == "explicit_coordinates"
+    assert (point.latitude, point.longitude) == (target.latitude, target.longitude)
+    assert point.response_checksum is None
 
 
 @pytest.mark.anyio

@@ -41,15 +41,32 @@ def _normalize(value: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", " ", normalized).strip()
 
 
+_US_STATES = dict(zip(
+    "AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC".split(),
+    ("Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming|District of Columbia").split("|"),
+    strict=True,
+))
+
+
+def _region_name(market: TargetMarket) -> str:
+    region = str(market.region or "").strip()
+    return _US_STATES.get(region.upper(), region) if market.country_code == "US" else region
+
+
 def build_location_query(market: TargetMarket) -> str:
     postal_code = str(market.postal_code or "").strip()
     if postal_code:
         return postal_code[:300]
     city = str(market.city or "").strip()
-    region = str(market.region or "").strip()
+    region = _region_name(market)
     if city:
         return ", ".join(part for part in (city, region) if part)[:300]
-    return str(market.display_name or "").strip()[:300]
+    display = str(market.display_name or "").strip()
+    if market.country_code == "US":
+        # Only comma-delimited region tokens; never expand part of a city name.
+        parts = [part.strip() for part in display.split(",")]
+        display = ", ".join([parts[0], *[_US_STATES.get(part.upper(), part) for part in parts[1:]]])
+    return display[:300]
 
 
 def _candidate_score(item: dict[str, Any], market: TargetMarket) -> int | None:
@@ -63,11 +80,20 @@ def _candidate_score(item: dict[str, Any], market: TargetMarket) -> int | None:
 
     postal = _normalize(market.postal_code)
     city = _normalize(market.city)
-    region = _normalize(market.region)
+    region = _normalize(_region_name(market))
     display = _normalize(market.display_name)
-    if postal and postal not in candidate_text:
+    target_type = _normalize(str(item.get("target_type") or ""))
+    if target_type in {"country", "dma region"}:
         return None
-    if city and city not in candidate_text:
+    postal_match = bool(postal) and postal in {
+        _normalize(name), _normalize(canonical.split(",", 1)[0]),
+    }
+    is_matching_postal = "postal" in target_type and postal_match
+    if postal and not postal_match:
+        return None
+    # Postal targets such as 93722,California,United States omit the city.
+    # Only an exact postal target match may bypass the city requirement.
+    if city and city not in candidate_text and not is_matching_postal:
         return None
 
     score = 0
@@ -79,17 +105,18 @@ def _candidate_score(item: dict[str, Any], market: TargetMarket) -> int | None:
         score += 100
     if city:
         score += 50
+        if city in {_normalize(name), _normalize(canonical.split(",", 1)[0])}:
+            # A city inside Fresno County is not the city of Fresno itself.
+            score += 100
     if region and region in candidate_text:
         score += 25
     display_tokens = set(display.split())
     score += len(display_tokens.intersection(candidate_text.split()))
-    target_type = _normalize(str(item.get("target_type") or ""))
-    if target_type == "country":
-        return None
-    if postal and "postal" in target_type:
+    if is_matching_postal:
         score += 40
     elif city and target_type == "city":
-        score += 40
+        # A City must outrank a district/county's better display-label match.
+        score += 1000
     return score
 
 

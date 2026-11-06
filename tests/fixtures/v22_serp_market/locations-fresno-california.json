@@ -1,0 +1,90 @@
+[
+  {
+    "id": "585069acee19ad271e9b78e0",
+    "name": "Fresno",
+    "canonical_name": "Fresno,California,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [
+      -119.7725868,
+      36.7468422
+    ]
+  },
+  {
+    "id": "585069adee19ad271e9b7ace",
+    "name": "Yokuts Valley",
+    "canonical_name": "Squaw Valley,Fresno,California,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [
+      -119.246785,
+      36.7402261
+    ]
+  },
+  {
+    "id": "585069acee19ad271e9b7941",
+    "name": "Kings Canyon National Park",
+    "canonical_name": "Kings Canyon National Park,Fresno County,California,United States",
+    "country_code": "US",
+    "target_type": "City",
+    "gps": [
+      -118.5551477,
+      36.8878548
+    ]
+  },
+  {
+    "id": "585069ebee19ad271e9c8af2",
+    "name": "Fresno County",
+    "canonical_name": "Fresno County,California,United States",
+    "country_code": "US",
+    "target_type": "County",
+    "gps": [
+      -119.2320784,
+      36.9858984
+    ]
+  },
+  {
+    "id": "585069eeee19ad271e9c9748",
+    "name": "Downtown",
+    "canonical_name": "Downtown,Fresno County,California,United States",
+    "country_code": "US",
+    "target_type": "Neighborhood",
+    "gps": [
+      -119.2320784,
+      36.9858984
+    ]
+  },
+  {
+    "id": "66826b74914a81594d5ded8b",
+    "name": "Edison",
+    "canonical_name": "Edison,Fresno County,California,United States",
+    "country_code": "US",
+    "target_type": "Neighborhood",
+    "gps": [
+      -119.8064788,
+      36.7208498
+    ]
+  },
+  {
+    "id": "585069eeee19ad271e9c968a",
+    "name": "California State University, Fresno",
+    "canonical_name": "California State University, Fresno,California,United States",
+    "country_code": "US",
+    "target_type": "University",
+    "gps": [
+      -119.7460937,
+      36.8133636
+    ]
+  },
+  {
+    "id": "585069bdee19ad271e9bc0d8",
+    "name": "Fresno-Visalia, CA",
+    "canonical_name": "Fresno-Visalia,CA,California,United States",
+    "country_code": "US",
+    "target_type": "DMA Region",
+    "gps": [
+      -119.311721,
+      36.314551
+    ]
+  }
+]
