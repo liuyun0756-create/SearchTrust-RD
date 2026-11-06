@@ -120,7 +120,11 @@ def _identity_comparisons(
     candidate: GbpCandidate | None,
 ) -> list[IdentityFieldComparison]:
     site_name = signals.names[0].value if signals.names else None
-    site_phone = signals.phones[0].value if signals.phones else None
+    gbp_phone_value = candidate.phone if candidate else None
+    site_phone = next(
+        (signal.value for signal in signals.phones if _phones_match(signal.value, gbp_phone_value)),
+        signals.phones[0].value if signals.phones else None,
+    )
     site_market = signals.markets[0] if signals.markets else None
     site_address = site_market.display_name if site_market else None
     site_model = signals.operating_models[0].value if signals.operating_models else None
@@ -289,7 +293,7 @@ def _identity_from_gbp(
     if signals.names and _names_match(candidate.business_name, signals.names[0].value):
         score += 2
         reasons.append("business name matched")
-    if signals.phones and _phones_match(candidate.phone, signals.phones[0].value):
+    if any(_phones_match(candidate.phone, signal.value) for signal in signals.phones):
         score += 2
         reasons.append("phone number matched")
     if _markets_match(candidate.market, preferred_market):

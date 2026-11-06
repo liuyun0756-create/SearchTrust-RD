@@ -192,11 +192,14 @@ def extract_site_signals(html: str) -> SiteSignals:
         )
         if is_business:
             name = str(record.get("name") or "").strip()
-            phone = str(record.get("telephone") or "").strip()
+            raw_phone = record.get("telephone")
+            raw_phones = raw_phone if isinstance(raw_phone, list) else [raw_phone]
             if 1 <= len(name) <= 240:
                 names.append(TextSignal(name, "json_ld", "high"))
-            if phone:
-                phones.append(TextSignal(phone, "json_ld", "high"))
+            for item in raw_phones:
+                phone = item.strip() if isinstance(item, str) else ""
+                if phone:
+                    phones.append(TextSignal(phone, "json_ld", "high"))
 
         address = record.get("address")
         if isinstance(address, dict):
