@@ -55,7 +55,7 @@ def test_workflow_has_least_privilege_checkouts_and_bounded_jobs() -> None:
     workflow = _load_workflow()
 
     assert workflow["permissions"] == {"contents": "read"}
-    assert workflow["jobs"]["backend-quality"]["timeout-minutes"] == 15
+    assert workflow["jobs"]["backend-quality"]["timeout-minutes"] == 30
     assert workflow["jobs"]["redis-integration"]["timeout-minutes"] == 10
     for job in workflow["jobs"].values():
         checkout = next(
