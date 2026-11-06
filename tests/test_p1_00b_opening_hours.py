@@ -1,4 +1,5 @@
 import pytest
+from support.private_gold import require_private_gold_inputs
 from app.report_v22.opening_hours import parse_week, parse_spec, compare_candidates
 
 @pytest.mark.parametrize('text,category', [
@@ -80,26 +81,27 @@ def test_real_contact_snapshot_compares_only_against_still_valid_gbp():
  assert all(r['days']=={str(i):[[480,1020]] for i in range(7)} for r in left if r['classification']=='parsed')
 
 
-def test_real_v11_hours_fixtures_are_actual_generation_and_new_targets_are_unlabelled(monkeypatch):
+@pytest.mark.parametrize('name', ['all-star-plumbing-fresno', 'vision-tech-swansea', 'nova-service'])
+def test_real_v11_hours_fixtures_are_actual_generation_and_new_targets_are_unlabelled(monkeypatch, name):
  from test_p0_08_gold import GOLD,ROOT,deny_network
  from scripts.eval_gold import generate,read_json,compare_findings
  from app.jobs_v22.digest import canonical_json_bytes
  from app.report_v22.public_rule_catalog import HOURS
  deny_network(monkeypatch)
- for name in ('all-star-plumbing-fresno','vision-tech-swansea','nova-service'):
-  directory=GOLD/name
-  report,result,*_=generate(read_json(directory/'input.json'),directory,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v11')
-  audit=result._hours_alignment
-  if name=='nova-service':
-   assert audit['state']=='not_checked'
-   assert not any(f.rule_id==HOURS for f in report.findings)
-   continue
-  assert audit['state']=='mismatch'
-  assert canonical_json_bytes(report)+b'\n'==(ROOT/'tests/fixtures/p1-00b-hours'/f'{name}.json').read_bytes()
-  assert audit['basis']==('structured' if name.startswith('all-star') else 'text_pattern')
-  assert len(audit['compared_days'])==(7 if name.startswith('all-star') else 5)
-  rows=compare_findings(read_json(directory/'truth.json'),[f.model_dump(mode='json') for f in report.findings],[e.model_dump(mode='json') for e in result.rule_evaluations])
-  assert all(r['verdict']!='正确' for r in rows if r.get('rule_id')==HOURS)
+ directory=GOLD/name
+ require_private_gold_inputs(directory, ROOT.parent/'.release-private/2026-10-29')
+ report,result,*_=generate(read_json(directory/'input.json'),directory,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v11')
+ audit=result._hours_alignment
+ if name=='nova-service':
+  assert audit['state']=='not_checked'
+  assert not any(f.rule_id==HOURS for f in report.findings)
+  return
+ assert audit['state']=='mismatch'
+ assert canonical_json_bytes(report)+b'\n'==(ROOT/'tests/fixtures/p1-00b-hours'/f'{name}.json').read_bytes()
+ assert audit['basis']==('structured' if name.startswith('all-star') else 'text_pattern')
+ assert len(audit['compared_days'])==(7 if name.startswith('all-star') else 5)
+ rows=compare_findings(read_json(directory/'truth.json'),[f.model_dump(mode='json') for f in report.findings],[e.model_dump(mode='json') for e in result.rule_evaluations])
+ assert all(r['verdict']!='正确' for r in rows if r.get('rule_id')==HOURS)
 
 
 def test_overnight_conflicting_next_day_and_unknown_conditions_remain_unchecked():

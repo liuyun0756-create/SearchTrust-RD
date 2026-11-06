@@ -3,6 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 import json
 import pytest
+from support.private_gold import require_private_gold_inputs
+from test_p0_08_gold import SITE_IDS
 from pydantic import ValidationError
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
 from app.report_v22.business_identity_v2 import BusinessIdentityV2, ModeConfirmation, ModeEvidence, legacy_service_identity
@@ -108,23 +110,25 @@ def test_address_applicability_never_becomes_a_correction(mode):
  assert not any(f.rule_id=='v22_public.gbp_address_alignment' for f in report.findings)
 
 
-def test_six_real_confirmed_modes_and_address_actions(monkeypatch):
+@pytest.mark.parametrize('name', SITE_IDS)
+def test_six_real_confirmed_modes_and_address_actions(monkeypatch, name):
  from test_p0_08_gold import deny_network
  from scripts.replay_p1_05_identity import replay
  deny_network(monkeypatch)
  confirms=json.loads((ROOT/'tests/fixtures/p1-05-identity/confirmations.json').read_text())
- for name,c in confirms.items():
-  report,row=replay(ROOT/'tests/fixtures/gold'/name,c,ROOT.parent/'.release-private/2026-10-29')
-  truth=json.loads((ROOT/'tests/fixtures/gold'/name/'truth.json').read_text())
-  assert row['effective_mode']==truth['operating_model']['value']==c['value']
-  if c['value'] in {'service_area','meeting_point'}:
-   assert row['address']['state']=='not_applicable'
-   assert row['address_actions']==[]
-   assert not any(f.rule_id=='v22_public.gbp_address_alignment' for f in report.findings)
-   assert all('address' not in step.lower() for a in report.action_candidates for step in a.steps if 'update the public' in step.lower())
-  if name=='vision-tech-swansea':
-   assert row['target_market']['city']=='Swansea'
-   assert 'Llanelli' in row['operating_location']['location']['address']
+ c=confirms[name]
+ require_private_gold_inputs(ROOT/'tests/fixtures/gold'/name, ROOT.parent/'.release-private/2026-10-29')
+ report,row=replay(ROOT/'tests/fixtures/gold'/name,c,ROOT.parent/'.release-private/2026-10-29')
+ truth=json.loads((ROOT/'tests/fixtures/gold'/name/'truth.json').read_text())
+ assert row['effective_mode']==truth['operating_model']['value']==c['value']
+ if c['value'] in {'service_area','meeting_point'}:
+  assert row['address']['state']=='not_applicable'
+  assert row['address_actions']==[]
+  assert not any(f.rule_id=='v22_public.gbp_address_alignment' for f in report.findings)
+  assert all('address' not in step.lower() for a in report.action_candidates for step in a.steps if 'update the public' in step.lower())
+ if name=='vision-tech-swansea':
+  assert row['target_market']['city']=='Swansea'
+  assert 'Llanelli' in row['operating_location']['location']['address']
 
 
 def test_switching_effective_mode_removes_address_candidate_and_its_materials():

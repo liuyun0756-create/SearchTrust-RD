@@ -8,6 +8,7 @@ import pytest
 
 from scripts import eval_gold
 from test_p0_08_gold import GOLD, ROOT, deny_network
+from support.private_gold import require_private_gold_inputs
 
 OVERLAY = ROOT / 'tests/fixtures/p1-00b-hours/confirmed-truth-overlay.json'
 RULESET = 'v22_capability_public_v11'
@@ -84,6 +85,7 @@ def test_cli_enables_overlay_only_with_explicit_option(monkeypatch, capsys):
 
 
 def test_six_sites_score_approved_hours_only_when_overlay_is_explicit(monkeypatch):
+    require_private_gold_inputs(GOLD / 'nova-service', ROOT.parent / '.release-private/2026-10-29')
     deny_network(monkeypatch)
     before = {p: p.read_bytes() for p in GOLD.glob('*/truth.json')}
     # Reuse identical generated reports for the second scoring pass, with no extra IO.

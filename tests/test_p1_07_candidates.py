@@ -4,6 +4,8 @@ from itertools import permutations
 from pathlib import Path
 import json
 import pytest
+from support.private_gold import require_private_gold_inputs
+from test_p0_08_gold import SITE_IDS
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, DeliveryRevision
 from app.report_v22.capability_priority import apply_priority, prioritize
@@ -136,17 +138,19 @@ def test_pool_integrity(case):
     with pytest.raises(ValueError):CapabilityReport.model_validate_json(canonical_json_bytes(raw))
 
 
-def test_v11_v12_six_site_observations_and_client_order_are_identical(monkeypatch):
+@pytest.mark.parametrize('name', SITE_IDS)
+def test_v11_v12_six_site_observations_and_client_order_are_identical(monkeypatch, name):
     from scripts.eval_gold import generate,read_json,ROOT
     from test_p0_08_gold import deny_network
     deny_network(monkeypatch)
-    for p in sorted((ROOT/'tests/fixtures/gold').glob('*/input.json')):
-        old,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v11')
-        new,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v12')
-        assert old.findings==new.findings and old.evidence==new.evidence and old.contact_checks==new.contact_checks
-        eligible=lambda a:any(f.status=='confirmed' and f.confidence!='low' for f in old.findings if f.id in a.finding_ids)
-        assert [a.id for a in new.actions]==[a.id for a in old.actions if eligible(a)]
-        assert {a.id for a in new.action_candidates}=={e.input.action_id for e in old.prioritization.candidates}
+    p = ROOT/'tests/fixtures/gold'/name/'input.json'
+    require_private_gold_inputs(p.parent, ROOT.parent/'.release-private/2026-10-29')
+    old,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v11')
+    new,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v12')
+    assert old.findings==new.findings and old.evidence==new.evidence and old.contact_checks==new.contact_checks
+    eligible=lambda a:any(f.status=='confirmed' and f.confidence!='low' for f in old.findings if f.id in a.finding_ids)
+    assert [a.id for a in new.actions]==[a.id for a in old.actions if eligible(a)]
+    assert {a.id for a in new.action_candidates}=={e.input.action_id for e in old.prioritization.candidates}
 
 
 @pytest.mark.parametrize('records,technical',[

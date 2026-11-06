@@ -159,7 +159,10 @@ const db = new PGlite();
 
 
 def run_sql(*, try_write=False):
-    result = subprocess.run(["node", "-e", SQL_RUNNER], cwd=ROOT.parent / "search-trust",
+    frontend = ROOT.parent / "search-trust"
+    if not (frontend / "node_modules/@electric-sql/pglite/package.json").is_file():
+        pytest.skip("Offline SQL integration requires sibling search-trust with installed @electric-sql/pglite; SQL execution is not checked")
+    result = subprocess.run(["node", "-e", SQL_RUNNER], cwd=frontend,
                             input=json.dumps(dict(sql=audit.SQL_PATH.read_text(), tryWrite=try_write)),
                             text=True, capture_output=True, check=True, timeout=45)
     return json.loads(result.stdout)
