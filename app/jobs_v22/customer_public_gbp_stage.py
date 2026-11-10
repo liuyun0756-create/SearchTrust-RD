@@ -27,6 +27,7 @@ from app.integrations.serpapi import (
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import CostLedgerError, JobCostLedger
+from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.report_common.google_business import data_cid, extract_data_id, extract_google_place_id
@@ -381,7 +382,7 @@ class CheckpointedCustomerPublicGbpStage:
             if type(provider_response) is not CustomerPublicGbpProviderResponse:
                 raise DeterministicJobError("V22_CUSTOMER_PUBLIC_GBP_IDENTITY_INVALID",
                     "The public Google Business Profile response could not be verified.")
-            payload = _sanitize(provider_response.payload)
+            payload = _sanitize(normalize_collection_json(provider_response.payload, source="public_gbp", job_id=job_id))
             completed_at = self.clock()
             collection = CustomerPublicGbpCollection(schema_version=CHECKPOINT_VERSION, reference=reference,
                 snapshot=_snapshot(reference=reference, payload=payload,

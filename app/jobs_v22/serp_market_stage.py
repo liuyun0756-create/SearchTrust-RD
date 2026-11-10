@@ -53,6 +53,7 @@ from app.integrations.serpapi import (
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.circuit_breaker import CircuitPermit, RedisCircuitBreaker
 from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError, ProviderCircuitOpen, TransientJobError
 from app.report_v22.models import StrictModel
@@ -340,7 +341,7 @@ class CheckpointedSerpProvider:
                 provider_attempts=0,
                 logical_call_used=False,
             )
-        payload = sanitize_serp_payload(response.payload, call.engine)
+        payload = sanitize_serp_payload(normalize_collection_json(response.payload, source="serp", job_id=self.job_id), call.engine)
         checkpoint = _ProviderCheckpoint(
             schema_version="serp_provider_response_v1",
             request_digest=call.request_digest,

@@ -8,6 +8,7 @@ from app.collectors.site_inventory_urls import SiteScope, canonicalize_site_reso
 from app.collectors.site_render_firecrawl import FirecrawlRenderAdapter
 from app.collectors.site_render_models import RENDER_FAILURE, RenderedPage, RenderedSiteSnapshot
 from app.jobs_v22.cost_ledger import CostLimitExceeded
+from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.report_v22.site_business_html import ParseBudget, dom_candidates, parse_html
 from app.report_v22.site_business_jsonld import jsonld_candidates
@@ -90,14 +91,15 @@ class SiteRenderStage:
                                                duration_ms=max(0,int((monotonic()-tick)*1000)))
                     if result.limitation:
                         return RenderedPage(**base, limitation='render_unavailable').model_dump(mode='json')
-                    body = result.html.encode('utf-8')
+                    html = normalize_collection_json(result.html, source='rendered', job_id=job_id)
+                    body = html.encode('utf-8')
                     rendered = RenderedDeepPage(url=url, final_url=result.final_url,
                         page_type=deep.page_type if deep else page.page_type if page else 'other',
                         crawl_depth=deep.crawl_depth if deep else page.crawl_depth if page else 0,
                         collected_at=self.clock(), status_code=result.status_code, content_type='text/html',
                         response_bytes=len(body), content_checksum='sha256:'+hashlib.sha256(body).hexdigest(),
-                        html=result.html, text='')
-                    return RenderedPage(**base, deep_snapshot=rendered).model_dump(mode='json')
+                        html=html, text='')
+                    return normalize_collection_json(RenderedPage(**base, deep_snapshot=rendered).model_dump(mode='json'), source='rendered', job_id=job_id)
 
                 raw = await checkpoints.run_once(job_id, page_key, scrape_page)
                 pages.append(RenderedPage.model_validate_json(canonical_json_bytes(raw)))

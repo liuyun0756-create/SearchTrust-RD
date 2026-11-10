@@ -28,6 +28,7 @@ from app.competitors_v22.public_profile import (
 )
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import CostLedgerError, JobCostLedger
+from app.jobs_v22.collection_json import CollectionJsonKeyCollision, normalize_collection_json
 from app.jobs_v22.digest import request_digest
 from app.integrations.serpapi import (
     SerpApiKeyState,
@@ -231,7 +232,7 @@ class CheckpointedPublicProfileStage:
         )
         if not isinstance(payload, dict):
             raise ValueError("public profile provider returned an invalid payload")
-        payload = sanitize_public_profile_payload(payload, params["engine"])
+        payload = sanitize_public_profile_payload(normalize_collection_json(payload, source="competitor", job_id=job_id), params["engine"])
         await checkpoints.save(job_id, key, payload)
         persisted = await checkpoints.get(job_id, key)
         return persisted if isinstance(persisted, dict) else payload, False
@@ -333,6 +334,8 @@ class CheckpointedPublicProfileStage:
             raise
         except ProviderBudgetExhausted:
             limitations.append("The shared public-provider attempt budget was exhausted.")
+        except CollectionJsonKeyCollision:
+            raise
         except (OSError, ValueError, RuntimeError):
             limitations.append("Public competitor data was only partially available.")
         return CompetitorPublicProfileResult(

@@ -38,6 +38,7 @@ from app.collectors.site_inventory_urls import (
 from app.core.config import Settings
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
+from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import canonical_json_bytes, request_digest
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import StrictModel
@@ -418,7 +419,7 @@ class CheckpointedSiteInventoryStage:
             persisted_selection = _validate_model(_InventorySelectionCheckpoint, selection_raw)
             if persisted_manifest != manifest or persisted_selection != selection:
                 raise SiteInventoryCheckpointError()
-            return snapshot.model_dump(mode="json")
+            return normalize_collection_json(snapshot.model_dump(mode="json"), source="site", job_id=job_id)
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
         return _validate_model(SiteInventorySnapshotV3 if self.contact_coverage else SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)
@@ -497,7 +498,7 @@ class CheckpointedSiteInventoryStage:
                     f"V22_SITE_INVENTORY_{exc.code.upper()}",
                     exc.user_message,
                 ) from exc
-            return snapshot.model_dump(mode="json")
+            return normalize_collection_json(snapshot.model_dump(mode="json"), source="competitor", job_id=job_id)
 
         raw = await checkpoints.run_once(job_id, final_key, operation)
         return _validate_model(SiteInventorySnapshotV3 if self.contact_coverage else SiteInventorySnapshotV2 if self.resource_limits else SiteInventorySnapshot, raw)

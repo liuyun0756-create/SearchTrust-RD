@@ -25,6 +25,7 @@ from app.collectors.serp_market_models import (
     SerpResultCount,
 )
 from app.collectors.serp_market_requests import SerpPlannedCall, SerpSearchPlan
+from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import request_digest
 
 
@@ -405,7 +406,7 @@ class SerpMarketCollector:
                         provider_attempts=0,
                         logical_call_used=False,
                     )
-                safe_payload = sanitize_serp_payload(response.payload, planned_call.engine)
+                safe_payload = sanitize_serp_payload(normalize_collection_json(response.payload, source="serp", job_id=job_id), planned_call.engine)
                 payload_error, is_empty = _payload_error(safe_payload)
                 if payload_error and not is_empty:
                     raise SerpMarketProviderError(

@@ -18,6 +18,7 @@ from app.competitors_v22.models import (
 )
 from app.competitors_v22.normalization import normalize_domain
 from app.jobs_v22.checkpoints import JobCheckpoints
+from app.jobs_v22.collection_json import CollectionJsonKeyCollision
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import CompetitorId, StrictModel, TargetMarket
@@ -106,6 +107,8 @@ class CheckpointedCompetitorSiteStage:
                 if normalize_domain("https://" + inventory.canonical_host) != normalize_domain(str(competitor.website_url)):
                     raise ValueError("competitor inventory crossed its canonical website boundary")
             except asyncio.CancelledError:
+                raise
+            except CollectionJsonKeyCollision:
                 raise
             except (DeterministicJobError, OSError, ValueError):
                 return CompetitorSiteInventoryResult(
