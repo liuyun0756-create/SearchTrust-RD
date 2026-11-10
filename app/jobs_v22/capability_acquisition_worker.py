@@ -4,6 +4,7 @@ No public intake is mounted here. SQL leases fence source freezing; a lost
 acknowledgement is recovered by claim's ready outcome, never by recollection.
 """
 import asyncio
+import json
 import logging
 import re
 from copy import copy
@@ -24,6 +25,29 @@ from app.jobs_v22.models import utc_now
 from app.report_v22.models import StrictModel
 
 logger = logging.getLogger(__name__)
+
+
+def _freeze_metrics(body):
+    """Measure HTTPX's JSON encoding without logging source keys or contents."""
+    kinds = ("site", "serp", "competitor", "public_gbp", "rendered")
+    try:
+        size = len(json.dumps(body, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8"))
+        sources = body.get("p_public_source_canonicals", {})
+        sizes = tuple(len(sources[k].encode("utf-8")) if k in sources else 0 for k in kinds)
+        schema = body.get("p_manifest", {}).get("schema_version")
+        if schema not in {"v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3"}:
+            schema = "unknown"
+        suffix = str(UUID(str(body.get("p_job_id"))))[-8:]
+        return (suffix, size, schema, *sizes)
+    except (ValueError, TypeError, AttributeError, OverflowError, RecursionError):
+        # Observability must not replace the RPC's own validation or error.
+        return ("invalid", -1, "unknown", *(-1 for _ in kinds))
+
+
+def _log_freeze(phase, elapsed_ms, metrics):
+    logger.info("acquisition freeze %s elapsed_ms=%d job_id_suffix=%s input_bytes=%d manifest_schema_version=%s "
+        "site_canonical_bytes=%d serp_canonical_bytes=%d competitor_canonical_bytes=%d "
+        "public_gbp_canonical_bytes=%d rendered_canonical_bytes=%d", phase, elapsed_ms, *metrics)
 
 
 def _log_preparation_error(exc, job_id_value):
@@ -141,8 +165,16 @@ class LeasedPreparationRpc:
     async def post(self, name, body):
         if name == "prepare_v22_capability_analysis_input":
             counters = await self.before_freeze()
-            return await self.rpc.post(f"freeze_v22_{self.kind}_preparation", dict(
-                p_lease_token=str(self.token), p_cost_counters=counters, p_input=body))
+            payload = dict(p_lease_token=str(self.token), p_cost_counters=counters, p_input=body)
+            if self.kind != "acquisition":
+                return await self.rpc.post(f"freeze_v22_{self.kind}_preparation", payload)
+            metrics = _freeze_metrics(body)
+            _log_freeze("started", 0, metrics)
+            started = monotonic()
+            try:
+                return await self.rpc.post("freeze_v22_acquisition_preparation", payload)
+            finally:
+                _log_freeze("finished", max(int((monotonic()-started)*1000), 0), metrics)
         return await self.rpc.post(name, body)
 
 
