@@ -378,6 +378,7 @@ async def test_saved_result_requires_matching_live_evidence_before_sql_persisten
     elif change == "market_checksum": raw["result"]["market_snapshot_checksum"] = "sha256:" + "f" * 64
     elif change == "market_missing":
         await ctx["redis"].delete(coordinator.market_store.key(state.result.input_digest))
+        await ctx["redis"].delete(coordinator.market_store.snapshot_key(state.result.market_snapshot_id))
     else:
         ctx["clock"] = lambda: NOW + timedelta(days=2)
         sql.deadline = NOW + timedelta(days=3)  # Boundary test, not a real SQL deadline extension.

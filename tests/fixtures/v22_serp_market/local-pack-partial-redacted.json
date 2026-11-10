@@ -1,0 +1,12 @@
+{
+  "search_metadata": {"status": "Success"},
+  "local_results": {
+    "more_locations_link": "https://www.google.com/search?tbm=lcl",
+    "places": [
+      {"position": 1, "lsig": "redacted"},
+      {"position": 2, "lsig": "redacted"},
+      {"position": 3, "lsig": "redacted"},
+      {"position": 4, "lsig": "redacted"}
+    ]
+  }
+}

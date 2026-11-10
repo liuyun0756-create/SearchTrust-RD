@@ -50,9 +50,10 @@ def classify_page(
 
     if path == root_path and urlsplit(url).hostname == urlsplit(root_url).hostname:
         return ClassificationResult("home", ("root_url",))
-    if any(token in segments for token in {"privacy", "terms", "legal", "cookies"}):
+    path_tokens = {token for segment in segments for token in re.split(r"[-_]+", segment)}
+    if path_tokens.intersection({"privacy", "terms", "legal", "cookie", "cookies"}):
         return ClassificationResult("legal", ("legal_path",))
-    if "faqpage" in schema_types or "frequently asked" in text or "common questions" in text:
+    if path_tokens.intersection({"faq", "faqs", "questions"}) or "frequently asked" in text or "common questions" in text:
         return ClassificationResult("faq", ("faq_signal",))
     if "product" in schema_types:
         return ClassificationResult("product_detail", ("schema_product",))

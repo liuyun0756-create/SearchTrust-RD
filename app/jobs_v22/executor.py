@@ -49,6 +49,7 @@ class MarketStore(Protocol):
         *,
         input_digest: str,
         now: datetime,
+        snapshot_id: UUID | None = None,
     ) -> SharedMarketSnapshot | None: ...
 
 
@@ -219,6 +220,7 @@ class ProspectV22Executor:
         shared_market = await self.market_store.get(
             input_digest=discovery.input_digest,
             now=self.clock(),
+            snapshot_id=discovery.market_snapshot_id,
         )
         link = discovery_link
         if (

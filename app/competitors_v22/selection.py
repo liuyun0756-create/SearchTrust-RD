@@ -169,7 +169,8 @@ class RedisDiscoveryVerifier:
                 "COMPETITOR_DISCOVERY_NOT_READY",
                 "The competitor discovery does not contain an eligible competitor.",
             )
-        shared = await self.market_store.get(input_digest=result.input_digest, now=now)
+        shared = await self.market_store.get(input_digest=result.input_digest, now=now,
+            snapshot_id=result.market_snapshot_id)
         if (
             shared is None
             or shared.snapshot_id != result.market_snapshot_id

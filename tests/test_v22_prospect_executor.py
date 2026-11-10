@@ -47,7 +47,7 @@ class MarketStore:
         self.shared = shared
         self.input_digest = None
 
-    async def get(self, *, input_digest, now):
+    async def get(self, *, input_digest, now, snapshot_id=None):
         self.input_digest = input_digest
         return self.shared
 

@@ -76,7 +76,7 @@ class CompetitorDiscoveryService:
     ) -> CompetitorDiscoveryResult:
         now = self.clock()
         input_digest = competitor_discovery_input_digest(request)
-        shared = await self.market_store.get(input_digest=input_digest, now=now)
+        shared = await self.market_store.get_current(input_digest=input_digest, now=now)
         if shared is None:
             snapshot = await self.market_stage.collect_context(
                 job_id=discovery_job_id,

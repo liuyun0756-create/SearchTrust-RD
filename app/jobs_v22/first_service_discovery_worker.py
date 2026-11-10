@@ -57,7 +57,8 @@ class FirstServiceDiscoveryCoordinator:
                 or result.input_digest != competitor_discovery_input_digest(work.request)
                 or result.created_at > now or result.expires_at <= now):
             raise ValueError("First-service discovery result mismatch")
-        shared = await self.market_store.get(input_digest=result.input_digest, now=now)
+        shared = await self.market_store.get(input_digest=result.input_digest, now=now,
+            snapshot_id=result.market_snapshot_id)
         if (shared is None or shared.snapshot_id != result.market_snapshot_id
                 or shared.snapshot_checksum != result.market_snapshot_checksum):
             raise ValueError("First-service discovery market unavailable")

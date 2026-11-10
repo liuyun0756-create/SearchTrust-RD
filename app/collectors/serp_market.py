@@ -28,6 +28,8 @@ from app.collectors.serp_market_requests import SerpPlannedCall, SerpSearchPlan
 from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import request_digest
 
+SERP_MARKET_PARSER_VERSION = "serp_market_v2"
+
 
 @dataclass(frozen=True)
 class SerpProviderResponse:
@@ -84,6 +86,17 @@ def _bounded_text(value: Any, limit: int) -> str | None:
     return text if text and len(text) <= limit else None
 
 
+def _result_section(payload: dict[str, Any], section: str, engine: str) -> Any:
+    raw = payload.get(section)
+    # Google Search's local pack wraps its list in {places: [...]}, unlike
+    # google_maps. Keep malformed wrappers invalid rather than inventing []:
+    # a missing/unreadable section is not evidence of no local businesses.
+    if engine == "google" and section == "local_results" and isinstance(raw, dict):
+        if isinstance(raw.get("places"), list):
+            return raw["places"]
+    return raw
+
+
 def sanitize_serp_payload(payload: dict[str, Any], engine: str) -> dict[str, Any]:
     """Keep only bounded fields needed by deterministic market normalization."""
     sanitized: dict[str, Any] = {}
@@ -114,7 +127,7 @@ def sanitize_serp_payload(payload: dict[str, Any], engine: str) -> dict[str, Any
         "snippet": 2_000,
     }
     for section in sections:
-        raw = payload.get(section)
+        raw = _result_section(payload, section, engine)
         if raw is None:
             continue
         if not isinstance(raw, list):
@@ -239,13 +252,6 @@ def _payload_error(payload: dict[str, Any]) -> tuple[str | None, bool]:
     return None, False
 
 
-def _result_list(payload: dict[str, Any], key: str) -> list[Any]:
-    raw = payload.get(key)
-    if not isinstance(raw, list):
-        return []
-    return raw[:SERP_RESULT_LIMIT_PER_TYPE]
-
-
 def _normalize_results(
     *,
     call: SerpPlannedCall,
@@ -264,11 +270,11 @@ def _normalize_results(
     limitations: list[str] = []
     seen: set[str] = set()
     for result_type, section in sections:
-        raw_section = payload.get(section)
+        raw_section = _result_section(payload, section, call.engine)
         if raw_section is not None and not isinstance(raw_section, list):
             limitations.append(f"SERP_{result_type.upper()}_SECTION_INVALID")
             continue
-        for response_index, item in enumerate(_result_list(payload, section), start=1):
+        for response_index, item in enumerate((raw_section or [])[:SERP_RESULT_LIMIT_PER_TYPE], start=1):
             if not isinstance(item, dict):
                 limitations.append(f"SERP_{result_type.upper()}_RESULT_SKIPPED")
                 continue
