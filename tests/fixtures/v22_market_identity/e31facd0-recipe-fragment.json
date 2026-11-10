@@ -1,0 +1,36 @@
+{
+  "fixture_kind": "redacted_recipe_fragment",
+  "manifest": {
+    "schema_version": "v22_analysis_input_v1",
+    "ruleset_version": "v22_capability_public_v12"
+  },
+  "recipe": {
+    "schema_version": "v22_generation_recipe_v1",
+    "request": {
+      "business_identity": {
+        "primary_location": {
+          "display_name": "Fresno, CA, US",
+          "country_code": "US",
+          "region": "CA",
+          "city": "Fresno",
+          "postal_code": "93722",
+          "latitude": 36.8151976,
+          "longitude": -119.8921305
+        }
+      },
+      "evidence_input": {
+        "context": {
+          "target_market": {
+            "display_name": "Fresno, CA, US",
+            "country_code": "US",
+            "region": "CA",
+            "city": "Fresno",
+            "postal_code": "93722",
+            "latitude": null,
+            "longitude": null
+          }
+        }
+      }
+    }
+  }
+}

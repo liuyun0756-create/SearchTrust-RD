@@ -109,6 +109,17 @@ class TargetMarket(StrictModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
 
 
+def same_target_market_identity(left: TargetMarket, right: TargetMarket) -> bool:
+    """Compare place identity; optional sampling coordinates are not identity.
+
+    This does not change model equality, serialization, digests, or the separate
+    checks that bind a search observation to its exact sampling coordinates.
+    """
+    return all(getattr(left, field) == getattr(right, field) for field in (
+        "country_code", "region", "city", "postal_code", "display_name",
+    ))
+
+
 class BusinessIdentity(StrictModel):
     business_name: str = Field(min_length=1, max_length=240)
     site_url: HttpUrl
@@ -726,7 +737,7 @@ class ReportV22(StrictModel):
 
         if self.market_snapshot.queries != self.case_context.queries:
             raise ValueError("market snapshot queries must match case context queries")
-        if self.market_snapshot.target_market != self.case_context.target_market:
+        if not same_target_market_identity(self.market_snapshot.target_market, self.case_context.target_market):
             raise ValueError("market snapshot target must match case context target")
 
         return self

@@ -12,6 +12,7 @@ from app.report_v22.actions import select_public_action_skeletons
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
+from app.report_v22.models import same_target_market_identity
 from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, IDENTITY_RULESET, annotate_findings
 from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
 
@@ -73,7 +74,7 @@ def _bound_public_sources(manifest, value):
     if v2 != (manifest.ruleset_version == IDENTITY_RULESET):
         raise CapabilityPublicError()
     if v2 and (manifest.identity_checksum != request_digest(request.business_identity)
-            or manifest.target_market != context.target_market):
+            or not same_target_market_identity(manifest.target_market, context.target_market)):
         raise CapabilityPublicError()
     if v2:
         reference = context.customer_public_gbp

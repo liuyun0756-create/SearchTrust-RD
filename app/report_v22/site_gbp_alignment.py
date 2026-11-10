@@ -15,7 +15,7 @@ from app.report_v22.evidence_models import (
     SiteEvidenceSource,
 )
 from app.report_v22.findings_errors import FindingsError
-from app.report_v22.models import BusinessIdentity, EvidenceItem, SourceLocator
+from app.report_v22.models import BusinessIdentity, EvidenceItem, SourceLocator, same_target_market_identity
 from app.report_v22.site_business_models import FIELD_NAMES, SiteBusinessCandidate, SiteBusinessFactsResult
 from app.report_v22.site_business_selection import REQUIRED
 from app.report_v22.site_gbp_alignment_models import (
@@ -66,7 +66,7 @@ def _validate_identity(context: EvidenceBuildContext, identity: BusinessIdentity
     )
     reference = context.customer_public_gbp
     if (identity.site_url != context.site_url
-            or (getattr(identity, "target_market", identity.primary_location) != context.target_market)
+            or not same_target_market_identity(getattr(identity, "target_market", identity.primary_location), context.target_market)
             or normalized_host(identity.normalized_domain) != source_domain
             or facts.case_id != context.case_id
             or facts.site_url != context.site_url):
