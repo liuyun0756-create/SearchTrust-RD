@@ -16,6 +16,7 @@ from app.jobs_v22.capability_acquisition_input import build_acquisition_input
 from app.jobs_v22.capability_input_repository import SupabaseCapabilityInputRepository
 from app.jobs_v22.cost_ledger import JobCostLedger, CostLedgerError
 from app.jobs_v22.cost_models import PricingCatalog, empty_request_prices
+from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.queue import ArqAcquisitionPreparationQueue, physical_job_id
 from app.jobs_v22.store import DurableJobStore
 from test_v22_capability_acquisition_preparation import inputs, dispatch_for
@@ -38,6 +39,9 @@ class Harness:
         self.freeze_lost = False
         self.pulse_ok = True
         self.stage_ok = True
+        self.revision = 1
+        self.failed = None
+        self.reject_failure = False
         self.redis = fakeredis.aioredis.FakeRedis()
         self.client = httpx.AsyncClient(transport=httpx.MockTransport(self.respond))
         self.repo = SupabaseCapabilityInputRepository(url="https://storage.example",service_role_key="test-only",http_client=self.client)
@@ -55,6 +59,7 @@ class Harness:
         name=sent.url.path.rsplit("/",1)[-1]; body=json.loads(sent.content)
         self.calls.append((name,body))
         if name=="claim_v22_acquisition_preparation":
+            if self.failed: return httpx.Response(200,json={"outcome":"inactive"})
             if self.outcome: return httpx.Response(200,json={"outcome":self.outcome})
             receipt=deepcopy(self.receipt)
             if self.frozen: receipt["dispatch"]=self.dispatch
@@ -63,7 +68,18 @@ class Harness:
         if name=="begin_v22_acquisition_preparation":
             return httpx.Response(200,json=self.receipt)
         if name=="heartbeat_v22_acquisition_preparation":
+            if self.pulse_ok and not self.frozen: self.revision += 1
             return httpx.Response(200,json=self.pulse_ok and not self.frozen)
+        if name=="get_v22_acquisition_status":
+            return httpx.Response(200,json=dict(job_id=str(self.args["job_id"]),run_generation=1,
+                status="running",revision=self.revision,progress=24))
+        if name=="apply_analysis_job_event":
+            assert body["p_revision"]==self.revision+1
+            if not self.reject_failure:
+                self.failed=body
+                self.revision=body["p_revision"]
+            return httpx.Response(200,json=[dict(found=True,applied=not self.reject_failure,
+                terminal_effects_applied=not self.reject_failure,state_revision=self.revision)])
         if name=="advance_v22_acquisition_stage":
             return httpx.Response(200,json=self.stage_ok and self.pulse_ok and not self.frozen)
         if name=="freeze_v22_acquisition_preparation":
@@ -82,6 +98,74 @@ class Harness:
 
     async def close(self):
         await self.client.aclose(); await self.redis.aclose()
+
+
+@pytest.mark.anyio
+async def test_deterministic_preparation_failure_is_terminal_and_preserves_safe_details(monkeypatch, caplog):
+    h=Harness(monkeypatch)
+    h.collector.collect_sources.side_effect=DeterministicJobError(
+        "V22_ACQUISITION_PREPARATION_INVALID", "The confirmed discovery changed.")
+    try:
+        assert await h.run() is None
+        failure=h.failed
+        assert failure is not None
+        assert failure["p_error_code"]=="V22_ACQUISITION_PREPARATION_INVALID"
+        assert failure["p_user_message"]=="The confirmed discovery changed."
+        assert failure["p_status"]==failure["p_current_stage"]=="failed"
+        assert failure["p_run_generation"]==1 and failure["p_attempt_count"]==1
+        assert failure["p_deadline_at"]==h.args["deadline_at"].isoformat()
+        assert failure["p_cost_counters"]["job_attempts"]==1
+        h.submit.assert_not_awaited()
+        await h.run()  # SQL terminal claim fences a duplicate delivery.
+        assert h.collector.collect_sources.await_count==1
+        assert [name for name,_ in h.calls].count("apply_analysis_job_event")==1
+        assert "error_code=V22_ACQUISITION_PREPARATION_INVALID" in caplog.text
+        assert str(h.args["job_id"])[-8:] in caplog.text
+        assert str(h.args["job_id"]) not in caplog.text
+        assert "The confirmed discovery changed." not in caplog.text
+    finally: await h.close()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("error",[
+    TransientJobError("PROVIDER_UNAVAILABLE", "private phone +15551234567"),
+    RuntimeError("private email owner@example.invalid"),
+    DeterministicJobError("bad code owner@example.invalid", "private payload"),
+])
+async def test_preparation_logs_never_include_exception_payloads(monkeypatch, caplog, error):
+    h=Harness(monkeypatch)
+    h.collector.collect_sources.side_effect=error
+    try:
+        if isinstance(error, DeterministicJobError):
+            await h.run()
+        else:
+            with pytest.raises(Retry): await h.run()
+            assert h.failed is None
+        assert "private" not in caplog.text and "owner@example.invalid" not in caplog.text
+        assert "+15551234567" not in caplog.text
+        if isinstance(error, TransientJobError): assert "PROVIDER_UNAVAILABLE" in caplog.text
+        if type(error) is RuntimeError:
+            assert "UNEXPECTED_ERROR" in caplog.text
+    finally: await h.close()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("boundary",["lost_lease", "committed_freeze", "revision_rejected"])
+async def test_deterministic_failure_cannot_refund_after_lease_or_handoff_uncertainty(monkeypatch, boundary):
+    h=Harness(monkeypatch)
+    async def fail(**kwargs):
+        if boundary=="lost_lease": h.pulse_ok=False
+        if boundary=="committed_freeze": h.frozen=True
+        if boundary=="revision_rejected": h.reject_failure=True
+        raise DeterministicJobError("SOURCE_INVALID", "Cannot use this source.")
+    h.collector.collect_sources.side_effect=fail
+    try:
+        with pytest.raises(Retry): await h.run()
+        assert h.failed is None
+        h.submit.assert_not_awaited()
+        if boundary!="revision_rejected":
+            assert not any(name=="apply_analysis_job_event" for name,_ in h.calls)
+    finally: await h.close()
 
 
 @pytest.mark.anyio

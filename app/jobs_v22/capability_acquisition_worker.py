@@ -5,6 +5,7 @@ acknowledgement is recovered by claim's ready outcome, never by recollection.
 """
 import asyncio
 import logging
+import re
 from copy import copy
 from time import monotonic
 from uuid import UUID, uuid4
@@ -18,11 +19,57 @@ from app.jobs_v22.capability_acquisition_preparation import (
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
-from app.jobs_v22.errors import JobLeaseLost
+from app.jobs_v22.errors import DurableJobError, JobLeaseLost
 from app.jobs_v22.models import utc_now
 from app.report_v22.models import StrictModel
 
 logger = logging.getLogger(__name__)
+
+
+def _log_preparation_error(exc, job_id_value):
+    # Never interpolate exception text, user_message, request or provider data.
+    code = exc.error_code if isinstance(exc, DurableJobError) else "UNEXPECTED_ERROR"
+    if not re.fullmatch(r"[A-Z0-9_]{1,120}", code):
+        code = "INVALID_ERROR_CODE"
+    try:
+        suffix = str(UUID(str(job_id_value)))[-8:]
+    except ValueError:
+        suffix = "invalid"
+    logger.warning("acquisition preparation error_code=%s job_id_suffix=%s", code, suffix)
+
+
+async def _fail_preparation(rpc, receipt, attempt_count, error, pulse, ledger):
+    """Use the existing revision-fenced job event and its transactional refund.
+
+    Called only after the operation and heartbeat have stopped. Read the SQL
+    revision BEFORE renewing our preparation lease: that heartbeat increments
+    it once. The failure event advances it once more. A takeover, freeze or
+    terminal update in between fences this event out; never invent a revision
+    or switch to the formal (manifest-bound) failure RPC before freezing.
+    """
+    status = await rpc.post("get_v22_acquisition_status", dict(
+        p_user_id=str(receipt.user_id), p_job_id=str(receipt.job_id)))
+    if (not isinstance(status, dict) or status.get("job_id") != str(receipt.job_id)
+            or status.get("run_generation") != receipt.run_generation
+            or status.get("status") not in {"queued", "running"}
+            or type(status.get("revision")) is not int or status["revision"] < 1
+            or type(status.get("progress")) is not int or not 0 <= status["progress"] <= 100):
+        raise Retry(defer=30)
+    # Reject a lost lease or a possibly committed freeze instead of refunding a
+    # task that may already have entered formal execution.
+    await pulse()
+    now = utc_now().isoformat()
+    rows = await rpc.post("apply_analysis_job_event", dict(
+        p_job_id=str(receipt.job_id), p_case_id=str(receipt.case_id),
+        p_revision=status["revision"] + 2, p_status="failed", p_current_stage="failed",
+        p_progress=status["progress"], p_attempt_count=attempt_count,
+        p_error_code=error.error_code, p_user_message=error.user_message,
+        p_cost_counters=(await ledger.snapshot()).root, p_heartbeat_at=now,
+        p_completed_at=now, p_run_generation=receipt.run_generation,
+        p_deadline_at=receipt.deadline_at.isoformat()))
+    if (not isinstance(rows, list) or len(rows) != 1 or rows[0].get("found") is not True
+            or rows[0].get("applied") is not True or rows[0].get("terminal_effects_applied") is not True):
+        raise Retry(defer=30)
 
 
 class ClaimedPreparation(StrictModel):
@@ -105,7 +152,7 @@ async def prepare_v22_acquisition(ctx, job_id_value: str, run_generation: int):
     except (Retry, asyncio.CancelledError):
         raise
     except Exception as exc:
-        logger.warning("acquisition preparation deferred error=%s", type(exc).__name__)
+        _log_preparation_error(exc, job_id_value)
         raise Retry(defer=30) from None
 
 
@@ -115,7 +162,7 @@ async def prepare_v22_first_service(ctx, job_id_value: str, run_generation: int)
     except (Retry, asyncio.CancelledError):
         raise
     except Exception as exc:
-        logger.warning("first-service preparation deferred error=%s", type(exc).__name__)
+        _log_preparation_error(exc, job_id_value)
         raise Retry(defer=30) from None
 
 
@@ -230,10 +277,16 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
     except asyncio.CancelledError:
         raise
     except Exception as exc:
-        # Unknown freeze/handoff outcome is resolved by the next SQL claim.
-        # Original deadline reconciliation, not this exception, owns refunds.
-        logger.warning("acquisition handoff deferred job_id_suffix=%s error=%s",
-            str(job_id)[-8:], type(exc).__name__)
+        _log_preparation_error(exc, job_id)
+        if kind == "acquisition" and isinstance(exc, DurableJobError) and not exc.retryable and not isinstance(exc, JobLeaseLost):
+            stop.set()
+            for task in (operation, heartbeat_task, lost_task):
+                task.cancel()
+            await asyncio.gather(operation, heartbeat_task, lost_task, return_exceptions=True)
+            await record_attempt()
+            return await _fail_preparation(rpc, receipt, claim.attempt_count, exc, pulse, ledger)
+        # Unknown freeze/handoff outcomes and lease loss still require SQL
+        # recovery, never a speculative refund. Transient failures retry.
         raise Retry(defer=30) from None
     finally:
         stop.set()
