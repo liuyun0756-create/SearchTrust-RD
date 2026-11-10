@@ -6,7 +6,7 @@ import pytest
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.models import EvidenceItem, Finding, LayerAssessment, REQUIRED_LAYER_KEYS
-from app.report_v22.public_rule_catalog import HOURS, RULES
+from app.report_v22.public_rule_catalog import HOURS, OBSERVED, RULES
 from scripts.export_v22_findings_fixtures import build_resources, sync_resources, INPUT_DIR, OUTPUT_DIR, FRONTEND_DIR
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,8 +24,8 @@ def test_generated_samples_have_independent_semantic_expectations():
     artifacts = build_resources(ROOT)
     triggered = json.loads(artifacts["triggered.json"])
     assert len(triggered["findings"]) == 7
-    # Hours are opt-in v11; these frozen samples use the legacy path.
-    assert {item["rule_id"] for item in triggered["findings"]} == set(RULES) - {HOURS}
+    # Hours and position facts are opt-in; these frozen samples use the legacy path.
+    assert {item["rule_id"] for item in triggered["findings"]} == set(RULES) - {HOURS, OBSERVED}
     clear = json.loads(artifacts["clear.json"])
     assert clear["findings"] == [] and clear["evidence_index"]
     gaps = json.loads(artifacts["gaps.json"])

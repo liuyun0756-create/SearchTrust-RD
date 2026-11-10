@@ -139,7 +139,7 @@ def test_pool_integrity(case):
 
 
 @pytest.mark.parametrize('name', SITE_IDS)
-def test_v11_v12_six_site_observations_and_client_order_are_identical(monkeypatch, name):
+def test_v11_v12_existing_observations_and_client_order_remain_identical_except_position_facts(monkeypatch, name):
     from scripts.eval_gold import generate,read_json,ROOT
     from test_p0_08_gold import deny_network
     deny_network(monkeypatch)
@@ -147,7 +147,15 @@ def test_v11_v12_six_site_observations_and_client_order_are_identical(monkeypatc
     require_private_gold_inputs(p.parent, ROOT.parent/'.release-private/2026-10-29')
     old,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v11')
     new,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v12')
-    assert old.findings==new.findings and old.evidence==new.evidence and old.contact_checks==new.contact_checks
+    from app.report_v22.public_rule_catalog import OBSERVED
+    observations = [f for f in new.findings if f.rule_id == OBSERVED]
+    assert old.findings == [f for f in new.findings if f.rule_id != OBSERVED]
+    assert old.contact_checks == new.contact_checks
+    evidence = {e.id: e for e in new.evidence}
+    assert all(evidence[e.id] == e for e in old.evidence)
+    extras = evidence.keys() - {e.id for e in old.evidence}
+    assert extras <= {key for f in observations for key in f.evidence_ids}
+    assert all(f.kind == "fact" and f.status == "confirmed" and "local_pack" not in f.target for f in observations)
     eligible=lambda a:any(f.status=='confirmed' and f.confidence!='low' for f in old.findings if f.id in a.finding_ids)
     assert [a.id for a in new.actions]==[a.id for a in old.actions if eligible(a)]
     assert {a.id for a in new.action_candidates}=={e.input.action_id for e in old.prioritization.candidates}

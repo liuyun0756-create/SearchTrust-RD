@@ -30,7 +30,7 @@ from app.report_v22.public_action_catalog import (
     RULE_ACTIONS,
     ActionTemplate,
 )
-from app.report_v22.public_rule_catalog import ASSET, HOURS, GBP_RULES, RULESET_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION, IDENTITY_GBP_ALIGNMENT_RULE_VERSION
+from app.report_v22.public_rule_catalog import ASSET, HOURS, OBSERVED, RULE_VERSION, GBP_RULES, RULESET_VERSION, TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION, IDENTITY_GBP_ALIGNMENT_RULE_VERSION
 
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -158,6 +158,10 @@ def _validated_references(
             or not set(finding.affected_queries) <= referenced_queries
         ):
             raise PublicActionError("REFERENCE_INVALID")
+        if finding.rule_id == OBSERVED:
+            if finding.rule_version != RULE_VERSION or finding.classification != "fact":
+                raise PublicActionError("UNSUPPORTED_FINDING")
+            continue  # A saved position is information, never an action candidate.
         binding = RULE_ACTIONS.get(finding.rule_id)
         text_alignment = finding.rule_id in GBP_RULES and finding.rule_version in {TEXT_PATTERN_GBP_ALIGNMENT_RULE_VERSION, NAME_QUALITY_GBP_ALIGNMENT_RULE_VERSION, IDENTITY_GBP_ALIGNMENT_RULE_VERSION}
         if binding is None or (binding.rule_version != finding.rule_version and not text_alignment):
@@ -298,6 +302,8 @@ def _build_candidates(
     groups: dict[str, _Candidate] = {}
     for key in sorted(findings):
         finding, evaluation = findings[key], evaluations[key]
+        if finding.rule_id == OBSERVED:
+            continue
         binding = RULE_ACTIONS[finding.rule_id]
         template = ACTION_TEMPLATES[binding.template_key]
         group_key = _group_key(finding, evaluation)

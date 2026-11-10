@@ -14,7 +14,8 @@ from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.models import same_target_market_identity
 from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, IDENTITY_RULESET, annotate_findings
-from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
+from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, OBSERVED, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
+from app.report_v22.public_presentation import POSITION_RULESETS, finish_presentation, zero_action_summary
 
 LEGACY_RULESET = "v22_capability_public_v1"
 PRIORITY_RULESET = "v22_capability_public_v2"
@@ -26,6 +27,7 @@ RENDERED_RULESET = "v22_capability_public_v7"
 _ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _BOUNDARY = "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
 _COPY = {
+    OBSERVED: ("This records a position in the saved sample only.", "No cause or business effect is established by this observation."),
     HOURS: ("The published hours on the two channels differ. Please check both channels.", "These public statements do not establish actual operating hours."),
     HTTP: ("Check the saved response before changing the page.", "An unintended HTTP error can prevent a visitor reaching the intended page."),
     NOINDEX: ("Confirm indexing intent before changing the directive.", "An unintended noindex directive can conflict with the intended search availability; actual indexing is not established here."),
@@ -152,10 +154,12 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
         resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
         sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET}
         opening_hours = manifest.ruleset_version in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET}
+        positions = manifest.ruleset_version in POSITION_RULESETS
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
                     rendered_pages=manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"}, resource_limits=True,
                     **({"sampling_quality": True} if sampling_quality else {}),
                     **({"opening_hours": True} if opening_hours else {}),
+                    **({"observed_positions": True} if positions else {}),
                     **({"identity_v2": True} if manifest.ruleset_version == IDENTITY_RULESET else {}))
                   if resource_limits else build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
                   if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3"})
@@ -234,6 +238,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                     evidence_ids=first["evidence_ids"])]))
         lead = by_id[skeletons[0].finding_ids[0]] if skeletons else findings[0]
         summary = (f"{lead['observed_fact']} {lead['judgment']}" if actions else
+            zero_action_summary(findings, evidence) if positions else
             f"No action is proposed from the available public evidence for {manifest.business.site_url}. {findings[0]['observed_fact']}")
         limits = [_BOUNDARY]
         if resource_limits:
@@ -286,6 +291,7 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
         if manifest.ruleset_version in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             apply_priority(raw, manifest)
+        finish_presentation(raw, manifest)
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))
         if len(canonical_json_bytes(report)) > 2_000_000:
             raise CapabilityPublicError()

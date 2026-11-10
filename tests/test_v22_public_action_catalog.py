@@ -1,11 +1,12 @@
 import re
 
 from app.report_v22.public_action_catalog import ACTION_TEMPLATES, RULE_ACTIONS
-from app.report_v22.public_rule_catalog import GBP_RULES, RULES
+from app.report_v22.public_rule_catalog import GBP_RULES, OBSERVED, RULES
 
 
-def test_catalog_covers_every_current_public_finding_rule() -> None:
-    assert set(RULE_ACTIONS) == {*RULES, *GBP_RULES}
+def test_catalog_covers_every_actionable_public_rule_and_excludes_position_facts() -> None:
+    assert set(RULE_ACTIONS) == {*RULES, *GBP_RULES} - {OBSERVED}
+    assert OBSERVED not in RULE_ACTIONS and RULES[OBSERVED].classification == "fact"
     assert {binding.template_key for binding in RULE_ACTIONS.values()} <= set(ACTION_TEMPLATES)
 
 

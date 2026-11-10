@@ -45,12 +45,13 @@ COVERAGE_SOURCES = ("site", "gbp", "serp", "competitor", "citation", "gsc", "ga4
 
 
 def rule_kinds():
-    from app.report_v22.public_rule_catalog import RULES, GBP_RULE_SPECS
+    from app.report_v22.public_rule_catalog import RULES, GBP_RULE_SPECS, OBSERVED
     from app.report_v22 import first_party_gsc_findings as gsc, first_party_ga4_findings as ga4, first_party_gbp_findings as gbp
     from app.report_v22.cross_source_findings import RULE_ORDER
     result = {key: "inference" if spec.classification != "fact" else "fact"
               for key, spec in {**RULES, **GBP_RULE_SPECS}.items()}
     result.update({key: "fact" for key in (
+        OBSERVED,
         "v22_capability.public_assessment", "v22_capability.service_source_check", "v22_capability.service_title_review",
         gsc.QUERY_OPPORTUNITY, gsc.PAGE_OPPORTUNITY, gsc.DIMENSION_DECLINE, gsc.DIMENSION_GROWTH,
         ga4.ENGAGEMENT_GAP, ga4.CONVERSION_GAP, ga4.PAGE_CHANGE,

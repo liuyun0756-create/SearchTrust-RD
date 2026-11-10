@@ -15,7 +15,7 @@ from app.report_v22.findings_models import PublicFindingsInput, PublicFindingsRe
 from app.report_v22.findings_rollup import build_rollups
 from app.report_v22.findings_view import EvidenceView
 from app.report_v22.models import REQUIRED_LAYER_KEYS
-from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, GBP_ALIGNMENT_RULE_VERSION, GBP_RULES, HTTP, NOINDEX, TITLE, RULES, RULE_VERSION
+from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, OBSERVED, GBP_ALIGNMENT_RULE_VERSION, GBP_RULES, HTTP, NOINDEX, TITLE, RULES, RULE_VERSION
 from app.report_v22.site_business_facts import build_site_business_facts
 from app.report_v22.site_business_errors import SiteBusinessError
 from app.report_v22.site_business_models import SiteBusinessFactsInput
@@ -84,19 +84,19 @@ def _validate_outcome(view, outcome, alignment=None, *, reviewed_evidence=False)
         return
     for key in finding.evidence_ids:
         item = view.items[key]
-        expected = "serp" if rule in {DOMAIN, AHEAD} else "site"
+        expected = "serp" if rule in {DOMAIN, AHEAD, OBSERVED} else "site"
         if item.source_type != expected or item.snapshot_id != evaluation.target.snapshot_id:
             raise FindingsError("REFERENCE_INVALID")
         trace = view.traces[key]
         if rule in {HTTP, NOINDEX, TITLE} and item.source_locator.url not in evaluation.target.urls:
             raise FindingsError("REFERENCE_INVALID")
-        if rule in {DOMAIN, AHEAD}:
+        if rule in {DOMAIN, AHEAD, OBSERVED}:
             _validate_market_context(item, trace, evaluation.target)
-            if rule == AHEAD and trace.selector.field != "status" and host(item.source_locator.url) != host(view.context.site_url):
+            if rule in {AHEAD, OBSERVED} and trace.selector.field != "status" and host(item.source_locator.url) != host(view.context.site_url):
                 raise FindingsError("REFERENCE_INVALID")
         elif rule == ASSET:
             _validate_count(item, trace, evaluation.target, comparator=False)
-    if rule in {HTTP, NOINDEX, TITLE, DOMAIN} and finding.comparator_ids:
+    if rule in {HTTP, NOINDEX, TITLE, DOMAIN, OBSERVED} and finding.comparator_ids:
         raise FindingsError("REFERENCE_INVALID")
     owners = set()
     known = {host(c.website_url): c.competitor_id for c in view.context.competitors}
@@ -196,7 +196,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False, identity_v2=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False, identity_v2=False, observed_positions=False) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -300,7 +300,9 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
         retained_bytes = len(canonical_json_bytes(evidence))
         if retained_bytes > request.limits.max_bytes:
             raise FindingsError("LIMIT_EXCEEDED")
-        for proposed in chain(site_findings.evaluate(view, **({"sampling_quality": True} if sampling_quality else {})), market, competitor_findings.evaluate(view), gbp, hours_outcomes):
+        from app.report_v22 import market_observations
+        observations = market_observations.evaluate(view) if observed_positions else ()
+        for proposed in chain(site_findings.evaluate(view, **({"sampling_quality": True} if sampling_quality else {})), market, competitor_findings.evaluate(view), gbp, hours_outcomes, observations):
             outcome = RuleOutcome.model_validate(proposed.model_dump(mode="python"))
             _validate_outcome(view, outcome, alignment, reviewed_evidence=reviewed_evidence)
             if outcome.finding:
