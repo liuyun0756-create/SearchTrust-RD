@@ -28,7 +28,7 @@ from app.collectors.serp_market_requests import SerpPlannedCall, SerpSearchPlan
 from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import request_digest
 
-SERP_MARKET_PARSER_VERSION = "serp_market_v2"
+SERP_MARKET_PARSER_VERSION = "serp_market_v3"
 
 
 @dataclass(frozen=True)
@@ -142,6 +142,17 @@ def sanitize_serp_payload(payload: dict[str, Any], engine: str) -> dict[str, Any
             for key, limit in string_limits.items():
                 if key in item and (value := _bounded_text(item.get(key), limit)) is not None:
                     clean[key] = value
+            if engine == "google" and section == "local_results":
+                links = item.get("links")
+                if isinstance(links, dict):
+                    safe_links = {
+                        key: text
+                        for key in ("website", "link")
+                        if isinstance(value := links.get(key), str)
+                        and (text := _bounded_text(value, 2083)) is not None
+                    }
+                    if safe_links:
+                        clean["links"] = safe_links
             for key in ("position", "rating", "reviews", "reviews_count"):
                 value = item.get(key)
                 if isinstance(value, int) and not isinstance(value, bool) and abs(value) <= 10**12:
@@ -175,6 +186,16 @@ def _safe_url(value: Any) -> tuple[str | None, str | None]:
         return None, None
     host = parsed.hostname.casefold().removeprefix("www.")
     return text, host if len(host) <= 253 else None
+
+
+def _local_pack_url(item: dict[str, Any]) -> tuple[str | None, str | None]:
+    links = item.get("links")
+    links = links if isinstance(links, dict) else {}
+    for value in (item.get("website"), links.get("website"), item.get("link"), links.get("link")):
+        url, domain = _safe_url(value)
+        if url is not None and domain is not None:
+            return url, domain
+    return None, None
 
 
 def _number(value: Any, *, minimum: float, maximum: float) -> float | None:
@@ -285,12 +306,17 @@ def _normalize_results(
             provider_position = _integer(item.get("position"), minimum=1, maximum=10_000)
             position = provider_position or response_index
             rank_source = "provider_position" if provider_position is not None else "response_order"
-            url_value = item.get("website") if result_type != "organic" else item.get("link")
-            if not url_value:
-                url_value = item.get("link")
-            url, domain = _safe_url(url_value)
-            if url is not None and domain is None:
-                url = None
+            if result_type == "local_pack":
+                url, domain = _local_pack_url(item)
+            else:
+                url_value = item.get("website") if result_type != "organic" else item.get("link")
+                if not url_value:
+                    url_value = item.get("link")
+                url, domain = _safe_url(url_value)
+                if url is not None and domain is None:
+                    url = None
+            if result_type == "local_pack" and url is None:
+                limitations.append("SERP_LOCAL_PACK_RESULT_SKIPPED")
             place_id = _bounded_text(item.get("place_id"), 500)
             data_id = _bounded_text(item.get("data_id"), 500)
             identity = {

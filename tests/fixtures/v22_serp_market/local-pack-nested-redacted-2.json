@@ -1,0 +1,41 @@
+{
+  "search_metadata": {
+    "id": "redacted-nova-archive-2",
+    "status": "Success"
+  },
+  "local_results": {
+    "places": [
+      {
+        "position": 1
+      },
+      {
+        "position": 2,
+        "title": "Redacted business 2-2"
+      },
+      {
+        "position": 3,
+        "title": "Redacted business 2-3",
+        "links": {
+          "website": "https://archive-2-business-3.example/service/",
+          "directions": "https://maps.example/directions"
+        }
+      },
+      {
+        "position": 4,
+        "title": "Redacted business 2-4",
+        "links": {
+          "website": "https://archive-2-business-4.example/service/",
+          "directions": "https://maps.example/directions"
+        }
+      },
+      {
+        "position": 5,
+        "title": "Redacted business 2-5",
+        "links": {
+          "website": "https://archive-2-business-5.example/service/",
+          "directions": "https://maps.example/directions"
+        }
+      }
+    ]
+  }
+}
