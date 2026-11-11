@@ -1,5 +1,6 @@
 """Observation-only facts and wording must not change earlier judgments."""
 from collections import Counter
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -14,7 +15,8 @@ from app.report_v22.capability_finding_status import rule_kinds
 from app.report_v22.capability_public import _COPY, build_public_capability_report
 from app.report_v22.findings import build_public_findings
 from app.report_v22.public_action_catalog import RULE_ACTIONS
-from app.report_v22.public_presentation import COMPARISON_GROUP, DOMAIN_GROUP, group_limits
+from app.report_v22.public_presentation import (COMPARISON_GROUP, DOMAIN_GROUP,
+    NEUTRAL_ZERO_ACTION_SUMMARY, finish_presentation, group_limits, zero_action_summary)
 from app.report_v22.public_rule_catalog import OBSERVED, RULES
 from test_v22_capability_public import inputs
 from test_p0_04_render_fallback import versioned_report_fixture
@@ -142,3 +144,113 @@ def test_summary_reads_position_evidence_instead_of_repeating_technical_prose():
         'This sample did not identify a supported change to propose. '
         'Observed Maps positions: Plumbing Services Fresno: 2. '
         'Unverified checks and sample limits are listed below.')
+
+
+@pytest.mark.parametrize('position', [None, True, '2', 2.0])
+def test_summary_without_verified_integer_position_is_neutral_and_observable(position, caplog):
+    findings = [dict(rule_id=OBSERVED, target='Private query · maps · 1,2 · en · mobile',
+        observed_fact='Observed at position 999 (rank_source=provider_position).',
+        evidence_ids=['url', 'status', 'position'])]
+    evidence = [dict(id='url', field_path='/results/0/url', value='https://private.test/'),
+        dict(id='status', field_path='/call/status', value='succeeded'),
+        dict(id='position', field_path='/results/0/position', value=position)]
+    before = canonical_json_bytes([findings, evidence])
+    assert zero_action_summary(findings, evidence) == NEUTRAL_ZERO_ACTION_SUMMARY
+    assert canonical_json_bytes([findings, evidence]) == before
+    record, = caplog.records
+    assert record.event == 'zero_action_summary_degraded'
+    assert record.summary_level == 'neutral_without_positions'
+    assert record.skipped_position_findings == 1
+    assert record.getMessage() == 'ZERO_ACTION_SUMMARY_DEGRADED'
+    assert 'Private query' not in caplog.text and 'private.test' not in caplog.text
+
+
+def test_summary_skips_only_unavailable_positions_and_keeps_target_order(caplog):
+    findings = [dict(rule_id=OBSERVED, target=f'{query} · maps · 1,2 · en · mobile',
+        observed_fact='Do not parse position 999.', evidence_ids=[key])
+        for query, key in [('Z query', 'z'), ('Missing query', 'missing'), ('A query', 'a')]]
+    evidence = [dict(id=key, field_path='/results/0/position', value=value)
+        for key, value in [('z', 3), ('a', 2)]]
+    assert zero_action_summary(findings, evidence) == (
+        'This sample did not identify a supported change to propose. '
+        'Observed Maps positions: A query: 2; Z query: 3. '
+        'Unverified checks and sample limits are listed below.')
+    assert caplog.records[0].summary_level == 'partial_positions'
+
+
+@pytest.mark.parametrize('version', [12, 13])
+def test_trimmed_position_evidence_cannot_veto_report_or_mutate_findings(version, caplog):
+    from app.report_v22.resource_limits import select_evidence
+    with patch('test_v22_capability_public.market', return_value=market([('example.test', 2, 'provider_position')])):
+        if version == 12:
+            manifest, value = inputs([{'title': 'Plumbing'}], ruleset='v22_capability_public_v12')
+        else:
+            from test_p1_05_identity import bound
+            from app.report_v22.identity_input import prepare_identity_input
+            manifest, value = bound()
+            manifest, value, _, _ = prepare_identity_input(manifest, value)
+    baseline = build_public_capability_report(manifest, value)
+    by_id = {e.id: e for e in baseline.evidence}
+    observation_ids = [set(f.evidence_ids) for f in baseline.findings if f.rule_id == OBSERVED]
+    before_input = (canonical_json_bytes(manifest), canonical_json_bytes(value))
+    captured = []
+
+    def trim(ids, source_kind, limit=20):
+        if set(ids) in observation_ids:
+            ids = [key for key in ids if any(path.endswith(('/url', '/status'))
+                for path in by_id[key].field_path.splitlines())]
+            assert ids
+        return select_evidence(ids, source_kind, limit)
+
+    def capture(raw, manifest):
+        captured.append(deepcopy(raw))
+        finish_presentation(raw, manifest)
+
+    with patch('app.report_v22.resource_limits.select_evidence', side_effect=trim), \
+            patch('app.report_v22.capability_public.finish_presentation', side_effect=capture):
+        report = build_public_capability_report(manifest, value)
+    assert report.summary == NEUTRAL_ZERO_ACTION_SUMMARY
+    assert report.actions == [] and report.action_state == 'insufficient_basis'
+    assert {f.id for f in report.findings} == {f.id for f in baseline.findings}
+    expected, = captured
+    assert canonical_json_bytes(report.model_dump(mode='json')['evidence']) == canonical_json_bytes(expected['evidence'])
+    assert {f.id: f.model_dump(mode='json') for f in report.findings} == {
+        f['id']: f for f in expected['findings']}
+    assert report.limitations == baseline.limitations
+    assert (canonical_json_bytes(manifest), canonical_json_bytes(value)) == before_input
+    record, = caplog.records  # Exactly one final-summary marker, no double computation.
+    assert record.skipped_position_findings == len(observation_ids)
+    assert record.summary_level == 'neutral_without_positions'
+
+
+@pytest.mark.parametrize('version', [12, 13])
+def test_semantic_card_order_is_severity_first_deterministic_and_not_action_priority(version):
+    from types import SimpleNamespace
+    findings = [dict(id=id, rule_id=rule, severity=severity, kind='fact', status=status,
+        target=f'{id} · maps · 1,2 · en · mobile', evidence_ids=['position'])
+        for id, rule, severity, status in [
+            ('fn-a', 'v22_public.market_site_domain_unobserved', 'low', 'not_detected'),
+            ('fn-b', 'other', 'low', 'not_checked'),
+            ('fn-c', 'confirmed', 'low', 'confirmed'),
+            ('fn-z', OBSERVED, 'low', 'confirmed'),
+            ('fn-high', 'unchecked', 'high', 'not_checked'),
+            ('fn-y', OBSERVED, 'low', 'confirmed')]]
+    raw = dict(findings=findings, evidence=[dict(id='position', value=2, field_path='/position')],
+        actions=[], action_candidates=[{'id': 'unchanged'}], prioritization={'action_order': []},
+        limitations=['Existing limitation.'])
+    expected_summary = zero_action_summary(raw['findings'], raw['evidence'])
+    before = deepcopy(raw)
+    first, second = deepcopy(raw), deepcopy(raw)
+    manifest = SimpleNamespace(ruleset_version=f'v22_capability_public_v{version}')
+    finish_presentation(first, manifest)
+    finish_presentation(second, manifest)
+    assert [f['id'] for f in first['findings']] == ['fn-high', 'fn-y', 'fn-z', 'fn-c', 'fn-a', 'fn-b']
+    assert canonical_json_bytes(first) == canonical_json_bytes(second)
+    assert first['summary'] == expected_summary
+    assert {f['id']: f for f in first['findings']} == {f['id']: f for f in before['findings']}
+    for key in ['evidence', 'actions', 'action_candidates', 'prioritization', 'limitations']:
+        assert first[key] == before[key]
+    for version in range(1, 12):
+        historical_raw = deepcopy(before)
+        finish_presentation(historical_raw, SimpleNamespace(ruleset_version=f'v22_capability_public_v{version}'))
+        assert canonical_json_bytes(historical_raw) == canonical_json_bytes(before)

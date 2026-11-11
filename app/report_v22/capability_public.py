@@ -15,7 +15,7 @@ from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.models import same_target_market_identity
 from app.report_v22.capability_finding_status import PUBLIC_RULESET as LABELLED_RULESET, LABELLED_RULESETS, PUBLIC_LABELLED_RULESETS, RESOURCE_RULESETS, SAMPLING_RULESET, HOURS_RULESET, IDENTITY_RULESET, annotate_findings
 from app.report_v22.public_rule_catalog import AHEAD, ASSET, DOMAIN, OBSERVED, HOURS, GBP_RULES, HTTP, NOINDEX, TITLE
-from app.report_v22.public_presentation import POSITION_RULESETS, finish_presentation, zero_action_summary
+from app.report_v22.public_presentation import POSITION_RULESETS, NEUTRAL_ZERO_ACTION_SUMMARY, finish_presentation
 
 LEGACY_RULESET = "v22_capability_public_v1"
 PRIORITY_RULESET = "v22_capability_public_v2"
@@ -238,7 +238,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                     evidence_ids=first["evidence_ids"])]))
         lead = by_id[skeletons[0].finding_ids[0]] if skeletons else findings[0]
         summary = (f"{lead['observed_fact']} {lead['judgment']}" if actions else
-            zero_action_summary(findings, evidence) if positions else
+            NEUTRAL_ZERO_ACTION_SUMMARY if positions else
             f"No action is proposed from the available public evidence for {manifest.business.site_url}. {findings[0]['observed_fact']}")
         limits = [_BOUNDARY]
         if resource_limits:

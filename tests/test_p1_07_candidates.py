@@ -149,7 +149,9 @@ def test_v11_v12_existing_observations_and_client_order_remain_identical_except_
     new,*_=generate(read_json(p),p.parent,ROOT.parent/'.release-private/2026-10-29',ruleset='v22_capability_public_v12')
     from app.report_v22.public_rule_catalog import OBSERVED
     observations = [f for f in new.findings if f.rule_id == OBSERVED]
-    assert old.findings == [f for f in new.findings if f.rule_id != OBSERVED]
+    # v12 uses semantic card ordering; every existing finding must remain exact.
+    assert sorted(old.findings, key=lambda f: f.id) == sorted(
+        (f for f in new.findings if f.rule_id != OBSERVED), key=lambda f: f.id)
     assert old.contact_checks == new.contact_checks
     evidence = {e.id: e for e in new.evidence}
     assert all(evidence[e.id] == e for e in old.evidence)
