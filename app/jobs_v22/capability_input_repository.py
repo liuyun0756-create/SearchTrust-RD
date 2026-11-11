@@ -40,7 +40,7 @@ def require_frozen_capability_input(value, *, run_generation):
 class SupabaseCapabilityInputRepository:
     def __init__(self, *, url: str, service_role_key: str, http_client: httpx.AsyncClient):
         self.rpc = VerifiedRpcClient(url=url, service_role_key=service_role_key, http_client=http_client,
-            max_response_bytes=25_000_000, prefix="V22_CAPABILITY_INPUT", invalid_retryable=True, total_timeout_seconds=60)
+            max_response_bytes=25_000_000, prefix="V22_CAPABILITY_INPUT", invalid_retryable=True, total_timeout_seconds=180)
 
     async def prepare(self, *, manifest, request, run_generation: int, previous_report=None):
         try:

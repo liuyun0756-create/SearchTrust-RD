@@ -112,7 +112,10 @@ class VerifiedRpcClient:
         self.total_timeout_seconds = (
             TOTAL_TIMEOUT_SECONDS if total_timeout_seconds is None else total_timeout_seconds
         )
-        if self.total_timeout_seconds <= 0 or self.total_timeout_seconds > 60:
+        # Only the capability-input boundary may opt into the longer freeze budget.
+        # Other RPC clients keep their existing defaults and 60-second ceiling.
+        max_timeout_seconds = 180 if prefix == "V22_CAPABILITY_INPUT" else 60
+        if self.total_timeout_seconds <= 0 or self.total_timeout_seconds > max_timeout_seconds:
             raise DeterministicJobError(prefix + "_NOT_CONFIGURED",
                 "Verified report storage is not configured.")
 
