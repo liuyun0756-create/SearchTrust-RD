@@ -99,7 +99,9 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
             "source": "explicit_confirmation", "confirmation_ref": confirmation})})
     updated = value.model_copy(update={"schema_version": "public_findings_input_v2", "business_identity": updated_identity})
     raw = deepcopy(base.input_manifest.model_dump(mode="json"))
-    raw.update(schema_version="v22_analysis_input_v3", ruleset_version="v22_capability_public_v13",
+    keyword = base.input_manifest.ruleset_version == "v22_capability_public_v14"
+    raw.update(schema_version="v22_analysis_input_v4" if keyword else "v22_analysis_input_v3",
+        ruleset_version="v22_capability_public_v14" if keyword else "v22_capability_public_v13",
         id=str(uuid5(request_id, "manifest")), job_id=str(uuid5(request_id, "report")),
         identity_version_id=str(uuid5(request_id, "identity")), identity_checksum=request_digest(updated_identity),
         target_market=value.evidence_input.context.target_market.model_dump(mode="json"),

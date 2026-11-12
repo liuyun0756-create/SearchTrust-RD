@@ -149,12 +149,12 @@ def apply_priority(raw, manifest):
     candidates = raw["actions"]
     trace = prioritize([candidate_input(a) for a in candidates], raw["findings"],
         manifest.business.model_dump(mode="json"), manifest.input_checksum,
-        rules_version="v22_business_priority_v3" if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13"} else "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else VERSION)
+        rules_version="v22_business_priority_v3" if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14"} else "v22_business_priority_v2" if manifest.ruleset_version.endswith(("_v3", "_v4", "_v5", "_v6", "_v7", "_v8", "_v9", "_v10", "_v11")) else VERSION)
     by_id = {a["id"]: a for a in candidates}
-    if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13"}:
+    if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14"}:
         raw["action_candidates"] = [by_id[key] for key in trace["candidate_order"]]
     raw["actions"] = [by_id[key] for key in trace["action_order"]]
-    if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13"}:
+    if manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14"}:
         raw["action_state"] = "actions_supported" if raw["actions"] else "insufficient_basis"
     raw["prioritization"] = trace
     raw["limitations"] = list(dict.fromkeys([*raw["limitations"], LIMIT]))

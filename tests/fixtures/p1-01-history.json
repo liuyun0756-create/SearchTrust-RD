@@ -1,0 +1,53 @@
+{
+  "source_commit": "41c4e51a3ddc2425c16c2b8ffbddddc925028591",
+  "reports": [
+    {
+      "version": 12,
+      "sample": "zero",
+      "sha256": "c2689fe1c4db4698ffd4984edbbb100671d736becc1ad763215f020a926e53ed",
+      "bytes": 18672
+    },
+    {
+      "version": 12,
+      "sample": "http",
+      "sha256": "ef8606b22196bae4418fb35f5c44aa7631ce8be3f8086b08eb98f9021f91ca76",
+      "bytes": 24544
+    },
+    {
+      "version": 12,
+      "sample": "title",
+      "sha256": "81a2e66515a84503732622fa0514ab70b7344bc9b01d6662b50b56f6400724dc",
+      "bytes": 28662
+    },
+    {
+      "version": 12,
+      "sample": "gap",
+      "sha256": "feed89b34af6228d919e4689eb3e004038450d554c68ce8717c7bcebcbd77c77",
+      "bytes": 57447
+    },
+    {
+      "version": 13,
+      "sample": "storefront",
+      "sha256": "11a10fd35e27ca427c67fa124851316b0ad5747492e4cba40892be228222dfb9",
+      "bytes": 24638
+    },
+    {
+      "version": 13,
+      "sample": "hybrid",
+      "sha256": "f50502dfae01d932ae9dc8b3499e97f027d0c1dfc6d66a9ad14be7309c412a5c",
+      "bytes": 24636
+    },
+    {
+      "version": 13,
+      "sample": "service_area",
+      "sha256": "ecf59b3862e63048b662454f490ab4365cb6eefdb22fc4201ecba2474e21cf78",
+      "bytes": 25883
+    },
+    {
+      "version": 13,
+      "sample": "meeting_point",
+      "sha256": "42479880752ffb0d54b0bd97fe8922b52dbd061d47b0f9b55690b74b5f2ca2e9",
+      "bytes": 25883
+    }
+  ]
+}

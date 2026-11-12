@@ -115,6 +115,25 @@
           "title": "Job Id",
           "type": "string"
         },
+        "keyword_queries": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 5,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keyword Queries"
+        },
         "mode": {
           "enum": [
             "acquisition",
@@ -146,7 +165,8 @@
           "enum": [
             "v22_analysis_input_v1",
             "v22_analysis_input_v2",
-            "v22_analysis_input_v3"
+            "v22_analysis_input_v3",
+            "v22_analysis_input_v4"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -873,6 +893,32 @@
       "additionalProperties": false,
       "allOf": [
         {
+          "else": {
+            "not": {
+              "required": [
+                "keyword_visibility"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.9"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "keyword_visibility": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "keyword_visibility"
+            ]
+          }
+        },
+        {
           "if": {
             "properties": {
               "schema_version": {
@@ -936,6 +982,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.9"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v14"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -951,7 +1018,8 @@
               "schema_version": {
                 "enum": [
                   "2.2.7",
-                  "2.2.8"
+                  "2.2.8",
+                  "2.2.9"
                 ]
               }
             }
@@ -995,7 +1063,8 @@
                 "enum": [
                   "2.2.6",
                   "2.2.7",
-                  "2.2.8"
+                  "2.2.8",
+                  "2.2.9"
                 ]
               }
             }
@@ -1055,7 +1124,8 @@
               "2.2.5",
               "2.2.6",
               "2.2.7",
-              "2.2.8"
+              "2.2.8",
+              "2.2.9"
             ]
           }
         },
@@ -1153,6 +1223,17 @@
         "input_manifest": {
           "$ref": "#/$defs/AnalysisInputManifest"
         },
+        "keyword_visibility": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordVisibility"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "limitations": {
           "items": {
             "maxLength": 2000,
@@ -1191,7 +1272,8 @@
             "2.2.5",
             "2.2.6",
             "2.2.7",
-            "2.2.8"
+            "2.2.8",
+            "2.2.9"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1263,7 +1345,8 @@
                     "v22_capability_public_v10",
                     "v22_capability_public_v11",
                     "v22_capability_public_v12",
-                    "v22_capability_public_v13"
+                    "v22_capability_public_v13",
+                    "v22_capability_public_v14"
                   ]
                 }
               },
@@ -1897,6 +1980,331 @@
         "checksum"
       ],
       "title": "ImplementationReference",
+      "type": "object"
+    },
+    "KeywordAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "enum": [
+            "strong",
+            "medium",
+            "weak",
+            "not_assessed"
+          ],
+          "title": "Assessment",
+          "type": "string"
+        },
+        "checked_keywords": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Checked Keywords",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "inference",
+          "default": "inference",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed_keywords": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Observed Keywords",
+          "type": "integer"
+        },
+        "ratio": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ratio"
+        },
+        "total_keywords": {
+          "maximum": 5,
+          "minimum": 3,
+          "title": "Total Keywords",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "assessment",
+        "checked_keywords",
+        "observed_keywords",
+        "total_keywords"
+      ],
+      "title": "KeywordAssessment",
+      "type": "object"
+    },
+    "KeywordPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "checked_count": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Checked Count",
+          "type": "integer"
+        },
+        "evidence_paths": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Evidence Paths",
+          "type": "array"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "rank_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "provider_position",
+                "response_order"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rank Source"
+        },
+        "reason": {
+          "enum": [
+            "observed",
+            "first_page_absent",
+            "source_unavailable",
+            "request_failed",
+            "section_unavailable",
+            "parse_incomplete",
+            "identity_unresolved",
+            "rank_basis_mismatch",
+            "sample_not_local"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "record_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Record Ids",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "not_detected",
+            "not_checked"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "checked_count",
+        "record_ids",
+        "evidence_paths"
+      ],
+      "title": "KeywordPosition",
+      "type": "object"
+    },
+    "KeywordRow": {
+      "additionalProperties": false,
+      "properties": {
+        "local_pack": {
+          "$ref": "#/$defs/KeywordPosition"
+        },
+        "maps": {
+          "$ref": "#/$defs/KeywordPosition"
+        },
+        "organic": {
+          "$ref": "#/$defs/KeywordPosition"
+        },
+        "query": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query",
+        "local_pack",
+        "organic",
+        "maps"
+      ],
+      "title": "KeywordRow",
+      "type": "object"
+    },
+    "KeywordSample": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "enum": [
+            "mobile",
+            "desktop"
+          ],
+          "title": "Device",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "maximum": 90.0,
+              "minimum": -90.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "maximum": 180.0,
+              "minimum": -180.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Longitude"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed At"
+        },
+        "payload_checksum": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Payload Checksum"
+        },
+        "selected_branch_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Branch Ref"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Snapshot Id"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "payload_checksum",
+        "observed_at",
+        "latitude",
+        "longitude",
+        "language",
+        "device",
+        "selected_branch_ref"
+      ],
+      "title": "KeywordSample",
+      "type": "object"
+    },
+    "KeywordVisibility": {
+      "additionalProperties": false,
+      "properties": {
+        "local_pack": {
+          "$ref": "#/$defs/KeywordAssessment"
+        },
+        "organic": {
+          "$ref": "#/$defs/KeywordAssessment"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/KeywordRow"
+          },
+          "maxItems": 5,
+          "minItems": 3,
+          "title": "Rows",
+          "type": "array"
+        },
+        "sample": {
+          "$ref": "#/$defs/KeywordSample"
+        },
+        "schema_version": {
+          "const": "keyword_visibility_v1",
+          "default": "keyword_visibility_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "window": {
+          "const": "first_page",
+          "default": "first_page",
+          "title": "Window",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rows",
+        "local_pack",
+        "organic",
+        "sample"
+      ],
+      "title": "KeywordVisibility",
       "type": "object"
     },
     "LocationConfirmation": {
@@ -2956,6 +3364,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.13 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.14 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9, delivery v1/v2/v3)",
   "type": "object"
 }

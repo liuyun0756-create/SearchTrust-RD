@@ -4,7 +4,7 @@ import logging
 from app.report_v22.public_rule_catalog import OBSERVED
 
 logger = logging.getLogger(__name__)
-POSITION_RULESETS = frozenset({"v22_capability_public_v12", "v22_capability_public_v13"})
+POSITION_RULESETS = frozenset({"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14"})
 NEUTRAL_ZERO_ACTION_SUMMARY = ("This sample did not identify a supported change to propose. "
     "Unverified checks and sample limits are listed below.")
 _SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}

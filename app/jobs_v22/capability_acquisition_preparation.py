@@ -91,7 +91,8 @@ class CapabilityAcquisitionPreparer:
     The existing collector is reused via collect_sources, never execute: this
     phase must not generate, persist or charge for a legacy report first.
     """
-    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None):
+    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None, target_keywords_enabled=False):
+        self.target_keywords_enabled = target_keywords_enabled
         self.repository = repository
         self.collector = collector
         self.render_stage = render_stage
@@ -128,6 +129,9 @@ class CapabilityAcquisitionPreparer:
         manifest, value = build_acquisition_input(user_id=user_id, job_id=job_id, business=receipt.business,
             request=envelope.analyze_request, collected=collected, created_at=receipt.created_at,
             deadline_at=receipt.deadline_at, now=self.clock(), rendered=rendered)
+        if self.target_keywords_enabled:
+            from app.report_v22.keyword_visibility import prepare_keyword_input
+            manifest, value = prepare_keyword_input(manifest, value)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)

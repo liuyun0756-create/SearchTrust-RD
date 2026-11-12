@@ -776,6 +776,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                 site_stage=CheckpointedCompetitorSiteStage(build_site_inventory_stage(settings, resource_limits=True, sampling_quality=True)),
                 profile_stage=prospect_executor.competitor_stage.profile_stage)
             ctx["capability_acquisition_preparer"] = CapabilityAcquisitionPreparer(
+                target_keywords_enabled=settings.V22_TARGET_KEYWORDS_ENABLED,
                 repository=capability_executor.resolver, collector=acquisition_collector,
                 render_stage=build_site_render_stage(settings),
                 discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))
