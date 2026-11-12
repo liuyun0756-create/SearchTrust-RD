@@ -118,6 +118,8 @@ class CapabilityAcquisitionPreparer:
             request=envelope.analyze_request, now=self.clock())
         if link != envelope.competitor_discovery:
             raise DeterministicJobError("V22_ACQUISITION_PREPARATION_INVALID", "The confirmed discovery changed.")
+        if envelope.target_keywords is not None and not self.target_keywords_enabled:
+            raise DeterministicJobError("TARGET_KEYWORDS_UNAVAILABLE", "Target keyword generation is unavailable for this saved workflow.")
         collected = await self.collector.collect_sources(job_id=job_id, request=envelope,
             submitted_at=receipt.created_at, checkpoints=checkpoints, cost_ledger=cost_ledger)
         rendered = None
@@ -129,9 +131,11 @@ class CapabilityAcquisitionPreparer:
         manifest, value = build_acquisition_input(user_id=user_id, job_id=job_id, business=receipt.business,
             request=envelope.analyze_request, collected=collected, created_at=receipt.created_at,
             deadline_at=receipt.deadline_at, now=self.clock(), rendered=rendered)
-        if self.target_keywords_enabled:
+        if self.target_keywords_enabled and envelope.target_keywords is not None:
+            if value.evidence_input.context.queries != envelope.target_keywords.queries:
+                raise DeterministicJobError("TARGET_KEYWORDS_DISCOVERY_CONFLICT", "The saved search sample does not match the confirmed keywords.")
             from app.report_v22.keyword_visibility import prepare_keyword_input
-            manifest, value = prepare_keyword_input(manifest, value)
+            manifest, value = prepare_keyword_input(manifest, value, confirmed_queries=envelope.target_keywords.queries)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)

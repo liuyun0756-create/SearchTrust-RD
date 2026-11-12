@@ -139,11 +139,16 @@ def test_ineligible_sources_never_receive_a_new_timestamp_or_manifest(mutation):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("keywords_enabled", [False, True])
-async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_and_small_dispatch(keywords_enabled):
+@pytest.mark.parametrize("keywords_enabled,confirmed_keywords", [(False,False),(True,True),(True,False)],ids=["off","confirmed-v3","running-legacy-v2"])
+async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_and_small_dispatch(keywords_enabled,confirmed_keywords):
     args, envelope, receipt = inputs()
     manifest, value = build_acquisition_input(**args)
-    if keywords_enabled:
+    if confirmed_keywords:
+        from app.jobs_v22.target_keywords import TargetKeywordBinding
+        from app.jobs_v22.digest import verified_request_digest
+        envelope=envelope.model_copy(update={"schema_version":"v22_analysis_request_envelope_v2","target_keywords":TargetKeywordBinding(queries=envelope.analyze_request.queries,
+            queries_digest=verified_request_digest(envelope.analyze_request.queries),planning_revision=1)})
+        receipt={**receipt,"request_checksum":verified_request_digest(envelope.model_dump(mode="json"))}
         from app.report_v22.keyword_visibility import prepare_keyword_input
         manifest, value = prepare_keyword_input(manifest, value)
     dispatch = dispatch_for(args,manifest)

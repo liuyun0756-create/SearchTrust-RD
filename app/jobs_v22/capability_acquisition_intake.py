@@ -20,10 +20,12 @@ class IntakeReceipt(StrictModel):
 
 async def submit_acquisition(
     *, repository, verifier, queue, user_id, job_id, workflow_id,
-    discovery_id, idempotency_key, previous_job_id, request, now, planning_revision=None,
+    discovery_id, idempotency_key, previous_job_id, request, now, planning_revision=None, target_keywords=None,
 ):
     if request.report_type != "prospect" or (planning_revision is not None and (type(planning_revision) is not int or not 0 <= planning_revision <= 2147483647)):
         raise DeterministicJobError("CAPABILITY_INTAKE_INVALID", "Only confirmed acquisition work can start here.")
+    if target_keywords is not None and target_keywords.queries != request.queries:
+        raise DeterministicJobError("TARGET_KEYWORDS_DISCOVERY_CONFLICT", "Target keywords changed. Start a new workflow; no collection has been started.")
     identity = dict(
         p_user_id=str(user_id), p_case_id=str(request.case_id),
         p_workflow_id=str(workflow_id), p_job_id=str(job_id),
@@ -37,8 +39,9 @@ async def submit_acquisition(
         if link.discovery_id != discovery_id:
             raise repository.rpc.invalid()
         envelope = AnalysisRequestEnvelope(
-            schema_version="v22_analysis_request_envelope_v1",
+            schema_version="v22_analysis_request_envelope_v2" if target_keywords is not None else "v22_analysis_request_envelope_v1",
             analyze_request=request, competitor_discovery=link,
+            **({"target_keywords":target_keywords} if target_keywords is not None else {}),
         )
         canonical = verified_canonical_json_bytes(envelope.model_dump(mode="json"))
         if len(canonical) > 150_000:
@@ -48,7 +51,8 @@ async def submit_acquisition(
             **({"p_planning_revision": planning_revision} if planning_revision is not None else {})})
     try:
         receipt = IntakeReceipt.model_validate_json(canonical_json_bytes(raw))
-        if (receipt.request.analyze_request != request
+        if (receipt.request.target_keywords != target_keywords
+                or receipt.request.analyze_request != request
                 or receipt.request.competitor_discovery.discovery_id != discovery_id
                 or receipt.status not in {"queued", "running", "succeeded", "failed"}):
             raise ValueError()

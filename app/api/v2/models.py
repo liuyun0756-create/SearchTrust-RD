@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, HttpUrl, model_validator
+from pydantic import model_serializer, AwareDatetime, Field, HttpUrl, model_validator
 
 from app.report_v22.contract_version import ContractVersion
 from app.competitors_v22.limits import COMPETITOR_MAX_COUNT, COMPETITOR_MIN_COUNT
@@ -119,7 +119,28 @@ class DataGap(StrictModel):
     resolution: str = Field(min_length=1)
 
 
+class KeywordSuggestion(StrictModel):
+    text: str = Field(min_length=1,max_length=300)
+    source: Literal['matched_gbp_category','site_title','site_h1']
+    ref: str = Field(min_length=1,max_length=300)
+    profile_url: str | None = None
+
+
+class KeywordSuggestions(StrictModel):
+    schema_version: Literal['v22_keyword_suggestions_v1'] = 'v22_keyword_suggestions_v1'
+    items: list[KeywordSuggestion] = Field(max_length=30)
+
+
 class PreflightResponse(StrictModel):
+    target_keyword_suggestions: KeywordSuggestions | None = None
+
+    @model_serializer(mode='wrap')
+    def preserve_disabled_response(self,handler):
+        value=handler(self)
+        if self.target_keyword_suggestions is None:
+            value.pop('target_keyword_suggestions',None)
+        return value
+
     preflight_id: UUID
     normalized_site_url: HttpUrl
     identity_candidates: list[BusinessIdentityCandidate] = Field(default_factory=list)

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_serializer, model_validator
 
 from app.api.v2.competitor_models import CompetitorDiscoveryRequest
 from app.api.v2.models import AnalyzeRequest
@@ -17,6 +17,7 @@ from app.competitors_v22.normalization import canonical_competitor_url
 from app.competitors_v22.store import CompetitorDiscoveryStore
 from app.jobs_v22.errors import DeterministicJobError
 from app.report_v22.models import StrictModel
+from app.jobs_v22.target_keywords import TargetKeywordBinding
 
 
 class AnalysisDiscoveryLink(StrictModel):
@@ -27,9 +28,27 @@ class AnalysisDiscoveryLink(StrictModel):
 
 
 class AnalysisRequestEnvelope(StrictModel):
-    schema_version: Literal["v22_analysis_request_envelope_v1"]
+    schema_version: Literal["v22_analysis_request_envelope_v1", "v22_analysis_request_envelope_v2"]
     analyze_request: AnalyzeRequest
     competitor_discovery: AnalysisDiscoveryLink
+    target_keywords: TargetKeywordBinding | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_old_envelope(self, handler):
+        result = handler(self)
+        if self.target_keywords is None:
+            result.pop("target_keywords", None)
+        return result
+
+    @model_validator(mode="after")
+    def same_confirmed_words(self):
+        if self.schema_version=="v22_analysis_request_envelope_v1" and "target_keywords" in self.model_fields_set:
+            raise ValueError("TARGET_KEYWORDS_ENVELOPE_VERSION_INVALID")
+        if (self.schema_version=="v22_analysis_request_envelope_v2") != (self.target_keywords is not None):
+            raise ValueError("TARGET_KEYWORDS_ENVELOPE_VERSION_INVALID")
+        if self.target_keywords is not None and self.target_keywords.queries != self.analyze_request.queries:
+            raise ValueError("TARGET_KEYWORDS_DISCOVERY_CONFLICT")
+        return self
 
 
 class DiscoverySelectionError(DeterministicJobError):

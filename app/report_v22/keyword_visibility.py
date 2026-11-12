@@ -99,16 +99,19 @@ class KeywordVisibility(StrictModel):
         return self
 
 
-def prepare_keyword_input(manifest, request):
+def prepare_keyword_input(manifest, request, *, confirmed_queries=None):
     """Derive a new V14 envelope; never alters the saved request or evidence."""
     from app.report_v22.capability import AnalysisInputManifest
     from app.report_v22.business_identity_v2 import BusinessIdentityV2
     from app.report_v22.identity_input import prepare_identity_input
     if not isinstance(request.business_identity, BusinessIdentityV2):
         manifest, request, _, _ = prepare_identity_input(manifest, request)
+    queries = request.evidence_input.context.queries if confirmed_queries is None else confirmed_queries
+    if queries != request.evidence_input.context.queries:
+        raise ValueError("TARGET_KEYWORDS_DISCOVERY_CONFLICT")
     raw = deepcopy(manifest.model_dump(mode="json"))
     raw.update(schema_version="v22_analysis_input_v4", ruleset_version=KEYWORD_RULESET,
-        keyword_queries=list(request.evidence_input.context.queries))
+        keyword_queries=list(queries))
     raw["input_checksum"] = verified_request_digest({k:v for k,v in raw.items() if k != "input_checksum"})
     return AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw)), request
 

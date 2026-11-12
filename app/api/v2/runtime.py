@@ -311,14 +311,26 @@ async def submit_capability_acquisition(
     runtime: Annotated[V22JobRuntime, Depends(get_v22_runtime)],
     previous_job_id: Annotated[UUID | None, Header(alias="X-SearchTrust-Previous-Job-ID")] = None,
     planning_revision: Annotated[int | None, Header(alias="X-SearchTrust-Planning-Revision", ge=0, le=2147483647)] = None,
+    keyword_revision: Annotated[int | None, Header(alias="X-SearchTrust-Keyword-Planning-Revision", ge=1, le=2147483647)] = None,
+    keyword_digest: Annotated[str | None, Header(alias="X-SearchTrust-Keyword-Digest", pattern=r"^sha256:[a-f0-9]{64}$")] = None,
 ):
+    from app.jobs_v22.target_keywords import TargetKeywordBinding
+    from app.core.config import settings
+    target_keywords = None
+    if keyword_revision is not None or keyword_digest is not None:
+        if not settings.V22_TARGET_KEYWORDS_ENABLED or keyword_revision is None or keyword_digest is None:
+            raise HTTPException(status_code=409, detail={"code":"TARGET_KEYWORDS_UNAVAILABLE", "message":"Target keyword setup is unavailable. Start a new Case check."})
+        try:
+            target_keywords = TargetKeywordBinding(queries=body.queries, queries_digest=keyword_digest, planning_revision=keyword_revision)
+        except ValueError:
+            raise HTTPException(status_code=409, detail={"code":"TARGET_KEYWORDS_DISCOVERY_CONFLICT", "message":"Target keywords changed. Start a new workflow; no collection has been started."}) from None
     if runtime.capability_repository is None or runtime.acquisition_queue is None or runtime.discovery_verifier is None:
         raise HTTPException(status_code=503,detail={"code":"CAPABILITY_INTAKE_UNAVAILABLE","message":"This workflow is not ready."})
     try:
         return await submit_acquisition(repository=runtime.capability_repository,verifier=runtime.discovery_verifier,
             queue=runtime.acquisition_queue,user_id=user_id,job_id=job_id,
             workflow_id=workflow_id,discovery_id=discovery_id,idempotency_key=idempotency_key,
-            previous_job_id=previous_job_id,request=body,now=datetime.now(timezone.utc),planning_revision=planning_revision)
+            previous_job_id=previous_job_id,request=body,now=datetime.now(timezone.utc),planning_revision=planning_revision,target_keywords=target_keywords)
     except DurableJobError as exc:
         raise HTTPException(status_code=503 if exc.retryable else 409,detail={"code":"CAPABILITY_INTAKE_UNAVAILABLE",
             "message":"This analysis could not be started or checked yet."}) from exc

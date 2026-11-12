@@ -78,7 +78,8 @@ class PreflightService:
                 domain_digest,
                 cached.preflight_id,
             )
-            return cached
+            return (cached if settings.V22_TARGET_KEYWORDS_ENABLED else
+                    cached.model_copy(update={'target_keyword_suggestions':None}))
 
         site_snapshot: HomepageSnapshot | None = None
         site_failure: _SiteFailure | None = None
@@ -119,7 +120,10 @@ class PreflightService:
             candidates=candidates,
             gbp_result=gbp_result,
         )
+        from app.preflight_v22.keyword_suggestions import saved_keyword_suggestions
         response = PreflightResponse(
+            target_keyword_suggestions=(saved_keyword_suggestions(site_snapshot.html if site_snapshot else '',signals,gbp_result,normalized_site_url)
+                if settings.V22_TARGET_KEYWORDS_ENABLED else None),
             preflight_id=uuid4(),
             normalized_site_url=normalized_site_url,
             identity_candidates=list(candidates.identities),

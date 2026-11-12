@@ -1924,6 +1924,75 @@
       "title": "JobError",
       "type": "object"
     },
+    "KeywordSuggestion": {
+      "additionalProperties": false,
+      "properties": {
+        "profile_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Url"
+        },
+        "ref": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "matched_gbp_category",
+            "site_title",
+            "site_h1"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source",
+        "ref"
+      ],
+      "title": "KeywordSuggestion",
+      "type": "object"
+    },
+    "KeywordSuggestions": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/KeywordSuggestion"
+          },
+          "maxItems": 30,
+          "title": "Items",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "v22_keyword_suggestions_v1",
+          "default": "v22_keyword_suggestions_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "KeywordSuggestions",
+      "type": "object"
+    },
     "LabelCount": {
       "additionalProperties": false,
       "properties": {
@@ -2374,6 +2443,17 @@
           },
           "title": "Service Candidates",
           "type": "array"
+        },
+        "target_keyword_suggestions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordSuggestions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

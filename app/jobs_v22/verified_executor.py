@@ -210,7 +210,7 @@ class V22ExecutorRouter:
                 parsed = CapabilityRequestEnvelope.model_validate_json(canonical_json_bytes(request))
             elif isinstance(request, dict):
                 schema = request.get("schema_version")
-                if schema == "v22_analysis_request_envelope_v1":
+                if schema in {"v22_analysis_request_envelope_v1", "v22_analysis_request_envelope_v2"}:
                     parsed = AnalysisRequestEnvelope.model_validate_json(
                         canonical_json_bytes(request)
                     )
@@ -232,7 +232,7 @@ class V22ExecutorRouter:
                 checkpoints=checkpoints,cost_ledger=cost_ledger)
         executor = (
             self.prospect_executor
-            if schema == "v22_analysis_request_envelope_v1"
+            if schema in {"v22_analysis_request_envelope_v1", "v22_analysis_request_envelope_v2"}
             else self.verified_executor
         )
         return await executor.execute(
