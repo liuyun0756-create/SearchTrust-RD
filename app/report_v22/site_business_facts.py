@@ -70,6 +70,7 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patt
             selected = {str(s.url): (index, s.deep_snapshot) for index, s in enumerate(source.payload.selected_pages)}
             exhausted = False
             limited_deep = {str(a.url) for a in source.payload.deep_attempts if a.error_code in {"response_too_large", "resource_limit"}}
+            limited_deep.update(str(p.url) for p in source.payload.selected_pages if "resource_limit" in p.selection_reasons)
             ordered_pages = source.payload.pages if resource_limits else sorted(source.payload.pages, key=lambda p: str(p.url))
             for page in ordered_pages:
                 position, deep = selected.get(str(page.url), (None, None))

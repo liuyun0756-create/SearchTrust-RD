@@ -7,6 +7,8 @@ from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from app.competitors_v22.selection import AnalysisRequestEnvelope
 from app.jobs_v22.capability_acquisition_input import build_acquisition_input
+from app.jobs_v22.acquisition_input_budget import bound_customer_html
+from app.jobs_v22.capability_input_repository import MAX_GENERATION_CANONICAL_BYTES
 from app.jobs_v22.capability_dispatch import CapabilityDispatch, authorize_dispatch
 from app.jobs_v22.cost_models import validate_cost_counters_snapshot
 from app.jobs_v22.digest import canonical_json_bytes, verified_canonical_json_bytes, verified_request_digest
@@ -122,20 +124,33 @@ class CapabilityAcquisitionPreparer:
             raise DeterministicJobError("TARGET_KEYWORDS_UNAVAILABLE", "Target keyword generation is unavailable for this saved workflow.")
         collected = await self.collector.collect_sources(job_id=job_id, request=envelope,
             submitted_at=receipt.created_at, checkpoints=checkpoints, cost_ledger=cost_ledger)
+        def build_input(sources, rendered=None):
+            manifest, value = build_acquisition_input(user_id=user_id, job_id=job_id, business=receipt.business,
+                request=envelope.analyze_request, collected=sources, created_at=receipt.created_at,
+                deadline_at=receipt.deadline_at, now=self.clock(), rendered=rendered)
+            if self.target_keywords_enabled and envelope.target_keywords is not None:
+                if value.evidence_input.context.queries != envelope.target_keywords.queries:
+                    raise DeterministicJobError("TARGET_KEYWORDS_DISCOVERY_CONFLICT", "The saved search sample does not match the confirmed keywords.")
+                from app.report_v22.keyword_visibility import prepare_keyword_input
+                manifest, value = prepare_keyword_input(manifest, value, confirmed_queries=envelope.target_keywords.queries)
+            return manifest, value
+
+        manifest, value = build_input(collected)
+        if len(verified_canonical_json_bytes(value.model_dump(mode="json"))) > MAX_GENERATION_CANONICAL_BYTES:
+            limited = bound_customer_html(collected, max_html_bytes=value.site_business_limits.max_html_bytes_total)
+            if limited is not collected:
+                collected = limited
+                manifest, value = build_input(collected)
+        # Rendering binds to the admitted static snapshot, so apply the budget
+        # before computing its checkpoint key or collecting/rendering any page.
         rendered = None
         if self.render_stage is not None:
             rendered = await self.render_stage.collect(job_id=job_id, business=receipt.business,
                 static=collected.site_inventory, gbp=collected.customer_public_gbp.snapshot,
                 country=envelope.analyze_request.target_market.country_code,
                 checkpoints=checkpoints, cost_ledger=cost_ledger)
-        manifest, value = build_acquisition_input(user_id=user_id, job_id=job_id, business=receipt.business,
-            request=envelope.analyze_request, collected=collected, created_at=receipt.created_at,
-            deadline_at=receipt.deadline_at, now=self.clock(), rendered=rendered)
-        if self.target_keywords_enabled and envelope.target_keywords is not None:
-            if value.evidence_input.context.queries != envelope.target_keywords.queries:
-                raise DeterministicJobError("TARGET_KEYWORDS_DISCOVERY_CONFLICT", "The saved search sample does not match the confirmed keywords.")
-            from app.report_v22.keyword_visibility import prepare_keyword_input
-            manifest, value = prepare_keyword_input(manifest, value, confirmed_queries=envelope.target_keywords.queries)
+        if rendered is not None:
+            manifest, value = build_input(collected, rendered)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)
