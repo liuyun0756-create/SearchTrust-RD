@@ -1,5 +1,7 @@
 """Bounded service-role prepare/resolve boundary for immutable worker inputs."""
 from dataclasses import dataclass
+import logging
+import traceback
 from uuid import UUID
 from weakref import WeakKeyDictionary
 
@@ -11,6 +13,28 @@ from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_c
 from app.jobs_v22.errors import DeterministicJobError
 from app.jobs_v22.verified_input_resolver import VerifiedRpcClient
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport
+
+
+logger = logging.getLogger(__name__)
+MAX_GENERATION_CANONICAL_BYTES = 20_000_000
+
+
+def _log_prepare_validation_error(exc, manifest):
+    """Keep exception values, payloads and traceback locals out of Worker logs."""
+    try:
+        job = manifest.get("job_id") if isinstance(manifest, dict) else manifest.job_id
+        suffix = str(UUID(str(job)))[-8:]
+    except (ValueError, TypeError, AttributeError):
+        suffix = "invalid"
+    location = "unknown"
+    for frame, line in traceback.walk_tb(exc.__traceback__):
+        module = frame.f_globals.get("__name__", "")
+        if isinstance(module, str) and module.startswith("app."):
+            location = f"{module}:{frame.f_code.co_name}:{line}"
+    fields = dict(exception_type=type(exc).__name__, exception_location=location,
+                  job_id_suffix=suffix, error_code="V22_CAPABILITY_INPUT_INVALID")
+    logger.warning("capability input preparation error_code=%s exception_type=%s exception_location=%s job_id_suffix=%s",
+                   fields["error_code"], fields["exception_type"], location, suffix, extra=fields)
 
 
 @dataclass(frozen=True, eq=False, slots=True, weakref_slot=True)
@@ -46,11 +70,12 @@ class SupabaseCapabilityInputRepository:
         try:
             bound, value, recipe = generation_recipe(manifest, request, previous_report)
             canonical = verified_canonical_json_bytes(value.model_dump(mode="json"))
-            if type(run_generation) is not int or run_generation < 1 or len(canonical)>20_000_000:
+            if type(run_generation) is not int or run_generation < 1 or len(canonical)>MAX_GENERATION_CANONICAL_BYTES:
                 raise ValueError("Invalid generation")
             public = value if bound.mode=="acquisition" else value.public_input
             sources = {s.kind: canonical_json_bytes(s.payload).decode() for s in public.evidence_input.sources}
-        except (ValueError, TypeError, AttributeError, OverflowError, RecursionError):
+        except (ValueError, TypeError, AttributeError, OverflowError, RecursionError) as exc:
+            _log_prepare_validation_error(exc, manifest)
             raise DeterministicJobError("V22_CAPABILITY_INPUT_INVALID", "The saved analysis sources could not be prepared.") from None
         rows = await self.rpc.post("prepare_v22_capability_analysis_input", dict(
             p_user_id=str(bound.user_id), p_case_id=str(bound.case_id), p_job_id=str(bound.job_id),
