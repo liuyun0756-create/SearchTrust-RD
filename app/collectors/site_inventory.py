@@ -42,6 +42,7 @@ from app.preflight_v22.urls import UrlSafetyError, UrlUnreachableError
 
 Clock = Callable[[], datetime]
 _HTML_TYPES = {"text/html", "application/xhtml+xml"}
+FEWER_PAGES_THAN_TARGET = "The website exposed fewer pages than the sampling target."
 
 
 class FirecrawlMapper(Protocol):
@@ -341,7 +342,7 @@ class SiteInventoryCollector:
                 "empty_inventory",
                 "No usable site pages were available for inventory collection.",
             )
-        if any(page.check_status != "checked" for page in records.values()):
+        if any(page.check_status != "checked" or (page.status_code or 500) >= 400 for page in records.values()):
             limitations.append("page_failures_present")
 
         pages = list(records.values())[:discovery_limit]
@@ -361,6 +362,7 @@ class SiteInventoryCollector:
             scope=scope,
             structural_responses=structural_responses,
             limit=deep_analysis_limit,
+            all_candidates_checked="page_failures_present" not in limitations,
         )
         limitations.extend(deep_limitations)
         if self.contact_coverage and not home_contact and not any(p.deep_analyzed and p.page_type == "contact" for p in selected_pages):
@@ -457,7 +459,7 @@ class SiteInventoryCollector:
                     continue
 
                 if chosen_url != str(record.url):
-                    record = InventoryPageRecord.model_validate(
+                    record = type(record).model_validate(
                         {**record.model_dump(mode="json"), "url": chosen_url}
                     )
                 if sources != record.discovery_sources or depth != record.crawl_depth:
@@ -562,6 +564,7 @@ class SiteInventoryCollector:
         scope: SiteScope,
         structural_responses: dict[str, SiteFetchResponse],
         limit: int,
+        all_candidates_checked: bool,
     ) -> tuple[list[SelectedPageRecord], list[DeepPageAttempt], list[str]]:
         outcomes: list[
             tuple[int, RankedPage, DeepPageSnapshot | None, InventoryErrorCode | None]
@@ -620,7 +623,7 @@ class SiteInventoryCollector:
         ]
         limitations: list[str] = []
         if len(successful) < limit:
-            limitations.append("candidate_exhausted")
+            limitations.append(FEWER_PAGES_THAN_TARGET if all_candidates_checked and not failed else "candidate_exhausted")
         if failed:
             limitations.append("deep_page_failures_present")
         return selected, attempts, limitations
