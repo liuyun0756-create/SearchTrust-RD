@@ -42,6 +42,7 @@ class Harness:
         self.revision = 1
         self.failed = None
         self.reject_failure = False
+        self.database_started_at = "2026-01-01T00:00:00Z"
         self.redis = fakeredis.aioredis.FakeRedis()
         self.client = httpx.AsyncClient(transport=httpx.MockTransport(self.respond))
         self.repo = SupabaseCapabilityInputRepository(url="https://storage.example",service_role_key="test-only",http_client=self.client)
@@ -73,6 +74,10 @@ class Harness:
         if name=="get_v22_acquisition_status":
             return httpx.Response(200,json=dict(job_id=str(self.args["job_id"]),run_generation=1,
                 status="running",revision=self.revision,progress=24))
+        if name=="inspect_v22_capability_preparation":
+            return httpx.Response(200,json=dict(job_id=str(self.args['job_id']),run_generation=1,
+                status='running',revision=self.revision,progress=24,lease_owned=self.pulse_ok,
+                manifest_exists=self.frozen,database_started_at=self.database_started_at))
         if name=="apply_analysis_job_event":
             assert body["p_revision"]==self.revision+1
             if not self.reject_failure:

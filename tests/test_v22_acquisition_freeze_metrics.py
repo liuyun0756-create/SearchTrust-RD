@@ -38,7 +38,7 @@ async def test_freeze_logs_exact_utf8_sizes_duration_and_versions_without_payloa
         p_lease_token=str(UUID(int=1)),p_cost_counters={"job_attempts":1},p_input=body))
     messages=[r.getMessage() for r in caplog.records if r.name==worker.__name__]
     assert len(messages)==2 and "started elapsed_ms=0" in messages[0] and "finished elapsed_ms=250" in messages[1]
-    expected_bytes=len(httpx.Request("POST","https://offline.example.invalid",json=body).content)
+    expected_bytes=len(httpx.Request("POST","https://offline.example.invalid",json=rpc.post.call_args.args[1]).content)
     for message in messages:
         assert f"input_bytes={expected_bytes}" in message
         assert "manifest_schema_version=v22_analysis_input_v3" in message and "job_id_suffix=56789abc" in message

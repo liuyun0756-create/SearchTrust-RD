@@ -20,18 +20,19 @@ from app.jobs_v22.capability_acquisition_preparation import (
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.cost_ledger import JobCostLedger
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
-from app.jobs_v22.errors import DurableJobError, JobLeaseLost
+from app.jobs_v22.errors import DurableJobError, JobLeaseLost, DeterministicJobError
+from app.jobs_v22.freeze_safety import DEFAULT_FREEZE_MAX_INPUT_BYTES, FreezeRecoveryGuard, freeze_json_bytes
 from app.jobs_v22.models import utc_now
 from app.report_v22.models import StrictModel
 
 logger = logging.getLogger(__name__)
 
 
-def _freeze_metrics(body):
+def _freeze_metrics(body, payload=None):
     """Measure HTTPX's JSON encoding without logging source keys or contents."""
     kinds = ("site", "serp", "competitor", "public_gbp", "rendered")
     try:
-        size = len(json.dumps(body, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8"))
+        size = len(freeze_json_bytes(body if payload is None else payload))
         sources = body.get("p_public_source_canonicals", {})
         sizes = tuple(len(sources[k].encode("utf-8")) if k in sources else 0 for k in kinds)
         schema = body.get("p_manifest", {}).get("schema_version")
@@ -62,7 +63,7 @@ def _log_preparation_error(exc, job_id_value):
     logger.warning("acquisition preparation error_code=%s job_id_suffix=%s", code, suffix)
 
 
-async def _fail_preparation(rpc, receipt, attempt_count, error, pulse, ledger):
+async def _fail_preparation(rpc, receipt, attempt_count, error, pulse, ledger, status_reader=None):
     """Use the existing revision-fenced job event and its transactional refund.
 
     Called only after the operation and heartbeat have stopped. Read the SQL
@@ -71,8 +72,8 @@ async def _fail_preparation(rpc, receipt, attempt_count, error, pulse, ledger):
     terminal update in between fences this event out; never invent a revision
     or switch to the formal (manifest-bound) failure RPC before freezing.
     """
-    status = await rpc.post("get_v22_acquisition_status", dict(
-        p_user_id=str(receipt.user_id), p_job_id=str(receipt.job_id)))
+    status = (await status_reader() if status_reader is not None else
+        await rpc.post("get_v22_acquisition_status", dict(p_user_id=str(receipt.user_id), p_job_id=str(receipt.job_id))))
     if (not isinstance(status, dict) or status.get("job_id") != str(receipt.job_id)
             or status.get("run_generation") != receipt.run_generation
             or status.get("status") not in {"queued", "running"}
@@ -153,29 +154,50 @@ class LeaseCheckpoints(JobCheckpoints):
 
 class LeasedPreparationRpc:
     """Wrap only the freeze call; all validation remains in the real repository."""
-    def __init__(self, rpc, *, token, before_freeze, kind="acquisition"):
+    def __init__(self, rpc, *, token, before_freeze, kind="acquisition",
+                 max_input_bytes=DEFAULT_FREEZE_MAX_INPUT_BYTES, cost_snapshot=None, recovery=None):
         self.rpc = rpc
         self.token = token
         self.before_freeze = before_freeze
         self.kind = kind
+        self.max_input_bytes = max_input_bytes
+        self.cost_snapshot = cost_snapshot
+        self.recovery = recovery
 
     def invalid(self):
         return self.rpc.invalid()
 
     async def post(self, name, body):
         if name == "prepare_v22_capability_analysis_input":
-            counters = await self.before_freeze()
+            counters = await (self.cost_snapshot() if self.cost_snapshot is not None else self.before_freeze())
             payload = dict(p_lease_token=str(self.token), p_cost_counters=counters, p_input=body)
-            if self.kind != "acquisition":
-                return await self.rpc.post(f"freeze_v22_{self.kind}_preparation", payload)
-            metrics = _freeze_metrics(body)
+            self.check_size(payload)
+            if self.recovery is not None:
+                await self.recovery.arm()
+            if self.cost_snapshot is not None:
+                counters = await self.before_freeze()
+                payload = dict(p_lease_token=str(self.token), p_cost_counters=counters, p_input=body)
+                self.check_size(payload)
+            metrics = _freeze_metrics(body, payload)
             _log_freeze("started", 0, metrics)
             started = monotonic()
             try:
-                return await self.rpc.post("freeze_v22_acquisition_preparation", payload)
+                return await self.rpc.post(f"freeze_v22_{self.kind}_preparation", payload)
+            except DurableJobError as exc:
+                if exc.retryable and self.recovery is not None:
+                    await self.recovery.reconcile_pending()
+                raise
             finally:
                 _log_freeze("finished", max(int((monotonic()-started)*1000), 0), metrics)
         return await self.rpc.post(name, body)
+
+    def check_size(self, payload):
+        size = len(freeze_json_bytes(payload))
+        if size > self.max_input_bytes:
+            logger.warning("acquisition freeze rejected error_code=V22_CAPABILITY_FREEZE_TOO_LARGE input_bytes=%d max_input_bytes=%d",
+                size, self.max_input_bytes)
+            raise DeterministicJobError("V22_CAPABILITY_FREEZE_TOO_LARGE",
+                "The saved sources are too large to prepare safely. Review the collection scope before starting again.")
 
 
 async def prepare_v22_acquisition(ctx, job_id_value: str, run_generation: int):
@@ -264,6 +286,10 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
         await record_attempt()
         return (await ledger.snapshot()).root
 
+    async def cost_snapshot():
+        await record_attempt()
+        return (await ledger.snapshot()).root
+
     async def heartbeat():
         while not stop.is_set():
             try:
@@ -280,7 +306,11 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
     # Persist the initialized budget before the first external operation.
     await pulse()
     repository = copy(preparer.repository)
-    repository.rpc = LeasedPreparationRpc(rpc, token=token, before_freeze=before_freeze, kind=kind)
+    recovery = FreezeRecoveryGuard(rpc=rpc, redis=ctx["redis"], prefix=prefix,
+        receipt=receipt, token=token, kind=kind, ttl_seconds=ctx["state_ttl_seconds"])
+    repository.rpc = LeasedPreparationRpc(rpc, token=token, before_freeze=before_freeze, kind=kind,
+        max_input_bytes=ctx.get("capability_freeze_max_input_bytes", DEFAULT_FREEZE_MAX_INPUT_BYTES),
+        cost_snapshot=cost_snapshot, recovery=recovery)
     owned = copy(preparer)
     owned.repository = repository
     async def report_stage(stage):
@@ -296,9 +326,13 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
         progress_reporter=report_stage if kind == "acquisition" else None)
     heartbeat_task = asyncio.create_task(heartbeat())
     lost_task = asyncio.create_task(lost.wait())
-    operation = asyncio.create_task(owned.prepare(user_id=receipt.user_id, job_id=job_id,
-        idempotency_key=receipt.idempotency_key, business_version_id=receipt.business.id,
-        request=claim.request, checkpoints=checkpoints, cost_ledger=ledger))
+    async def prepare_owned():
+        await recovery.reconcile_pending()
+        return await owned.prepare(user_id=receipt.user_id, job_id=job_id,
+            idempotency_key=receipt.idempotency_key, business_version_id=receipt.business.id,
+            request=claim.request, checkpoints=checkpoints, cost_ledger=ledger)
+
+    operation = asyncio.create_task(prepare_owned())
     try:
         remaining = max((receipt.deadline_at-utc_now()).total_seconds(), 0)
         done, _ = await asyncio.wait({operation, lost_task}, timeout=remaining, return_when=asyncio.FIRST_COMPLETED)
@@ -310,13 +344,16 @@ async def _prepare(ctx, job_id_value: str, run_generation: int, *, kind="acquisi
         raise
     except Exception as exc:
         _log_preparation_error(exc, job_id)
-        if kind == "acquisition" and isinstance(exc, DurableJobError) and not exc.retryable and not isinstance(exc, JobLeaseLost):
+        if (isinstance(exc, DurableJobError) and not exc.retryable and not isinstance(exc, JobLeaseLost)
+                and (kind == "acquisition" or exc.error_code in {
+                    "V22_CAPABILITY_FREEZE_TOO_LARGE", "V22_CAPABILITY_FREEZE_DATABASE_RESTARTED"})):
             stop.set()
             for task in (operation, heartbeat_task, lost_task):
                 task.cancel()
             await asyncio.gather(operation, heartbeat_task, lost_task, return_exceptions=True)
             await record_attempt()
-            return await _fail_preparation(rpc, receipt, claim.attempt_count, exc, pulse, ledger)
+            return await _fail_preparation(rpc, receipt, claim.attempt_count, exc, pulse, ledger,
+                status_reader=recovery.observe if kind == "first_service" else None)
         # Unknown freeze/handoff outcomes and lease loss still require SQL
         # recovery, never a speculative refund. Transient failures retry.
         raise Retry(defer=30) from None

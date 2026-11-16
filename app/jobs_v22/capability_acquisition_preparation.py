@@ -137,7 +137,8 @@ class CapabilityAcquisitionPreparer:
 
         manifest, value = build_input(collected)
         if len(verified_canonical_json_bytes(value.model_dump(mode="json"))) > MAX_GENERATION_CANONICAL_BYTES:
-            limited = bound_customer_html(collected, max_html_bytes=value.site_business_limits.max_html_bytes_total)
+            limited = bound_customer_html(collected, max_html_bytes=value.site_business_limits.max_html_bytes_total,
+                required_urls=receipt.business.target_pages)
             if limited is not collected:
                 collected = limited
                 manifest, value = build_input(collected)
