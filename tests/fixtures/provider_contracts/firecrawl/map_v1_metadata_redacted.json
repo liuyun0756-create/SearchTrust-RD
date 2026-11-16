@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "links": [
+    "https://fixture.example/page-0",
+    "https://fixture.example/page-1",
+    "https://fixture.example/page-2",
+    "https://fixture.example/page-3",
+    "https://fixture.example/page-4",
+    "https://fixture.example/page-5",
+    "https://fixture.example/page-6",
+    "https://fixture.example/page-7",
+    "https://fixture.example/page-8",
+    "https://fixture.example/page-9",
+    "https://fixture.example/page-10",
+    "https://fixture.example/page-11",
+    "https://fixture.example/page-12",
+    "https://fixture.example/page-13",
+    "https://fixture.example/page-14",
+    "https://fixture.example/page-15",
+    "https://fixture.example/page-16",
+    "https://fixture.example/page-17"
+  ],
+  "warnings": [
+    "/v1/map is deprecated. Use /v2/map instead."
+  ],
+  "replacement": "/v2/map"
+}

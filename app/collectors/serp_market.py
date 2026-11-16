@@ -28,7 +28,7 @@ from app.collectors.serp_market_requests import SerpPlannedCall, SerpSearchPlan
 from app.jobs_v22.collection_json import normalize_collection_json
 from app.jobs_v22.digest import request_digest
 
-SERP_MARKET_PARSER_VERSION = "serp_market_v3"
+SERP_MARKET_PARSER_VERSION = "serp_market_v4"
 
 
 @dataclass(frozen=True)
@@ -301,7 +301,13 @@ def _normalize_results(
                 continue
             display_name = _bounded_text(item.get("title") or item.get("name"), 240)
             if display_name is None:
-                limitations.append(f"SERP_{result_type.upper()}_RESULT_SKIPPED")
+                # Preserve an unnamed position-only observation without treating
+                # it as lost business data. Other malformed shapes stay skipped.
+                limitations.append(
+                    "SERP_LOCAL_PACK_UNNAMED_RESULT"
+                    if result_type == "local_pack" and set(item) == {"position"}
+                    else f"SERP_{result_type.upper()}_RESULT_SKIPPED"
+                )
                 continue
             provider_position = _integer(item.get("position"), minimum=1, maximum=10_000)
             position = provider_position or response_index
@@ -319,6 +325,14 @@ def _normalize_results(
                 limitations.append("SERP_LOCAL_PACK_RESULT_SKIPPED")
             place_id = _bounded_text(item.get("place_id"), 500)
             data_id = _bounded_text(item.get("data_id"), 500)
+            cid = _provider_cid(item, data_id)
+            if (result_type == "local_pack" and place_id is not None
+                    and place_id.isascii() and place_id.isdecimal()
+                    and (data_id is None or _provider_cid({}, data_id) == place_id)
+                    and (cid is None or cid == place_id)):
+                # Google Search may label a numeric CID as place_id. Its original
+                # field remains in the provider checkpoint, linked by checksum.
+                cid, place_id = place_id, None
             identity = {
                 "call_id": call.call_id,
                 "result_type": result_type,
@@ -346,7 +360,7 @@ def _normalize_results(
                     normalized_domain=domain,
                     provider_place_id=place_id,
                     provider_data_id=data_id,
-                    provider_cid=_provider_cid(item, data_id),
+                    provider_cid=cid,
                     address=_bounded_text(item.get("address"), 500),
                     phone=_bounded_text(item.get("phone"), 100),
                     categories=_categories(item),

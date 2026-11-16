@@ -32,7 +32,7 @@ async def test_firecrawl_map_fixture_matches_active_adapter_contract(provider_fi
         "https://fixture.example/services",
     )
     assert result.limitation is None
-    assert requests[0].url.path == "/v1/map"
+    assert requests[0].url.path == "/v2/map"
     assert json.loads(requests[0].content) == {"url": "https://fixture.example/", "limit": 10}
 
 
