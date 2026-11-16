@@ -39,7 +39,17 @@ class Sources:
 
 
 def v3(payload):
-    return SiteInventorySnapshotV3.model_validate_json(canonical_json_bytes({**payload.model_dump(mode='json'), 'schema_version':'site_inventory_snapshot_v3'}))
+    raw={**payload.model_dump(mode='json'), 'schema_version':'site_inventory_snapshot_v3'}
+    # two_pages clones homepage metadata onto /contact; give that synthetic
+    # contact page its actual type before testing explicit homepage protection.
+    for page in raw['pages']:
+        if page['url']!=raw['root_url'] and page['page_type']=='home':page['page_type']='contact'
+    for page in raw['selected_pages']:
+        if page['url']!=raw['root_url']:
+            if page['page_type']=='home':page['page_type']='contact'
+            if page['deep_snapshot'] and page['deep_snapshot']['page_type']=='home':page['deep_snapshot']['page_type']='contact'
+    raw['page_type_counts']=[{'label':k,'count':v} for k,v in sorted(Counter(p['page_type'] for p in raw['pages']).items())]
+    return SiteInventorySnapshotV3.model_validate_json(canonical_json_bytes(raw))
 
 
 def test_projection_keeps_original_fetch_history_and_marks_omitted_fields_unknown():
@@ -96,6 +106,8 @@ def test_retained_html_whitespace_and_checksum_are_not_normalized():
 def test_page_order_and_prefix_exhaustion_are_deterministic():
     site=v3(two_pages('<p>one</p>').source.payload)
     selected=site.selected_pages[0].model_copy(deep=True)
+    selected.page_type='about'
+    selected.selection_score=0
     url=HttpUrl('https://example.test/last')
     selected.url=selected.deep_snapshot.url=url
     site.pages.append(site.pages[0].model_copy(update={'url':url}))
@@ -111,7 +123,7 @@ def test_page_order_and_prefix_exhaustion_are_deterministic():
     assert kept=={str(site.pages[0].url)}  # Do not fit a later small page after exhaustion.
 
 
-def large_tour_inputs():
+def large_tour_inputs(service_pages=2):
     args,envelope,receipt=inputs()
     old=args['collected'];request=envelope.analyze_request.model_copy(deep=True)
     old_queries=request.queries[:]
@@ -135,7 +147,7 @@ def large_tour_inputs():
     pages=[];selected=[];attempts=[]
     for i in range(46):
         url=HttpUrl('https://example.test/'+(f'tours/{i}/' if i else ''))
-        kind='home' if i==0 else 'service_detail'
+        kind='home' if i==0 else 'service_detail' if i<=service_pages else 'blog_post'
         pages.append(template.pages[0].model_copy(update={'url':url,'final_url':url,'canonical_url':url,'page_type':kind}))
         deep=template.selected_pages[0].deep_snapshot.model_copy(update={'url':url,'final_url':url,'page_type':kind,'html':html,
             'text':'','response_bytes':len(html.encode()),'content_checksum':'sha256:'+hashlib.sha256(html.encode()).hexdigest()})
@@ -201,3 +213,29 @@ async def test_46_page_tour_operator_with_three_failed_firecrawl_maps_prepares_w
     assert hashlib.sha256(prepared['p_generation_canonical'].encode()).hexdigest()==prepared['p_manifest']['generation_input_checksum'][7:]
     for source in generated['evidence_input']['sources']:
         assert hashlib.sha256(prepared['p_public_source_canonicals'][source['kind']].encode()).hexdigest()==source['binding']['payload_checksum'][7:]
+
+
+def test_home_and_selected_service_content_are_kept_independent_of_inventory_order():
+    args,_,_=large_tour_inputs()
+    original=args['collected']; site=original.site_inventory
+    required={str(p.url):canonical_json_bytes(p.deep_snapshot) for p in site.selected_pages if p.page_type in {'home','service_detail'}}
+    site.pages=list(reversed(site.pages)); site.selected_pages=list(reversed(site.selected_pages))
+    limited=bound_customer_html(original,max_html_bytes=5_000_000).site_inventory
+    kept={str(p.url):canonical_json_bytes(p.deep_snapshot) for p in limited.selected_pages if p.deep_snapshot is not None}
+    assert required and all(kept[url]==content for url,content in required.items())
+    assert sum(len(p.deep_snapshot.html.encode()) for p in limited.selected_pages if p.deep_snapshot)<=5_000_000
+    with pytest.raises(DeterministicJobError,match='^V22_CAPABILITY_FREEZE_TOO_LARGE$'):
+        bound_customer_html(original,max_html_bytes=1)
+    assert all(p.deep_snapshot is not None for p in original.site_inventory.selected_pages)
+
+
+def test_explicit_selected_service_urls_are_protected_even_without_service_classification():
+    args,_,_=large_tour_inputs(service_pages=0)
+    original=args['collected'];target=original.site_inventory.selected_pages[-1]
+    before=canonical_json_bytes(target.deep_snapshot)
+    limited=bound_customer_html(original,max_html_bytes=3_100_000,required_urls=[str(target.url)]).site_inventory
+    retained={str(p.url):p for p in limited.selected_pages if p.deep_snapshot is not None}
+    assert str(target.url) in retained and str(original.site_inventory.root_url) in retained
+    assert canonical_json_bytes(retained[str(target.url)].deep_snapshot)==before
+    with pytest.raises(DeterministicJobError,match='^V22_CAPABILITY_FREEZE_TOO_LARGE$'):
+        bound_customer_html(original,max_html_bytes=1_600_000,required_urls=[str(target.url)])

@@ -92,6 +92,7 @@ class Settings(BaseSettings):
     V22_SUPABASE_URL: str = Field(default="")
     V22_SUPABASE_SERVICE_ROLE_KEY: SecretStr = Field(default="", repr=False)
     V22_RESULT_PERSISTENCE_TIMEOUT_SECONDS: Annotated[int, Field(ge=5, le=120)] = 30
+    V22_CAPABILITY_FREEZE_MAX_INPUT_BYTES: Annotated[int, Field(ge=1)] = 40_000_000
     V22_CALLBACK_CLOCK_SKEW_SECONDS: Annotated[int, Field(ge=30, le=900)] = 300
     V22_CALLBACK_TIMEOUT_SECONDS: Annotated[int, Field(ge=1, le=30)] = 5
     V22_JOB_MAX_ATTEMPTS: Annotated[int, Field(ge=1, le=10)] = 3

@@ -63,6 +63,10 @@ class Harness:
             return httpx.Response(200,json=self.receipt)
         if name=="heartbeat_v22_first_service_preparation":
             return httpx.Response(200,json=self.pulse_ok and not self.frozen)
+        if name=="inspect_v22_capability_preparation":
+            return httpx.Response(200,json=dict(job_id=str(self.args['job_id']),run_generation=1,
+                status='running',revision=1,progress=24,lease_owned=self.pulse_ok,
+                manifest_exists=self.frozen,database_started_at='2026-01-01T00:00:00Z'))
         if name=="freeze_v22_first_service_preparation":
             assert body["p_input"]["p_manifest"]==self.manifest.model_dump(mode="json")
             assert body["p_cost_counters"]["cost_ledger_revision"]>0

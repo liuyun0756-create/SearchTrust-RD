@@ -628,6 +628,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         job_timeout_seconds=settings.V22_JOB_TIMEOUT_SECONDS,
     )
     ctx["max_attempts"] = settings.V22_JOB_MAX_ATTEMPTS
+    ctx["capability_freeze_max_input_bytes"] = settings.V22_CAPABILITY_FREEZE_MAX_INPUT_BYTES
     ctx["heartbeat_seconds"] = settings.V22_JOB_HEARTBEAT_SECONDS
     ctx["lease_seconds"] = settings.V22_JOB_LEASE_SECONDS
     ctx["state_ttl_seconds"] = settings.V22_JOB_STATE_TTL_SECONDS
