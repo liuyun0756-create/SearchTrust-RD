@@ -1,0 +1,95 @@
+{
+  "success": true,
+  "links": [
+    {
+      "url": "https://fixture.example/page-0",
+      "title": "Page 0",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-1",
+      "title": "Page 1",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-2",
+      "title": "Page 2",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-3",
+      "title": "Page 3",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-4",
+      "title": "Page 4",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-5",
+      "title": "Page 5",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-6",
+      "title": "Page 6",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-7",
+      "title": "Page 7",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-8",
+      "title": "Page 8",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-9",
+      "title": "Page 9",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-10",
+      "title": "Page 10",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-11",
+      "title": "Page 11",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-12",
+      "title": "Page 12",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-13",
+      "title": "Page 13",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-14",
+      "title": "Page 14",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-15",
+      "title": "Page 15",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-16",
+      "title": "Page 16",
+      "description": "Redacted page description"
+    },
+    {
+      "url": "https://fixture.example/page-17",
+      "title": "Page 17",
+      "description": "Redacted page description"
+    }
+  ]
+}

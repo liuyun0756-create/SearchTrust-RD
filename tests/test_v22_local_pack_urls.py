@@ -52,7 +52,11 @@ async def test_real_redacted_nested_local_pack_urls_survive_sanitization(archive
             assert records[title].normalized_domain == url.split("/")[2]
             assert records[title].response_checksum == run.google_call.response_checksum
         assert len(records) == (3 if archive == 1 else 4)
-        assert "SERP_LOCAL_PACK_RESULT_SKIPPED" in run.limitations
+        if archive == 1:
+            assert "SERP_LOCAL_PACK_UNNAMED_RESULT" in run.limitations
+            assert "SERP_LOCAL_PACK_RESULT_SKIPPED" not in run.limitations
+        else:
+            assert "SERP_LOCAL_PACK_RESULT_SKIPPED" in run.limitations
         assert "SERP_LOCAL_PACK_SECTION_INVALID" not in run.limitations
 
 

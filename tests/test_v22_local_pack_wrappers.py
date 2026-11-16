@@ -64,7 +64,8 @@ async def test_real_frozen_partial_wrapper_is_not_invalid_and_does_not_invent_na
     for run in result.query_runs:
         assert not [r for r in run.results if r.result_type == 'local_pack']
         assert 'SERP_LOCAL_PACK_SECTION_INVALID' not in run.limitations
-        assert 'SERP_LOCAL_PACK_RESULT_SKIPPED' in run.limitations
+        assert 'SERP_LOCAL_PACK_UNNAMED_RESULT' in run.limitations
+        assert 'SERP_LOCAL_PACK_RESULT_SKIPPED' not in run.limitations
 
 
 @pytest.mark.anyio

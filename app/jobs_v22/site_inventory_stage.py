@@ -27,6 +27,7 @@ from app.collectors.site_inventory_fetcher import (
 from app.collectors.site_inventory_firecrawl import (
     FirecrawlMapAdapter,
     FirecrawlMapResult,
+    firecrawl_job_context,
 )
 from app.collectors.site_inventory_models import GscPagePriority, SiteInventorySnapshot, SiteInventorySnapshotV2, SiteInventorySnapshotV3
 from app.collectors.site_inventory_selection import gsc_priorities_from_snapshots
@@ -249,7 +250,8 @@ class _CheckpointedFirecrawl:
             )
             started = monotonic()
             try:
-                result = await self.delegate.map(root_url, limit=limit)
+                with firecrawl_job_context(self.job_id):
+                    result = await self.delegate.map(root_url, limit=limit)
             except Exception:
                 if claim is not None:
                     await self.cost_ledger.complete(

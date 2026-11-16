@@ -42,7 +42,7 @@ async def test_new_save_uses_version_key_and_keeps_legacy_bytes_checksum_expiry_
         assert await store.get(input_digest=DIGEST,now=NOW) == old
         fresh = snapshot(business_records('New', 'new.example', 710)).model_copy(update={'job_id':uuid4()})
         current = await store.save(input_digest=DIGEST,snapshot=fresh,now=NOW)
-        assert SERP_MARKET_PARSER_VERSION == 'serp_market_v3' and SERP_MARKET_PARSER_VERSION in store.key(DIGEST)
+        assert SERP_MARKET_PARSER_VERSION == 'serp_market_v4' and SERP_MARKET_PARSER_VERSION in store.key(DIGEST)
         assert current.snapshot_id == uuid5(NAMESPACE_URL, f'searchtrust:v22:market:{DIGEST}:{request_digest(fresh)}')
         assert current.snapshot_id != old.snapshot_id
         assert await store.get(input_digest=DIGEST,now=NOW) == current
@@ -129,7 +129,8 @@ async def test_first_discovery_collects_despite_legacy_cache_then_reuses_current
 
 
 @pytest.mark.anyio
-async def test_v3_discovery_bypasses_v2_cache_and_preserves_pinned_v2_snapshot(monkeypatch):
+@pytest.mark.parametrize('previous_parser', ['serp_market_v2', 'serp_market_v3'])
+async def test_v4_discovery_bypasses_previous_cache_and_preserves_pinned_snapshot(monkeypatch, previous_parser):
     redis = fakeredis.aioredis.FakeRedis()
     store = SharedMarketSnapshotStore(redis, prefix='parser-test', ttl_seconds=86400)
     req = discovery_request()
@@ -138,14 +139,14 @@ async def test_v3_discovery_bypasses_v2_cache_and_preserves_pinned_v2_snapshot(m
     service = CompetitorDiscoveryService(market_stage=stage, market_store=store, clock=lambda: NOW)
     cp = JobCheckpoints(redis, prefix='parser-test', ttl_seconds=86400)
     try:
-        monkeypatch.setattr(store_module, 'SERP_MARKET_PARSER_VERSION', 'serp_market_v2')
+        monkeypatch.setattr(store_module, 'SERP_MARKET_PARSER_VERSION', previous_parser)
         old = await store.save(input_digest=digest, snapshot=market_with_three_competitors().model_copy(
             update={'job_id': SECOND_JOB}), now=NOW)
         old_key = store.key(digest)
         old_bytes = await redis.get(old_key)
         old_ttl = await redis.pttl(old_key)
         monkeypatch.setattr(store_module, 'SERP_MARKET_PARSER_VERSION', SERP_MARKET_PARSER_VERSION)
-        assert SERP_MARKET_PARSER_VERSION == 'serp_market_v3'
+        assert SERP_MARKET_PARSER_VERSION == 'serp_market_v4'
         assert await store.get_current(input_digest=digest, now=NOW) is None
         first = await service.discover(discovery_job_id=FIRST_JOB, request=req, checkpoints=cp)
         second = await service.discover(discovery_job_id=SECOND_JOB, request=req, checkpoints=cp)

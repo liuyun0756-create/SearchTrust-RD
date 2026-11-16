@@ -1,0 +1,126 @@
+{
+  "customer_cid": "11111111111111111111",
+  "rows": [
+    {
+      "query": "Plumber Fresno",
+      "local_results": [
+        {
+          "position": 1
+        },
+        {
+          "position": 2,
+          "rating": 4.6,
+          "reviews": 1704,
+          "title": "Other business",
+          "place_id": "0"
+        },
+        {
+          "position": 3,
+          "rating": 4.8,
+          "reviews": 1868,
+          "title": "Other business",
+          "place_id": "20000000000000000000",
+          "links": {
+            "website": "https://other-0.example/"
+          }
+        },
+        {
+          "position": 4,
+          "rating": 4.2,
+          "reviews": 117,
+          "title": "Customer business",
+          "place_id": "11111111111111111111",
+          "links": {
+            "website": "https://customer.example/"
+          }
+        },
+        {
+          "position": 5,
+          "rating": 4.9,
+          "reviews": 814,
+          "title": "Other business",
+          "place_id": "20000000000000000001",
+          "links": {
+            "website": "https://other-1.example/"
+          }
+        }
+      ]
+    },
+    {
+      "query": "best Plumber Fresno",
+      "local_results": [
+        {
+          "position": 1
+        },
+        {
+          "position": 2,
+          "rating": 4.9,
+          "reviews": 814,
+          "title": "Other business",
+          "place_id": "20000000000000000001",
+          "links": {
+            "website": "https://other-1.example/"
+          }
+        },
+        {
+          "position": 3,
+          "rating": 4.8,
+          "reviews": 1868,
+          "title": "Other business",
+          "place_id": "20000000000000000000",
+          "links": {
+            "website": "https://other-0.example/"
+          }
+        },
+        {
+          "position": 4,
+          "rating": 4.8,
+          "reviews": 480,
+          "title": "Other business",
+          "place_id": "20000000000000000002",
+          "links": {
+            "website": "https://other-2.example/"
+          }
+        }
+      ]
+    },
+    {
+      "query": "Plumber near me",
+      "local_results": [
+        {
+          "position": 1
+        },
+        {
+          "position": 2,
+          "rating": 4.8,
+          "reviews": 1868,
+          "title": "Other business",
+          "place_id": "20000000000000000000",
+          "links": {
+            "website": "https://other-0.example/"
+          }
+        },
+        {
+          "position": 3,
+          "rating": 4.2,
+          "reviews": 117,
+          "title": "Customer business",
+          "place_id": "11111111111111111111",
+          "links": {
+            "website": "https://customer.example/"
+          }
+        },
+        {
+          "position": 4,
+          "rating": 4.4,
+          "reviews": 270,
+          "title": "Other business",
+          "place_id": "20000000000000000003",
+          "links": {
+            "website": "https://other-3.example/"
+          }
+        }
+      ]
+    }
+  ]
+}
