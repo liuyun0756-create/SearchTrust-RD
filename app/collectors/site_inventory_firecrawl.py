@@ -66,6 +66,7 @@ class FirecrawlMapAdapter:
         status: int | None = None
         exception_type: str | None = None
         warnings_count = 0
+        provider_request_id: str | None = None
         owns_client = False
         client = self.http_client
         try:
@@ -103,7 +104,12 @@ class FirecrawlMapAdapter:
             stage = "schema"
             if not isinstance(payload, dict) or payload.get("success") is not True:
                 raise ValueError("Firecrawl returned an invalid result")
-            if set(payload) - {"success", "links", "warnings", "replacement"}:
+            if "id" in payload:
+                value = payload["id"]
+                if not isinstance(value, str) or not 1 <= len(value) <= 128:
+                    raise ValueError("Firecrawl returned an invalid request ID")
+                provider_request_id = value
+            if set(payload) - {"success", "links", "warnings", "replacement", "id"}:
                 raise ValueError("Firecrawl returned unknown fields")
             warnings = payload.get("warnings", [])
             if not isinstance(warnings, list) or any(not isinstance(item, str) for item in warnings):
@@ -138,9 +144,10 @@ class FirecrawlMapAdapter:
             job_id = _job_id.get()
             logger.info(
                 "firecrawl_map failure_stage=%s http_status=%s exception_type=%s "
-                "job_id_suffix=%s elapsed_ms=%d warnings_count=%d",
+                "job_id_suffix=%s elapsed_ms=%d warnings_count=%d provider_request_id=%s",
                 stage, status, exception_type, str(job_id)[-8:] if job_id else "unknown",
                 max(int((monotonic() - started) * 1000), 0), warnings_count,
+                json.dumps(provider_request_id, ensure_ascii=True),
             )
             if owns_client and client is not None:
                 await client.aclose()
