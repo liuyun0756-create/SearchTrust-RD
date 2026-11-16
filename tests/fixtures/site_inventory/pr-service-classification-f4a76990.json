@@ -1,0 +1,175 @@
+{
+  "source_job": "f4a76990-ee4d-4c1f-ab1f-e83cb85b51ee",
+  "root_url": "https://www.prplumbingfresno.com/",
+  "pages": [
+    {
+      "url": "https://www.prplumbingfresno.com/articles",
+      "title": "Recent Articles | PR Plumbing, Heating & Air Conditioning Inc. Tips and Blogs",
+      "h1": "Recent Tips and Articles by PR Plumbing, Heating & Air Conditioning Inc.",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "other"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/commercial-plumbing",
+      "title": "Fresno Commercial Plumbing - Commercial Plumber, Plumbing Repairs, Plumbing Service, Merced",
+      "h1": "Fresno Commercial Plumbing",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/specials",
+      "title": "Plumbing Specials - Fresno Plumbing Company, HVAC Service & Heating Contractors, California",
+      "h1": "Fresno Plumbing, Heating & Cooling Specials",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "other"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/careers",
+      "title": "Fresno Plumbing Employment | Plumbing & HVAC Careers | PR Plumbing, Heating & Air Conditioning Inc., INC",
+      "h1": "PR Plumbing, Heating & Air Conditioning Inc. - Careers",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "other"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/commercial-services",
+      "title": "Fresno Commercial Services - Commercial Plumbing Service, Commercial HVAC Repairs",
+      "h1": "Our Commercial HVAC & Plumbing Services",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_index"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/heating-installation",
+      "title": "Heating Installation Fresno - Heating Systems, Furnace Installation, HVAC Contractor, Clovis",
+      "h1": "Professional Heating Installation in Fresno & surrounding areas",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/plumber-services",
+      "title": "Fresno Plumber - Plumbing Service, Plumbing Company & Plumber Repairs, California",
+      "h1": "Your Trusted Fresno Plumber",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_index"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/plumbing-repairs",
+      "title": "Fresno Plumbing Repair - Plumbing Repairs, Plumbing Service & Plumber in Kingsburg, CA",
+      "h1": "Fresno Plumbing Repair",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/hydro-flushing",
+      "title": "Hydro Flushing | Fresno Plumber | Hydro Jetting",
+      "h1": "Hydro Flushing & Jetting Services",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/drain-cleaning",
+      "title": "Drain Cleaning Fresno - Clogged Drains, Unclogging Drains, Drain Clearing, Sanger",
+      "h1": "Professional Drain Cleaning in Fresno",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/back-flow-testing",
+      "title": "Fresno Back Flow Testing | Plumbing Company",
+      "h1": "Back Flow Testing Services",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "service_detail"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/common-fresno-plumbing-concerns",
+      "title": "Common Fresno Plumbing Concerns - Plumber",
+      "h1": "Common Fresno Plumbing Concerns",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "other"
+    },
+    {
+      "url": "https://www.prplumbingfresno.com/plumbing-and-hvac-tips/expert-fresno-plumber-services-plugging-leaks",
+      "title": "Expert Fresno Plumber Services Are More Than Just Plugging Leaks",
+      "h1": "Expert Fresno Plumber Services Are More Than Just Plugging Leaks",
+      "schema_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "PostalAddress",
+        "ProfessionalService",
+        "WebSite"
+      ],
+      "expected": "other"
+    }
+  ]
+}

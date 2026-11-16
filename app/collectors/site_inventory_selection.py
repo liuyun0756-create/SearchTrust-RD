@@ -35,6 +35,27 @@ def _path_segments(url: str) -> list[str]:
     return [segment.casefold() for segment in urlsplit(url).path.split("/") if segment]
 
 
+def _flat_service_page(segments: list[str], text: str) -> SitePageType | None:
+    """Require corroborating URL and headline signals, not site-wide schema."""
+    if len(segments) != 1:
+        return None
+    slug = set(re.findall(r"[a-z0-9]+", segments[0]))
+    excluded = {"blog", "news", "article", "articles", "tips", "how", "why", "when", "what", "guide", "guides", "careers", "jobs", "specials", "discounts", "coupons"}
+    if slug & excluded or any(word.isdigit() for word in slug):
+        return None
+    # Normalize only the service/action terms, preserving other subject words.
+    terms = {"services": "service", "repairs": "repair"}
+    words = {terms.get(word, word) for word in slug}
+    headline = {terms.get(word, word) for word in re.findall(r"[a-z0-9]+", text)}
+    actions = {"service", "repair", "installation", "maintenance", "replacement", "cleaning", "inspection", "testing", "flushing", "remodeling"}
+    signals = words & headline & actions
+    subjects = {word for word in words - actions if len(word) >= 3}
+    commercial_offer = "commercial" in words and "commercial" in headline and bool(headline & actions)
+    if subjects & headline and (signals or commercial_offer):
+        return "service_index" if "service" in words else "service_detail"
+    return None
+
+
 def classify_page(
     *,
     url: str,
@@ -88,6 +109,9 @@ def classify_page(
         return ClassificationResult("product_category", ("product_index_path",))
     if any(token in segments for token in {"products", "product", "shop", "items"}):
         return ClassificationResult("product_detail", ("product_path",))
+    service_type = _flat_service_page(segments, text)
+    if service_type is not None:
+        return ClassificationResult(service_type, ("service_path_and_heading",))
     return ClassificationResult("other", (f"unmatched_path:{joined_path or '/'}",))
 
 
