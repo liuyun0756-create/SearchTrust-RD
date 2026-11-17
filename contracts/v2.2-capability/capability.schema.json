@@ -166,7 +166,8 @@
             "v22_analysis_input_v1",
             "v22_analysis_input_v2",
             "v22_analysis_input_v3",
-            "v22_analysis_input_v4"
+            "v22_analysis_input_v4",
+            "v22_analysis_input_v5"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -896,6 +897,32 @@
           "else": {
             "not": {
               "required": [
+                "gbp_comparison"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.10"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "gbp_comparison": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "gbp_comparison"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "required": [
                 "keyword_visibility"
               ]
             }
@@ -903,7 +930,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.9"
+                "enum": [
+                  "2.2.9",
+                  "2.2.10"
+                ]
               }
             }
           },
@@ -1003,6 +1033,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.10"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v15"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -1019,7 +1070,8 @@
                 "enum": [
                   "2.2.7",
                   "2.2.8",
-                  "2.2.9"
+                  "2.2.9",
+                  "2.2.10"
                 ]
               }
             }
@@ -1064,7 +1116,8 @@
                   "2.2.6",
                   "2.2.7",
                   "2.2.8",
-                  "2.2.9"
+                  "2.2.9",
+                  "2.2.10"
                 ]
               }
             }
@@ -1125,7 +1178,8 @@
               "2.2.6",
               "2.2.7",
               "2.2.8",
-              "2.2.9"
+              "2.2.9",
+              "2.2.10"
             ]
           }
         },
@@ -1208,6 +1262,17 @@
           "title": "Findings",
           "type": "array"
         },
+        "gbp_comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GbpComparison"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "generated_at": {
           "format": "date-time",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
@@ -1273,7 +1338,8 @@
             "2.2.6",
             "2.2.7",
             "2.2.8",
-            "2.2.9"
+            "2.2.9",
+            "2.2.10"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1346,7 +1412,8 @@
                     "v22_capability_public_v11",
                     "v22_capability_public_v12",
                     "v22_capability_public_v13",
-                    "v22_capability_public_v14"
+                    "v22_capability_public_v14",
+                    "v22_capability_public_v15"
                   ]
                 }
               },
@@ -1900,6 +1967,252 @@
         "checked"
       ],
       "title": "FindingCoverage",
+      "type": "object"
+    },
+    "GbpComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "differences": {
+          "items": {
+            "$ref": "#/$defs/GbpDifference"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Differences",
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/GbpComparisonRow"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Rows",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "gbp_comparison_v1",
+          "default": "gbp_comparison_v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rows",
+        "differences"
+      ],
+      "title": "GbpComparison",
+      "type": "object"
+    },
+    "GbpComparisonRow": {
+      "additionalProperties": false,
+      "properties": {
+        "metrics": {
+          "additionalProperties": {
+            "$ref": "#/$defs/GbpMetric"
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "subject": {
+          "enum": [
+            "customer",
+            "competitor"
+          ],
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject",
+        "name",
+        "metrics"
+      ],
+      "title": "GbpComparisonRow",
+      "type": "object"
+    },
+    "GbpDifference": {
+      "additionalProperties": false,
+      "properties": {
+        "competitor_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "title": "Competitor Indices",
+          "type": "array"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "higher",
+                "lower",
+                "different_categories"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "metric": {
+          "enum": [
+            "categories",
+            "rating",
+            "review_count",
+            "reviews_90d",
+            "latest_review",
+            "visible_replies"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "same_direction",
+            "customer_unchecked",
+            "insufficient_comparators",
+            "comparison_time_gap"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "not_checked"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "status",
+        "competitor_indices",
+        "reason"
+      ],
+      "title": "GbpDifference",
+      "type": "object"
+    },
+    "GbpMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "anyOf": [
+            {
+              "maximum": 30,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Denominator"
+        },
+        "lower_bound": {
+          "default": false,
+          "title": "Lower Bound",
+          "type": "boolean"
+        },
+        "numerator": {
+          "anyOf": [
+            {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Numerator"
+        },
+        "reason": {
+          "enum": [
+            "saved_value",
+            "customer_reviews_not_collected",
+            "source_unavailable",
+            "identity_unresolved",
+            "date_unavailable",
+            "no_review_sample",
+            "no_reviews",
+            "sample_lower_bound"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "sampled_at": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sampled At"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "not_checked",
+            "not_applicable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "source_refs"
+      ],
+      "title": "GbpMetric",
       "type": "object"
     },
     "IdentityMatch": {
@@ -3364,6 +3677,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.14 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.15 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10, delivery v1/v2/v3)",
   "type": "object"
 }
