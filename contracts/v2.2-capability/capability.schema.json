@@ -168,7 +168,8 @@
             "v22_analysis_input_v3",
             "v22_analysis_input_v4",
             "v22_analysis_input_v5",
-            "v22_analysis_input_v6"
+            "v22_analysis_input_v6",
+            "v22_analysis_input_v7"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -898,6 +899,32 @@
           "else": {
             "not": {
               "required": [
+                "possible_reasons"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.12"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "possible_reasons": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "possible_reasons"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "required": [
                 "landing_page_comparison"
               ]
             }
@@ -905,7 +932,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.11"
+                "enum": [
+                  "2.2.11",
+                  "2.2.12"
+                ]
               }
             }
           },
@@ -933,7 +963,8 @@
               "schema_version": {
                 "enum": [
                   "2.2.10",
-                  "2.2.11"
+                  "2.2.11",
+                  "2.2.12"
                 ]
               }
             }
@@ -963,7 +994,8 @@
                 "enum": [
                   "2.2.9",
                   "2.2.10",
-                  "2.2.11"
+                  "2.2.11",
+                  "2.2.12"
                 ]
               }
             }
@@ -1106,6 +1138,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.12"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v17"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -1124,7 +1177,8 @@
                   "2.2.8",
                   "2.2.9",
                   "2.2.10",
-                  "2.2.11"
+                  "2.2.11",
+                  "2.2.12"
                 ]
               }
             }
@@ -1171,7 +1225,8 @@
                   "2.2.8",
                   "2.2.9",
                   "2.2.10",
-                  "2.2.11"
+                  "2.2.11",
+                  "2.2.12"
                 ]
               }
             }
@@ -1234,7 +1289,8 @@
               "2.2.8",
               "2.2.9",
               "2.2.10",
-              "2.2.11"
+              "2.2.11",
+              "2.2.12"
             ]
           }
         },
@@ -1377,6 +1433,17 @@
           "title": "Limitations",
           "type": "array"
         },
+        "possible_reasons": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PossibleReasons"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "prioritization": {
           "anyOf": [
             {
@@ -1406,7 +1473,8 @@
             "2.2.8",
             "2.2.9",
             "2.2.10",
-            "2.2.11"
+            "2.2.11",
+            "2.2.12"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1481,7 +1549,8 @@
                     "v22_capability_public_v13",
                     "v22_capability_public_v14",
                     "v22_capability_public_v15",
-                    "v22_capability_public_v16"
+                    "v22_capability_public_v16",
+                    "v22_capability_public_v17"
                   ]
                 }
               },
@@ -3406,6 +3475,90 @@
       "title": "OperatingPlace",
       "type": "object"
     },
+    "PossibleReason": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_refs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 401,
+          "minItems": 4,
+          "title": "Basis Refs",
+          "type": "array"
+        },
+        "classification": {
+          "const": "inference",
+          "default": "inference",
+          "title": "Classification",
+          "type": "string"
+        },
+        "competitor_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 2,
+          "title": "Competitor Indices",
+          "type": "array"
+        },
+        "customer_text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Customer Text",
+          "type": "string"
+        },
+        "metric": {
+          "enum": [
+            "rating",
+            "review_count"
+          ],
+          "title": "Metric",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "basis_refs",
+        "competitor_indices",
+        "customer_text"
+      ],
+      "title": "PossibleReason",
+      "type": "object"
+    },
+    "PossibleReasons": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/PossibleReason"
+          },
+          "maxItems": 2,
+          "title": "Items",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "possible_reasons_v1",
+          "default": "possible_reasons_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "assessed",
+            "not_assessed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "items"
+      ],
+      "title": "PossibleReasons",
+      "type": "object"
+    },
     "PrioritizationTrace": {
       "additionalProperties": false,
       "properties": {
@@ -4064,6 +4217,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.16 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.17 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12, delivery v1/v2/v3)",
   "type": "object"
 }
