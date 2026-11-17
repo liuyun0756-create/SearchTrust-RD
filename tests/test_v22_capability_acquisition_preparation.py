@@ -139,9 +139,9 @@ def test_ineligible_sources_never_receive_a_new_timestamp_or_manifest(mutation):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("gbp_enabled", [False, True], ids=["gbp-off", "gbp-v15"])
+@pytest.mark.parametrize("gbp_enabled,landing_enabled", [(False,False),(False,True),(True,False),(True,True)], ids=["both-off","landing-only","gbp-v15","landing-v16"])
 @pytest.mark.parametrize("keywords_enabled,confirmed_keywords", [(False,False),(True,True),(True,False)],ids=["off","confirmed-v3","running-legacy-v2"])
-async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_and_small_dispatch(keywords_enabled,confirmed_keywords,gbp_enabled):
+async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_and_small_dispatch(keywords_enabled,confirmed_keywords,gbp_enabled,landing_enabled):
     args, envelope, receipt = inputs()
     manifest, value = build_acquisition_input(**args)
     if confirmed_keywords:
@@ -155,6 +155,9 @@ async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_
     if gbp_enabled:
         from app.report_v22.gbp_comparison import prepare_comparison_input
         manifest,value=prepare_comparison_input(manifest,value)
+        if landing_enabled:
+            from app.report_v22.landing_page_comparison import prepare_landing_input
+            manifest,value=prepare_landing_input(manifest,value)
     dispatch = dispatch_for(args,manifest)
     calls=[]
     def respond(sent):
@@ -177,7 +180,7 @@ async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_
         report_pipeline=SimpleNamespace(build=AsyncMock()),clock=lambda:args["now"])
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
         repo=SupabaseCapabilityInputRepository(url="https://store.example",service_role_key="fixture",http_client=client)
-        prep=CapabilityAcquisitionPreparer(target_keywords_enabled=keywords_enabled,gbp_comparison_enabled=gbp_enabled,repository=repo,collector=collector,
+        prep=CapabilityAcquisitionPreparer(target_keywords_enabled=keywords_enabled,gbp_comparison_enabled=gbp_enabled,landing_page_comparison_enabled=landing_enabled,repository=repo,collector=collector,
             discovery_verifier=SimpleNamespace(verify=AsyncMock(return_value=envelope.competitor_discovery)),clock=lambda:args["now"])
         result=await prep.prepare(user_id=args["user_id"],job_id=args["job_id"],idempotency_key=receipt["idempotency_key"],
             business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),

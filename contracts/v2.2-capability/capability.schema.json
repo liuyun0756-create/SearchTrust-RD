@@ -167,7 +167,8 @@
             "v22_analysis_input_v2",
             "v22_analysis_input_v3",
             "v22_analysis_input_v4",
-            "v22_analysis_input_v5"
+            "v22_analysis_input_v5",
+            "v22_analysis_input_v6"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -897,6 +898,32 @@
           "else": {
             "not": {
               "required": [
+                "landing_page_comparison"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.11"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "landing_page_comparison": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "landing_page_comparison"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "required": [
                 "gbp_comparison"
               ]
             }
@@ -904,7 +931,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.10"
+                "enum": [
+                  "2.2.10",
+                  "2.2.11"
+                ]
               }
             }
           },
@@ -932,7 +962,8 @@
               "schema_version": {
                 "enum": [
                   "2.2.9",
-                  "2.2.10"
+                  "2.2.10",
+                  "2.2.11"
                 ]
               }
             }
@@ -1054,6 +1085,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.11"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v16"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -1071,7 +1123,8 @@
                   "2.2.7",
                   "2.2.8",
                   "2.2.9",
-                  "2.2.10"
+                  "2.2.10",
+                  "2.2.11"
                 ]
               }
             }
@@ -1117,7 +1170,8 @@
                   "2.2.7",
                   "2.2.8",
                   "2.2.9",
-                  "2.2.10"
+                  "2.2.10",
+                  "2.2.11"
                 ]
               }
             }
@@ -1179,7 +1233,8 @@
               "2.2.7",
               "2.2.8",
               "2.2.9",
-              "2.2.10"
+              "2.2.10",
+              "2.2.11"
             ]
           }
         },
@@ -1299,6 +1354,17 @@
           ],
           "default": null
         },
+        "landing_page_comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LandingComparison"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "limitations": {
           "items": {
             "maxLength": 2000,
@@ -1339,7 +1405,8 @@
             "2.2.7",
             "2.2.8",
             "2.2.9",
-            "2.2.10"
+            "2.2.10",
+            "2.2.11"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1413,7 +1480,8 @@
                     "v22_capability_public_v12",
                     "v22_capability_public_v13",
                     "v22_capability_public_v14",
-                    "v22_capability_public_v15"
+                    "v22_capability_public_v15",
+                    "v22_capability_public_v16"
                   ]
                 }
               },
@@ -2620,6 +2688,325 @@
       "title": "KeywordVisibility",
       "type": "object"
     },
+    "LandingComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "city_limit": {
+          "const": "Only the confirmed target city is checked; other cities, neighbourhoods and landmarks are not assessed.",
+          "default": "Only the confirmed target city is checked; other cities, neighbourhoods and landmarks are not assessed.",
+          "title": "City Limit",
+          "type": "string"
+        },
+        "comparisons": {
+          "items": {
+            "$ref": "#/$defs/LandingInference"
+          },
+          "maxItems": 8,
+          "minItems": 8,
+          "title": "Comparisons",
+          "type": "array"
+        },
+        "extraction_version": {
+          "const": "landing_content_rules_v1",
+          "default": "landing_content_rules_v1",
+          "title": "Extraction Version",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/LandingRow"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Rows",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "landing_page_comparison_v1",
+          "default": "landing_page_comparison_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_city": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target City"
+        }
+      },
+      "required": [
+        "target_city",
+        "rows",
+        "comparisons"
+      ],
+      "title": "LandingComparison",
+      "type": "object"
+    },
+    "LandingEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "enum": [
+            "title",
+            "h1",
+            "body",
+            "footer"
+          ],
+          "title": "Location",
+          "type": "string"
+        },
+        "path": {
+          "pattern": "^/payload/(?:competitors/\\d+/site_inventory/)?selected_pages/\\d+/deep_snapshot/(?:text|title|h1)$",
+          "title": "Path",
+          "type": "string"
+        },
+        "quote": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "sampled_at": {
+          "maxLength": 64,
+          "title": "Sampled At",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "path",
+        "url",
+        "quote",
+        "location",
+        "sampled_at"
+      ],
+      "title": "LandingEvidence",
+      "type": "object"
+    },
+    "LandingInference": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "const": "inference",
+          "default": "inference",
+          "title": "Classification",
+          "type": "string"
+        },
+        "competitor_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "title": "Competitor Indices",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LandingEvidence"
+          },
+          "maxItems": 400,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "metric": {
+          "enum": [
+            "page_type_counts",
+            "local_entities",
+            "case_study",
+            "portfolio",
+            "credentials",
+            "service_price",
+            "discount",
+            "project_budget"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "bounded_counts",
+            "customer_unchecked",
+            "insufficient_comparators",
+            "comparison_time_gap",
+            "no_supported_difference"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "const": "not_checked",
+          "default": "not_checked",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "reason",
+        "competitor_indices",
+        "evidence"
+      ],
+      "title": "LandingInference",
+      "type": "object"
+    },
+    "LandingMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Count"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LandingEvidence"
+          },
+          "maxItems": 100,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "lower_bound": {
+          "default": false,
+          "title": "Lower Bound",
+          "type": "boolean"
+        },
+        "reason": {
+          "enum": [
+            "saved_positive",
+            "not_observed_in_saved_sample",
+            "no_usable_pages",
+            "source_unavailable",
+            "identity_unresolved",
+            "target_city_unavailable"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "not_checked"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "evidence"
+      ],
+      "title": "LandingMetric",
+      "type": "object"
+    },
+    "LandingRow": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "const": "bounded_sample",
+          "default": "bounded_sample",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "deep_page_count": {
+          "maximum": 50,
+          "minimum": 0,
+          "title": "Deep Page Count",
+          "type": "integer"
+        },
+        "eligible_html_count": {
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Eligible Html Count",
+          "type": "integer"
+        },
+        "inventory_path": {
+          "title": "Inventory Path",
+          "type": "string"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "$ref": "#/$defs/LandingMetric"
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "page_type_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Page Type Counts",
+          "type": "object"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Snapshot Id"
+        },
+        "subject": {
+          "enum": [
+            "customer",
+            "competitor"
+          ],
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject",
+        "name",
+        "snapshot_id",
+        "inventory_path",
+        "eligible_html_count",
+        "deep_page_count",
+        "page_type_counts",
+        "metrics"
+      ],
+      "title": "LandingRow",
+      "type": "object"
+    },
     "LocationConfirmation": {
       "additionalProperties": false,
       "properties": {
@@ -3677,6 +4064,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.15 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.16 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11, delivery v1/v2/v3)",
   "type": "object"
 }
