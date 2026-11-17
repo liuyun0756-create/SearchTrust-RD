@@ -106,6 +106,7 @@ class SiteInventoryCollector:
         resource_limits: bool = False,
         sampling_quality: bool = False,
         contact_coverage: bool = False,
+        reuse_deep_structure: bool = False,
         clock: Clock = _utc_now,
     ) -> None:
         self.fetcher = fetcher
@@ -120,6 +121,8 @@ class SiteInventoryCollector:
         self.resource_limits = resource_limits
         self.sampling_quality = sampling_quality
         self.contact_coverage = contact_coverage
+        self.reuse_deep_structure = reuse_deep_structure and resource_limits
+        self._restored_structures: dict[str, InventoryPageRecord] = {}
         self.contact_urls: list[str] = []
         self._contact_structural_success = False
         self.clock = clock
@@ -136,6 +139,7 @@ class SiteInventoryCollector:
     ) -> SiteInventorySnapshot:
         discovery_limit = min(max(discovery_limit, 1), 500)
         deep_analysis_limit = min(max(deep_analysis_limit, 1), 50)
+        self._restored_structures.clear()
         started_at = self.clock()
         initial_scope = SiteScope.from_root(site_url)
         try:
@@ -365,6 +369,16 @@ class SiteInventoryCollector:
             all_candidates_checked="page_failures_present" not in limitations,
         )
         limitations.extend(deep_limitations)
+        if self.reuse_deep_structure:
+            refreshed = self._restored_structures
+            pages = [refreshed.get(str(page.url), page) for page in pages]
+            checked_pages = [page for page in pages if page.check_status == 'checked']
+            # Keep the actual selection order/scores. More discovered links do not
+            # schedule another crawl or a second deep-page selection in this run.
+            selected_pages = [page.model_copy(update={
+                'page_type': refreshed[str(page.url)].page_type,
+                'deep_snapshot': page.deep_snapshot.model_copy(update={'page_type': refreshed[str(page.url)].page_type}) if page.deep_snapshot else None,
+            }) if str(page.url) in refreshed else page for page in selected_pages]
         if self.contact_coverage and not home_contact and not any(p.deep_analyzed and p.page_type == "contact" for p in selected_pages):
             limitations.append("contact_not_checked:coverage_incomplete")
         page_types = Counter(page.page_type for page in checked_pages)
@@ -661,7 +675,7 @@ class SiteInventoryCollector:
             scope=scope,
             max_text_chars=2_000_000,
         )
-        return DeepPageSnapshot(
+        snapshot = DeepPageSnapshot(
             url=ranked.page.url,
             final_url=response.final_url,
             page_type=ranked.page.page_type,
@@ -676,3 +690,11 @@ class SiteInventoryCollector:
             title=structure.title,
             h1=structure.h1,
         )
+
+        if self.reuse_deep_structure and getattr(ranked.page, 'structural_truncated', False):
+            from app.collectors.site_inventory_reuse import restored_record
+            budget = 4_000_000 if self.contact_coverage and ranked.page.page_type in {'home', 'contact'} else self.deep_max_bytes
+            refreshed = restored_record(ranked.page, response, structure, scope=scope, max_bytes=budget)
+            if refreshed is not ranked.page:
+                self._restored_structures[str(ranked.page.url)] = refreshed
+        return snapshot
