@@ -46,6 +46,7 @@ from app.report_v22.models import StrictModel
 
 
 _CHECKPOINT_VERSION = "site_inventory_v1"
+DEEP_STRUCTURE_CHECKPOINT_VERSION = "site_inventory_v5"
 
 
 class Fetcher(Protocol):
@@ -130,10 +131,12 @@ class CheckpointedSiteFetcher:
         delegate: Fetcher,
         checkpoints: JobCheckpoints,
         job_id: UUID,
+        checkpoint_namespace: str | None = None,
     ) -> None:
         self.delegate = delegate
         self.checkpoints = checkpoints
         self.job_id = job_id
+        self.checkpoint_namespace = checkpoint_namespace
 
     def checkpoint_key(
         self,
@@ -166,7 +169,15 @@ class CheckpointedSiteFetcher:
         if allow_prefix:
             key = key.replace("site_inventory_v1:", "site_inventory_v2:prefix:")
 
+        legacy_key = key
+        if self.checkpoint_namespace:
+            key = f"{self.checkpoint_namespace}:{legacy_key}"
+
         async def operation() -> dict[str, Any]:
+            if self.checkpoint_namespace:
+                saved = await self.checkpoints.get(self.job_id, legacy_key)
+                if saved is not None:
+                    return saved  # Raw response only; validation below is unchanged.
             response = await self.delegate.fetch(
                 url,
                 scope=scope,
@@ -230,11 +241,13 @@ class _CheckpointedFirecrawl:
         checkpoints: JobCheckpoints,
         job_id: UUID,
         cost_ledger: JobCostLedger | None = None,
+        checkpoint_namespace: str | None = None,
     ) -> None:
         self.delegate = delegate
         self.checkpoints = checkpoints
         self.job_id = job_id
         self.cost_ledger = cost_ledger
+        self.checkpoint_namespace = checkpoint_namespace
 
     async def map(self, root_url: str, *, limit: int) -> FirecrawlMapResult:
         key = (
@@ -242,7 +255,17 @@ class _CheckpointedFirecrawl:
             f"{stable_url_digest(root_url)[7:]}:{limit}"
         )
 
+        legacy_key = key
+        if self.checkpoint_namespace:
+            key = f"{self.checkpoint_namespace}:{legacy_key}"
+
         async def operation() -> dict[str, Any]:
+            if self.checkpoint_namespace:
+                saved = await self.checkpoints.get(self.job_id, legacy_key)
+                if saved is not None:
+                    if self.cost_ledger is not None:
+                        await self.cost_ledger.record_checkpoint_hit()
+                    return saved
             claim = (
                 await self.cost_ledger.claim("firecrawl_map")
                 if self.cost_ledger is not None
@@ -292,6 +315,7 @@ class CheckpointedSiteInventoryStage:
         resource_limits: bool = False,
         sampling_quality: bool = False,
         contact_coverage: bool = False,
+        reuse_deep_structure: bool = False,
     ) -> None:
         self.fetcher = fetcher
         self.firecrawl = firecrawl
@@ -299,6 +323,7 @@ class CheckpointedSiteInventoryStage:
         self.resource_limits = resource_limits
         self.sampling_quality = sampling_quality
         self.contact_coverage = contact_coverage
+        self.reuse_deep_structure = reuse_deep_structure and resource_limits
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     async def collect(
@@ -328,6 +353,8 @@ class CheckpointedSiteInventoryStage:
         }
         input_digest = request_digest(identity)
         version = "site_inventory_v4" if self.contact_coverage else "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        if self.reuse_deep_structure:
+            version = f"{DEEP_STRUCTURE_CHECKPOINT_VERSION}:{version}"
         final_key = f"{version}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -335,6 +362,7 @@ class CheckpointedSiteInventoryStage:
                 delegate=self.fetcher,
                 checkpoints=checkpoints,
                 job_id=job_id,
+                checkpoint_namespace=DEEP_STRUCTURE_CHECKPOINT_VERSION if self.reuse_deep_structure else None,
             )
             checkpointed_firecrawl = (
                 _CheckpointedFirecrawl(
@@ -342,6 +370,7 @@ class CheckpointedSiteInventoryStage:
                     checkpoints=checkpoints,
                     job_id=job_id,
                     cost_ledger=cost_ledger,
+                    checkpoint_namespace=DEEP_STRUCTURE_CHECKPOINT_VERSION if self.reuse_deep_structure else None,
                 )
                 if self.firecrawl is not None
                 else None
@@ -360,6 +389,7 @@ class CheckpointedSiteInventoryStage:
                 resource_limits=self.resource_limits,
                 sampling_quality=self.sampling_quality,
                 contact_coverage=self.contact_coverage,
+                reuse_deep_structure=self.reuse_deep_structure,
             )
             scope = SiteScope.from_root(str(request.business_identity.site_url))
             gsc_priorities = gsc_priorities_from_snapshots(
@@ -453,6 +483,8 @@ class CheckpointedSiteInventoryStage:
         }
         input_digest = request_digest(identity)
         version = "site_inventory_v4" if self.contact_coverage else "site_inventory_v3" if self.sampling_quality else "site_inventory_v2" if self.resource_limits else _CHECKPOINT_VERSION
+        if self.reuse_deep_structure:
+            version = f"{DEEP_STRUCTURE_CHECKPOINT_VERSION}:{version}"
         final_key = f"{version}:{checkpoint_namespace}:snapshot:{input_digest[7:]}"
 
         async def operation() -> dict[str, Any]:
@@ -460,6 +492,7 @@ class CheckpointedSiteInventoryStage:
                 delegate=self.fetcher,
                 checkpoints=checkpoints,
                 job_id=job_id,
+                checkpoint_namespace=DEEP_STRUCTURE_CHECKPOINT_VERSION if self.reuse_deep_structure else None,
             )
             checkpointed_firecrawl = (
                 _CheckpointedFirecrawl(
@@ -467,6 +500,7 @@ class CheckpointedSiteInventoryStage:
                     checkpoints=checkpoints,
                     job_id=job_id,
                     cost_ledger=cost_ledger,
+                    checkpoint_namespace=DEEP_STRUCTURE_CHECKPOINT_VERSION if self.reuse_deep_structure else None,
                 )
                 if self.firecrawl is not None
                 else None
@@ -485,6 +519,7 @@ class CheckpointedSiteInventoryStage:
                 resource_limits=self.resource_limits,
                 sampling_quality=self.sampling_quality,
                 contact_coverage=self.contact_coverage,
+                reuse_deep_structure=self.reuse_deep_structure,
             )
             try:
                 snapshot = await collector.collect(
@@ -529,6 +564,7 @@ def build_site_inventory_stage(settings: Settings, *, resource_limits: bool = Fa
         resource_limits=resource_limits,
         sampling_quality=sampling_quality,
         contact_coverage=contact_coverage,
+        reuse_deep_structure=resource_limits,
         fetcher=fetcher,
         firecrawl=firecrawl,
         config=SiteInventoryStageConfig(
