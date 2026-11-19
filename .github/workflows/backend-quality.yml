@@ -32,6 +32,10 @@ jobs:
             requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
+      - name: Check identity fixtures
+        run: python scripts/export_v22_identity_fixtures.py --check
+      - name: Check candidate fixtures
+        run: python scripts/export_v22_candidate_fixtures.py --check
       - name: Run backend tests
         run: python scripts/run_v22_backend_quality.py fast
 
