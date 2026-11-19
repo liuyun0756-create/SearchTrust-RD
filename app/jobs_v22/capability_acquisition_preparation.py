@@ -93,11 +93,12 @@ class CapabilityAcquisitionPreparer:
     The existing collector is reused via collect_sources, never execute: this
     phase must not generate, persist or charge for a legacy report first.
     """
-    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None, target_keywords_enabled=False, gbp_comparison_enabled=False, landing_page_comparison_enabled=False, comparison_reasons_enabled=False):
+    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None, target_keywords_enabled=False, gbp_comparison_enabled=False, landing_page_comparison_enabled=False, comparison_reasons_enabled=False, local_entity_coverage_enabled=False):
         self.target_keywords_enabled = target_keywords_enabled
         self.gbp_comparison_enabled = gbp_comparison_enabled
         self.landing_page_comparison_enabled = landing_page_comparison_enabled
         self.comparison_reasons_enabled = comparison_reasons_enabled
+        self.local_entity_coverage_enabled = local_entity_coverage_enabled
         self.repository = repository
         self.collector = collector
         self.render_stage = render_stage
@@ -136,8 +137,13 @@ class CapabilityAcquisitionPreparer:
                     raise DeterministicJobError("TARGET_KEYWORDS_DISCOVERY_CONFLICT", "The saved search sample does not match the confirmed keywords.")
                 from app.report_v22.keyword_visibility import prepare_keyword_input
                 manifest, value = prepare_keyword_input(manifest, value, confirmed_queries=envelope.target_keywords.queries)
-            from app.report_v22.comparison_reasons import select_reasons_ruleset
-            selected_ruleset = select_reasons_ruleset(self.gbp_comparison_enabled, self.landing_page_comparison_enabled, self.comparison_reasons_enabled)
+            from app.report_v22.local_entity_coverage import RULESET as LOCAL_ENTITY_RULESET, select_local_entity_ruleset
+            selected_ruleset = select_local_entity_ruleset(
+                self.gbp_comparison_enabled, self.landing_page_comparison_enabled,
+                self.comparison_reasons_enabled, self.local_entity_coverage_enabled)
+            if selected_ruleset == LOCAL_ENTITY_RULESET:
+                from app.report_v22.local_entity_coverage import prepare_local_entity_input
+                return prepare_local_entity_input(manifest, value)
             if self.gbp_comparison_enabled:
                 from app.report_v22.gbp_comparison import prepare_comparison_input
                 manifest, value = prepare_comparison_input(manifest, value)

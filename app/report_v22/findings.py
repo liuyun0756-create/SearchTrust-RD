@@ -196,7 +196,7 @@ def _merge_alignment_evidence(inputs, evidence, extra, maximum, *, reviewed_evid
     )
 
 
-def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False, identity_v2=False, observed_positions=False) -> PublicFindingsResult:
+def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=False, reviewed_evidence=False, rendered_pages=False, resource_limits=False, sampling_quality=False, opening_hours=False, identity_v2=False, observed_positions=False, ruleset_version=None) -> PublicFindingsResult:
     alignment_enabled = False
     try:
         reject_nonfinite(value)
@@ -250,7 +250,8 @@ def build_public_findings(value: PublicFindingsInput | dict, *, text_patterns=Fa
                 source=site_source,
                 limits=request.site_business_limits,
             ), text_patterns=text_patterns, gbp_phone=gbp_phone, gbp_address=gbp_address,
-                country=identity.primary_location.country_code, resource_limits=resource_limits)
+                country=identity.primary_location.country_code, resource_limits=resource_limits,
+                **({"ruleset_version": ruleset_version} if ruleset_version is not None else {}))
             resource_pages = [str(p.requested_url) for p in facts.pages if any(d.code == "resource_limit" for d in p.diagnostics)]
             selection = select_site_business_candidates(facts, identity, request.site_gbp_alignment_limits)
             extra = build_site_gbp_alignment(

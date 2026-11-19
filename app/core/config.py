@@ -112,6 +112,7 @@ class Settings(BaseSettings):
     V22_GBP_COMPARISON_ENABLED: bool = False
     V22_LANDING_PAGE_COMPARISON_ENABLED: bool = False
     V22_COMPARISON_REASONS_ENABLED: bool = False
+    V22_LOCAL_ENTITY_COVERAGE_ENABLED: bool = False
     V22_COST_PRICING_REVISION: Annotated[int, Field(ge=1, le=1_000_000)] = 1
     V22_COST_SERPAPI_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
     V22_COST_FIRECRAWL_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None

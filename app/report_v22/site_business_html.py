@@ -1,6 +1,7 @@
 """Bounded source-position HTML tree, without rendering or inferred contact facts."""
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
+import logging
 import re
 
 from app.jobs_v22.digest import request_digest
@@ -9,6 +10,9 @@ from app.report_v22.site_business_models import CandidateDiagnostic, CandidateDr
 
 VOID = frozenset("area base br col embed hr img input link meta param source track wbr".split())
 IGNORED = frozenset("script style noscript template svg".split())
+HTML_TOLERANCE_RULESET = "v22_capability_public_v18"
+HTML_TOLERANCE_RULESETS = frozenset({HTML_TOLERANCE_RULESET, "v22_capability_public_v19"})
+logger = logging.getLogger(__name__)
 LABELS = {
     "business_name": ("business name", "company name", "商家名称", "公司名称"),
     "phone": ("phone", "telephone", "tel", "电话", "联系电话"),
@@ -43,7 +47,7 @@ class Node:
 
 
 class HtmlTree(HTMLParser):
-    def __init__(self, text, origin_path, budget):
+    def __init__(self, text, origin_path, budget, *, ruleset_version=None):
         super().__init__(convert_charrefs=True)
         self.text, self.origin_path, self.budget = text, origin_path, budget
         self.checksum = request_digest({"html": text})
@@ -51,6 +55,17 @@ class HtmlTree(HTMLParser):
         self.root = Node("document", {}, 0, 0, [], end=len(text), content_end=len(text), closed=True)
         self.stack, self.nodes, self.json_blocks = [self.root], [], []
         self.node_count, self.dom_failed = 0, False
+        self.tolerate_isolated_errors = ruleset_version in HTML_TOLERANCE_RULESETS
+        self.recoveries = []
+
+    def recover(self, code, start, end):
+        # Internal diagnostics only: no customer evidence or source is rewritten.
+        # Retain one position per kind, not an unbounded list of stray end tags.
+        previous = next((item for item in self.recoveries if item["code"] == code), None)
+        if previous is None:
+            self.recoveries.append(dict(code=code, start=start, end=end, count=1))
+        else:
+            previous["count"] += 1
 
     def source_offset(self):
         line, column = self.getpos()
@@ -72,7 +87,16 @@ class HtmlTree(HTMLParser):
                     suppressed=suppressed, hidden=suppressed or tag in IGNORED, parent=parent,
                     bad=len(attrs_dict) != len(attrs))
         if node.bad:
-            self.dom_failed = True
+            svg = tag == "svg"
+            ancestor = parent
+            while not svg and ancestor is not None:
+                svg = ancestor.tag == "svg"
+                ancestor = ancestor.parent
+            if self.tolerate_isolated_errors and svg and node.hidden:
+                # Keep the node bad/hidden; never extract its duplicate attributes.
+                self.recover("ignored_svg_duplicate_attribute", start, node.content_start)
+            else:
+                self.dom_failed = True
         parent.children.append(node)
         parent.elements.append(node)
         self.nodes.append(node)
@@ -93,7 +117,12 @@ class HtmlTree(HTMLParser):
     def handle_endtag(self, tag):
         position = next((i for i in range(len(self.stack) - 1, 0, -1) if self.stack[i].tag == tag), None)
         if position is None:
-            self.dom_failed = True
+            if self.tolerate_isolated_errors:
+                offset = self.source_offset()
+                closing = self.text.find(">", offset)
+                self.recover("unmatched_end_tag_ignored", offset, closing + 1 if closing >= 0 else len(self.text))
+            else:
+                self.dom_failed = True
             return
         offset = self.source_offset()
         end = self.text.find(">", offset) + 1
@@ -134,11 +163,15 @@ class HtmlTree(HTMLParser):
         return node
 
 
-def parse_html(text, origin_path, budget):
+def parse_html(text, origin_path, budget, *, ruleset_version=None):
     size = len(text.encode("utf-8"))
     budget.html_bytes += size
     require(size <= budget.limits.max_html_bytes_per_page and budget.html_bytes <= budget.limits.max_html_bytes_total, "LIMIT_EXCEEDED")
-    return HtmlTree(text, origin_path, budget).finish()
+    tree = HtmlTree(text, origin_path, budget, ruleset_version=ruleset_version).finish()
+    for item in sorted(tree.recoveries, key=lambda item: item["code"]):
+        logger.info("site_business_html_recovery", extra=dict(
+            ruleset_version=ruleset_version, recovery_code=item["code"], recovery_count=item["count"]))
+    return tree
 
 
 def visible_text(node):

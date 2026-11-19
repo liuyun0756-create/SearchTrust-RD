@@ -150,7 +150,7 @@ def prepare_landing_input(manifest, request):
     return AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw)), request
 
 
-def extract_content(deep, *, city, business_name, snapshot_id, path):
+def extract_content(deep, *, city, business_name, snapshot_id, path, city_positions=None):
     """Positive observations only. No provider, file, clock, or mutable input."""
     found = {key: [] for key in METRICS}
     if not deep.html or not deep.text or len(deep.html) > 5_000_000:
@@ -159,7 +159,13 @@ def extract_content(deep, *, city, business_name, snapshot_id, path):
         from app.report_v22.site_business_html import parse_html, ParseBudget
         from app.report_v22.site_business_models import SiteBusinessLimits
         from app.report_v22.site_business_errors import SiteBusinessError
-        tree = parse_html(deep.html, path, ParseBudget(SiteBusinessLimits()))
+        options = {}
+        if city_positions is not None:
+            from app.report_v22.site_business_html import HTML_TOLERANCE_RULESET
+            options['ruleset_version'] = HTML_TOLERANCE_RULESET
+        tree = parse_html(deep.html, path, ParseBudget(SiteBusinessLimits()), **options)
+        if city_positions is not None:
+            city_positions.complete = not tree.dom_failed
     except (ValueError, TypeError, SiteBusinessError):
         return found
     def ancestors(node):
@@ -186,6 +192,8 @@ def extract_content(deep, *, city, business_name, snapshot_id, path):
         if not quote or quote.casefold() not in normalized(getattr(deep, field)).casefold():
             return
         identity = identity or quote.casefold()
+        if city_positions is not None and key == 'local_entities':
+            identity = location
         if identity in seen[key] or len(found[key]) >= 100:
             return
         seen[key].add(identity)
@@ -220,6 +228,8 @@ def extract_content(deep, *, city, business_name, snapshot_id, path):
         if match:
             original = match
             add('local_entities', value[max(0, original.start()-40):original.end()+100], location, identity=city.casefold())
+        if city_positions is not None:
+            continue
         if len(value) < 15:
             continue
         # Explicit numbers or a self-attributed assertion, never job requirements/advice.
@@ -247,6 +257,8 @@ def extract_content(deep, *, city, business_name, snapshot_id, path):
             details = sum(bool(re.search(pattern, value, re.I)) for pattern in (r'\bbudget\b', r'\b(?:client|customer)\b', r'\blocation\b', r'\bbefore\b', r'\bafter\b'))
             if details >= 2:
                 add('case_study', value)
+    if city_positions is not None:
+        return found
     for heading in tree.nodes:
         if heading.tag not in {'h1', 'h2', 'h3', 'h4'} or ignored(heading):
             continue
