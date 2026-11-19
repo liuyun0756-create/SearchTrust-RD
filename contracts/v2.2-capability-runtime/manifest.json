@@ -1,8 +1,8 @@
 {
   "files": {
     "completed.json": "sha256:c1482367f9963acfde569dc6e4c67178ed465c82be6a91e86150fca18ced9a4b",
-    "completed.schema.json": "sha256:e4f84630a48b74ff978d1c581e31cde2deef21ef5c0342912dd367e56a0d5660",
-    "dispatch.schema.json": "sha256:1591c19f12409b95a24ff5fe62943ddef6bb651fb68c83937b32d7eb7455d5b0",
+    "completed.schema.json": "sha256:67056c17bda348f3cbca427c98d1edcac830f0f1756e92fd10007429e9c5b8d8",
+    "dispatch.schema.json": "sha256:b4973f7a740b248aba6950fb681ef1d55643e7ecb141a220681c9c82c01e720e",
     "request.json": "sha256:84cb80a57b27e0953669bd5b804590883cbc5321223d940923fe7c2422898af4",
     "request.schema.json": "sha256:0bc258b10616dd63ed1f2944f167987edc6e3c02d25cb2ff5ab44f138489a891"
   },
