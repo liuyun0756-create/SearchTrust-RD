@@ -36,7 +36,7 @@ def _freeze_metrics(body, payload=None):
         sources = body.get("p_public_source_canonicals", {})
         sizes = tuple(len(sources[k].encode("utf-8")) if k in sources else 0 for k in kinds)
         schema = body.get("p_manifest", {}).get("schema_version")
-        if schema not in {"v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}:
+        if schema not in {"v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}:
             schema = "unknown"
         suffix = str(UUID(str(body.get("p_job_id"))))[-8:]
         return (suffix, size, schema, *sizes)

@@ -736,7 +736,14 @@ async def on_startup(ctx: dict[str, Any]) -> None:
     if v22_capability_execution_ready(settings):
         capability_http_client = httpx.AsyncClient(timeout=60,follow_redirects=False)
         try:
+            example_provider = None
+            if (settings.V22_ACTION_EXAMPLE_COPY_ENABLED and settings.V22_GBP_COMPARISON_ENABLED
+                    and settings.V22_LANDING_PAGE_COMPARISON_ENABLED and settings.V22_COMPARISON_REASONS_ENABLED
+                    and settings.V22_LOCAL_ENTITY_COVERAGE_ENABLED and settings.OPENAI_API_KEY.get_secret_value()):
+                from app.jobs_v22.action_example_provider import ActionExampleProvider
+                example_provider = ActionExampleProvider(settings.OPENAI_API_KEY.get_secret_value())
             capability_executor = CapabilityV22Executor(
+                example_provider=example_provider,
                 resolver=SupabaseCapabilityInputRepository(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client),
                 persister=SupabaseCapabilityResultPersister(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client))
         except BaseException:
@@ -782,6 +789,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                 landing_page_comparison_enabled=settings.V22_LANDING_PAGE_COMPARISON_ENABLED,
                 comparison_reasons_enabled=settings.V22_COMPARISON_REASONS_ENABLED,
                 local_entity_coverage_enabled=settings.V22_LOCAL_ENTITY_COVERAGE_ENABLED,
+                action_example_copy_enabled=settings.V22_ACTION_EXAMPLE_COPY_ENABLED,
                 repository=capability_executor.resolver, collector=acquisition_collector,
                 render_stage=build_site_render_stage(settings),
                 discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))

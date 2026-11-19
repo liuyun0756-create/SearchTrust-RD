@@ -99,13 +99,14 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
             "source": "explicit_confirmation", "confirmation_ref": confirmation})})
     updated = value.model_copy(update={"schema_version": "public_findings_input_v2", "business_identity": updated_identity})
     raw = deepcopy(base.input_manifest.model_dump(mode="json"))
-    local_entity = base.input_manifest.ruleset_version == "v22_capability_public_v18"
+    action_advice = base.input_manifest.ruleset_version == "v22_capability_public_v20"
+    local_entity = action_advice or base.input_manifest.ruleset_version == "v22_capability_public_v18"
     reasons = base.input_manifest.ruleset_version in {"v22_capability_public_v17", "v22_capability_public_v18"}
     landing = base.input_manifest.ruleset_version in {"v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
     comparison = base.input_manifest.ruleset_version in {"v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
     keyword = base.input_manifest.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-    raw.update(schema_version="v22_analysis_input_v8" if local_entity else "v22_analysis_input_v7" if reasons else "v22_analysis_input_v6" if landing else "v22_analysis_input_v5" if comparison else "v22_analysis_input_v4" if keyword else "v22_analysis_input_v3",
-        ruleset_version="v22_capability_public_v18" if local_entity else "v22_capability_public_v17" if reasons else "v22_capability_public_v16" if landing else "v22_capability_public_v15" if comparison else "v22_capability_public_v14" if keyword else "v22_capability_public_v13",
+    raw.update(schema_version="v22_analysis_input_v10" if action_advice else "v22_analysis_input_v8" if local_entity else "v22_analysis_input_v7" if reasons else "v22_analysis_input_v6" if landing else "v22_analysis_input_v5" if comparison else "v22_analysis_input_v4" if keyword else "v22_analysis_input_v3",
+        ruleset_version="v22_capability_public_v20" if action_advice else "v22_capability_public_v18" if local_entity else "v22_capability_public_v17" if reasons else "v22_capability_public_v16" if landing else "v22_capability_public_v15" if comparison else "v22_capability_public_v14" if keyword else "v22_capability_public_v13",
         id=str(uuid5(request_id, "manifest")), job_id=str(uuid5(request_id, "report")),
         identity_version_id=str(uuid5(request_id, "identity")), identity_checksum=request_digest(updated_identity),
         target_market=value.evidence_input.context.target_market.model_dump(mode="json"),
@@ -117,6 +118,20 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
     raw['input_checksum'] = verified_request_digest({k: v for k,v in raw.items() if k != 'input_checksum'})
     manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw))
     after = build_public_capability_report(manifest, updated)
+    if after.action_advice is not None:
+        from app.report_v22.action_advice import apply_copy_result, copy_options
+        old_copy = {item.action_id: item for item in base.action_advice if item.example}
+        old_actions = {item.id: item for item in base.actions}
+        next_actions = {item.id: item for item in after.actions}
+        options = copy_options(after)
+        outcomes = {item.action_id: item for item in after.action_advice}
+        preserved = {key: old_copy[key].example.text
+                     for key in options if key in old_copy and old_actions[key] == next_actions[key]
+                     and old_copy[key].evidence_ids == outcomes[key].evidence_ids}
+        if preserved:
+            import json
+            after = apply_copy_result(after, {key: options[key] for key in preserved},
+                                      json.dumps(preserved))
     # Compare to the actual base report, including legacy rules. A rule upgrade
     # must not silently hide unrelated differences behind an intermediate replay.
     baseline = base
