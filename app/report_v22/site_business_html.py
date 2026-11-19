@@ -5,13 +5,13 @@ import logging
 import re
 
 from app.jobs_v22.digest import request_digest
+from app.report_v22.ruleset_registry import public_ruleset_number
 from app.report_v22.site_business_errors import require
 from app.report_v22.site_business_models import CandidateDiagnostic, CandidateDraft, CandidateOrigin, FIELD_NAMES
 
 VOID = frozenset("area base br col embed hr img input link meta param source track wbr".split())
 IGNORED = frozenset("script style noscript template svg".split())
 HTML_TOLERANCE_RULESET = "v22_capability_public_v18"
-HTML_TOLERANCE_RULESETS = frozenset({HTML_TOLERANCE_RULESET, "v22_capability_public_v19"})
 logger = logging.getLogger(__name__)
 LABELS = {
     "business_name": ("business name", "company name", "商家名称", "公司名称"),
@@ -55,7 +55,8 @@ class HtmlTree(HTMLParser):
         self.root = Node("document", {}, 0, 0, [], end=len(text), content_end=len(text), closed=True)
         self.stack, self.nodes, self.json_blocks = [self.root], [], []
         self.node_count, self.dom_failed = 0, False
-        self.tolerate_isolated_errors = ruleset_version in HTML_TOLERANCE_RULESETS
+        ruleset_number = public_ruleset_number(ruleset_version)
+        self.tolerate_isolated_errors = ruleset_number is not None and ruleset_number >= 18
         self.recoveries = []
 
     def recover(self, code, start, end):
