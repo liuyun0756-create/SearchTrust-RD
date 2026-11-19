@@ -169,7 +169,8 @@
             "v22_analysis_input_v4",
             "v22_analysis_input_v5",
             "v22_analysis_input_v6",
-            "v22_analysis_input_v7"
+            "v22_analysis_input_v7",
+            "v22_analysis_input_v8"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -899,6 +900,32 @@
           "else": {
             "not": {
               "required": [
+                "local_entity_coverage"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.13"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "local_entity_coverage": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "local_entity_coverage"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "required": [
                 "possible_reasons"
               ]
             }
@@ -906,7 +933,10 @@
           "if": {
             "properties": {
               "schema_version": {
-                "const": "2.2.12"
+                "enum": [
+                  "2.2.12",
+                  "2.2.13"
+                ]
               }
             }
           },
@@ -934,7 +964,8 @@
               "schema_version": {
                 "enum": [
                   "2.2.11",
-                  "2.2.12"
+                  "2.2.12",
+                  "2.2.13"
                 ]
               }
             }
@@ -964,7 +995,8 @@
                 "enum": [
                   "2.2.10",
                   "2.2.11",
-                  "2.2.12"
+                  "2.2.12",
+                  "2.2.13"
                 ]
               }
             }
@@ -995,7 +1027,8 @@
                   "2.2.9",
                   "2.2.10",
                   "2.2.11",
-                  "2.2.12"
+                  "2.2.12",
+                  "2.2.13"
                 ]
               }
             }
@@ -1159,6 +1192,27 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.13"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v18"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
           "else": {
             "not": {
               "properties": {
@@ -1178,7 +1232,8 @@
                   "2.2.9",
                   "2.2.10",
                   "2.2.11",
-                  "2.2.12"
+                  "2.2.12",
+                  "2.2.13"
                 ]
               }
             }
@@ -1226,7 +1281,8 @@
                   "2.2.9",
                   "2.2.10",
                   "2.2.11",
-                  "2.2.12"
+                  "2.2.12",
+                  "2.2.13"
                 ]
               }
             }
@@ -1290,7 +1346,8 @@
               "2.2.9",
               "2.2.10",
               "2.2.11",
-              "2.2.12"
+              "2.2.12",
+              "2.2.13"
             ]
           }
         },
@@ -1433,6 +1490,17 @@
           "title": "Limitations",
           "type": "array"
         },
+        "local_entity_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalEntityCoverage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "possible_reasons": {
           "anyOf": [
             {
@@ -1474,7 +1542,8 @@
             "2.2.9",
             "2.2.10",
             "2.2.11",
-            "2.2.12"
+            "2.2.12",
+            "2.2.13"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1550,7 +1619,8 @@
                     "v22_capability_public_v14",
                     "v22_capability_public_v15",
                     "v22_capability_public_v16",
-                    "v22_capability_public_v17"
+                    "v22_capability_public_v17",
+                    "v22_capability_public_v18"
                   ]
                 }
               },
@@ -3076,6 +3146,82 @@
       "title": "LandingRow",
       "type": "object"
     },
+    "LocalEntityCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "archive_headings_only": {
+          "title": "Archive Headings Only",
+          "type": "boolean"
+        },
+        "city_limit": {
+          "const": "Only the confirmed target city is checked; other cities, neighbourhoods and landmarks are not assessed.",
+          "default": "Only the confirmed target city is checked; other cities, neighbourhoods and landmarks are not assessed.",
+          "title": "City Limit",
+          "type": "string"
+        },
+        "complete": {
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LandingEvidence"
+          },
+          "maxItems": 200,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "enum": [
+            "saved_positive",
+            "not_observed_in_saved_sample",
+            "target_city_unavailable",
+            "incomplete_sample"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "local_entity_coverage_v1",
+          "default": "local_entity_coverage_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "present",
+            "weak_position",
+            "not_detected",
+            "not_checked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "target_city": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target City"
+        }
+      },
+      "required": [
+        "target_city",
+        "status",
+        "reason",
+        "complete",
+        "archive_headings_only",
+        "evidence"
+      ],
+      "title": "LocalEntityCoverage",
+      "type": "object"
+    },
     "LocationConfirmation": {
       "additionalProperties": false,
       "properties": {
@@ -4217,6 +4363,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.17 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.18 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12/2.2.13, delivery v1/v2/v3)",
   "type": "object"
 }

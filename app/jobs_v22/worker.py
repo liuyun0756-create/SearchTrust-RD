@@ -781,6 +781,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
                 gbp_comparison_enabled=settings.V22_GBP_COMPARISON_ENABLED,
                 landing_page_comparison_enabled=settings.V22_LANDING_PAGE_COMPARISON_ENABLED,
                 comparison_reasons_enabled=settings.V22_COMPARISON_REASONS_ENABLED,
+                local_entity_coverage_enabled=settings.V22_LOCAL_ENTITY_COVERAGE_ENABLED,
                 repository=capability_executor.resolver, collector=acquisition_collector,
                 render_stage=build_site_render_stage(settings),
                 discovery_verifier=RedisDiscoveryVerifier(store=discovery_store, market_store=market_store))
