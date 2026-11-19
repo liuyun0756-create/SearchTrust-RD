@@ -9,13 +9,15 @@ from app.jobs_v22.digest import canonical_json_bytes
 from app.report_v22.identity_input import prepare_identity_input
 from app.report_v22.capability_public import build_public_capability_report
 from test_p1_05_identity import bound, confirmation
+from test_p1_09_action_advice import example_gold_input, select_first_example
 
 
 def artifacts():
  m,q=bound()
  m,q,_,_=prepare_identity_input(m,q,confirmation=confirmation(q,'service_area'))
  return {'identity.json':canonical_json_bytes(q.business_identity)+b'\n',
-         'report.json':canonical_json_bytes(build_public_capability_report(m,q))+b'\n'}
+         'report.json':canonical_json_bytes(build_public_capability_report(m,q))+b'\n',
+         'v20.json':canonical_json_bytes(select_first_example(build_public_capability_report(*example_gold_input())))+b'\n'}
 
 
 def main():
@@ -28,5 +30,5 @@ def main():
    if args.check:
     if not path.is_file() or path.read_bytes()!=data:raise SystemExit('Identity fixture drift')
    else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
- print(f'identity fixtures: check={args.check}, files=2, destinations={len(roots)}, ok')
+ print(f'identity fixtures: check={args.check}, files=3, destinations={len(roots)}, ok')
 if __name__=='__main__':main()

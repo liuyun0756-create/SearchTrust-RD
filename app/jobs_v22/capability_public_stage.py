@@ -10,7 +10,10 @@ from app.report_v22.findings_models import PublicFindingsInput
 
 
 class CheckpointedCapabilityPublicStage:
-    """No provider call or debit; retries share the original frozen job input."""
+    """Retries read the frozen report checkpoint, including copy outcomes."""
+
+    def __init__(self, example_provider=None):
+        self.example_provider = example_provider
 
     async def build(self, *, job_id: UUID, manifest: AnalysisInputManifest | dict,
                     request: PublicFindingsInput | dict, checkpoints: JobCheckpoints) -> CapabilityReport:
@@ -29,6 +32,13 @@ class CheckpointedCapabilityPublicStage:
                 report = build_public_capability_report(manifest, request)
             except CapabilityPublicError:
                 raise DeterministicJobError("V22_CAPABILITY_PUBLIC_RESULT_INVALID", "The public evidence could not produce a valid diagnosis.") from None
+            if report.action_advice is not None:
+                from app.jobs_v22.action_example_provider import fill_action_examples
+
+                async def claim_attempt():
+                    return await checkpoints.save(job_id, f"{key}:example-attempt", {"attempted": True})
+
+                report = await fill_action_examples(report, self.example_provider, claim_attempt=claim_attempt)
             return {"schema_version": "capability_public_checkpoint_v1", "job_id": str(job_id), "input_digest": basis,
                     "result_checksum": request_digest(report), "result": report.model_dump(mode="json")}
 

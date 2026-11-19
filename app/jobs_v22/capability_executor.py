@@ -9,10 +9,10 @@ from app.report_v22.capability import CapabilityReport
 
 
 class CapabilityV22Executor:
-    def __init__(self, *, resolver, persister):
+    def __init__(self, *, resolver, persister, example_provider=None):
         self.resolver=resolver
         self.persister=persister
-        self.public_stage=CheckpointedCapabilityPublicStage()
+        self.public_stage=CheckpointedCapabilityPublicStage(example_provider)
         self.service_stage=CheckpointedCapabilityServiceStage()
 
     async def execute(self, *, job_id, request, submitted_at, checkpoints, cost_ledger=None):

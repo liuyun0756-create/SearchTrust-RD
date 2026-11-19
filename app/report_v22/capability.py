@@ -112,6 +112,7 @@ class ImplementationReference(StrictModel):
     checksum: Checksum
 
 
+from app.report_v22.action_advice_models import ActionAdvice
 from app.report_v22.keyword_visibility import KeywordVisibility
 from app.report_v22.gbp_comparison import GbpComparison
 from app.report_v22.landing_page_comparison import LandingComparison
@@ -120,7 +121,7 @@ from app.report_v22.comparison_reasons import PossibleReasons, build_possible_re
 
 
 class AnalysisInputManifest(StrictModel):
-    schema_version: Literal["v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"]
+    schema_version: Literal["v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"]
     id: UUID
     job_id: UUID
     user_id: UUID
@@ -148,17 +149,19 @@ class AnalysisInputManifest(StrictModel):
         if self.execution_type is None:
             result.pop("execution_type", None)
             result.pop("base_report_ref", None)
-        if self.schema_version not in {"v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}:
+        if self.schema_version not in {"v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}:
             result.pop("keyword_queries", None)
-        if self.schema_version not in {"v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}:
+        if self.schema_version not in {"v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}:
             for key in ("identity_version_id", "identity_checksum", "target_market", "evidence_as_of"):
                 result.pop(key, None)
         return result
 
     @model_validator(mode="after")
     def validate_binding(self):
-        v3 = self.schema_version in {"v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}
-        v4 = self.schema_version in {"v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}
+        v3 = self.schema_version in {"v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}
+        v4 = self.schema_version in {"v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}
+        if (self.schema_version == "v22_analysis_input_v10") != (self.ruleset_version == "v22_capability_public_v20"):
+            raise ValueError("action advice requires manifest v10 / v20")
         if (self.schema_version == "v22_analysis_input_v8") != (self.ruleset_version == "v22_capability_public_v18"):
             raise ValueError("local entity coverage requires v8 / v18")
         if (self.schema_version == "v22_analysis_input_v7") != (self.ruleset_version == "v22_capability_public_v17"):
@@ -167,14 +170,14 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("landing comparison requires v6 / v16")
         if (self.schema_version == "v22_analysis_input_v5") != (self.ruleset_version == "v22_capability_public_v15"):
             raise ValueError("GBP comparison requires manifest v5 / v15")
-        if v4 != (self.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}):
+        if v4 != (self.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}):
             raise ValueError("keyword manifest requires v14")
         if v4:
             if self.keyword_queries is None or len({q.casefold() for q in self.keyword_queries}) != len(self.keyword_queries):
                 raise ValueError("confirmed keyword queries required")
         elif "keyword_queries" in self.model_fields_set:
             raise ValueError("historical manifest cannot carry keyword queries")
-        if v3 != (self.ruleset_version in {"v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}):
+        if v3 != (self.ruleset_version in {"v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}):
             raise ValueError("identity v2 requires manifest v3 and public v13")
         fields = ("identity_version_id", "identity_checksum", "target_market", "evidence_as_of")
         if v3:
@@ -204,8 +207,8 @@ class AnalysisInputManifest(StrictModel):
         if kinds != sorted(kinds, key=SOURCE_ORDER.index):
             raise ValueError("snapshot order is not canonical")
         required = set(SOURCE_ORDER[:4 if self.mode == "acquisition" else 6])
-        if self.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"}:
-            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}:
+        if self.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}:
+            if self.mode != "acquisition" or self.ruleset_version not in {"v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}:
                 raise ValueError("rendered inputs require their own acquisition ruleset")
             if self.schema_version == "v22_analysis_input_v2" or "rendered" in kinds:
                 required.add("rendered")
@@ -216,8 +219,8 @@ class AnalysisInputManifest(StrictModel):
         for source in self.snapshots:
             if source.schema_version != SOURCE_SCHEMAS[source.source_kind] and not (
                     (source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2")
-                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.ruleset_version in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"})
-                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"})):
+                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.ruleset_version in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"})
+                    or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.ruleset_version in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"})):
                 raise ValueError("source schema mismatch")
             if source.case_id != self.case_id or not instant(source.fetched_at) <= instant(self.evidence_as_of or self.evaluated_at) < instant(source.expires_at):
                 raise ValueError("source Case or freshness mismatch")
@@ -423,25 +426,28 @@ class ContactCheck(StrictModel):
 class CapabilityReport(StrictModel):
     model_config = ConfigDict(json_schema_extra={
         "allOf": [
-            {"if": {"properties": {"schema_version": {"const": "2.2.13"}}},
+            {"if": {"properties": {"schema_version": {"enum": ["2.2.13", "2.2.15"]}}},
              "then": {"required": ["local_entity_coverage"], "properties": {"local_entity_coverage": {"type": "object"}}},
              "else": {"not": {"required": ["local_entity_coverage"]}}},
-            {"if":{"properties":{"schema_version":{"enum":["2.2.12", "2.2.13"]}}},"then":{"required":["possible_reasons"],"properties":{"possible_reasons":{"type":"object"}}},"else":{"not":{"required":["possible_reasons"]}}}, {"if":{"properties":{"schema_version":{"enum":["2.2.11", "2.2.12", "2.2.13"]}}},"then":{"required":["landing_page_comparison"],"properties":{"landing_page_comparison":{"type":"object"}}},"else":{"not":{"required":["landing_page_comparison"]}}}, {"if": {"properties": {"schema_version": {"enum": ["2.2.10", "2.2.11", "2.2.12", "2.2.13"]}}}, "then": {"required": ["gbp_comparison"], "properties": {"gbp_comparison": {"type": "object"}}}, "else": {"not": {"required": ["gbp_comparison"]}}}, {"if": {"properties": {"schema_version": {"enum": ["2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"]}}},
+            {"if": {"properties": {"schema_version": {"const": "2.2.15"}}},
+             "then": {"required": ["action_advice"], "properties": {"action_advice": {"type": "array"}}},
+             "else": {"not": {"required": ["action_advice"]}}},
+            {"if":{"properties":{"schema_version":{"enum":["2.2.12", "2.2.13", "2.2.15"]}}},"then":{"required":["possible_reasons"],"properties":{"possible_reasons":{"type":"object"}}},"else":{"not":{"required":["possible_reasons"]}}}, {"if":{"properties":{"schema_version":{"enum":["2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}},"then":{"required":["landing_page_comparison"],"properties":{"landing_page_comparison":{"type":"object"}}},"else":{"not":{"required":["landing_page_comparison"]}}}, {"if": {"properties": {"schema_version": {"enum": ["2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}}, "then": {"required": ["gbp_comparison"], "properties": {"gbp_comparison": {"type": "object"}}}, "else": {"not": {"required": ["gbp_comparison"]}}}, {"if": {"properties": {"schema_version": {"enum": ["2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}},
             "then": {"required": ["keyword_visibility"], "properties": {"keyword_visibility": {"type": "object"}}},
             "else": {"not": {"required": ["keyword_visibility"]}}}] + [
             {"if": {"properties": {"schema_version": {"const": version}}},
              "then": {"properties": {"input_manifest": {"type": "object", "properties": {"ruleset_version": {"const": rules}}}}}}
-            for version, rules in (("2.2.6", "v22_capability_public_v11"), ("2.2.7", "v22_capability_public_v12"), ("2.2.8", "v22_capability_public_v13"), ("2.2.9", "v22_capability_public_v14"), ("2.2.10", "v22_capability_public_v15"), ("2.2.11", "v22_capability_public_v16"), ("2.2.12", "v22_capability_public_v17"), ("2.2.13", "v22_capability_public_v18"))
-        ] + [{"if": {"properties": {"schema_version": {"enum": ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"]}}},
+            for version, rules in (("2.2.6", "v22_capability_public_v11"), ("2.2.7", "v22_capability_public_v12"), ("2.2.8", "v22_capability_public_v13"), ("2.2.9", "v22_capability_public_v14"), ("2.2.10", "v22_capability_public_v15"), ("2.2.11", "v22_capability_public_v16"), ("2.2.12", "v22_capability_public_v17"), ("2.2.13", "v22_capability_public_v18"), ("2.2.15", "v22_capability_public_v20"))
+        ] + [{"if": {"properties": {"schema_version": {"enum": ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}},
               "then": {"required": ["action_candidates"], "properties": {"action_candidates": {"type": "array"}}},
               "else": {"not": {"properties": {"action_candidates": {}}, "required": ["action_candidates"]}}},
-             {"if": {"properties": {"schema_version": {"enum": ["2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"]}}},
+             {"if": {"properties": {"schema_version": {"enum": ["2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}},
               "else": {"properties": {"contact_checks": {"type": "array", "maxItems": 4, "items": {"type": "object", "properties": {
                 "field": {"enum": ["phone", "address", "business_name", "service_area"]}}}}}}}],
-        "if": {"properties": {"schema_version": {"enum": ["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"]}}, "required": ["schema_version"]},
+        "if": {"properties": {"schema_version": {"enum": ["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]}}, "required": ["schema_version"]},
         "then": {
             "if": {"properties": {"input_manifest": {"type": "object", "properties": {
-                "ruleset_version": {"enum": ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"]}}, "required": ["ruleset_version"]}},
+                "ruleset_version": {"enum": ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"]}}, "required": ["ruleset_version"]}},
                 "required": ["input_manifest"]},
             "then": {"properties": {"contact_checks": {"type": "array"}}, "required": ["contact_checks"]},
             "else": {"not": {"properties": {"contact_checks": {}}, "required": ["contact_checks"]}},
@@ -456,7 +462,7 @@ class CapabilityReport(StrictModel):
             "type": "object", "not": {"anyOf": [{"properties": {name: {}}, "required": [name]} for name in ("kind", "status", "coverage")]}
         }}}}
     })
-    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"]
+    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"]
     id: UUID
     report_type: Literal["prospect", "verified_execution"]
     version: int = Field(ge=1)
@@ -471,6 +477,7 @@ class CapabilityReport(StrictModel):
     landing_page_comparison: LandingComparison | None = None
     possible_reasons: PossibleReasons | None = None
     local_entity_coverage: LocalEntityCoverage | None = None
+    action_advice: list[ActionAdvice] | None = Field(default=None, max_length=1000)
     contact_checks: list[ContactCheck] | None = Field(default=None, max_length=5)
     action_state: Literal["actions_supported", "insufficient_basis"]
     action_candidates: list[CapabilityAction] | None = Field(default=None, max_length=1000)
@@ -484,6 +491,8 @@ class CapabilityReport(StrictModel):
     def preserve_historical_bytes(self, handler):
         result = handler(self)
         # Adding optional metadata must not change historical report digests.
+        if self.action_advice is None:
+            result.pop("action_advice", None)
         if self.local_entity_coverage is None:
             result.pop("local_entity_coverage", None)
         if self.possible_reasons is None:
@@ -505,9 +514,14 @@ class CapabilityReport(StrictModel):
     @model_validator(mode="after")
     def validate_references(self):
         manifest = self.input_manifest
-        local_entity = manifest.ruleset_version == "v22_capability_public_v18"
+        advice_version = manifest.ruleset_version == "v22_capability_public_v20"
+        if advice_version != (self.schema_version == "2.2.15") or advice_version != (self.action_advice is not None):
+            raise ValueError("action advice requires v20 / 2.2.15")
+        if not advice_version and "action_advice" in self.model_fields_set:
+            raise ValueError("historical report cannot carry action advice")
+        local_entity = manifest.ruleset_version in {"v22_capability_public_v18", "v22_capability_public_v20"}
         coverage = self.local_entity_coverage
-        if local_entity != (self.schema_version == "2.2.13") or local_entity != (coverage is not None):
+        if local_entity != (self.schema_version in {"2.2.13", "2.2.15"}) or local_entity != (coverage is not None):
             raise ValueError("local entity coverage requires v18 / 2.2.13")
         if not local_entity and "local_entity_coverage" in self.model_fields_set:
             raise ValueError("historical report cannot carry local entity coverage")
@@ -518,15 +532,15 @@ class CapabilityReport(StrictModel):
                 for e in coverage.evidence
             ):
                 raise ValueError("local entity coverage source binding mismatch")
-        reasons = manifest.ruleset_version in {"v22_capability_public_v17", "v22_capability_public_v18"}
-        if reasons != (self.schema_version in {"2.2.12", "2.2.13"}) or reasons != (self.possible_reasons is not None):
+        reasons = manifest.ruleset_version in {"v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
+        if reasons != (self.schema_version in {"2.2.12", "2.2.13", "2.2.15"}) or reasons != (self.possible_reasons is not None):
             raise ValueError("possible reasons requires v17 / 2.2.12")
         if not reasons and "possible_reasons" in self.model_fields_set:
             raise ValueError("historical report cannot carry possible reasons")
         if reasons and self.possible_reasons != build_possible_reasons(self.gbp_comparison, self.landing_page_comparison):
             raise ValueError("possible reasons evidence gates mismatch")
-        landing = manifest.ruleset_version in {"v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-        if landing != (self.schema_version in {"2.2.11", "2.2.12", "2.2.13"}) or landing != (self.landing_page_comparison is not None):
+        landing = manifest.ruleset_version in {"v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
+        if landing != (self.schema_version in {"2.2.11", "2.2.12", "2.2.13", "2.2.15"}) or landing != (self.landing_page_comparison is not None):
             raise ValueError("landing comparison requires v16 / 2.2.11")
         if not landing and "landing_page_comparison" in self.model_fields_set:
             raise ValueError("historical report cannot carry landing comparison")
@@ -543,8 +557,8 @@ class CapabilityReport(StrictModel):
                     for e in metric.evidence:
                         if e.snapshot_id != row.snapshot_id or not e.path.startswith(expected_path + "/selected_pages/"):
                             raise ValueError("landing evidence source binding mismatch")
-        comparison = manifest.ruleset_version in {"v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-        if comparison != (self.schema_version in {"2.2.10", "2.2.11", "2.2.12", "2.2.13"}) or comparison != (self.gbp_comparison is not None):
+        comparison = manifest.ruleset_version in {"v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
+        if comparison != (self.schema_version in {"2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"}) or comparison != (self.gbp_comparison is not None):
             raise ValueError("GBP comparison requires v15 / 2.2.10")
         if not comparison and "gbp_comparison" in self.model_fields_set:
             raise ValueError("historical report cannot carry GBP comparison")
@@ -557,8 +571,8 @@ class CapabilityReport(StrictModel):
                         [refs["competitor"] + f":/payload/competitors/{index-1}/" + ("public_gbp/" + key if key in ("categories", "rating", "review_count") else "reviews")])
                     if metric.source_refs != expected:
                         raise ValueError("GBP comparison source binding mismatch")
-        keyword = manifest.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-        if keyword != (self.schema_version in {"2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"}) or keyword != (self.keyword_visibility is not None):
+        keyword = manifest.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
+        if keyword != (self.schema_version in {"2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"}) or keyword != (self.keyword_visibility is not None):
             raise ValueError("keyword visibility requires v14 / 2.2.9")
         if not keyword and "keyword_visibility" in self.model_fields_set:
             raise ValueError("historical report cannot carry keyword visibility")
@@ -567,17 +581,17 @@ class CapabilityReport(StrictModel):
             source = next((s for s in manifest.snapshots if s.source_kind == "serp"), None)
             if [r.query for r in module.rows] != manifest.keyword_queries or (source and (module.sample.snapshot_id != source.snapshot_id or module.sample.payload_checksum != source.payload_checksum or instant(module.sample.observed_at) != instant(source.fetched_at))):
                 raise ValueError("keyword source and query binding mismatch")
-        v12 = manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-        if (self.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"}) != v12 or v12 != (self.action_candidates is not None):
+        v12 = manifest.ruleset_version in {"v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
+        if (self.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"}) != v12 or v12 != (self.action_candidates is not None):
             raise ValueError("candidate pool requires v12")
         if not v12 and "action_candidates" in self.model_fields_set:
             raise ValueError("historical report cannot contain candidate pool")
         if (self.schema_version == "2.2.8") != (manifest.ruleset_version == "v22_capability_public_v13"):
             raise ValueError("identity v2 report version mismatch")
-        labelled = self.schema_version in {"2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"}
+        labelled = self.schema_version in {"2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"}
         if (self.schema_version == "2.2.6") != (manifest.ruleset_version == "v22_capability_public_v11"):
             raise ValueError("hours require v11")
-        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_service_v5"}):
+        if labelled != (manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20", "v22_capability_service_v5"}):
             raise ValueError("finding labels require a versioned ruleset")
         if any((f.kind is not None) != labelled for f in self.findings):
             raise ValueError("finding labels require the new report version")
@@ -600,11 +614,11 @@ class CapabilityReport(StrictModel):
         snapshots = {s.snapshot_id: s for s in manifest.snapshots}
         evidence = {e.id: e for e in self.evidence}
         findings = {f.id: f for f in self.findings}
-        has_checks = manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
+        has_checks = manifest.ruleset_version in {"v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"}
         if has_checks != (self.contact_checks is not None) or (not has_checks and "contact_checks" in self.model_fields_set):
             raise ValueError("contact checks require public v8")
         checks = self.contact_checks or []
-        if manifest.ruleset_version not in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"} and (len(checks)>4 or any(c.field=="opening_hours" for c in checks)):
+        if manifest.ruleset_version not in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"} and (len(checks)>4 or any(c.field=="opening_hours" for c in checks)):
             raise ValueError("hours require v11")
         if len({c.field for c in checks}) != len(checks):
             raise ValueError("duplicate contact check field")
@@ -646,7 +660,64 @@ class CapabilityReport(StrictModel):
                 raise ValueError("changed finding fingerprint mismatch")
         if len({c.finding_id for c in self.changes}) != len(self.changes):
             raise ValueError("duplicate history badge")
-        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_service_v5"}
+        if advice_version:
+            from app.report_v22.action_advice import (
+                COPY_KINDS, CONFIDENCE, EFFORT, approved_options, contains_phrase,
+                copy_target_verified, restricted, safe_copy,
+            )
+            pool = self.action_candidates or []
+            ranks = {action.id: number for number, action in enumerate(self.actions, 1)}
+            if [advice.action_id for advice in self.action_advice] != [action.id for action in pool]:
+                raise ValueError("advice must follow the frozen action pool")
+            for action, advice in zip(pool, self.action_advice):
+                basis = [findings[key] for key in action.finding_ids]
+                eligible = [finding for finding in basis if finding.status == "confirmed" and finding.confidence != "low"]
+                used = eligible or basis
+                kind = action.materials[0].kind if action.materials else None
+                if (advice.reference or advice.example) and (
+                    not eligible or kind not in COPY_KINDS or not copy_target_verified(
+                        action.target, manifest.business.site_url, {finding.rule_id for finding in eligible}
+                    )
+                ):
+                    raise ValueError("this action cannot carry published copy")
+                expected_evidence = list(dict.fromkeys(key for finding in used for key in finding.evidence_ids))[:50]
+                reference = advice.reference
+                expected_fix = ["Reuse the cited passage on the proposed page.", *action.steps[:11]] if reference else action.steps
+                if (advice.priority != ranks.get(action.id) or advice.where != action.target
+                        or advice.verification != action.completion or advice.fix != expected_fix
+                        or advice.problem != list(dict.fromkeys(f.observed_fact for f in used))
+                        or advice.why_important != list(dict.fromkeys(f.impact_path for f in used))
+                        or advice.confidence != min((f.confidence for f in used), key=CONFIDENCE.__getitem__)
+                        or advice.effort != EFFORT.get(kind, "not_assessed")
+                        or advice.evidence_ids != expected_evidence):
+                    raise ValueError("advice substance must match the frozen action and findings")
+                if reference:
+                    from urllib.parse import urlsplit
+                    source_url = urlsplit(reference.url)
+                    target_url = urlsplit(action.target)
+                    city = manifest.target_market.city
+                    if (source_url.username is not None or source_url.password is not None
+                        or (source_url.hostname or "").removeprefix("www.") != (target_url.hostname or "").removeprefix("www.")
+                        or source_url.path.rstrip("/") == target_url.path.rstrip("/")
+                        or not city or not contains_phrase(reference.text, city)
+                        or not contains_phrase(reference.text, manifest.business.primary_service)
+                        or not any(e.url == reference.url and e.location == "body" for e in coverage.evidence)
+                        or not any(
+                            entry.url == reference.url and entry.path == reference.path and entry.quote == reference.text
+                            and entry.snapshot_id == reference.snapshot_id and entry.location == "body"
+                            for metric in self.landing_page_comparison.rows[0].metrics.values() for entry in metric.evidence
+                        )
+                    ):
+                        raise ValueError("advice reference must be bound to customer page evidence")
+                if advice.example and not any(
+                    option.template == advice.example.template and option.text == advice.example.text
+                    for option in approved_options(manifest.business.primary_service)
+                ):
+                    raise ValueError("unbound action example")
+                copy = reference or advice.example
+                if copy and (not safe_copy(copy.text) or restricted(copy.text)):
+                    raise ValueError("advice includes unpublishable copy")
+        priority_rules = {"v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20", "v22_capability_service_v5"}
         if self.prioritization is None and "prioritization" in self.model_fields_set:
             raise ValueError("absent historical priority must not be serialized as null")
         if (manifest.ruleset_version in priority_rules) != (self.prioritization is not None):
@@ -756,7 +827,7 @@ class DeliveryRevision(StrictModel):
         report = CapabilityReport.model_validate(report)
         manifest = report.input_manifest
         v3 = self.schema_version == "v22_delivery_revision_v3"
-        if v3 != (report.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"}):
+        if v3 != (report.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"}):
             raise ValueError("v12 report requires revision v3")
         if self.schema_version == "v22_delivery_revision_v2" and report.schema_version not in {"2.2.5", "2.2.6"}:
             raise ValueError("visibility edits require labelled findings")
