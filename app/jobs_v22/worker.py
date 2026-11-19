@@ -750,7 +750,12 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             if example_api_key:
                 from app.jobs_v22.action_example_provider import ActionExampleProvider
 
-                example_provider = ActionExampleProvider(example_api_key, model=settings.V22_ACTION_EXAMPLE_MODEL)
+                example_provider = ActionExampleProvider(
+                    example_api_key,
+                    api_url=settings.V22_ACTION_EXAMPLE_API_URL,
+                    model=settings.V22_ACTION_EXAMPLE_MODEL,
+                    reasoning_effort=settings.V22_ACTION_EXAMPLE_REASONING_EFFORT,
+                )
             capability_executor = CapabilityV22Executor(
                 example_provider=example_provider,
                 resolver=SupabaseCapabilityInputRepository(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client),

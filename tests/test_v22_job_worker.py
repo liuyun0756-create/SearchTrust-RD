@@ -590,7 +590,9 @@ async def test_action_advice_startup_warns_once_only_when_fully_enabled_without_
     monkeypatch, caplog, disabled_flag, api_key, warning_count,
 ) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", api_key)
+    monkeypatch.setenv("V22_ACTION_EXAMPLE_API_URL", "https://provider.example/v1")
     monkeypatch.setenv("V22_ACTION_EXAMPLE_MODEL", "configured-example-model")
+    monkeypatch.setenv("V22_ACTION_EXAMPLE_REASONING_EFFORT", "low")
     configured = Settings(
         _env_file=None,
         V22_CAPABILITY_EXECUTION_ENABLED=True,
@@ -614,6 +616,8 @@ async def test_action_advice_startup_warns_once_only_when_fully_enabled_without_
             provider = ctx["executor"].capability_executor.public_stage.example_provider
             if api_key.strip():
                 assert provider.model == "configured-example-model"
+                assert provider.url == "https://provider.example/v1/chat/completions"
+                assert provider.reasoning_effort == "low"
                 assert api_key not in caplog.text
             else:
                 assert provider is None
@@ -622,27 +626,67 @@ async def test_action_advice_startup_warns_once_only_when_fully_enabled_without_
 
 
 @pytest.mark.anyio
-async def test_action_advice_sends_the_model_from_environment_configuration(monkeypatch):
+@pytest.mark.parametrize("api_url,effort,expected_url", [
+    (None, None, "https://api.openai.com/v1/chat/completions"),
+    ("https://provider.example/custom/v1/", "low", "https://provider.example/custom/v1/chat/completions"),
+    ("https://provider.example/custom/v1", "   ", "https://provider.example/custom/v1/chat/completions"),
+])
+async def test_action_advice_sends_configuration_to_chat_completions(monkeypatch, api_url, effort, expected_url):
     from app.jobs_v22.action_example_provider import ActionExampleProvider
 
     monkeypatch.delenv("V22_ACTION_EXAMPLE_MODEL", raising=False)
     assert Settings(_env_file=None).V22_ACTION_EXAMPLE_MODEL == "gpt-6-luna"
     monkeypatch.setenv("V22_ACTION_EXAMPLE_MODEL", "configured-example-model")
-    provider = ActionExampleProvider("fake-key", model=Settings(_env_file=None).V22_ACTION_EXAMPLE_MODEL)
+    monkeypatch.delenv("V22_ACTION_EXAMPLE_API_URL", raising=False)
+    monkeypatch.delenv("V22_ACTION_EXAMPLE_REASONING_EFFORT", raising=False)
+    if api_url is not None:
+        monkeypatch.setenv("V22_ACTION_EXAMPLE_API_URL", api_url)
+    if effort is not None:
+        monkeypatch.setenv("V22_ACTION_EXAMPLE_REASONING_EFFORT", effort)
+    configured = Settings(_env_file=None)
+    provider = ActionExampleProvider(
+        "fake-key", api_url=configured.V22_ACTION_EXAMPLE_API_URL,
+        model=configured.V22_ACTION_EXAMPLE_MODEL,
+        reasoning_effort=configured.V22_ACTION_EXAMPLE_REASONING_EFFORT,
+    )
     requests = []
 
     async def send(client, request, **kwargs):
+        assert client.follow_redirects is False
         requests.append(request)
         return httpx.Response(200, json={"choices": [{"message": {"content": '{"1":"Approved."}'}}]}, request=request)
 
     monkeypatch.setattr(httpx.AsyncClient, "send", send)
-    assert await provider.choose({"1": ["Approved."]}) == '{"1":"Approved."}'
+    assert await provider.choose({"1": ["Approved."]}) == {"1": "Approved."}
     assert len(requests) == 1
-    assert str(requests[0].url) == "https://api.openai.com/v1/chat/completions"
+    assert str(requests[0].url) == expected_url
     payload = json.loads(requests[0].content)
     assert payload["model"] == "configured-example-model"
-    assert payload["reasoning_effort"] == "none"
+    if effort == "low":
+        assert payload["reasoning_effort"] == "low"
+    else:
+        assert "reasoning_effort" not in payload
     assert payload["response_format"] == {"type": "json_object"}
+    assert payload["max_completion_tokens"] == 900
+
+
+@pytest.mark.parametrize("url", [
+    "http://provider.example/v1",
+    "ftp://provider.example/v1",
+    "provider.example/v1",
+    "https://",
+    "https://user:password@provider.example/v1",
+    "https://provider.example/v1?secret=example",
+    "https://provider.example/v1#fragment",
+])
+def test_action_example_api_base_must_be_an_https_url_without_credentials_or_suffix(monkeypatch, url):
+    from app.jobs_v22.action_example_provider import ActionExampleProvider
+
+    monkeypatch.setenv("V22_ACTION_EXAMPLE_API_URL", url)
+    with pytest.raises(ValueError, match="V22_ACTION_EXAMPLE_API_URL"):
+        Settings(_env_file=None)
+    with pytest.raises(ValueError, match="HTTPS base URL"):
+        ActionExampleProvider("fake-key", api_url=url, model="mock-model")
 
 
 @pytest.mark.anyio

@@ -38,7 +38,9 @@ class CheckpointedCapabilityPublicStage:
                 async def claim_attempt():
                     return await checkpoints.save(job_id, f"{key}:example-attempt", {"attempted": True})
 
-                report = await fill_action_examples(report, self.example_provider, claim_attempt=claim_attempt)
+                report = await fill_action_examples(
+                    report, self.example_provider, claim_attempt=claim_attempt, job_id=job_id,
+                )
             return {"schema_version": "capability_public_checkpoint_v1", "job_id": str(job_id), "input_digest": basis,
                     "result_checksum": request_digest(report), "result": report.model_dump(mode="json")}
 

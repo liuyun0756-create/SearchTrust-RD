@@ -10,8 +10,20 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, SecretStr, field_validator
+import httpx
+from pydantic import AfterValidator, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def validate_action_example_api_url(value: str) -> str:
+    value = value.strip()
+    try:
+        url = httpx.URL(value)
+    except httpx.InvalidURL:
+        raise ValueError("Invalid action example API URL") from None
+    if url.scheme != "https" or not url.host or url.userinfo or "?" in value or "#" in value:
+        raise ValueError("Action example API URL must be an HTTPS base URL without credentials, query or fragment")
+    return str(url).rstrip("/")
 
 
 class Settings(BaseSettings):
@@ -114,7 +126,9 @@ class Settings(BaseSettings):
     V22_COMPARISON_REASONS_ENABLED: bool = False
     V22_LOCAL_ENTITY_COVERAGE_ENABLED: bool = False
     V22_ACTION_EXAMPLE_COPY_ENABLED: bool = False
+    V22_ACTION_EXAMPLE_API_URL: Annotated[str, AfterValidator(validate_action_example_api_url)] = "https://api.openai.com/v1"
     V22_ACTION_EXAMPLE_MODEL: str = Field(default="gpt-6-luna", min_length=1)
+    V22_ACTION_EXAMPLE_REASONING_EFFORT: str = ""
     OPENAI_API_KEY: SecretStr = Field(default="", repr=False)
     V22_COST_PRICING_REVISION: Annotated[int, Field(ge=1, le=1_000_000)] = 1
     V22_COST_SERPAPI_REQUEST_USD_MICROS: Annotated[int | None, Field(ge=0)] = None
