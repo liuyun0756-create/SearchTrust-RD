@@ -1,4 +1,4 @@
-"""V18-only recovery cannot erase visible ambiguity, budgets, or provenance."""
+"""Recovery for registered public rulesets starting at v18 cannot erase visible ambiguity, budgets, or provenance."""
 import logging
 
 import pytest
@@ -17,14 +17,16 @@ def parse(html, ruleset=HTML_TOLERANCE_RULESET, **limits):
     return parse_html(html, '/saved/html', ParseBudget(SiteBusinessLimits(**limits)), ruleset_version=ruleset)
 
 
+@pytest.mark.parametrize('version', [18, 19, 20])
 @pytest.mark.parametrize('html,code', [
     ('<div>Saved phone</div></div><p>After</p>', 'unmatched_end_tag_ignored'),
     ('<svg fill="none" fill="red"><text>555-9999</text></svg><p>After</p>', 'ignored_svg_duplicate_attribute'),
     ('<svg><path fill="none" fill="red"/></svg><p>After</p>', 'ignored_svg_duplicate_attribute'),
 ])
-def test_v18_recovers_only_isolated_errors_and_keeps_source_spans(html, code, caplog):
+def test_registered_v18_and_newer_recover_isolated_errors_and_keep_source_spans(html, code, caplog, version):
+    ruleset = f'v22_capability_public_v{version}'
     with caplog.at_level(logging.INFO):
-        tree = parse(html)
+        tree = parse(html, ruleset)
     assert not tree.dom_failed
     assert [r['code'] for r in tree.recoveries] == [code]
     assert tree.text == html and visible_text(tree.root).endswith('After')
@@ -32,12 +34,20 @@ def test_v18_recovers_only_isolated_errors_and_keeps_source_spans(html, code, ca
     p = next(n for n in tree.nodes if n.tag == 'p')
     assert html[p.start:p.end] == '<p>After</p>'
     record = next(r for r in caplog.records if r.msg == 'site_business_html_recovery')
-    assert (record.recovery_code, record.recovery_count, record.ruleset_version) == (code, 1, HTML_TOLERANCE_RULESET)
+    assert (record.recovery_code, record.recovery_count, record.ruleset_version) == (code, 1, ruleset)
     assert not any(value in caplog.text for value in ('555-9999', 'Saved phone', '/saved/html'))
 
 
-@pytest.mark.parametrize('version', [*(f'v22_capability_public_v{n}' for n in range(1, 18)), 'v22_capability_public_v999', 'unknown'])
-def test_v1_to_v17_keep_default_diagnostics_and_candidate_bytes(version):
+@pytest.mark.parametrize('version', [
+    *(f'v22_capability_public_v{number}' for number in range(1, 18)),
+    'v22_capability_public_v21',
+    'v22_capability_public_v999',
+    'v22_capability_public_v018',
+    'v22_capability_service_v20',
+    'unknown',
+    None,
+])
+def test_older_and_unknown_rulesets_keep_default_diagnostics_and_candidate_bytes(version):
     value = request(business_html() + '</div><svg fill="none" fill="red"></svg>')
     before = canonical_json_bytes(value)
     legacy = build_site_business_facts(value, text_patterns=True)
