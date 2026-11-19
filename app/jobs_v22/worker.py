@@ -528,6 +528,16 @@ def _secret_value(value: SecretStr | str) -> str:
 
 async def on_startup(ctx: dict[str, Any]) -> None:
     pool = ctx["redis"]
+    example_copy_enabled = all((
+        settings.V22_ACTION_EXAMPLE_COPY_ENABLED,
+        settings.V22_GBP_COMPARISON_ENABLED,
+        settings.V22_LANDING_PAGE_COMPARISON_ENABLED,
+        settings.V22_COMPARISON_REASONS_ENABLED,
+        settings.V22_LOCAL_ENTITY_COVERAGE_ENABLED,
+    ))
+    example_api_key = _secret_value(settings.OPENAI_API_KEY).strip() if example_copy_enabled else ""
+    if example_copy_enabled and not example_api_key:
+        logger.warning("action_advice_enabled_without_api_key")
     await start_attachment_cleanup(ctx, settings)
     if settings.V22_PAGE_CHECKS_ENABLED and settings.V22_CAPABILITY_EXECUTION_ENABLED:
         page_client = httpx.AsyncClient(timeout=30, follow_redirects=False)
@@ -737,11 +747,10 @@ async def on_startup(ctx: dict[str, Any]) -> None:
         capability_http_client = httpx.AsyncClient(timeout=60,follow_redirects=False)
         try:
             example_provider = None
-            if (settings.V22_ACTION_EXAMPLE_COPY_ENABLED and settings.V22_GBP_COMPARISON_ENABLED
-                    and settings.V22_LANDING_PAGE_COMPARISON_ENABLED and settings.V22_COMPARISON_REASONS_ENABLED
-                    and settings.V22_LOCAL_ENTITY_COVERAGE_ENABLED and settings.OPENAI_API_KEY.get_secret_value()):
+            if example_api_key:
                 from app.jobs_v22.action_example_provider import ActionExampleProvider
-                example_provider = ActionExampleProvider(settings.OPENAI_API_KEY.get_secret_value())
+
+                example_provider = ActionExampleProvider(example_api_key, model=settings.V22_ACTION_EXAMPLE_MODEL)
             capability_executor = CapabilityV22Executor(
                 example_provider=example_provider,
                 resolver=SupabaseCapabilityInputRepository(url=settings.V22_SUPABASE_URL,service_role_key=storage_key,http_client=capability_http_client),
