@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
@@ -21,7 +22,7 @@ from app.jobs_v22.models import JobState
 from app.jobs_v22.store import DurableJobStore
 from app.jobs_v22.worker import execute_v22_job, on_shutdown, on_startup
 from app.jobs_v22.verified_reconciler import reconcile_v22_verified_orphans
-from app.core.config import settings
+from app.core.config import Settings, settings
 from app.competitors_v22.selection import AnalysisDiscoveryLink, AnalysisRequestEnvelope
 from app.api.v2.models import AnalyzeRequest
 from app.report_v22.models import ReportV22
@@ -568,6 +569,80 @@ async def test_worker_builds_real_isolated_executor_only_when_analyze_is_enabled
         )
     finally:
         await on_shutdown(ctx)
+
+
+ACTION_ADVICE_FLAGS = (
+    "V22_ACTION_EXAMPLE_COPY_ENABLED",
+    "V22_GBP_COMPARISON_ENABLED",
+    "V22_LANDING_PAGE_COMPARISON_ENABLED",
+    "V22_COMPARISON_REASONS_ENABLED",
+    "V22_LOCAL_ENTITY_COVERAGE_ENABLED",
+)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("disabled_flag", "api_key", "warning_count"),
+    [(None, "", 1), (None, "   ", 1), (None, "fake-openai-test-key", 0)]
+    + [(flag, "", 0) for flag in ACTION_ADVICE_FLAGS],
+)
+async def test_action_advice_startup_warns_once_only_when_fully_enabled_without_key(
+    monkeypatch, caplog, disabled_flag, api_key, warning_count,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", api_key)
+    monkeypatch.setenv("V22_ACTION_EXAMPLE_MODEL", "configured-example-model")
+    configured = Settings(
+        _env_file=None,
+        V22_CAPABILITY_EXECUTION_ENABLED=True,
+        V22_SUPABASE_URL="https://project.supabase.co",
+        V22_SUPABASE_SERVICE_ROLE_KEY=SecretStr("fake-service"),
+        V22_CALLBACK_URL="https://app.example.com/callback",
+        V22_CALLBACK_SECRET=SecretStr("fake-callback"),
+        **{flag: flag != disabled_flag for flag in ACTION_ADVICE_FLAGS},
+    )
+    monkeypatch.setattr("app.jobs_v22.worker.settings", configured)
+    async with fakeredis.aioredis.FakeRedis(decode_responses=False) as redis:
+        ctx = {"redis": redis}
+        with caplog.at_level(logging.WARNING, logger="app.jobs_v22.worker"):
+            await on_startup(ctx)
+        try:
+            warning = [
+                record for record in caplog.records
+                if record.getMessage() == "action_advice_enabled_without_api_key"
+            ]
+            assert [record.levelno for record in warning] == [logging.WARNING] * warning_count
+            provider = ctx["executor"].capability_executor.public_stage.example_provider
+            if api_key.strip():
+                assert provider.model == "configured-example-model"
+                assert api_key not in caplog.text
+            else:
+                assert provider is None
+        finally:
+            await on_shutdown(ctx)
+
+
+@pytest.mark.anyio
+async def test_action_advice_sends_the_model_from_environment_configuration(monkeypatch):
+    from app.jobs_v22.action_example_provider import ActionExampleProvider
+
+    monkeypatch.delenv("V22_ACTION_EXAMPLE_MODEL", raising=False)
+    assert Settings(_env_file=None).V22_ACTION_EXAMPLE_MODEL == "gpt-6-luna"
+    monkeypatch.setenv("V22_ACTION_EXAMPLE_MODEL", "configured-example-model")
+    provider = ActionExampleProvider("fake-key", model=Settings(_env_file=None).V22_ACTION_EXAMPLE_MODEL)
+    requests = []
+
+    async def send(client, request, **kwargs):
+        requests.append(request)
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"1":"Approved."}'}}]}, request=request)
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", send)
+    assert await provider.choose({"1": ["Approved."]}) == '{"1":"Approved."}'
+    assert len(requests) == 1
+    assert str(requests[0].url) == "https://api.openai.com/v1/chat/completions"
+    payload = json.loads(requests[0].content)
+    assert payload["model"] == "configured-example-model"
+    assert payload["reasoning_effort"] == "none"
+    assert payload["response_format"] == {"type": "json_object"}
 
 
 @pytest.mark.anyio

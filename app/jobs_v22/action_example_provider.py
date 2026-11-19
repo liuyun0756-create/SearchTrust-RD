@@ -6,7 +6,6 @@ import httpx
 
 from app.report_v22.action_advice import apply_copy_result, copy_options
 
-MODEL = "gpt-4.1-mini-2025-04-14"
 TIMEOUT_SECONDS = 8
 INSTRUCTION = (
     "Choose one supplied sentence for each action. Copy it exactly. Return only a JSON object "
@@ -15,8 +14,9 @@ INSTRUCTION = (
 
 
 class ActionExampleProvider:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, *, model: str):
         self.api_key = api_key
+        self.model = model
 
     async def choose(self, menu: dict[str, list[str]]) -> str:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS, follow_redirects=False) as http:
@@ -24,7 +24,8 @@ class ActionExampleProvider:
                 "https://api.openai.com/v1/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 json={
-                    "model": MODEL,
+                    "model": self.model,
+                    "reasoning_effort": "none",
                     "messages": [{"role": "system", "content": INSTRUCTION},
                                  {"role": "user", "content": json.dumps(menu, ensure_ascii=False)}],
                     "response_format": {"type": "json_object"}, "max_completion_tokens": 900,
