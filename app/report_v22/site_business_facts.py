@@ -46,7 +46,7 @@ def field_states(candidates, diagnostics, checked):
     return fields
 
 
-def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patterns=False, gbp_phone=None, gbp_address=None, country="", resource_limits=False) -> SiteBusinessFactsResult:
+def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patterns=False, gbp_phone=None, gbp_address=None, country="", resource_limits=False, ruleset_version=None) -> SiteBusinessFactsResult:
     try:
         reject_nonfinite(value)
         raw = unpack_models(value)
@@ -92,7 +92,8 @@ def build_site_business_facts(value: SiteBusinessFactsInput | dict, *, text_patt
                 else:
                     path = f"/payload/selected_pages/{position}/deep_snapshot/html"
                     try:
-                        tree = parse_html(deep.html, path, budget)
+                        tree = parse_html(deep.html, path, budget, **(
+                            {"ruleset_version": ruleset_version} if ruleset_version is not None else {}))
                     except SiteBusinessError as exc:
                         if not resource_limits or not exc.error_code.endswith("LIMIT_EXCEEDED"):
                             raise
