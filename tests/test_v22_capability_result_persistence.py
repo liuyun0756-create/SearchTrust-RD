@@ -90,6 +90,33 @@ async def test_transport_failures_are_bounded_and_do_not_log_private_bodies(code
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(("code", "message", "reason"), [
+    ("P0001", "CAPABILITY_REPORT_INVALID", "CAPABILITY_REPORT_INVALID"),
+    ("P0001", "CAPABILITY_GBP_COMPARISON_VALUE_INVALID", "CAPABILITY_GBP_COMPARISON_VALUE_INVALID"),
+    ("P0001", "CAPABILITY_CANDIDATES_INVALID", "CAPABILITY_CANDIDATES_INVALID"),
+    ("P0001", "CAPABILITY_RECIPE_SOURCE_INVALID", "CAPABILITY_RECIPE_SOURCE_INVALID"),
+    ("P0001", "CAPABILITY_UNRECOGNIZED_PRIVATE_VALUE", None),
+    ("P0001", "CAPABILITY_REPORT_INVALID: private-result-details", None),
+    ("P0001", {"code": "CAPABILITY_REPORT_INVALID"}, None),
+    ("22P02", 'invalid input syntax for type integer: "private-cast-value"', "invalid_text_representation"),
+])
+async def test_capability_rejection_logs_only_exact_database_invariant(code, message, reason, caplog):
+    body = {"code": code, "message": message, "details": "private-result-details", "hint": "private-result-hint"}
+    with pytest.raises(DeterministicJobError) as error:
+        await persist(httpx.Response(400, json=body), params=values("acquisition"))
+    assert error.value.error_code == "V22_CAPABILITY_PERSISTENCE_REJECTED"
+    warnings = [record for record in caplog.records if record.getMessage().startswith("verified RPC rejected ")]
+    if reason:
+        assert len(warnings) == 1
+        assert warnings[0].getMessage().endswith(f" reason={reason}")
+    else:
+        assert not warnings
+    assert "private-result-details" not in caplog.text
+    assert "private-result-hint" not in caplog.text
+    assert "private-cast-value" not in caplog.text
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize("change", ["empty", "many", "job", "checksum", "idempotent", "extra", "json", "oversized"])
 async def test_bad_ack_is_retryable_not_a_reason_to_refund(change):
     params = values()
