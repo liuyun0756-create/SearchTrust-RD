@@ -86,6 +86,34 @@ def test_duplicate_titles_across_pages_do_not_publish_generic_service_copy():
     assert any(item.rejection_reason == "target_scope_unverified" for item in report.action_advice)
 
 
+@pytest.mark.anyio
+async def test_empty_copy_options_log_only_counts_and_preserve_report(caplog):
+    report = build_public_capability_report(*example_gold_input("pr-plumbing-fresno"))
+    original = canonical_json_bytes(report)
+    job_id = report.input_manifest.job_id
+    provider = SimpleNamespace(choose=AsyncMock())
+    claim_attempt = AsyncMock()
+
+    provider_logger = "app.jobs_v22.action_example_provider"
+    caplog.clear()
+    with caplog.at_level("INFO", logger=provider_logger):
+        result = await fill_action_examples(
+            report, provider, claim_attempt=claim_attempt, job_id=job_id,
+        )
+
+    assert canonical_json_bytes(result) == original
+    skipped_messages = [
+        record.getMessage() for record in caplog.records
+        if record.name == provider_logger and record.getMessage().startswith("action_example_skipped")
+    ]
+    assert skipped_messages == [
+        f"action_example_skipped job_id_suffix={str(job_id)[-8:]} selected=2 "
+        "no_approved_copy=1 target_scope_unverified=1",
+    ]
+    claim_attempt.assert_not_awaited()
+    provider.choose.assert_not_awaited()
+
+
 def test_structured_advice_must_match_the_existing_action_and_finding(base_report):
     checked = select_first_example(base_report)
     assert checked.schema_version == "2.2.15" and checked.input_manifest.ruleset_version == RULESET
