@@ -7,10 +7,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 from fakeredis.aioredis import FakeRedis
 
-from app.jobs_v22.action_example_provider import fill_action_examples
+from app.jobs_v22.action_example_provider import ActionExampleProvider, fill_action_examples
 from app.jobs_v22.capability_public_stage import CheckpointedCapabilityPublicStage
 from app.jobs_v22.checkpoints import JobCheckpoints
 from app.jobs_v22.digest import canonical_json_bytes
@@ -154,7 +155,7 @@ async def test_provider_timeout_keeps_structured_advice_and_is_not_retried(pr_in
 @pytest.mark.anyio
 async def test_copy_result_is_frozen_and_replayed_without_another_call(pr_input):
     async def choose(menu):
-        return json.dumps({key: texts[-1] for key, texts in menu.items()})
+        return {key: texts[-1] for key, texts in menu.items()}
 
     provider = SimpleNamespace(choose=AsyncMock(side_effect=choose))
     async with FakeRedis() as redis:
@@ -173,13 +174,74 @@ async def test_copy_result_is_frozen_and_replayed_without_another_call(pr_input)
 
 
 @pytest.mark.anyio
-async def test_prior_attempt_and_unknown_provider_output_cannot_replace_report(base_report):
-    provider = SimpleNamespace(choose=AsyncMock(return_value='{"1":"x","1":"y"}'))
-    blocked = await fill_action_examples(base_report, provider, claim_attempt=AsyncMock(return_value=False))
+async def test_prior_attempt_cannot_replace_report(base_report):
+    provider = SimpleNamespace(choose=AsyncMock())
+    blocked = await fill_action_examples(
+        base_report, provider, claim_attempt=AsyncMock(return_value=False), job_id=base_report.input_manifest.job_id,
+    )
     provider.choose.assert_not_called()
     assert blocked == base_report
-    invalid = await fill_action_examples(base_report, provider, claim_attempt=AsyncMock(return_value=True))
-    assert any(item.rejection_reason == "invalid_response" for item in invalid.action_advice)
+
+
+@pytest.mark.anyio
+async def test_json_fenced_provider_copy_passes_the_same_evidence_check(base_report, monkeypatch):
+    async def send(client, request, **kwargs):
+        menu = json.loads(json.loads(request.content)["messages"][-1]["content"])
+        content = json.dumps({key: options[0] for key, options in menu.items()})
+        return httpx.Response(200, json={"choices": [{"message": {"content": f"\n```json\n{content}\n```\n"}}]})
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", send)
+    provider = ActionExampleProvider("example-secret", api_url="https://provider.example/v1", model="mock-model")
+    report = await fill_action_examples(
+        base_report, provider, claim_attempt=AsyncMock(return_value=True), job_id=base_report.input_manifest.job_id,
+    )
+    assert report == select_first_example(base_report)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("status,body,stage,code,reason", [
+    (401, {"error": {"code": "invalid_api_key", "message": "private-response"}}, "http",
+     "invalid_api_key", "provider_unavailable"),
+    (402, {"error": {"code": "secret-test-key"}}, "http", None, "provider_unavailable"),
+    (429, "private-response", "http", None, "provider_unavailable"),
+    (None, None, "network", None, "provider_unavailable"),
+    (200, "private-response", "json", None, "invalid_response"),
+    (200, {}, "schema", None, "invalid_response"),
+    (200, {"choices": [{"message": {"content": "```json\nprivate-response\n```"}}]}, "json", None,
+     "invalid_response"),
+    (200, {"choices": [{"message": {"content": '{"0":"private-response"}'}}]}, "schema", None,
+     "invalid_response"),
+    (200, {"choices": [{"message": {"content": '{"1":"x","1":"y"}'}}]}, "schema", None, "invalid_response"),
+])
+async def test_provider_failures_keep_advice_and_warn_without_payload(
+    base_report, monkeypatch, caplog, status, body, stage, code, reason,
+):
+    async def send(client, request, **kwargs):
+        assert request.headers["Authorization"] == "Bearer secret-test-key"
+        if status is None:
+            raise httpx.ConnectError("private-response secret-test-key", request=request)
+        if isinstance(body, str):
+            return httpx.Response(status, text=body)
+        return httpx.Response(status, json=body)
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", send)
+    provider = ActionExampleProvider("secret-test-key", api_url="https://provider.example/v1", model="mock-model")
+    job_id = base_report.input_manifest.job_id
+    report = await fill_action_examples(
+        base_report, provider, claim_attempt=AsyncMock(return_value=True), job_id=job_id,
+    )
+    assert report.actions == base_report.actions
+    assert report.findings == base_report.findings
+    assert any(item.rejection_reason == reason and item.fix for item in report.action_advice)
+    assert all(item.example is None for item in report.action_advice)
+    warnings = [record for record in caplog.records if record.msg.startswith("action_example_provider_failed ")]
+    assert len(warnings) == 1
+    assert warnings[0].levelname == "WARNING"
+    logged_stage, http_status, provider_code, job_id_suffix, elapsed_ms = warnings[0].args
+    assert (logged_stage, http_status, provider_code, job_id_suffix) == (stage, status, code, str(job_id)[-8:])
+    assert isinstance(elapsed_ms, int) and elapsed_ms >= 0
+    for sensitive in ("secret-test-key", "private-response", "provider.example", "Choose one supplied", str(job_id)):
+        assert sensitive not in caplog.text
 
 
 def test_v19_is_reserved_without_selecting_or_loosening_its_contract(base_report, caplog):

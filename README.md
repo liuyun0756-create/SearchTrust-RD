@@ -66,3 +66,20 @@ Worker 需要可用的 `V22_REDIS_URL`：
 - `V22_ANALYZE_ENABLED`、`V22_PREFLIGHT_ENABLED`、`V22_COMPETITOR_DISCOVERY_ENABLED`
 
 Google Search Console、GA4 与官方 GBP 同步为独立可选开关；公开 GBP 证据使用 SerpAPI，不要求用户拥有官方 GBP 后台。
+
+### P1-09 示例文案提供方
+
+| Worker 变量 | 默认值 | 用法 |
+| --- | --- | --- |
+| `V22_ACTION_EXAMPLE_API_URL` | `https://api.openai.com/v1` | 填 HTTPS API 基址。Worker 会附加 `/chat/completions`，请求不会跟随重定向。 |
+| `V22_ACTION_EXAMPLE_MODEL` | `gpt-6-luna` | 填该提供方的模型 ID。模型需要支持 `response_format=json_object` 和 `max_completion_tokens`。 |
+| `V22_ACTION_EXAMPLE_REASONING_EFFORT` | 空 | 留空或不设时省略该请求字段。显式设置时，填模型支持的档位。 |
+
+Comfly 使用以下配置，`V22_ACTION_EXAMPLE_REASONING_EFFORT` 留空或不设。
+
+```dotenv
+V22_ACTION_EXAMPLE_API_URL=https://ai.comfly.org/v1
+V22_ACTION_EXAMPLE_MODEL=gpt-6.2-sol
+```
+
+将所选提供方配套的密钥存入 Worker 的 `OPENAI_API_KEY`。这三项配置本身不会启用例文。
