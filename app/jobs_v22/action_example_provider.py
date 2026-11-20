@@ -105,6 +105,18 @@ class ActionExampleProvider:
 async def fill_action_examples(report, provider, *, claim_attempt, job_id: UUID):
     options = copy_options(report)
     if not options:
+        selected_ids = {action.id for action in report.actions}
+        reasons = [
+            item.rejection_reason for item in report.action_advice
+            if item.action_id in selected_ids
+        ]
+        logger.info(
+            "action_example_skipped job_id_suffix=%s selected=%d "
+            "no_approved_copy=%d target_scope_unverified=%d",
+            str(job_id)[-8:], len(selected_ids),
+            reasons.count("no_approved_copy"),
+            reasons.count("target_scope_unverified"),
+        )
         return report
     if provider is None:
         return apply_copy_result(report, options, unavailable="provider_unavailable")
