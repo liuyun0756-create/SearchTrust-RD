@@ -1,12 +1,14 @@
 """Pure saved-input reassessment. No provider, clock, database or collection IO."""
+from collections import Counter
 from copy import deepcopy
 from uuid import UUID, uuid5
 
 from pydantic import Field, field_validator, model_validator
 
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
-from app.report_v22.business_identity_v2 import BusinessIdentityV2, ModeConfirmation, OperatingMode, OperatingLocation, OperatingPlace, LocationConfirmation
+from app.report_v22.business_identity_v2 import BusinessIdentityV2, IDENTITY_RULESET, ModeConfirmation, OperatingMode, OperatingLocation, OperatingPlace, LocationConfirmation
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
+from app.report_v22.public_rule_catalog import OBSERVED
 from app.report_v22.capability_public import build_public_capability_report, _bound_public_sources
 from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.identity_input import prepare_identity_input, source_set_checksum
@@ -139,8 +141,18 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
     def unrelated(r):
         return sorted((f.rule_id, f.target, f.observed_fact, f.judgment, f.confidence)
                       for f in r.findings if f.rule_id not in allowed and f.rule_id != 'v22_capability.public_assessment')
-    if unrelated(baseline) != unrelated(after):
-        raise ValueError("UNEXPLAINED_FACT_CHANGE")
+    before_facts = Counter(unrelated(baseline))
+    after_facts = Counter(unrelated(after))
+    if before_facts != after_facts:
+        additions = after_facts - before_facts
+        existing_targets = {(rule, target) for rule, target, *_ in before_facts}
+        if (base.input_manifest.ruleset_version != IDENTITY_RULESET
+                or before_facts - after_facts
+                or any(rule != OBSERVED or (rule, target) in existing_targets or count != 1
+                       for (rule, target, *_), count in additions.items())
+                or after_facts != Counter(unrelated(
+                    build_public_capability_report(base.input_manifest, value)))):
+            raise ValueError("UNEXPLAINED_FACT_CHANGE")
     if canonical_json_bytes(updated.evidence_input) != original_bytes:
         raise ValueError("FROZEN_SOURCE_MUTATION")
     before_actions = {a.id for a in base.action_candidates or base.actions}

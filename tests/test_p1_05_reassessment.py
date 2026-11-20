@@ -253,3 +253,58 @@ def test_pr_saved_parse_failure_is_not_converted_into_a_match_by_visit_confirmat
     address=next(c for c in findings._contact_alignment.fields if c.field=='address')
     assert address.not_checked_reason=='site_content_not_checked'
     assert 'address:html_parse_failed' in address.limitations
+
+@pytest.mark.parametrize('change', ['add_saved_positions', 'edit_old_fact', 'delete_old_fact',
+                                     'edit_new_position', 'duplicate_position', 'other_ruleset'])
+def test_historical_position_backfill_does_not_allow_unexplained_fact_changes(change, monkeypatch):
+    from app.report_v22 import public_reassessment
+    from app.report_v22.identity_input import prepare_identity_input
+    from app.report_v22.keyword_visibility import prepare_keyword_input
+    from app.report_v22.public_rule_catalog import OBSERVED
+    from test_v22_capability_public import inputs
+    from test_zero_action_presentation import three_result_types
+    from test_v22_site_gbp_alignment import exact_gbp, exact_html
+    from site_business_helpers import source
+
+    deny_network(monkeypatch)
+    monkeypatch.setattr('test_v22_capability_public.market', lambda _: three_result_types())
+    monkeypatch.setattr('test_v22_capability_public.sample_input', exact_gbp)
+    manifest, request = inputs(business_source=source(exact_html(telephone='+1 512 555 9999')),
+                               ruleset='v22_capability_public_v12')
+    if change == 'other_ruleset':
+        manifest, request = prepare_keyword_input(manifest, request)
+    else:
+        manifest, request, _, _ = prepare_identity_input(manifest, request)
+    current = build_public_capability_report(manifest, request)
+    previous = current.model_copy(update={'findings':[f for f in current.findings if f.rule_id != OBSERVED]})
+    old_fact = next(f for f in previous.findings if f.rule_id == 'v22_public.gbp_phone_alignment')
+    observations = [f for f in current.findings if f.rule_id == OBSERVED]
+    assert observations
+
+    def build_with_change(manifest, request):
+        report = build_public_capability_report(manifest, request)
+        if not manifest.execution_type:
+            return report
+        if change == 'edit_old_fact':
+            report.findings = [f.model_copy(update={'observed_fact':'Changed observation'})
+                               if f.id == old_fact.id else f for f in report.findings]
+        elif change == 'delete_old_fact':
+            report.findings = [f for f in report.findings if f.id != old_fact.id]
+        elif change == 'edit_new_position':
+            report.findings = [f.model_copy(update={'observed_fact':'Changed rank'})
+                               if f.id == observations[0].id else f for f in report.findings]
+        elif change == 'duplicate_position':
+            report.findings.append(observations[0])
+        return report
+
+    monkeypatch.setattr(public_reassessment, 'build_public_capability_report', build_with_change)
+    args = dict(request_id=REQUEST, evaluated_at='2026-11-06T00:00:00Z')
+    if change != 'add_saved_positions':
+        with pytest.raises(ValueError, match='^UNEXPLAINED_FACT_CHANGE$'):
+            reassess_public_report(previous, request, selection(request), **args)
+        return
+    before = canonical_json_bytes(previous)
+    after, updated, _ = reassess_public_report(previous, request, selection(request), **args)
+    assert [f for f in after.findings if f.rule_id == OBSERVED] == observations
+    assert canonical_json_bytes(previous) == before
+    assert canonical_json_bytes(updated.evidence_input) == canonical_json_bytes(request.evidence_input)
