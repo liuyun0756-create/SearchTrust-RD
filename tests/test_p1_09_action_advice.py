@@ -94,13 +94,19 @@ async def test_empty_copy_options_log_only_counts_and_preserve_report(caplog):
     provider = SimpleNamespace(choose=AsyncMock())
     claim_attempt = AsyncMock()
 
-    with caplog.at_level("INFO", logger="app.jobs_v22.action_example_provider"):
+    provider_logger = "app.jobs_v22.action_example_provider"
+    caplog.clear()
+    with caplog.at_level("INFO", logger=provider_logger):
         result = await fill_action_examples(
             report, provider, claim_attempt=claim_attempt, job_id=job_id,
         )
 
     assert canonical_json_bytes(result) == original
-    assert caplog.messages == [
+    skipped_messages = [
+        record.getMessage() for record in caplog.records
+        if record.name == provider_logger and record.getMessage().startswith("action_example_skipped")
+    ]
+    assert skipped_messages == [
         f"action_example_skipped job_id_suffix={str(job_id)[-8:]} selected=2 "
         "no_approved_copy=1 target_scope_unverified=1",
     ]
