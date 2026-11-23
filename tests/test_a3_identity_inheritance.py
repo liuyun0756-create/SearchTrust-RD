@@ -3,6 +3,8 @@ from uuid import UUID
 
 import pytest
 
+from app.jobs_v22.capability_acquisition_worker import _freeze_metrics
+from app.jobs_v22.capability_inputs import generation_recipe
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
 from app.report_v22.capability_public import build_public_capability_report
 from app.report_v22.identity_inheritance import PinnedIdentity, inherit_identity
@@ -69,3 +71,22 @@ def test_inheritance_uses_independent_confirmation_gates(change, monkeypatch):
     else:
         assert identity.operating_model.confirmation_ref is None
     assert (identity.operating_location.role == 'customer_facing') == (change in {'unchanged', 'mode'})
+
+
+def test_inherited_manifest_passes_generation_recipe_without_weakening_request_binding(monkeypatch):
+    deny_network(monkeypatch)
+    base, collected, saved = saved_confirmation()
+    manifest, request = inherit_identity(base, collected, PinnedIdentity.model_validate(saved))
+
+    bound, value, recipe = generation_recipe(manifest, request)
+    assert bound == manifest and value == request
+    assert recipe['request']['business_identity']['operating_location']['role'] == 'customer_facing'
+    assert all('payload' not in source for source in recipe['request']['evidence_input']['sources'])
+    assert _freeze_metrics({'p_job_id': str(bound.job_id), 'p_manifest': bound.model_dump(mode='json')})[2] == 'v22_analysis_input_v11'
+
+    tampered = request.model_copy(deep=True)
+    tampered.business_identity.business_name = 'A different business'
+    with pytest.raises(ValueError, match='Invalid generation identity'):
+        generation_recipe(manifest, tampered)
+    with pytest.raises(ValueError, match='Invalid generation identity'):
+        generation_recipe(manifest, request, previous_report={})

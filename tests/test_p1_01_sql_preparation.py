@@ -27,7 +27,15 @@ from app.jobs_v22.capability_input_repository import SupabaseCapabilityInputRepo
 from app.jobs_v22.cost_models import ALLOWED_COUNTER_KEYS
 from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_request_digest
 from app.jobs_v22.target_keywords import TargetKeywordBinding
+from app.report_v22 import keyword_visibility
+from app.report_v22.capability import AnalysisInputManifest
 from test_v22_capability_acquisition_preparation import inputs
+
+
+# The production migration registry matched all 109 local versions through
+# the A3 migration at the time of the v21 repair.
+PRODUCTION_MIGRATION = '20261120100000'
+PRODUCTION_MIGRATION_COUNT = 109
 
 
 class SqlError(RuntimeError):
@@ -37,8 +45,8 @@ class SqlError(RuntimeError):
 
 
 class LocalSql:
-    def __init__(self, workspace):
-        self.process = subprocess.Popen(['node', 'scripts/test-v22-preparation-rpc.mjs'],
+    def __init__(self, workspace, script='scripts/test-v22-preparation-rpc.mjs'):
+        self.process = subprocess.Popen(['node', str(script)],
             cwd=workspace, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, bufsize=1)
         self.calls = []
@@ -98,8 +106,8 @@ def compressed_collection(value, *, old_start, old_end, created):
 
 @pytest.mark.anyio
 @pytest.mark.parametrize('anyio_backend', ['asyncio'])
-@pytest.mark.parametrize('include_fix', [False, True], ids=['production-baseline', 'identity-fix'])
-async def test_enabled_intake_prepare_and_real_sql_freeze(monkeypatch, include_fix):
+@pytest.mark.parametrize('conflicting_identity', [True, False], ids=['production-baseline', 'identity-fix'])
+async def test_enabled_intake_prepare_and_real_sql_freeze(monkeypatch, conflicting_identity):
     workspace = Path(os.environ.get('SEARCHTRUST_SQL_WORKSPACE', Path(__file__).resolve().parents[2]/'search-trust'))
     if not shutil.which('node') or not (workspace/'node_modules/@electric-sql/pglite').exists():
         pytest.skip('Cross-repository SQL integration requires Node and the frontend migration workspace with PGlite installed; set SEARCHTRUST_SQL_WORKSPACE. No SQL assertion was substituted.')
@@ -110,9 +118,25 @@ async def test_enabled_intake_prepare_and_real_sql_freeze(monkeypatch, include_f
     owner, job, workflow = args['user_id'], args['job_id'], uuid4()
     found = envelope.competitor_discovery
     binding = TargetKeywordBinding(queries=req.queries, queries_digest=verified_request_digest(req.queries), planning_revision=1)
-    bridge = LocalSql(workspace)
+    bridge = LocalSql(workspace, Path(__file__).parent / 'support/a3_sql_replay.mjs')
+    baseline = dict(migrationVersion=PRODUCTION_MIGRATION, migrationCount=PRODUCTION_MIGRATION_COUNT) if conflicting_identity else {}
+    if conflicting_identity:
+        prepare_keywords = keyword_visibility.prepare_keyword_input
+
+        def prepare_conflicting_identity(manifest, value, **kwargs):
+            # Production accepts faithful v1-to-v2 conversion. Submit one changed
+            # name with correct digests to exercise its actual SQL binding check.
+            changed = value.model_copy(deep=True)
+            changed.business_identity.business_name = 'Different collected business'
+            raw = manifest.model_dump(mode='json', exclude={'input_checksum'})
+            raw['generation_input_checksum'] = verified_request_digest(changed.model_dump(mode='json'))
+            raw['input_checksum'] = verified_request_digest(raw)
+            bound = AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw))
+            return prepare_keywords(bound, changed, **kwargs)
+
+        monkeypatch.setattr(keyword_visibility, 'prepare_keyword_input', prepare_conflicting_identity)
     try:
-        bridge.command(dict(op='init',includeFix=include_fix,seed=dict(owner=str(owner),caseId=str(req.case_id),
+        bridge.command(dict(op='init', **baseline, seed=dict(owner=str(owner),caseId=str(req.case_id),
             identity=req.business_identity.model_dump(mode='json'),service=req.primary_service,market=req.target_market.model_dump(mode='json'))))
         planning = dict(schema_version='v22_planning_settings_v2',priority=None,target_pages=[],
             execution_conditions=dict(capacity='unknown',publishing_access='unknown'),
@@ -144,7 +168,7 @@ async def test_enabled_intake_prepare_and_real_sql_freeze(monkeypatch, include_f
         # All repository SQL is real. No transport can issue a provider call.
         def no_http(*_args,**_kwargs):raise AssertionError('NO_PROVIDER_CALL_ALLOWED')
         monkeypatch.setattr(httpx.AsyncClient,'send',no_http)
-        if not include_fix:
+        if conflicting_identity:
             with pytest.raises(SqlError,match='CAPABILITY_PREPARATION_CONFLICT') as failure:
                 await preparer.prepare(**call)
             assert failure.value.code=='P0001'
