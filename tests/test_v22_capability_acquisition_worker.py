@@ -68,6 +68,8 @@ class Harness:
                 attempt_count=self.attempt,preparation=receipt,request=self.envelope.model_dump(mode="json")))
         if name=="begin_v22_acquisition_preparation":
             return httpx.Response(200,json=self.receipt)
+        if name=="get_v22_acquisition_identity_pin":
+            return httpx.Response(200,content=b"null")
         if name=="heartbeat_v22_acquisition_preparation":
             if self.pulse_ok and not self.frozen: self.revision += 1
             return httpx.Response(200,json=self.pulse_ok and not self.frozen)

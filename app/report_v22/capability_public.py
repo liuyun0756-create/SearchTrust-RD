@@ -74,7 +74,7 @@ def _bound_public_sources(manifest, value):
     context = request.evidence_input.context
     from app.report_v22.business_identity_v2 import BusinessIdentityV2
     v2 = isinstance(request.business_identity, BusinessIdentityV2)
-    if v2 != (manifest.ruleset_version in {IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}):
+    if v2 != (manifest.content_ruleset in {IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}):
         raise CapabilityPublicError()
     if v2 and (manifest.identity_checksum != request_digest(request.business_identity)
             or not same_target_market_identity(manifest.target_market, context.target_market)):
@@ -88,16 +88,28 @@ def _bound_public_sources(manifest, value):
         from app.report_v22.identity_input import source_set_checksum
         auto, _ = inspect_operating_model(request)
         confirmation = request.business_identity.operating_model.confirmation_ref
+        visit = request.business_identity.operating_location.confirmation_ref
+        inherited = manifest.identity_inheritance
+        if inherited:
+            if ((inherited.operating_model == "retained") != bool(confirmation)
+                    or (inherited.visits == "retained") != bool(visit)
+                    or inherited.branch == "needs_confirmation" and (confirmation or visit)
+                    or confirmation and confirmation.confirmed_at != inherited.confirmed_at
+                    or visit and (visit.source_identity_version_id != inherited.source_identity_version_id
+                                  or visit.confirmed_at != inherited.confirmed_at)):
+                raise CapabilityPublicError()
+        elif visit and visit.source_identity_version_id:
+            raise CapabilityPublicError()
         expected = auto.model_copy(update={"value": confirmation.value, "state": "resolved", "source": "explicit_confirmation", "confirmation_ref": confirmation}) if confirmation else auto
         if expected != request.business_identity.operating_model or (confirmation and confirmation.evidence_checksum != source_set_checksum(request)):
             raise CapabilityPublicError()
-    if manifest.ruleset_version in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} and manifest.keyword_queries != context.queries:
+    if manifest.content_ruleset in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} and manifest.keyword_queries != context.queries:
         raise CapabilityPublicError()
     refs = {s.source_kind: s for s in manifest.snapshots if s.source_kind in {"site", "serp", "competitor", "public_gbp", "rendered"}}
     sources = request.evidence_input.sources
-    if manifest.ruleset_version not in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
+    if manifest.content_ruleset not in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v3" for s in sources):
         raise ValueError("v11 inventory requires v11 rules")
-    if manifest.ruleset_version not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
+    if manifest.content_ruleset not in RESOURCE_RULESETS and any(s.kind == "site" and s.payload.schema_version == "site_inventory_snapshot_v2" for s in sources):
         raise CapabilityPublicError()
     if (context.case_id != manifest.case_id or context.report_type != "prospect"
             or str(context.site_url) != manifest.business.site_url
@@ -152,27 +164,27 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = _bound_public_sources(manifest, value)
-        labelled = manifest.ruleset_version in LABELLED_RULESETS
-        reviewed = labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
-        resource_limits = manifest.ruleset_version in RESOURCE_RULESETS
-        sampling_quality = manifest.ruleset_version in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}
-        opening_hours = manifest.ruleset_version in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}
-        positions = manifest.ruleset_version in POSITION_RULESETS
+        labelled = manifest.content_ruleset in LABELLED_RULESETS
+        reviewed = labelled or manifest.content_ruleset in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, "v22_capability_service_v4"}
+        resource_limits = manifest.content_ruleset in RESOURCE_RULESETS
+        sampling_quality = manifest.content_ruleset in {SAMPLING_RULESET, HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}
+        opening_hours = manifest.content_ruleset in {HOURS_RULESET, LABELLED_RULESET, IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}
+        positions = manifest.content_ruleset in POSITION_RULESETS
         result = (build_public_findings(request, text_patterns=True, reviewed_evidence=True,
-                    rendered_pages=manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}, resource_limits=True,
+                    rendered_pages=manifest.content_schema in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}, resource_limits=True,
                     **({"sampling_quality": True} if sampling_quality else {}),
                     **({"opening_hours": True} if opening_hours else {}),
                     **({"observed_positions": True} if positions else {}),
-                    **({"ruleset_version": manifest.ruleset_version} if manifest.ruleset_version in {LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else {}),
-                    **({"identity_v2": True} if manifest.ruleset_version in {IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else {}))
+                    **({"ruleset_version": manifest.content_ruleset} if manifest.content_ruleset in {LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else {}),
+                    **({"identity_v2": True} if manifest.content_ruleset in {IDENTITY_RULESET, KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else {}))
                   if resource_limits else build_public_findings(request, text_patterns=True, reviewed_evidence=True, rendered_pages=True)
-                  if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"})
+                  if manifest.content_ruleset == RENDERED_RULESET or (labelled and manifest.content_schema in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"})
                   else build_public_findings(request, text_patterns=True, reviewed_evidence=reviewed)
-                  if manifest.ruleset_version == RULESET or (labelled and manifest.mode == "acquisition")
+                  if manifest.content_ruleset == RULESET or (labelled and manifest.mode == "acquisition")
                   else build_public_findings(request, reviewed_evidence=reviewed))
         skeletons = select_public_action_skeletons(PublicActionPlanInput(
             findings_result=result, planning_date=instant(manifest.evidence_as_of or manifest.evaluated_at).date()),
-            candidate_only=resource_limits, all_candidates=labelled or manifest.ruleset_version in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
+            candidate_only=resource_limits, all_candidates=labelled or manifest.content_ruleset in {RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, "v22_capability_service_v2", "v22_capability_service_v3", "v22_capability_service_v4"})
         refs = {s.snapshot_id: s for s in manifest.snapshots}
         original = {e.evidence_id: e for e in result.evidence_result.evidence_index}
         traces = {e.evidence_id: e for e in result.evidence_result.source_traces}
@@ -207,10 +219,10 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 comparison_scope="Saved public sample only", judgment="No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
                 interpretation="needs_verification", impact_path="No business impact or healthy-site conclusion is established.",
                 evidence_ids=[e.evidence_id for e in sample], limitations=[_BOUNDARY]))
-        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}):
+        if manifest.content_ruleset == RENDERED_RULESET or (labelled and manifest.content_schema in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}):
             used.update(sorted(e.evidence_id for e in original.values() if refs[e.snapshot_id].source_kind == "rendered")[:50])
         contact_checks = None
-        if manifest.ruleset_version in PUBLIC_LABELLED_RULESETS:
+        if manifest.content_ruleset in PUBLIC_LABELLED_RULESETS:
             from app.report_v22.capability_contact_checks import contact_checks_from_alignment
             contact_checks = contact_checks_from_alignment(result._contact_alignment, request, original)
             if opening_hours:
@@ -250,7 +262,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 limits.append(f"Content on {len(result._resource_limited_pages)} saved pages was not checked because it exceeded the processing limits. This does not establish that information is missing.")
         if manifest.mode == "acquisition":
             limits.append("Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.")
-        if manifest.ruleset_version == RENDERED_RULESET or (labelled and manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}):
+        if manifest.content_ruleset == RENDERED_RULESET or (labelled and manifest.content_schema in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"}):
             from app.report_v22.rendered_alignment import RENDER_NOTE
             limits.extend(sorted({note for source in request.evidence_input.sources if source.kind == "rendered" for note in source.payload.limitations}))
             if any(refs[original[key].snapshot_id].source_kind == "rendered" and original[key].source_type != "coverage" for key in used):
@@ -261,7 +273,7 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             limits.extend(unchecked_limits(result.rule_evaluations))
         else:
             limits.extend(unchecked)
-        raw = dict(schema_version="2.2.15" if manifest.ruleset_version == ACTION_ADVICE_RULESET else "2.2.13" if manifest.ruleset_version == LOCAL_ENTITY_RULESET else "2.2.12" if manifest.ruleset_version == REASONS_RULESET else "2.2.11" if manifest.ruleset_version == LANDING_RULESET else "2.2.10" if manifest.ruleset_version in {GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else "2.2.9" if manifest.ruleset_version in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else "2.2.8" if manifest.ruleset_version == IDENTITY_RULESET else "2.2.7" if manifest.ruleset_version == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.schema_version in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"} else "2.2.2", id=str(manifest.job_id),
+        raw = dict(schema_version="2.2.15" if manifest.content_ruleset == ACTION_ADVICE_RULESET else "2.2.13" if manifest.content_ruleset == LOCAL_ENTITY_RULESET else "2.2.12" if manifest.content_ruleset == REASONS_RULESET else "2.2.11" if manifest.content_ruleset == LANDING_RULESET else "2.2.10" if manifest.content_ruleset in {GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else "2.2.9" if manifest.content_ruleset in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} else "2.2.8" if manifest.content_ruleset == IDENTITY_RULESET else "2.2.7" if manifest.content_ruleset == LABELLED_RULESET else "2.2.6" if opening_hours else "2.2.5" if labelled else "2.2.4" if manifest.content_schema in {"v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10"} else "2.2.2", id=str(manifest.job_id),
             report_type="prospect" if manifest.mode == "acquisition" else "verified_execution",
             version=(manifest.base_report_ref.version + 1 if manifest.base_report_ref else
                 1 if manifest.previous_report is None else manifest.previous_report.version + 1),
@@ -271,28 +283,28 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
                 if manifest.execution_type else "one_credit_per_completed_analysis"))
         if manifest.execution_type:
             raw["limitations"].append("Reassessed from saved observations. No new pages or search results were collected.")
-        if manifest.ruleset_version in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET}:
+        if manifest.content_ruleset in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET}:
             from app.report_v22.page_title_review import extend_report
             extend_report(raw, manifest, request, result)
         if contact_checks is not None:
             raw["contact_checks"] = contact_checks
         if labelled:
             annotate_findings(raw)
-        if manifest.ruleset_version in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
+        if manifest.content_ruleset in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.keyword_visibility import build_keyword_visibility
             raw["keyword_visibility"] = build_keyword_visibility(request).model_dump(mode="json")
-        if manifest.ruleset_version in {GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
+        if manifest.content_ruleset in {GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.gbp_comparison import build_gbp_comparison
             raw["gbp_comparison"] = build_gbp_comparison(request).model_dump(mode="json")
-        if manifest.ruleset_version in {LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
+        if manifest.content_ruleset in {LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.landing_page_comparison import build_landing_comparison
             raw["landing_page_comparison"] = build_landing_comparison(request).model_dump(mode="json")
-        if manifest.ruleset_version in {REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
+        if manifest.content_ruleset in {REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.comparison_reasons import build_possible_reasons
             from app.report_v22.gbp_comparison import GbpComparison
             from app.report_v22.landing_page_comparison import LandingComparison
             raw["possible_reasons"] = build_possible_reasons(GbpComparison.model_validate_json(canonical_json_bytes(raw["gbp_comparison"])), LandingComparison.model_validate_json(canonical_json_bytes(raw["landing_page_comparison"]))).model_dump(mode="json")
-        if manifest.ruleset_version in {LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
+        if manifest.content_ruleset in {LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.local_entity_coverage import build_local_entity_coverage
             raw["local_entity_coverage"] = build_local_entity_coverage(request).model_dump(mode="json")
         return raw
@@ -305,16 +317,19 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
     try:
         manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(manifest))
         request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
-        if (manifest.mode != "acquisition" or manifest.ruleset_version not in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
+        if (manifest.mode != "acquisition" or manifest.content_ruleset not in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET, LEGACY_RULESET}
                 or verified_request_digest(request.model_dump(mode="json")) != manifest.generation_input_checksum):
             raise CapabilityPublicError()
         raw = _public_report_content(manifest, request)
-        if manifest.ruleset_version in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
+        if manifest.content_ruleset in {*PUBLIC_LABELLED_RULESETS, RENDERED_RULESET, RULESET, TITLE_RULESET, REVIEWED_RULESET, BUSINESS_RULESET, PRIORITY_RULESET}:
             from app.report_v22.capability_priority import apply_priority
             apply_priority(raw, manifest)
         finish_presentation(raw, manifest)
-        if manifest.ruleset_version == ACTION_ADVICE_RULESET:
+        if manifest.content_ruleset == ACTION_ADVICE_RULESET:
             raw["action_advice"] = build_action_advice(raw, request)
+        if manifest.identity_inheritance:
+            from app.report_v22.identity_inheritance_contract import REPORT_SCHEMA
+            raw["schema_version"] = REPORT_SCHEMA
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))
         if len(canonical_json_bytes(report)) > 2_000_000:
             raise CapabilityPublicError()

@@ -178,6 +178,10 @@ class CapabilityAcquisitionPreparer:
                 checkpoints=checkpoints, cost_ledger=cost_ledger)
         if rendered is not None:
             manifest, value = build_input(collected, rendered)
+        pin = await self.repository.acquisition_identity_pin(user_id=user_id, case_id=receipt.case_id, job_id=job_id)
+        if pin is not None:
+            from app.report_v22.identity_inheritance import inherit_identity
+            manifest, value = inherit_identity(manifest, value, pin)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)

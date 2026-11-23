@@ -332,6 +332,17 @@
           "default": null,
           "title": "Identity Checksum"
         },
+        "identity_inheritance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IdentityInheritance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "identity_version_id": {
           "anyOf": [
             {
@@ -423,7 +434,8 @@
             "v22_analysis_input_v6",
             "v22_analysis_input_v7",
             "v22_analysis_input_v8",
-            "v22_analysis_input_v10"
+            "v22_analysis_input_v10",
+            "v22_analysis_input_v11"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1158,14 +1170,44 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "enum": [
-                  "2.2.13",
-                  "2.2.15"
-                ]
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "enum": [
+                      "2.2.13",
+                      "2.2.15"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v18",
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1187,11 +1229,40 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "const": "2.2.15"
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "const": "2.2.15"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1213,15 +1284,46 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "enum": [
-                  "2.2.12",
-                  "2.2.13",
-                  "2.2.15"
-                ]
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "enum": [
+                      "2.2.12",
+                      "2.2.13",
+                      "2.2.15"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v17",
+                              "v22_capability_public_v18",
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1243,16 +1345,48 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "enum": [
-                  "2.2.11",
-                  "2.2.12",
-                  "2.2.13",
-                  "2.2.15"
-                ]
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "enum": [
+                      "2.2.11",
+                      "2.2.12",
+                      "2.2.13",
+                      "2.2.15"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v16",
+                              "v22_capability_public_v17",
+                              "v22_capability_public_v18",
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1274,17 +1408,50 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "enum": [
-                  "2.2.10",
-                  "2.2.11",
-                  "2.2.12",
-                  "2.2.13",
-                  "2.2.15"
-                ]
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "enum": [
+                      "2.2.10",
+                      "2.2.11",
+                      "2.2.12",
+                      "2.2.13",
+                      "2.2.15"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v15",
+                              "v22_capability_public_v16",
+                              "v22_capability_public_v17",
+                              "v22_capability_public_v18",
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1306,18 +1473,52 @@
             }
           },
           "if": {
-            "properties": {
-              "schema_version": {
-                "enum": [
-                  "2.2.9",
-                  "2.2.10",
-                  "2.2.11",
-                  "2.2.12",
-                  "2.2.13",
-                  "2.2.15"
-                ]
+            "anyOf": [
+              {
+                "properties": {
+                  "schema_version": {
+                    "enum": [
+                      "2.2.9",
+                      "2.2.10",
+                      "2.2.11",
+                      "2.2.12",
+                      "2.2.13",
+                      "2.2.15"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "input_manifest": {
+                    "properties": {
+                      "identity_inheritance": {
+                        "properties": {
+                          "base_ruleset": {
+                            "enum": [
+                              "v22_capability_public_v14",
+                              "v22_capability_public_v15",
+                              "v22_capability_public_v16",
+                              "v22_capability_public_v17",
+                              "v22_capability_public_v18",
+                              "v22_capability_public_v20"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "identity_inheritance"
+                    ],
+                    "type": "object"
+                  },
+                  "schema_version": {
+                    "const": "2.2.16"
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -1541,7 +1742,8 @@
                   "2.2.11",
                   "2.2.12",
                   "2.2.13",
-                  "2.2.15"
+                  "2.2.15",
+                  "2.2.16"
                 ]
               }
             }
@@ -1591,8 +1793,39 @@
                   "2.2.11",
                   "2.2.12",
                   "2.2.13",
-                  "2.2.15"
+                  "2.2.15",
+                  "2.2.16"
                 ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.16"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "identity_inheritance": {
+                    "type": "object"
+                  },
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v21"
+                  },
+                  "schema_version": {
+                    "const": "v22_analysis_input_v11"
+                  }
+                },
+                "required": [
+                  "identity_inheritance"
+                ],
+                "type": "object"
               }
             }
           }
@@ -1657,7 +1890,8 @@
               "2.2.11",
               "2.2.12",
               "2.2.13",
-              "2.2.15"
+              "2.2.15",
+              "2.2.16"
             ]
           }
         },
@@ -1870,7 +2104,8 @@
             "2.2.11",
             "2.2.12",
             "2.2.13",
-            "2.2.15"
+            "2.2.15",
+            "2.2.16"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1948,7 +2183,8 @@
                     "v22_capability_public_v16",
                     "v22_capability_public_v17",
                     "v22_capability_public_v18",
-                    "v22_capability_public_v20"
+                    "v22_capability_public_v20",
+                    "v22_capability_public_v21"
                   ]
                 }
               },
@@ -2748,6 +2984,82 @@
         "source_refs"
       ],
       "title": "GbpMetric",
+      "type": "object"
+    },
+    "IdentityInheritance": {
+      "additionalProperties": false,
+      "properties": {
+        "base_ruleset": {
+          "enum": [
+            "v22_capability_public_v13",
+            "v22_capability_public_v14",
+            "v22_capability_public_v15",
+            "v22_capability_public_v16",
+            "v22_capability_public_v17",
+            "v22_capability_public_v18",
+            "v22_capability_public_v20"
+          ],
+          "title": "Base Ruleset",
+          "type": "string"
+        },
+        "branch": {
+          "enum": [
+            "retained",
+            "needs_confirmation"
+          ],
+          "title": "Branch",
+          "type": "string"
+        },
+        "confirmed_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$",
+          "title": "Confirmed At",
+          "type": "string"
+        },
+        "operating_model": {
+          "enum": [
+            "retained",
+            "needs_confirmation"
+          ],
+          "title": "Operating Model",
+          "type": "string"
+        },
+        "source_identity_checksum": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Source Identity Checksum",
+          "type": "string"
+        },
+        "source_identity_version_id": {
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Source Identity Version Id",
+          "type": "string"
+        },
+        "source_revision": {
+          "minimum": 1,
+          "title": "Source Revision",
+          "type": "integer"
+        },
+        "visits": {
+          "enum": [
+            "retained",
+            "needs_confirmation",
+            "not_previously_confirmed"
+          ],
+          "title": "Visits",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_ruleset",
+        "source_identity_version_id",
+        "source_identity_checksum",
+        "source_revision",
+        "confirmed_at",
+        "branch",
+        "operating_model",
+        "visits"
+      ],
+      "title": "IdentityInheritance",
       "type": "object"
     },
     "IdentityMatch": {
@@ -3575,6 +3887,20 @@
           "minLength": 1,
           "title": "Selected Branch Ref",
           "type": "string"
+        },
+        "source_identity_version_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Identity Version Id"
         },
         "source_ref": {
           "maxLength": 1000,
@@ -4691,6 +5017,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.20 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12/2.2.13/2.2.15, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.21 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12/2.2.13/2.2.15/2.2.16, delivery v1/v2/v3)",
   "type": "object"
 }

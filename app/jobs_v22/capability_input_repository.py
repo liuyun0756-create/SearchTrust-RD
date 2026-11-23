@@ -66,6 +66,17 @@ class SupabaseCapabilityInputRepository:
         self.rpc = VerifiedRpcClient(url=url, service_role_key=service_role_key, http_client=http_client,
             max_response_bytes=25_000_000, prefix="V22_CAPABILITY_INPUT", invalid_retryable=True, total_timeout_seconds=180)
 
+    async def acquisition_identity_pin(self, *, user_id, case_id, job_id):
+        from app.report_v22.identity_inheritance import PinnedIdentity
+        raw = await self.rpc.post("get_v22_acquisition_identity_pin", dict(
+            p_user_id=str(user_id), p_case_id=str(case_id), p_job_id=str(job_id)))
+        if raw is None:
+            return None
+        try:
+            return PinnedIdentity.model_validate_json(canonical_json_bytes(raw))
+        except (ValueError, TypeError, AttributeError):
+            raise self.rpc.invalid() from None
+
     async def prepare(self, *, manifest, request, run_generation: int, previous_report=None):
         try:
             bound, value, recipe = generation_recipe(manifest, request, previous_report)
