@@ -101,12 +101,13 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
             "source": "explicit_confirmation", "confirmation_ref": confirmation})})
     updated = value.model_copy(update={"schema_version": "public_findings_input_v2", "business_identity": updated_identity})
     raw = deepcopy(base.input_manifest.model_dump(mode="json"))
-    action_advice = base.input_manifest.ruleset_version == "v22_capability_public_v20"
-    local_entity = action_advice or base.input_manifest.ruleset_version == "v22_capability_public_v18"
-    reasons = base.input_manifest.ruleset_version in {"v22_capability_public_v17", "v22_capability_public_v18"}
-    landing = base.input_manifest.ruleset_version in {"v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-    comparison = base.input_manifest.ruleset_version in {"v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
-    keyword = base.input_manifest.ruleset_version in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
+    raw.pop("identity_inheritance", None)
+    action_advice = base.input_manifest.content_ruleset == "v22_capability_public_v20"
+    local_entity = action_advice or base.input_manifest.content_ruleset == "v22_capability_public_v18"
+    reasons = base.input_manifest.content_ruleset in {"v22_capability_public_v17", "v22_capability_public_v18"}
+    landing = base.input_manifest.content_ruleset in {"v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
+    comparison = base.input_manifest.content_ruleset in {"v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
+    keyword = base.input_manifest.content_ruleset in {"v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"}
     raw.update(schema_version="v22_analysis_input_v10" if action_advice else "v22_analysis_input_v8" if local_entity else "v22_analysis_input_v7" if reasons else "v22_analysis_input_v6" if landing else "v22_analysis_input_v5" if comparison else "v22_analysis_input_v4" if keyword else "v22_analysis_input_v3",
         ruleset_version="v22_capability_public_v20" if action_advice else "v22_capability_public_v18" if local_entity else "v22_capability_public_v17" if reasons else "v22_capability_public_v16" if landing else "v22_capability_public_v15" if comparison else "v22_capability_public_v14" if keyword else "v22_capability_public_v13",
         id=str(uuid5(request_id, "manifest")), job_id=str(uuid5(request_id, "report")),

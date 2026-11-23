@@ -3,6 +3,7 @@
 Recognition and human confirmation are separate. This module performs no I/O.
 """
 from typing import Literal
+from uuid import UUID
 from pydantic import Field, HttpUrl, model_validator, field_validator, model_serializer
 from app.report_v22.models import StrictModel, TargetMarket, BusinessIdentity
 
@@ -75,6 +76,15 @@ class LocationConfirmation(StrictModel):
     address: str = Field(min_length=1, max_length=1000)
     source_ref: str = Field(min_length=1, max_length=1000)
 
+    source_identity_version_id: UUID | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_saved_confirmation(self, handler):
+        result = handler(self)
+        if self.source_identity_version_id is None:
+            result.pop("source_identity_version_id", None)
+        return result
+
     @field_validator("confirmed_at")
     @classmethod
     def timestamp(cls, value):
@@ -137,7 +147,10 @@ class BusinessIdentityV2(StrictModel):
                 or confirmation.selected_branch_ref != self.selected_branch_ref):
             raise ValueError("confirmation belongs to another entity or branch")
         visit = self.operating_location.confirmation_ref
-        if visit and (self.operating_model.value not in {"storefront", "hybrid"}
+        if visit and visit.source_identity_version_id:
+            if visit.selected_branch_ref != self.selected_branch_ref:
+                raise ValueError("inherited address confirmation belongs to another branch")
+        elif visit and (self.operating_model.value not in {"storefront", "hybrid"}
                 or visit.selected_branch_ref != self.selected_branch_ref or not confirmation
                 or visit.confirmed_by != confirmation.confirmed_by
                 or visit.confirmed_at != confirmation.confirmed_at or visit.source_ref != confirmation.source_ref):

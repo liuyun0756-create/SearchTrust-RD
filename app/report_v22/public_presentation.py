@@ -66,7 +66,8 @@ def group_limits(values):
 
 
 def finish_presentation(raw, manifest):
-    if manifest.ruleset_version not in POSITION_RULESETS:
+    inheritance = getattr(manifest, "identity_inheritance", None)
+    if (inheritance.base_ruleset if inheritance else manifest.ruleset_version) not in POSITION_RULESETS:
         return
     # Run after annotation and action selection. Only the card list is reordered.
     raw["findings"] = sorted(raw["findings"], key=finding_display_key)

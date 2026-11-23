@@ -1,5 +1,6 @@
 from copy import deepcopy
 from datetime import timedelta
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
@@ -21,6 +22,7 @@ from app.jobs_v22.errors import DeterministicJobError, TransientJobError
 from app.jobs_v22.executor import CollectedProspectSources, ProspectV22Executor
 from app.report_v22.capability import BusinessScope
 from app.report_v22.capability_public import build_public_capability_report
+from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.models import TargetMarket
 from app.report_v22.public_gbp_models import CustomerPublicGbpReference
 from findings_helpers import collection, market, site
@@ -165,9 +167,9 @@ async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_
     dispatch = dispatch_for(args,manifest)
     calls=[]
     def respond(sent):
-        import json
         body=json.loads(sent.content); calls.append((sent.url.path,body))
         if sent.url.path.endswith("begin_v22_acquisition_preparation"): return httpx.Response(200,json=receipt)
+        if sent.url.path.endswith("get_v22_acquisition_identity_pin"): return httpx.Response(200,content=b'null')
         if sent.url.path.endswith("prepare_v22_capability_analysis_input"):
             assert body["p_manifest"]==manifest.model_dump(mode="json")
             assert json.loads(body["p_generation_canonical"])==value.model_dump(mode="json")
@@ -190,9 +192,86 @@ async def test_prepare_uses_real_collector_orchestration_then_atomic_repository_
             business_version_id=args["business"].id,request=envelope,checkpoints=SimpleNamespace(run_generation=1, report_progress=AsyncMock()),
             cost_ledger=SimpleNamespace(job_id=args["job_id"],job_created_at=args["created_at"]))
     assert result.request.capability_request.manifest_id==manifest.id
-    assert len(calls)==3 and all("debit" not in path for path,_ in calls)
+    assert [path.rsplit("/", 1)[-1] for path, _ in calls] == [
+        "begin_v22_acquisition_preparation", "get_v22_acquisition_identity_pin",
+        "prepare_v22_capability_analysis_input", "get_v22_capability_dispatch",
+    ]
+    assert all("debit" not in path for path, _ in calls)
     collector.report_pipeline.build.assert_not_called()
     assert collector.site_stage.collect.call_count==1
+
+
+# Canonical freeze body, report and dispatch digests from main 58b1357.
+@pytest.mark.anyio
+@pytest.mark.parametrize(("enable_comparisons", "expected"), [
+    pytest.param(False, (
+        "sha256:61bcb9e6c41ddadddac90012b861a4a2e05f3df0e9fd9faddf3a560c68df3ef9",
+        "sha256:88a71eb3bd50cbe5d3e0bb794524a489806776412a4cae56b3bc4a46c5c9c2a9",
+        "sha256:7b632441478d07cde1523f99399c04cb98eae754af83a2790e9acd6e15b8c83b",
+    ), id="v12"),
+    pytest.param(True, (
+        "sha256:71ea8e5d6ad16975c01e49fcee26a89ea7687e88013cca0a8c6f54621eb4ba36",
+        "sha256:880b8ee0bae6d8c20cf039d3f06f3f3b6c3358623413457593c7c4765ee3f18b",
+        "sha256:051dd0eb205b9a4f1c4fbf6d0cbc110be4cb04ae53f7b6d4bd8293da760f4a5e",
+    ), id="v20"),
+])
+async def test_case_without_manual_identity_preserves_pre_a3_bytes(monkeypatch, enable_comparisons, expected):
+    from app.report_v22.action_advice import prepare_action_advice_input
+    from app.report_v22.capability import AnalysisInputManifest
+    from app.report_v22.local_entity_coverage import prepare_local_entity_input
+
+    fixture_ids = iter(range(501, 504))
+    monkeypatch.setattr(f"{__name__}.uuid4", lambda: UUID(int=next(fixture_ids)))
+    args, envelope, receipt = inputs()
+    manifest, request = build_acquisition_input(**args)
+    if enable_comparisons:
+        manifest, request = prepare_local_entity_input(manifest, request)
+        manifest, request = prepare_action_advice_input(manifest, request)
+    dispatch = dispatch_for(args, manifest)
+    freeze_bodies = []
+
+    def respond(sent):
+        name = sent.url.path.rsplit("/", 1)[-1]
+        if name == "begin_v22_acquisition_preparation":
+            return httpx.Response(200, json=receipt)
+        if name == "get_v22_acquisition_identity_pin":
+            assert json.loads(sent.content) == {
+                "p_user_id": str(args["user_id"]), "p_case_id": str(envelope.analyze_request.case_id),
+                "p_job_id": str(args["job_id"]),
+            }
+            return httpx.Response(200, content=b"null")
+        if name == "prepare_v22_capability_analysis_input":
+            freeze_bodies.append(json.loads(sent.content))
+            return httpx.Response(200, json={
+                "manifest_id": str(manifest.id), "input_checksum": manifest.input_checksum,
+                "generation_input_checksum": manifest.generation_input_checksum,
+            })
+        assert name == "get_v22_capability_dispatch"
+        return httpx.Response(200, json=dispatch)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        repository = SupabaseCapabilityInputRepository(
+            url="https://storage.invalid", service_role_key="fixture", http_client=client)
+        preparer = CapabilityAcquisitionPreparer(
+            repository=repository, clock=lambda: args["now"],
+            collector=SimpleNamespace(collect_sources=AsyncMock(return_value=args["collected"])),
+            discovery_verifier=SimpleNamespace(verify=AsyncMock(return_value=envelope.competitor_discovery)),
+            gbp_comparison_enabled=enable_comparisons, landing_page_comparison_enabled=enable_comparisons,
+            comparison_reasons_enabled=enable_comparisons, local_entity_coverage_enabled=enable_comparisons,
+            action_example_copy_enabled=enable_comparisons,
+        )
+        result = await preparer.prepare(
+            user_id=args["user_id"], job_id=args["job_id"], idempotency_key=receipt["idempotency_key"],
+            business_version_id=args["business"].id, request=envelope,
+            checkpoints=SimpleNamespace(run_generation=1),
+            cost_ledger=SimpleNamespace(job_id=args["job_id"], job_created_at=args["created_at"]),
+        )
+
+    body, = freeze_bodies
+    bound = AnalysisInputManifest.model_validate_json(canonical_json_bytes(body["p_manifest"]))
+    value = PublicFindingsInput.model_validate_json(body["p_generation_canonical"])
+    report = build_public_capability_report(bound, value)
+    assert (request_digest(body), request_digest(report), request_digest(result)) == expected
 
 
 @pytest.mark.anyio
@@ -203,6 +282,8 @@ async def test_committed_prepare_response_loss_recovers_without_recollection_or_
         nonlocal committed,prepares
         if sent.url.path.endswith("begin_v22_acquisition_preparation"):
             return httpx.Response(200,json={**receipt,"dispatch":dispatch if committed else None})
+        if sent.url.path.endswith("get_v22_acquisition_identity_pin"):
+            return httpx.Response(200,content=b"null")
         prepares+=1; committed=True
         raise httpx.ReadTimeout("private response lost",request=sent)
     collector=SimpleNamespace(collect_sources=AsyncMock(return_value=args["collected"]))

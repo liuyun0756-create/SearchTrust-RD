@@ -117,6 +117,11 @@ def prepare_keyword_input(manifest, request, *, confirmed_queries=None):
 
 
 def _profile(request):
+    match = assess_bound_profile(request)
+    return match[0] if match else None
+
+
+def assess_bound_profile(request, *, include_observed_url=False):
     """Reuse P1-05's positive domain/phone gate, only on the bound GBP detail."""
     from app.preflight_v22.gbp_identity import assess_candidate, observations_from_site_selection, record_from_saved_mapping
     from app.preflight_v22.gbp_identity_models import GbpIdentityRequest
@@ -135,6 +140,8 @@ def _profile(request):
     row = {"business_name":get("business_name"), "website_url":get("website_url"),
         "phone":get("phone"), "address":get("address"),
         **{k.kind:k.value for k in source.payload.record.observed_entity_keys}}
+    if include_observed_url and row["website_url"] is not None:
+        row["website_url"] = str(row["website_url"])
     record = record_from_saved_mapping(row, source_ref=str(source.binding.snapshot_id),
         record_id=source.payload.request_record_id, payload_checksum=source.binding.payload_checksum,
         observed_at=source.binding.fetched_at, expires_at=source.binding.expires_at, kind="detail")
@@ -147,7 +154,8 @@ def _profile(request):
     lookup = GbpIdentityRequest(case_ref=str(ctx.case_id), site_url=ctx.site_url, country_code=identity.country_code,
         target_market=ctx.target_market, evaluated_at=ctx.evaluated_at,
         phones=observations["phones"], names=observations["names"], saved_records=[record])
-    if not assess_candidate(lookup, record).eligible:
+    evaluation = assess_candidate(lookup, record)
+    if not evaluation.eligible:
         return None
     keys = {k.kind:k.value for k in source.payload.record.observed_entity_keys}
     if not any(keys.get(k.kind) == k.value for k in ref.entity_keys):
@@ -155,7 +163,7 @@ def _profile(request):
     branch = identity.selected_branch_ref
     if not branch or branch not in {*keys.values(), *(f"{k}:{v}" for k,v in keys.items())}:
         return None
-    return keys
+    return keys, evaluation
 
 
 def _branch_match(record, keys):

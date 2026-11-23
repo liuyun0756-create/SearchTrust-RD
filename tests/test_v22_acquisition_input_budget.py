@@ -187,6 +187,7 @@ async def test_46_page_tour_operator_with_three_failed_firecrawl_maps_prepares_w
     def respond(sent):
         body=json.loads(sent.content);calls.append(sent.url.path)
         if sent.url.path.endswith('begin_v22_acquisition_preparation'):return httpx.Response(200,json=receipt)
+        if sent.url.path.endswith('get_v22_acquisition_identity_pin'):return httpx.Response(200,content=b'null')
         if sent.url.path.endswith('prepare_v22_capability_analysis_input'):
             prepared.update(body);bound=AnalysisInputManifest.model_validate_json(json.dumps(body['p_manifest']))
             return httpx.Response(200,json={'manifest_id':str(bound.id),'input_checksum':bound.input_checksum,'generation_input_checksum':bound.generation_input_checksum})
@@ -200,7 +201,11 @@ async def test_46_page_tour_operator_with_three_failed_firecrawl_maps_prepares_w
         ledger=SimpleNamespace(job_id=args['job_id'],job_created_at=args['created_at'],redis=SimpleNamespace(exists=AsyncMock(return_value=True)),key='synthetic-ledger',claim=AsyncMock(side_effect=AssertionError('provider denied')))
         await prep.prepare(user_id=args['user_id'],job_id=args['job_id'],idempotency_key=receipt['idempotency_key'],business_version_id=args['business'].id,
             request=envelope,checkpoints=SimpleNamespace(run_generation=1),cost_ledger=ledger)
-    assert len(calls)==3 and collector.collect_sources.call_count==1
+    assert [path.rsplit('/', 1)[-1] for path in calls] == [
+        'begin_v22_acquisition_preparation', 'get_v22_acquisition_identity_pin',
+        'prepare_v22_capability_analysis_input', 'get_v22_capability_dispatch',
+    ]
+    assert collector.collect_sources.call_count==1
     ledger.claim.assert_not_called()
     assert len(prepared['p_generation_canonical'].encode())<=MAX_GENERATION_CANONICAL_BYTES
     generated=json.loads(prepared['p_generation_canonical']);site=next(s for s in generated['evidence_input']['sources'] if s['kind']=='site')
