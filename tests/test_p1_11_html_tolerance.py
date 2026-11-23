@@ -17,7 +17,7 @@ def parse(html, ruleset=HTML_TOLERANCE_RULESET, **limits):
     return parse_html(html, '/saved/html', ParseBudget(SiteBusinessLimits(**limits)), ruleset_version=ruleset)
 
 
-@pytest.mark.parametrize('version', [18, 19, 20])
+@pytest.mark.parametrize('version', [18, 19, 20, 21])
 @pytest.mark.parametrize('html,code', [
     ('<div>Saved phone</div></div><p>After</p>', 'unmatched_end_tag_ignored'),
     ('<svg fill="none" fill="red"><text>555-9999</text></svg><p>After</p>', 'ignored_svg_duplicate_attribute'),
@@ -40,7 +40,6 @@ def test_registered_v18_and_newer_recover_isolated_errors_and_keep_source_spans(
 
 @pytest.mark.parametrize('version', [
     *(f'v22_capability_public_v{number}' for number in range(1, 18)),
-    'v22_capability_public_v21',
     'v22_capability_public_v999',
     'v22_capability_public_v018',
     'v22_capability_service_v20',

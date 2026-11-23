@@ -37,8 +37,8 @@ class SqlError(RuntimeError):
 
 
 class LocalSql:
-    def __init__(self, workspace):
-        self.process = subprocess.Popen(['node', 'scripts/test-v22-preparation-rpc.mjs'],
+    def __init__(self, workspace, script='scripts/test-v22-preparation-rpc.mjs'):
+        self.process = subprocess.Popen(['node', str(script)],
             cwd=workspace, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, bufsize=1)
         self.calls = []
