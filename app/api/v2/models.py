@@ -131,7 +131,18 @@ class KeywordSuggestions(StrictModel):
     items: list[KeywordSuggestion] = Field(max_length=30)
 
 
+class PreflightBranchOption(StrictModel):
+    ref: str = Field(min_length=1, max_length=320)
+    public_gbp_url: HttpUrl
+    name: str = Field(min_length=1, max_length=240)
+    address: str | None = Field(default=None, max_length=1000)
+    domain_matched: bool
+    phone_matched: bool
+    evidence_token: str = Field(min_length=1, max_length=25000)
+
+
 class PreflightResponse(StrictModel):
+    branch_options: list[PreflightBranchOption] | None = Field(default=None, max_length=5)
     target_keyword_suggestions: KeywordSuggestions | None = None
 
     @model_serializer(mode='wrap')
@@ -139,6 +150,8 @@ class PreflightResponse(StrictModel):
         value=handler(self)
         if self.target_keyword_suggestions is None:
             value.pop('target_keyword_suggestions',None)
+        if self.branch_options is None:
+            value.pop('branch_options',None)
         return value
 
     preflight_id: UUID
