@@ -1,8 +1,8 @@
 {
   "success": true,
   "links": [
-    "https://fixture.example/",
+    {"url": "https://fixture.example/", "title": "Home"},
     {"url": "https://fixture.example/services"},
-    "https://fixture.example/services"
+    {"url": "https://fixture.example/services"}
   ]
 }

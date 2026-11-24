@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # ── Site collection ───────────────────────────────────────────────────────
     FIRECRAWL_API_KEY: str = Field(default="")
-    FIRECRAWL_API_URL: str = Field(default="https://api.firecrawl.dev/v1")
+    FIRECRAWL_API_URL: str = Field(default="https://api.firecrawl.dev/v2")
 
     # ── V2.2 task event streaming ─────────────────────────────────────────────
     TASK_STREAM_TIMEOUT: Annotated[int, Field(ge=60, le=3600)] = Field(default=1260)

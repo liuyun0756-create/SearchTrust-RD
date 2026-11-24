@@ -58,7 +58,7 @@
     {
       "id": "firecrawl.map", "provider": "firecrawl",
       "adapter": "app.collectors.site_inventory_firecrawl.FirecrawlMapAdapter",
-      "request_contract": "POST /map with url and limit<=500",
+      "request_contract": "POST /v2/map with url and limit<=500",
       "fixtures": ["firecrawl/map_success.json"],
       "error_mapping": {"timeout_4xx_5xx_malformed_oversized": "firecrawl_unavailable"},
       "max_response_bytes": 1000000
