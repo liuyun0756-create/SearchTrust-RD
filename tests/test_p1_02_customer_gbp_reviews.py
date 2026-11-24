@@ -76,6 +76,14 @@ def test_frozen_review_sample_metrics_and_inference_are_bound_to_v22(monkeypatch
     assert canonical_json_bytes(build_public_capability_report(m, request)) == canonical_json_bytes(report)
 
 
+def test_full_sample_inside_window_is_a_lower_bound_even_on_final_page():
+    data = sample("12345")
+    data.reviews = [review(i).model_copy(update={"iso_date": NOW - timedelta(days=i)}) for i in range(30)]
+    data.stop = "natural_end"
+    data.pages[-1] = data.pages[-1].model_copy(update={"has_next": False})
+    assert not data.exact_window
+
+
 def test_review_collection_refuses_unretained_and_overlapping_bounds_do_not_compare():
     m, q = inputs()
     m2 = m.model_copy(update={"identity_inheritance":m.identity_inheritance.model_copy(update={"branch":"needs_confirmation"})})

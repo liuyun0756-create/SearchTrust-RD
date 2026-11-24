@@ -2388,6 +2388,73 @@
       "title": "ContactCheck",
       "type": "object"
     },
+    "CustomerReviewProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "discarded_recent_or_invalid": {
+          "title": "Discarded Recent Or Invalid",
+          "type": "boolean"
+        },
+        "invalid_records": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Invalid Records",
+          "type": "integer"
+        },
+        "page_count": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Page Count",
+          "type": "integer"
+        },
+        "returned_count": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Returned Count",
+          "type": "integer"
+        },
+        "sampled_at": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sampled At"
+        },
+        "sort_verified": {
+          "title": "Sort Verified",
+          "type": "boolean"
+        },
+        "stop": {
+          "enum": [
+            "natural_end",
+            "sample_cap",
+            "page_cap",
+            "provider_failure",
+            "branch_unavailable",
+            "invalid_pagination",
+            "budget"
+          ],
+          "title": "Stop",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sampled_at",
+        "page_count",
+        "returned_count",
+        "sort_verified",
+        "stop",
+        "invalid_records",
+        "discarded_recent_or_invalid"
+      ],
+      "title": "CustomerReviewProvenance",
+      "type": "object"
+    },
     "DeliveryRevision": {
       "additionalProperties": false,
       "allOf": [
@@ -2797,6 +2864,17 @@
     "GbpComparison": {
       "additionalProperties": false,
       "properties": {
+        "customer_sampling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CustomerReviewProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "differences": {
           "items": {
             "$ref": "#/$defs/GbpDifference"

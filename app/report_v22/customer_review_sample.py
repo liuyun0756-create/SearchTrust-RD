@@ -67,4 +67,5 @@ class CustomerReviewSample(StrictModel):
                 or any(t is None or t > self.sampled_at for t in dates)
                 or any(a < b for a, b in zip(dates, dates[1:]))):
             return False
-        return self.stop == "natural_end" or dates[-1] < self.sampled_at - timedelta(days=90)
+        crossed_window = dates[-1] < self.sampled_at - timedelta(days=90)
+        return crossed_window or (self.stop == "natural_end" and len(self.reviews) < SAMPLE_LIMIT)

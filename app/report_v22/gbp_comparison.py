@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from itertools import combinations
 from typing import Literal
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_serializer, model_validator
 
 from app.jobs_v22.digest import canonical_json_bytes, verified_request_digest
 from app.report_v22.models import StrictModel
@@ -58,15 +58,36 @@ class GbpDifference(StrictModel):
     reason: Literal['same_direction', 'customer_unchecked', 'insufficient_comparators', 'comparison_time_gap']
 
 
+class CustomerReviewProvenance(StrictModel):
+    sampled_at: str | None = Field(max_length=64)
+    page_count: int = Field(ge=0, le=4)
+    returned_count: int = Field(ge=0, le=400)
+    sort_verified: bool
+    stop: Literal["natural_end", "sample_cap", "page_cap", "provider_failure", "branch_unavailable", "invalid_pagination", "budget"]
+    invalid_records: int = Field(ge=0, le=400)
+    discarded_recent_or_invalid: bool
+
+
 class GbpComparison(StrictModel):
     schema_version: Literal['gbp_comparison_v1', 'gbp_comparison_v2'] = 'gbp_comparison_v1'
     rows: list[GbpComparisonRow] = Field(min_length=1, max_length=4)
     differences: list[GbpDifference] = Field(min_length=6, max_length=6)
+    customer_sampling: CustomerReviewProvenance | None = None
+
+    @model_serializer(mode="wrap")
+    def historical_shape(self, handler):
+        result = handler(self)
+        if self.schema_version == "gbp_comparison_v1":
+            result.pop("customer_sampling", None)
+        return result
 
     @model_validator(mode='after')
     def validate_rows(self):
         if self.rows[0].subject != 'customer' or any(r.subject != 'competitor' for r in self.rows[1:]):
             raise ValueError('customer must precede confirmed competitors')
+        if (self.schema_version == "gbp_comparison_v2" and self.customer_sampling is None
+                or self.schema_version == "gbp_comparison_v1" and "customer_sampling" in self.model_fields_set):
+            raise ValueError("customer review sampling provenance requires v2")
         if self.differences != compare_rows(self.rows, review_metrics=self.schema_version == "gbp_comparison_v2"):
             raise ValueError('GBP comparison gates do not match saved metrics')
         return self
@@ -218,12 +239,19 @@ def build_gbp_comparison(request, *, review_metrics=False):
                     if field is not None and field.state=='observed' and field.value is not None
                     else _unknown('identity_unresolved' if confirmed_customer is None else 'source_unavailable',source_refs))
         customer_metrics[key]=metric
+    sampling = None
     if review_metrics:
         from app.report_v22.public_gbp_models import CustomerPublicGbpSnapshotV3
 
         if customer is None or not isinstance(customer.payload, CustomerPublicGbpSnapshotV3):
             raise ValueError('v22 comparison needs customer reviews provenance')
         customer_metrics.update(customer_review_metrics(customer))
+        sample = customer.payload.review_sample
+        sampling = CustomerReviewProvenance(
+            sampled_at=sample.sampled_at.isoformat().replace("+00:00", "Z") if sample.sampled_at else None,
+            page_count=len(sample.pages), returned_count=sum(p.returned for p in sample.pages),
+            sort_verified=bool(sample.pages) and all(p.sort_verified for p in sample.pages), stop=sample.stop,
+            invalid_records=sample.invalid_records, discarded_recent_or_invalid=sample.discarded_recent_or_invalid)
     rows=[GbpComparisonRow(subject='customer',name=request.business_identity.business_name,metrics=customer_metrics)]
     for i,item in enumerate(competitor.payload.competitors if competitor else []):
         prefix=f'/payload/competitors/{i}'; profile=item.public_gbp
@@ -256,4 +284,5 @@ def build_gbp_comparison(request, *, review_metrics=False):
                 metrics['latest_review']=_observed(max(r.iso_date for r in reviews).isoformat(),t,rr)
         rows.append(GbpComparisonRow(subject='competitor',name=item.competitor.business_name,metrics=metrics))
     return GbpComparison(schema_version='gbp_comparison_v2' if review_metrics else 'gbp_comparison_v1',
-                         rows=rows, differences=compare_rows(rows, review_metrics=review_metrics))
+                         rows=rows, differences=compare_rows(rows, review_metrics=review_metrics),
+                         **({"customer_sampling": sampling} if sampling is not None else {}))
