@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from app.collectors.firecrawl_api import firecrawl_v2_endpoint
 from app.collectors.site_inventory_urls import SiteScope, canonicalize_site_resource_url
 from app.security_v22.urls import Resolver, UrlSafetyError, UrlUnreachableError, resolve_public_url
 
@@ -43,10 +44,10 @@ class FirecrawlRenderAdapter:
                 if not scope.contains_host(urlsplit(safe.normalized_url).hostname or ''):
                     return FirecrawlRenderResult(limitation='render_unavailable')
                 client = client or httpx.AsyncClient(timeout=self.timeout_seconds, follow_redirects=False, trust_env=False)
-                async with client.stream('POST', f'{self.api_url}/scrape',
+                async with client.stream('POST', firecrawl_v2_endpoint(self.api_url, 'scrape'),
                     headers={'Authorization': f'Bearer {self.api_key}', 'Content-Type': 'application/json'},
                     json={'url': url, 'formats': ['html'], 'onlyMainContent': False,
-                          'maxAge': 0, 'waitFor': 1000, 'parsePDF': False, 'proxy': 'basic',
+                          'maxAge': 0, 'waitFor': 1000, 'parsers': [], 'proxy': 'basic',
                           'timeout': max(1000, int((self.timeout_seconds - 2) * 1000))},
                     timeout=self.timeout_seconds) as response:
                     response.raise_for_status()
@@ -62,6 +63,9 @@ class FirecrawlRenderAdapter:
                 if not isinstance(payload, dict) or payload.get('success') is not True:
                     raise ValueError('invalid response')
                 data = payload.get('data')
+                # HTML-only Scrape shares its core fields across versions. Reject legacy markers.
+                if 'replacement' in payload or (isinstance(data, dict) and 'extract' in data):
+                    raise ValueError('legacy Scrape response')
                 if not isinstance(data, dict) or not isinstance(data.get('html'), str) or not data['html'].strip():
                     raise ValueError('HTML unavailable')
                 metadata = data.get('metadata')

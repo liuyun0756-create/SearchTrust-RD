@@ -21,7 +21,7 @@ async def test_firecrawl_map_fixture_matches_active_adapter_contract(provider_fi
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
         result = await FirecrawlMapAdapter(
             api_key="fixture-key-value",
-            api_url="https://firecrawl.example.test/v1",
+            api_url="https://firecrawl.example.test/v2",
             enabled=True,
             timeout_seconds=2,
             http_client=client,
@@ -53,7 +53,7 @@ async def test_firecrawl_drift_errors_and_limits_fail_closed(response) -> None:
     ) as client:
         result = await FirecrawlMapAdapter(
             api_key="fixture-key-value",
-            api_url="https://firecrawl.example.test/v1",
+            api_url="https://firecrawl.example.test/v2",
             enabled=True,
             timeout_seconds=2,
             http_client=client,

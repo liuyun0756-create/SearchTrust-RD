@@ -13,6 +13,8 @@ from uuid import UUID
 
 import httpx
 
+from app.collectors.firecrawl_api import firecrawl_v2_endpoint
+
 
 logger = logging.getLogger(__name__)
 _job_id: ContextVar[UUID | None] = ContextVar("firecrawl_map_job_id", default=None)
@@ -26,14 +28,6 @@ def firecrawl_job_context(job_id: UUID):
         yield
     finally:
         _job_id.reset(token)
-
-
-def _map_endpoint(api_url: str) -> str:
-    """Map uses v2; the shared base may still serve the existing v1 scraper."""
-    base = api_url.rstrip("/")
-    if base.rsplit("/", 1)[-1] in {"v1", "v2"}:
-        base = base.rsplit("/", 1)[0]
-    return f"{base}/v2/map"
 
 
 @dataclass(frozen=True)
@@ -81,7 +75,7 @@ class FirecrawlMapAdapter:
             )
             async with client.stream(
                 "POST",
-                _map_endpoint(self.api_url),
+                firecrawl_v2_endpoint(self.api_url, "map"),
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
@@ -109,20 +103,22 @@ class FirecrawlMapAdapter:
                 if not isinstance(value, str) or not 1 <= len(value) <= 128:
                     raise ValueError("Firecrawl returned an invalid request ID")
                 provider_request_id = value
-            if set(payload) - {"success", "links", "warnings", "replacement", "id"}:
+            if "replacement" in payload:
+                raise ValueError("Firecrawl returned a legacy Map response")
+            if set(payload) - {"success", "links", "warnings", "id"}:
                 raise ValueError("Firecrawl returned unknown fields")
             warnings = payload.get("warnings", [])
             if not isinstance(warnings, list) or any(not isinstance(item, str) for item in warnings):
                 raise ValueError("Firecrawl returned invalid warnings")
             warnings_count = len(warnings)
-            if "replacement" in payload and not isinstance(payload["replacement"], str):
-                raise ValueError("Firecrawl returned an invalid replacement")
             raw_links = payload.get("links")
             if not isinstance(raw_links, list):
                 raise ValueError("Firecrawl links were missing")
+            if any(not isinstance(item, dict) for item in raw_links):
+                raise ValueError("Firecrawl Map requires v2 link objects")
             urls: list[str] = []
             for item in raw_links:
-                value = item if isinstance(item, str) else item.get("url") if isinstance(item, dict) else None
+                value = item.get("url")
                 if isinstance(value, str) and value.strip() and value not in urls:
                     urls.append(value.strip())
                 if len(urls) >= min(limit, 500):

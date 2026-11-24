@@ -14,7 +14,7 @@ def anyio_backend() -> str:
 
 
 @pytest.mark.anyio
-async def test_firecrawl_returns_bounded_urls_from_supported_shapes() -> None:
+async def test_firecrawl_returns_bounded_urls_from_v2_objects() -> None:
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -24,7 +24,7 @@ async def test_firecrawl_returns_bounded_urls_from_supported_shapes() -> None:
             json={
                 "success": True,
                 "links": [
-                    "https://example.com/a",
+                    {"url": "https://example.com/a", "description": "A"},
                     {"url": "https://example.com/b", "title": "B"},
                     {"title": "missing"},
                 ],
@@ -34,7 +34,7 @@ async def test_firecrawl_returns_bounded_urls_from_supported_shapes() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         adapter = FirecrawlMapAdapter(
             api_key="secret",
-            api_url="https://api.firecrawl.dev/v1",
+            api_url="https://api.firecrawl.dev/v2",
             enabled=True,
             timeout_seconds=5,
             http_client=client,
@@ -49,10 +49,31 @@ async def test_firecrawl_returns_bounded_urls_from_supported_shapes() -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("links", "limitation"),
+    (
+        ([], None),
+        (["https://example.com/legacy"], "firecrawl_unavailable"),
+        ([{"url": "https://example.com/a"}, "https://example.com/legacy"], "firecrawl_unavailable"),
+    ),
+)
+async def test_map_only_accepts_empty_or_object_links(links, limitation):
+    async with httpx.AsyncClient(transport=httpx.MockTransport(
+        lambda _: httpx.Response(200, json={"success": True, "links": links})
+    )) as client:
+        result = await FirecrawlMapAdapter(
+            api_key="test-key", api_url="https://provider.example/v2", enabled=True,
+            timeout_seconds=5, http_client=client,
+        ).map("https://example.com/", limit=1)
+    assert result.urls == ()
+    assert result.limitation == limitation
+
+
+@pytest.mark.anyio
 async def test_firecrawl_skips_without_configuration() -> None:
     adapter = FirecrawlMapAdapter(
         api_key="",
-        api_url="https://api.firecrawl.dev/v1",
+        api_url="https://api.firecrawl.dev/v2",
         enabled=True,
         timeout_seconds=5,
     )
@@ -70,7 +91,7 @@ async def test_firecrawl_returns_safe_limitation_on_bad_response() -> None:
     ) as client:
         adapter = FirecrawlMapAdapter(
             api_key="secret",
-            api_url="https://api.firecrawl.dev/v1",
+            api_url="https://api.firecrawl.dev/v2",
             enabled=True,
             timeout_seconds=5,
             http_client=client,
@@ -90,7 +111,7 @@ async def test_firecrawl_rejects_oversized_provider_response() -> None:
     ) as client:
         adapter = FirecrawlMapAdapter(
             api_key="secret",
-            api_url="https://api.firecrawl.dev/v1",
+            api_url="https://api.firecrawl.dev/v2",
             enabled=True,
             timeout_seconds=5,
             http_client=client,
@@ -104,7 +125,7 @@ async def test_firecrawl_rejects_oversized_provider_response() -> None:
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("version", [1, 2])
-async def test_map_accepts_saved_v1_metadata_and_v2_link_objects(version, caplog):
+async def test_map_rejects_saved_v1_shape_and_accepts_v2_links(version, caplog):
     fixture = Path(__file__).parent / f"fixtures/provider_contracts/firecrawl/map_v{version}_metadata_redacted.json"
     payload = json.loads(fixture.read_text())
     requests = []
@@ -117,10 +138,14 @@ async def test_map_accepts_saved_v1_metadata_and_v2_link_objects(version, caplog
                 enabled=True, timeout_seconds=5, http_client=client)
             with firecrawl_job_context(UUID("55555555-5555-4555-8555-123456789abc")):
                 result = await adapter.map("https://PRIVATE_CUSTOMER.example/", limit=200)
-    assert len(result.urls) == 18 and result.limitation is None
+    if version == 1:
+        assert result.urls == () and result.limitation == "firecrawl_unavailable"
+        assert "failure_stage=schema http_status=200 exception_type=ValueError" in caplog.text
+    else:
+        assert len(result.urls) == 18 and result.limitation is None
+        assert "failure_stage=none http_status=200 exception_type=None" in caplog.text
+    assert len(requests) == 1
     assert requests[0].url.path == "/v2/map"
-    assert "failure_stage=none http_status=200 exception_type=None" in caplog.text
-    assert f"warnings_count={1 if version == 1 else 0}" in caplog.text
     assert "job_id_suffix=56789abc" in caplog.text
     assert "elapsed_ms=" in caplog.text
     for secret in ("PRIVATE_KEY", "PRIVATE_CUSTOMER", "fixture.example", "deprecated", "/v2/map"):
@@ -128,7 +153,7 @@ async def test_map_accepts_saved_v1_metadata_and_v2_link_objects(version, caplog
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("status", [401, 402, 429, 500, 502, 503, 504])
+@pytest.mark.parametrize("status", [400, 401, 402, 410, 429, 500, 502, 503, 504])
 async def test_map_http_failures_log_status_and_type_without_content(status, caplog):
     with caplog.at_level(logging.INFO, logger="app.collectors.site_inventory_firecrawl"):
         async with httpx.AsyncClient(transport=httpx.MockTransport(

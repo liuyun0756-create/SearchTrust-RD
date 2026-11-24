@@ -22,7 +22,7 @@ def observed_shape():
 async def map_response(payload):
     async with httpx.AsyncClient(transport=httpx.MockTransport(
         lambda _: httpx.Response(200, json=payload))) as client:
-        return await FirecrawlMapAdapter(api_key="PRIVATE_KEY", api_url="https://provider.example/v1",
+        return await FirecrawlMapAdapter(api_key="PRIVATE_KEY", api_url="https://provider.example/v2",
             enabled=True, timeout_seconds=5, http_client=client).map("https://customer.example/", limit=200)
 
 

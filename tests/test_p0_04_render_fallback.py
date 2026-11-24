@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import timedelta
 from types import SimpleNamespace
 from uuid import UUID
@@ -27,33 +28,48 @@ async def public_dns(host):
 
 
 def test_flag_defaults_off_and_contact_precedes_short_text():
-    assert Settings(_env_file=None).V22_SITE_RENDER_FALLBACK_ENABLED is False
+    settings = Settings(_env_file=None)
+    assert settings.V22_SITE_RENDER_FALLBACK_ENABLED is False
+    assert settings.FIRECRAWL_API_URL == 'https://api.firecrawl.dev/v2'
     deep = request('<p>512-555-0100</p>').source.payload.selected_pages[0].deep_snapshot
     assert static_contact_check(deep)[0] is True
     assert static_contact_check(deep)[1] < 200
 
 
-@pytest.mark.parametrize('case', ['ok', 'timeout', 'error', 'oversize', 'invalid', 'empty', 'redirect', 'http_page_error'])
+@pytest.mark.parametrize('case', [
+    'ok', 'timeout', 400, 401, 402, 410, 429, 500, 503, 'oversize', 'invalid',
+    'empty', 'redirect', 'http_page_error', 'legacy_extract', 'legacy_replacement',
+])
 def test_bounded_scrape_adapter(case):
     async def run():
         seen = []
         def handler(req):
-            import json
-            seen.append(json.loads(req.content))
+            seen.append(req)
             if case == 'timeout': raise httpx.ReadTimeout('private upstream details')
-            if case == 'error': return httpx.Response(500)
+            if isinstance(case, int): return httpx.Response(case)
             if case == 'oversize': return httpx.Response(200, content=b'x'*2001)
             if case == 'invalid': return httpx.Response(200, text='not json')
-            return httpx.Response(200, json={'success': True, 'data': {
+            data = {
                 'html': '' if case == 'empty' else '<footer><p>512-555-0100</p></footer>',
                 'metadata': {'statusCode': 404 if case == 'http_page_error' else 200,
-                             'sourceURL': 'https://rival.test/' if case == 'redirect' else 'https://example.test/'}}})
+                             'sourceURL': 'https://rival.test/' if case == 'redirect' else 'https://example.test/'},
+            }
+            payload = {'success': True, 'data': data}
+            if case == 'legacy_extract':
+                data['extract'] = {'legacy': True}
+            if case == 'legacy_replacement':
+                payload['replacement'] = '/v2/scrape'
+            return httpx.Response(200, json=payload)
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
             adapter = FirecrawlRenderAdapter(api_key='test-key', api_url='https://api.test/v1', enabled=True,
                 max_response_bytes=2000, http_client=client, resolver=public_dns)
             result = await adapter.scrape('https://example.test/', scope=SiteScope.from_root('https://example.test/'))
-        assert len(seen) == 1 and seen[0]['onlyMainContent'] is False and seen[0]['formats'] == ['html']
-        assert seen[0]['proxy'] == 'basic'
+        assert len(seen) == 1
+        assert seen[0].url.path == '/v2/scrape'
+        assert json.loads(seen[0].content) == {
+            'url': 'https://example.test/', 'formats': ['html'], 'onlyMainContent': False,
+            'maxAge': 0, 'waitFor': 1000, 'parsers': [], 'proxy': 'basic', 'timeout': 28000,
+        }
         assert (result.html is not None) is (case == 'ok')
         if case != 'ok': assert result.limitation == 'render_unavailable' and result.html is None
     asyncio.run(run())
