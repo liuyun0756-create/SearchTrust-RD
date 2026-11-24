@@ -19,6 +19,7 @@ from app.jobs_v22.digest import canonical_json_bytes
 from app.report_v22.capability_public import build_public_capability_report
 from app.report_v22.comparison_reasons import prepare_reasons_input
 from app.report_v22.customer_review_sample import CustomerReview, CustomerReviewPage, CustomerReviewSample
+from app.report_v22.gbp_comparison import compare_rows, customer_review_metrics
 from app.report_v22.identity_inheritance import _bind_inheritance
 from test_p1_02_gbp_comparison import comparison_input
 
@@ -95,6 +96,33 @@ def test_review_collection_refuses_unretained_and_overlapping_bounds_do_not_comp
     assert report.gbp_comparison.rows[0].metrics["reviews_90d"].lower_bound
     assert report.gbp_comparison.differences[3].status == "not_checked"
     assert all(r.metric != "recent_review_activity" for r in report.possible_reasons.items)
+
+
+@pytest.mark.parametrize("hours,count,expected", [(24, 2, "observed"), (24.001, 2, "not_checked"), (0, 1, "not_checked"), (24.001, 3, "observed")])
+def test_reviews_differences_use_original_times_and_two_eligible_competitors(hours, count, expected):
+    _, report = output_fixture()
+    rows = report.gbp_comparison.rows[:count+1]
+    for row in rows[1:1+(1 if count==3 else count)]:
+        for key in ("reviews_90d", "latest_review"):
+            row.metrics[key].sampled_at = (NOW + timedelta(hours=hours)).isoformat()
+    results = {d.metric: d for d in compare_rows(rows, review_metrics=True)}
+    assert results["reviews_90d"].status == results["latest_review"].status == expected
+    if count == 3:
+        assert results["reviews_90d"].competitor_indices == [2,3]
+    assert results["visible_replies"].status == "not_checked"
+
+
+def test_unknown_review_date_and_response_do_not_count_as_zero():
+    old, request = inputs()
+    branch = request.business_identity.selected_branch_ref
+    partial = sample(branch)
+    partial.reviews[0] = partial.reviews[0].model_copy(update={"iso_date":None,"reply_state":"unknown"})
+    _, new = bind_customer_review_sample(old, request, partial)
+    source = next(item for item in new.evidence_input.sources if item.kind == "public_gbp")
+    metrics = customer_review_metrics(source)
+    assert metrics["reviews_90d"].reason == metrics["latest_review"].reason == "date_unavailable"
+    assert metrics["reviews_90d"].value is None
+    assert (metrics["visible_replies"].numerator, metrics["visible_replies"].denominator) == (19,29)
 
 
 @pytest.fixture
