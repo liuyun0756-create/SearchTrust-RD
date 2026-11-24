@@ -125,7 +125,7 @@ class PreflightService:
         preflight_id = uuid4()
         branches = branch_options(preflight_id=preflight_id, snapshot=site_snapshot, signals=signals,
             candidates=gbp_result.candidates, key=settings.V22_INTERNAL_API_TOKEN.get_secret_value(),
-            ttl_seconds=self.cache.ttl_seconds)
+            ttl_seconds=settings.V22_PREFLIGHT_CACHE_TTL_SECONDS)
         response = PreflightResponse(
             branch_options=branches or None,
             target_keyword_suggestions=(saved_keyword_suggestions(site_snapshot.html if site_snapshot else '',signals,gbp_result,normalized_site_url)
