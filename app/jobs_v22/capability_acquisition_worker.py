@@ -24,6 +24,7 @@ from app.jobs_v22.errors import DurableJobError, JobLeaseLost, DeterministicJobE
 from app.jobs_v22.freeze_safety import DEFAULT_FREEZE_MAX_INPUT_BYTES, FreezeRecoveryGuard, freeze_json_bytes
 from app.jobs_v22.models import utc_now
 from app.report_v22.identity_inheritance_contract import MANIFEST_SCHEMA as INHERITED_MANIFEST_SCHEMA
+from app.report_v22.customer_review_sample import MANIFEST_SCHEMA as CUSTOMER_REVIEWS_MANIFEST
 from app.report_v22.models import StrictModel
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def _freeze_metrics(body, payload=None):
         sources = body.get("p_public_source_canonicals", {})
         sizes = tuple(len(sources[k].encode("utf-8")) if k in sources else 0 for k in kinds)
         schema = body.get("p_manifest", {}).get("schema_version")
-        if schema not in {"v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10", INHERITED_MANIFEST_SCHEMA}:
+        if schema not in {"v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10", INHERITED_MANIFEST_SCHEMA, CUSTOMER_REVIEWS_MANIFEST}:
             schema = "unknown"
         suffix = str(UUID(str(body.get("p_job_id"))))[-8:]
         return (suffix, size, schema, *sizes)

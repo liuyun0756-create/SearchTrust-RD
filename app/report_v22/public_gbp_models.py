@@ -220,5 +220,32 @@ class CustomerPublicGbpSnapshotV2(CustomerPublicGbpSnapshot):
     _extended_sample = model_validator(mode='after')(validate_extended_sample)
 
 
+from app.report_v22.customer_review_sample import CustomerReviewSample
+
+
+class CustomerPublicGbpSnapshotV3(CustomerPublicGbpSnapshotV2):
+    schema_version: Literal['customer_public_gbp_snapshot_v3'] = 'customer_public_gbp_snapshot_v3'
+    review_sample: CustomerReviewSample
+
+    @model_validator(mode='after')
+    def review_binding(self):
+        from app.report_common.google_business import data_cid
+
+        observed = {key.kind: key.value for key in self.record.observed_entity_keys}
+        target = {key.kind: key.value for key in self.request_target.entity_keys}
+        sample = self.review_sample
+        common = target.keys() & observed.keys()
+        if (self.identity_match_status != 'matched' or self.collection_status != 'succeeded'
+                or not any(kind in common and target[kind] == observed[kind] == sample.branch_ref
+                           for kind in ('cid', 'place_id'))
+                or any(target[kind] != observed[kind] for kind in common)
+                or (sample.data_id is not None and observed.get('data_id') not in (None, sample.data_id))
+                or (sample.data_id is not None and observed.get('cid') is not None
+                    and data_cid(sample.data_id) != observed['cid'])):
+            raise ValueError('customer reviews must bind to the matched public branch')
+        return self
+
+
 CustomerPublicGbpSnapshotValue = Annotated[
-    CustomerPublicGbpSnapshot | CustomerPublicGbpSnapshotV2, Field(discriminator='schema_version')]
+    CustomerPublicGbpSnapshot | CustomerPublicGbpSnapshotV2 | CustomerPublicGbpSnapshotV3,
+    Field(discriminator='schema_version')]

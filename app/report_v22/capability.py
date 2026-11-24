@@ -118,6 +118,10 @@ from app.report_v22.gbp_comparison import GbpComparison
 from app.report_v22.landing_page_comparison import LandingComparison
 from app.report_v22.local_entity_coverage import LocalEntityCoverage
 from app.report_v22.comparison_reasons import PossibleReasons, build_possible_reasons
+from app.report_v22.customer_review_sample import (
+    BASE_RULESETS as REVIEWS_BASE_RULESETS, MANIFEST_SCHEMA as REVIEWS_MANIFEST,
+    REPORT_SCHEMA as REVIEWS_REPORT, RULESET as REVIEWS_RULESET, SNAPSHOT_SCHEMA as REVIEWS_SNAPSHOT,
+)
 from app.report_v22.identity_inheritance_contract import (
     BASE_VERSIONS, MANIFEST_SCHEMA as INHERITED_MANIFEST, REPORT_SCHEMA as INHERITED_REPORT,
     RULESET as INHERITED_RULESET, IdentityInheritance,
@@ -125,7 +129,7 @@ from app.report_v22.identity_inheritance_contract import (
 
 
 class AnalysisInputManifest(StrictModel):
-    schema_version: Literal["v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10", "v22_analysis_input_v11"]
+    schema_version: Literal["v22_analysis_input_v1", "v22_analysis_input_v2", "v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8", "v22_analysis_input_v10", "v22_analysis_input_v11", "v22_analysis_input_v12"]
     id: UUID
     job_id: UUID
     user_id: UUID
@@ -175,8 +179,14 @@ class AnalysisInputManifest(StrictModel):
     @model_validator(mode="after")
     def validate_binding(self):
         inherits = self.identity_inheritance is not None
-        if inherits != (self.schema_version == INHERITED_MANIFEST) or inherits != (self.ruleset_version == INHERITED_RULESET):
-            raise ValueError("identity inheritance requires v11 / v21")
+        versions = {INHERITED_RULESET: INHERITED_MANIFEST, REVIEWS_RULESET: REVIEWS_MANIFEST}
+        if (inherits != (self.ruleset_version in versions)
+                or inherits != (self.schema_version in versions.values())
+                or inherits and self.schema_version != versions[self.ruleset_version]):
+            raise ValueError("identity inheritance manifest and ruleset mismatch")
+        if self.ruleset_version == REVIEWS_RULESET and (
+                self.identity_inheritance.branch != "retained" or self.content_ruleset not in REVIEWS_BASE_RULESETS):
+            raise ValueError("customer review sampling requires a retained GBP branch")
         if (inherits and (self.mode != "acquisition" or self.execution_type is not None
                          or instant(self.identity_inheritance.confirmed_at) > instant(self.evaluated_at))
                 or not inherits and "identity_inheritance" in self.model_fields_set):
@@ -239,9 +249,13 @@ class AnalysisInputManifest(StrictModel):
             raise ValueError("rendered source requires a versioned manifest")
         if not required <= set(kinds) or (self.mode == "acquisition" and set(kinds) != required):
             raise ValueError("required sources missing or private acquisition source")
+        if (self.ruleset_version == REVIEWS_RULESET) != any(
+            source.source_kind == "public_gbp" and source.schema_version == REVIEWS_SNAPSHOT for source in self.snapshots
+        ):
+            raise ValueError("customer review snapshot requires v22 and conversely")
         for source in self.snapshots:
             if source.schema_version != SOURCE_SCHEMAS[source.source_kind] and not (
-                    (source.source_kind == "public_gbp" and source.schema_version == "customer_public_gbp_snapshot_v2")
+                    (source.source_kind == "public_gbp" and source.schema_version in {"customer_public_gbp_snapshot_v2", REVIEWS_SNAPSHOT})
                     or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v3" and self.content_ruleset in {"v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"})
                     or (source.source_kind == "site" and source.schema_version == "site_inventory_snapshot_v2" and self.content_ruleset in {"v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"})):
                 raise ValueError("source schema mismatch")
@@ -452,20 +466,25 @@ def inheritance_schema(schema):
         base_versions = version.get("enum", [version.get("const")])
         allowed = [ruleset for ruleset, (_, report) in BASE_VERSIONS.items() if report in base_versions]
         block["if"] = {"anyOf": [block["if"], {"properties": {
-            "schema_version": {"const": INHERITED_REPORT},
+            "schema_version": {"enum": [INHERITED_REPORT, REVIEWS_REPORT]},
             "input_manifest": {"type": "object", "required": ["identity_inheritance"], "properties": {
                 "identity_inheritance": {"type": "object", "properties": {"base_ruleset": {"enum": allowed}}},
             }},
         }}]}
-    schema["allOf"].append({"if": {"properties": {"schema_version": {"const": INHERITED_REPORT}}},
-        "then": {"properties": {"input_manifest": {"type": "object", "required": ["identity_inheritance"],
-            "properties": {"identity_inheritance": {"type": "object"},
-                           "ruleset_version": {"const": INHERITED_RULESET},
-                           "schema_version": {"const": INHERITED_MANIFEST}}}}}})
-    for block in schema["allOf"][-3:-1]:
-        block["if"]["properties"]["schema_version"]["enum"].append(INHERITED_REPORT)
-    schema["if"]["properties"]["schema_version"]["enum"].append(INHERITED_REPORT)
-    schema["then"]["if"]["properties"]["input_manifest"]["properties"]["ruleset_version"]["enum"].append(INHERITED_RULESET)
+    delivery_blocks = schema["allOf"][-2:]
+    for report, ruleset, manifest in (
+        (INHERITED_REPORT, INHERITED_RULESET, INHERITED_MANIFEST),
+        (REVIEWS_REPORT, REVIEWS_RULESET, REVIEWS_MANIFEST),
+    ):
+        schema["allOf"].append({"if": {"properties": {"schema_version": {"const": report}}},
+            "then": {"properties": {"input_manifest": {"type": "object", "required": ["identity_inheritance"],
+                "properties": {"identity_inheritance": {"type": "object"},
+                               "ruleset_version": {"const": ruleset},
+                               "schema_version": {"const": manifest}}}}}})
+        for block in delivery_blocks:
+            block["if"]["properties"]["schema_version"]["enum"].append(report)
+        schema["if"]["properties"]["schema_version"]["enum"].append(report)
+        schema["then"]["if"]["properties"]["input_manifest"]["properties"]["ruleset_version"]["enum"].append(ruleset)
     return schema
 
 
@@ -508,7 +527,7 @@ class CapabilityReport(StrictModel):
             "type": "object", "not": {"anyOf": [{"properties": {name: {}}, "required": [name]} for name in ("kind", "status", "coverage")]}
         }}}}
     }))
-    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"]
+    schema_version: Literal["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16", "2.2.17"]
     id: UUID
     report_type: Literal["prospect", "verified_execution"]
     version: int = Field(ge=1)
@@ -561,7 +580,9 @@ class CapabilityReport(StrictModel):
     def validate_references(self):
         manifest = self.input_manifest
         inherits = manifest.identity_inheritance is not None
-        if inherits != (self.schema_version == INHERITED_REPORT):
+        reviews = manifest.ruleset_version == REVIEWS_RULESET
+        if (inherits != (self.schema_version in {INHERITED_REPORT, REVIEWS_REPORT})
+                or (self.schema_version == REVIEWS_REPORT) != reviews):
             raise ValueError("identity inheritance report version mismatch")
         report_schema = BASE_VERSIONS[manifest.content_ruleset][1] if inherits else self.schema_version
         advice_version = manifest.content_ruleset == "v22_capability_public_v20"
@@ -613,10 +634,13 @@ class CapabilityReport(StrictModel):
         if not comparison and "gbp_comparison" in self.model_fields_set:
             raise ValueError("historical report cannot carry GBP comparison")
         if comparison:
+            if self.gbp_comparison.schema_version != ("gbp_comparison_v2" if reviews else "gbp_comparison_v1"):
+                raise ValueError("GBP comparison version mismatch")
             refs = {s.source_kind: str(s.snapshot_id) for s in manifest.snapshots}
             for index, row in enumerate(self.gbp_comparison.rows):
                 for key, metric in row.metrics.items():
-                    expected = ([] if index == 0 and key in ("reviews_90d", "latest_review", "visible_replies") else
+                    expected = (([refs["public_gbp"] + ":/payload/review_sample"] if reviews else [])
+                        if index == 0 and key in ("reviews_90d", "latest_review", "visible_replies") else
                         [refs["public_gbp"] + ":/payload/record/fields/" + key] if index == 0 else
                         [refs["competitor"] + f":/payload/competitors/{index-1}/" + ("public_gbp/" + key if key in ("categories", "rating", "review_count") else "reviews")])
                     if metric.source_refs != expected:
@@ -877,7 +901,7 @@ class DeliveryRevision(StrictModel):
         report = CapabilityReport.model_validate(report)
         manifest = report.input_manifest
         v3 = self.schema_version == "v22_delivery_revision_v3"
-        if v3 != (report.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", INHERITED_REPORT}):
+        if v3 != (report.schema_version in {"2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", INHERITED_REPORT, REVIEWS_REPORT}):
             raise ValueError("v12 report requires revision v3")
         if self.schema_version == "v22_delivery_revision_v2" and report.schema_version not in {"2.2.5", "2.2.6"}:
             raise ValueError("visibility edits require labelled findings")

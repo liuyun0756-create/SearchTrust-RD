@@ -10,6 +10,7 @@ from app.jobs_v22.digest import canonical_json_bytes, request_digest, verified_r
 from app.report_v22.action_advice import RULESET as ACTION_ADVICE_RULESET, build_action_advice
 from app.report_v22.action_models import PublicActionPlanInput
 from app.report_v22.actions import select_public_action_skeletons
+from app.report_v22.customer_review_sample import RULESET as REVIEWS_RULESET, REPORT_SCHEMA as REVIEWS_REPORT
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.findings import build_public_findings
 from app.report_v22.findings_models import PublicFindingsInput
@@ -67,7 +68,6 @@ def _kind(source):
         return source.kind
     return source.binding.source_type
 
-
 def _bound_public_sources(manifest, value):
     # JSON round-trip revalidates model_copy mutations in nested legacy models.
     request = PublicFindingsInput.model_validate_json(canonical_json_bytes(value))
@@ -102,6 +102,11 @@ def _bound_public_sources(manifest, value):
             raise CapabilityPublicError()
         expected = auto.model_copy(update={"value": confirmation.value, "state": "resolved", "source": "explicit_confirmation", "confirmation_ref": confirmation}) if confirmation else auto
         if expected != request.business_identity.operating_model or (confirmation and confirmation.evidence_checksum != source_set_checksum(request)):
+            raise CapabilityPublicError()
+    if manifest.ruleset_version == REVIEWS_RULESET:
+        gbp = next(source.payload for source in request.evidence_input.sources if source.kind == "public_gbp")
+        if (gbp.review_sample.branch_ref != request.business_identity.selected_branch_ref
+                or gbp.review_sample.sampled_at and gbp.review_sample.sampled_at < instant(manifest.identity_inheritance.confirmed_at)):
             raise CapabilityPublicError()
     if manifest.content_ruleset in {KEYWORD_RULESET, GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET} and manifest.keyword_queries != context.queries:
         raise CapabilityPublicError()
@@ -295,7 +300,8 @@ def _public_report_content(manifest: AnalysisInputManifest, value: PublicFinding
             raw["keyword_visibility"] = build_keyword_visibility(request).model_dump(mode="json")
         if manifest.content_ruleset in {GBP_COMPARISON_RULESET, LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.gbp_comparison import build_gbp_comparison
-            raw["gbp_comparison"] = build_gbp_comparison(request).model_dump(mode="json")
+            raw["gbp_comparison"] = build_gbp_comparison(
+                request, review_metrics=manifest.ruleset_version == REVIEWS_RULESET).model_dump(mode="json")
         if manifest.content_ruleset in {LANDING_RULESET, REASONS_RULESET, LOCAL_ENTITY_RULESET, ACTION_ADVICE_RULESET}:
             from app.report_v22.landing_page_comparison import build_landing_comparison
             raw["landing_page_comparison"] = build_landing_comparison(request).model_dump(mode="json")
@@ -329,7 +335,7 @@ def build_public_capability_report(manifest: AnalysisInputManifest | dict, value
             raw["action_advice"] = build_action_advice(raw, request)
         if manifest.identity_inheritance:
             from app.report_v22.identity_inheritance_contract import REPORT_SCHEMA
-            raw["schema_version"] = REPORT_SCHEMA
+            raw["schema_version"] = REVIEWS_REPORT if manifest.ruleset_version == REVIEWS_RULESET else REPORT_SCHEMA
         report = CapabilityReport.model_validate_json(canonical_json_bytes(raw))
         if len(canonical_json_bytes(report)) > 2_000_000:
             raise CapabilityPublicError()

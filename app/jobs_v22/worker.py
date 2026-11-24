@@ -797,7 +797,11 @@ async def on_startup(ctx: dict[str, Any]) -> None:
             acquisition_collector.competitor_stage = CheckpointedCompetitorCollectionStage(
                 site_stage=CheckpointedCompetitorSiteStage(build_site_inventory_stage(settings, resource_limits=True, sampling_quality=True)),
                 profile_stage=prospect_executor.competitor_stage.profile_stage)
+            from app.jobs_v22.customer_gbp_reviews import build_customer_gbp_reviews_stage
+
             ctx["capability_acquisition_preparer"] = CapabilityAcquisitionPreparer(
+                customer_reviews_stage=build_customer_gbp_reviews_stage(settings)
+                    if settings.V22_CUSTOMER_GBP_REVIEWS_ENABLED and settings.V22_GBP_COMPARISON_ENABLED else None,
                 target_keywords_enabled=settings.V22_TARGET_KEYWORDS_ENABLED,
                 gbp_comparison_enabled=settings.V22_GBP_COMPARISON_ENABLED,
                 landing_page_comparison_enabled=settings.V22_LANDING_PAGE_COMPARISON_ENABLED,

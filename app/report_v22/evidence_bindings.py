@@ -79,7 +79,10 @@ def validate_sources(value: EvidenceBuildInput) -> list[EvidenceSource]:
             if kind in {"public_gbp", "rendered"}:
                 kind = "gbp" if kind == "public_gbp" else "site"
             require(b.source_type == kind and b.schema_version == p.schema_version)
-            _validate_times(p.model_dump(mode="python"), b.fetched_at)
+            timed_payload = p.model_dump(mode="python")
+            if source.kind == "public_gbp" and p.schema_version == "customer_public_gbp_snapshot_v3":
+                _validate_times(timed_payload.pop("review_sample"), context.evaluated_at)
+            _validate_times(timed_payload, b.fetched_at)
             if source.kind == "first_party":
                 require(context.report_type == "verified_execution")
                 for field in ("snapshot_id", "source_type", "schema_version", "fetched_at", "expires_at", "health_status", "identity_match_status", "payload_checksum"):
