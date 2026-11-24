@@ -271,3 +271,42 @@ async def test_gbp_lookup_ignores_malformed_provider_candidate() -> None:
 
     assert result.status == "not_found"
     assert result.candidates == ()
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("title", "address", "categories", "expected_count"),
+    [
+        ("10025 Ashton Brosnaham Dr", "10025 Ashton Brosnaham Dr, Pensacola, FL 32534", ["Building"], 0),
+        ("10025 Ashton Brosnaham Dr", "10025 Ashton Brosnaham Dr, Pensacola, FL 32534", [], 0),
+        ("A mapped location", None, ["Street address"], 0),
+        ("24 Hour Gutter Service", "100 Main St, Pensacola, FL 32534", ["Gutter service"], 1),
+    ],
+)
+async def test_preflight_rejects_address_places_without_rejecting_numeric_business_names(
+    title, address, categories, expected_count,
+):
+    calls = []
+
+    async def provider(params):
+        calls.append(params)
+        return {"place_results": {
+            "title": title,
+            "address": address,
+            "type": categories,
+            "data_id": "0x8890945269cf386b:0x8fb1d45bd095f8b7",
+        }}
+
+    result = await LimitedGbpLookup(provider=provider, configured=True).lookup(
+        site_url="https://example.com/",
+        signals=site_signals(),
+        gbp_url="https://www.google.com/maps?cid=10354290509108082871",
+        allow_site_link_fallback=True,
+    )
+
+    assert [call["type"] for call in calls] == (["place"] if expected_count else ["place", "search"])
+    assert len(result.candidates) == expected_count
+    assert result.status == ("found" if expected_count else "not_found")
+    if expected_count:
+        assert result.candidates[0].business_name == title
+    else:
+        assert result.lookup_reason == "site_map_link_address_only"

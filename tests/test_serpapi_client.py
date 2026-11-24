@@ -88,6 +88,21 @@ async def test_execute_serpapi_get_reports_safe_attempt_metadata() -> None:
 
 
 @pytest.mark.anyio
+async def test_execute_serpapi_get_caps_paid_attempts_during_key_failover() -> None:
+    client = _FakeClient([
+        _FakeResponse({"error": "No searches remaining."}, status_code=429),
+        _FakeResponse({"local_results": []}),
+    ])
+    with pytest.raises(SerpApiKeysUnavailable):
+        await execute_serpapi_get(
+            client, {"engine": "google_maps", "type": "search"},
+            keys=["primary", "secondary"], base_url="https://serpapi.example/search",
+            max_attempts=1,
+        )
+    assert len(client.requests) == 1
+
+
+@pytest.mark.anyio
 async def test_execute_serpapi_get_does_not_fail_over_transport_errors() -> None:
     client = _FakeClient([RuntimeError("network includes primary-secret")])
 

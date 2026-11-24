@@ -143,6 +143,7 @@ class PreflightBranchOption(StrictModel):
 
 class PreflightResponse(StrictModel):
     branch_options: list[PreflightBranchOption] | None = Field(default=None, max_length=5)
+    gbp_lookup_reason: Literal["site_map_link_address_only"] | None = None
     target_keyword_suggestions: KeywordSuggestions | None = None
 
     @model_serializer(mode='wrap')
@@ -152,6 +153,8 @@ class PreflightResponse(StrictModel):
             value.pop('target_keyword_suggestions',None)
         if self.branch_options is None:
             value.pop('branch_options',None)
+        if self.gbp_lookup_reason is None:
+            value.pop("gbp_lookup_reason", None)
         return value
 
     preflight_id: UUID

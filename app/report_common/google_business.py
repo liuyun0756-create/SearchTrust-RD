@@ -24,7 +24,9 @@ def configured_keys() -> list[str]:
     )
 
 
-async def request_serpapi(client: httpx.AsyncClient, params: dict[str, str]) -> dict[str, Any]:
+async def request_serpapi(
+    client: httpx.AsyncClient, params: dict[str, str], *, max_attempts: int | None = None,
+) -> dict[str, Any]:
     global _ACTIVE_KEY_FINGERPRINT
 
     state = SerpApiKeyState(
@@ -38,6 +40,7 @@ async def request_serpapi(client: httpx.AsyncClient, params: dict[str, str]) -> 
             keys=configured_keys(),
             base_url=settings.SERPAPI_BASE_URL,
             state=state,
+            max_attempts=max_attempts,
         )
         return result.payload
     finally:
@@ -71,3 +74,14 @@ def data_cid(data_id: str | None) -> str | None:
     except ValueError:
         return None
 
+
+def is_address_only_gbp(name: str | None, address: str | None, categories: tuple[str, ...] | list[str]) -> bool:
+    normalized_name = re.sub(r"\W+", " ", name or "").casefold().strip()
+    normalized_address = re.sub(r"\W+", " ", address or "").casefold().strip()
+    if not normalized_name:
+        return True
+    if normalized_address and (normalized_name == normalized_address
+                               or normalized_address.startswith(normalized_name + " ")):
+        return True
+    address_categories = {"building", "street address", "premise", "route", "postal_code", "street_address"}
+    return bool(categories) and all(category.casefold() in address_categories for category in categories)

@@ -6,7 +6,6 @@ is unchanged. The caller persists Case-scoped attempts before provider requests.
 from __future__ import annotations
 
 import asyncio
-import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 
@@ -19,7 +18,7 @@ from app.preflight_v22.gbp_identity_models import (
     CandidateDecision, GbpIdentityRequest, GbpIdentityResult, GbpLookupLedger,
     IdentityObservation, LookupAttempt, SavedGbpRecord,
 )
-from app.report_common.google_business import data_cid, extract_data_id, extract_google_place_id
+from app.report_common.google_business import data_cid, extract_data_id, extract_google_place_id, is_address_only_gbp
 from app.report_v22.site_gbp_comparators import compare_phones, normalize_phone
 from app.security_v22.urls import validate_gbp_url
 
@@ -65,17 +64,6 @@ def _branch(record):
     return f"cid:{record.cid}" if record.cid else f"place_id:{record.place_id}" if record.place_id else None
 
 
-def _address_only(record):
-    name = re.sub(r"\W+", " ", record.business_name or "").casefold().strip()
-    address = re.sub(r"\W+", " ", record.address or "").casefold().strip()
-    # Saved map places may use a street address as their title. A CID is not
-    # evidence of a business. Numeric brand names with distinct titles survive.
-    return (not name or bool(address and (name == address or address.startswith(name + " ")))
-            or (bool(record.categories) and all(c.casefold() in {
-                "building", "street address", "premise", "route", "postal_code", "street_address",
-            } for c in record.categories)))
-
-
 def assess_candidate(request: GbpIdentityRequest, record: SavedGbpRecord) -> CandidateDecision:
     expected = canonical_host(str(request.site_url))
     observed = canonical_host(record.website_url)
@@ -89,7 +77,7 @@ def assess_candidate(request: GbpIdentityRequest, record: SavedGbpRecord) -> Can
     current = bool(record.available and record.observed_at <= request.evaluated_at
                    and (record.expires_at is None or request.evaluated_at < record.expires_at))
     reasons = []
-    if _address_only(record):
+    if is_address_only_gbp(record.business_name, record.address, record.categories):
         reasons.append("address_only_place")
     if not _branch(record):
         reasons.append("business_entity_key_missing")
