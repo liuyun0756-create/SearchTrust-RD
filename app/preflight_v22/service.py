@@ -121,10 +121,16 @@ class PreflightService:
             gbp_result=gbp_result,
         )
         from app.preflight_v22.keyword_suggestions import saved_keyword_suggestions
+        from app.preflight_v22.branch_confirmation import branch_options
+        preflight_id = uuid4()
+        branches = branch_options(preflight_id=preflight_id, snapshot=site_snapshot, signals=signals,
+            candidates=gbp_result.candidates, key=settings.V22_INTERNAL_API_TOKEN.get_secret_value(),
+            ttl_seconds=settings.V22_PREFLIGHT_CACHE_TTL_SECONDS)
         response = PreflightResponse(
+            branch_options=branches or None,
             target_keyword_suggestions=(saved_keyword_suggestions(site_snapshot.html if site_snapshot else '',signals,gbp_result,normalized_site_url)
                 if settings.V22_TARGET_KEYWORDS_ENABLED else None),
-            preflight_id=uuid4(),
+            preflight_id=preflight_id,
             normalized_site_url=normalized_site_url,
             identity_candidates=list(candidates.identities),
             service_candidates=list(candidates.services),

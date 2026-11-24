@@ -67,13 +67,14 @@ class SupabaseCapabilityInputRepository:
             max_response_bytes=25_000_000, prefix="V22_CAPABILITY_INPUT", invalid_retryable=True, total_timeout_seconds=180)
 
     async def acquisition_identity_pin(self, *, user_id, case_id, job_id):
-        from app.report_v22.identity_inheritance import PinnedIdentity
+        from app.report_v22.identity_inheritance import PinnedIdentity, PinnedPreflightBranch
         raw = await self.rpc.post("get_v22_acquisition_identity_pin", dict(
             p_user_id=str(user_id), p_case_id=str(case_id), p_job_id=str(job_id)))
         if raw is None:
             return None
         try:
-            return PinnedIdentity.model_validate_json(canonical_json_bytes(raw))
+            model = PinnedPreflightBranch if isinstance(raw, dict) and "evidence" in raw else PinnedIdentity
+            return model.model_validate_json(canonical_json_bytes(raw))
         except (ValueError, TypeError, AttributeError):
             raise self.rpc.invalid() from None
 

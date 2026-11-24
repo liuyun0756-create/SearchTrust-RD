@@ -2315,6 +2315,67 @@
       "title": "NormalizedSnapshotPayload",
       "type": "object"
     },
+    "PreflightBranchOption": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "domain_matched": {
+          "title": "Domain Matched",
+          "type": "boolean"
+        },
+        "evidence_token": {
+          "maxLength": 25000,
+          "minLength": 1,
+          "title": "Evidence Token",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "phone_matched": {
+          "title": "Phone Matched",
+          "type": "boolean"
+        },
+        "public_gbp_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Public Gbp Url",
+          "type": "string"
+        },
+        "ref": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "public_gbp_url",
+        "name",
+        "domain_matched",
+        "phone_matched",
+        "evidence_token"
+      ],
+      "title": "PreflightBranchOption",
+      "type": "object"
+    },
     "PreflightRequest": {
       "additionalProperties": false,
       "properties": {
@@ -2375,6 +2436,22 @@
     "PreflightResponse": {
       "additionalProperties": false,
       "properties": {
+        "branch_options": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PreflightBranchOption"
+              },
+              "maxItems": 5,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch Options"
+        },
         "competitor_candidates": {
           "items": {
             "$ref": "#/$defs/CompetitorCandidate"
