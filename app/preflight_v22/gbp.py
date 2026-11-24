@@ -1,10 +1,11 @@
-"""One-call public GBP discovery adapter for v2.2 preflight."""
+"""Bounded public GBP discovery adapter for v2.2 preflight."""
 
 from __future__ import annotations
 
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, Literal
 from urllib.parse import parse_qs, urljoin, urlsplit
 
@@ -15,6 +16,7 @@ from app.report_common.google_business import (
     data_cid,
     extract_data_id,
     extract_google_place_id,
+    is_address_only_gbp,
     request_serpapi,
 )
 from app.report_v22.models import OperatingModel, TargetMarket
@@ -26,6 +28,8 @@ from app.security_v22.urls import Resolver, SafeUrl, resolve_public_url, validat
 Provider = Callable[[dict[str, str]], Awaitable[dict[str, Any]]]
 UrlExpander = Callable[[str], Awaitable[str]]
 LookupStatus = Literal["found", "not_found", "unavailable"]
+LookupReason = Literal["site_map_link_address_only"]
+SITE_MAP_LINK_ADDRESS_ONLY: LookupReason = "site_map_link_address_only"
 
 
 @dataclass(frozen=True)
@@ -46,6 +50,7 @@ class GbpLookupResult:
     code: str
     message: str
     candidates: tuple[GbpCandidate, ...]
+    lookup_reason: LookupReason | None = None
 
 
 _US_STATES = {
@@ -208,16 +213,21 @@ class LimitedGbpLookup:
         url_expander: UrlExpander | None = None,
     ) -> None:
         self.provider = provider or self._default_provider
+        self.fallback_provider = provider or partial(self._default_provider, max_attempts=1)
         self.configured = bool(configured_keys()) if configured is None else configured
         self.url_expander = url_expander or GoogleMapsUrlExpander().expand
 
-    async def _default_provider(self, params: dict[str, str]) -> dict[str, Any]:
+    async def _default_provider(
+        self, params: dict[str, str], *, max_attempts: int | None = None,
+    ) -> dict[str, Any]:
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(30.0),
             follow_redirects=False,
             trust_env=False,
         ) as client:
-            return await request_serpapi(client, params)
+            if max_attempts is None:
+                return await request_serpapi(client, params)
+            return await request_serpapi(client, params, max_attempts=max_attempts)
 
     def _request_params(
         self,
@@ -262,6 +272,7 @@ class LimitedGbpLookup:
         site_url: str,
         signals: SiteSignals,
         gbp_url: str | None = None,
+        allow_site_link_fallback: bool = False,
     ) -> GbpLookupResult:
         if not self.configured:
             return GbpLookupResult(
@@ -281,22 +292,36 @@ class LimitedGbpLookup:
             signals=signals,
             gbp_url=resolved_gbp_url,
         )
+        site_link_place = allow_site_link_fallback and params["type"] == "place"
+        result, only_address_places = await self._fetch_candidates(
+            self.provider, params, resolved_gbp_url, filter_address_places=site_link_place,
+        )
+        if not only_address_places:
+            return result
+
+        search_params = self._request_params(site_url=site_url, signals=signals, gbp_url=None)
+        fallback, _ = await self._fetch_candidates(
+            self.fallback_provider, search_params, None, filter_address_places=True,
+            lookup_reason=SITE_MAP_LINK_ADDRESS_ONLY,
+        )
+        return fallback
+
+    async def _fetch_candidates(
+        self, provider: Provider, params: dict[str, str], fallback_gbp_url: str | None,
+        *, filter_address_places: bool, lookup_reason: LookupReason | None = None,
+    ) -> tuple[GbpLookupResult, bool]:
         try:
-            payload = await self.provider(params)
-        except Exception:  # provider details are intentionally not exposed.
-            return GbpLookupResult(
-                "unavailable",
-                "GBP_LOOKUP_UNAVAILABLE",
-                "Public GBP lookup is temporarily unavailable.",
-                (),
-            )
+            payload = await provider(params)
+        except Exception:
+            payload = None
         if not isinstance(payload, dict) or payload.get("error"):
             return GbpLookupResult(
                 "unavailable",
                 "GBP_LOOKUP_UNAVAILABLE",
                 "Public GBP lookup is temporarily unavailable.",
                 (),
-            )
+                lookup_reason,
+            ), False
 
         raw_candidates: list[dict[str, Any]] = []
         place = payload.get("place_results")
@@ -308,13 +333,20 @@ class LimitedGbpLookup:
         elif isinstance(local, list):
             raw_candidates.extend(item for item in local if isinstance(item, dict))
         normalized_candidates: list[GbpCandidate] = []
+        address_places = 0
         for item in raw_candidates[:5]:
             try:
-                candidate = _normalize_candidate(item, resolved_gbp_url)
+                candidate = _normalize_candidate(item, fallback_gbp_url)
             except (TypeError, ValueError):
                 candidate = None
-            if candidate is not None:
-                normalized_candidates.append(candidate)
+            if candidate is None:
+                continue
+            if filter_address_places and is_address_only_gbp(
+                candidate.business_name, candidate.address, candidate.categories,
+            ):
+                address_places += 1
+                continue
+            normalized_candidates.append(candidate)
         candidates = tuple(normalized_candidates)
         if not candidates:
             return GbpLookupResult(
@@ -322,5 +354,6 @@ class LimitedGbpLookup:
                 "GBP_NOT_FOUND",
                 "No public GBP candidate was found.",
                 (),
-            )
-        return GbpLookupResult("found", "GBP_FOUND", "Public GBP candidates were found.", candidates)
+                lookup_reason,
+            ), bool(raw_candidates) and address_places == len(raw_candidates)
+        return GbpLookupResult("found", "GBP_FOUND", "Public GBP candidates were found.", candidates, lookup_reason), False

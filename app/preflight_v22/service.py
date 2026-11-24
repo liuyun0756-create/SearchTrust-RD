@@ -102,6 +102,7 @@ class PreflightService:
             site_url=normalized_site_url,
             signals=signals,
             gbp_url=selected_gbp_url,
+            allow_site_link_fallback=user_gbp_url is None and selected_gbp_url is not None,
         )
         gbp_ms = round((time.monotonic() - gbp_started) * 1000)
         candidates = build_candidates(
@@ -128,6 +129,7 @@ class PreflightService:
             ttl_seconds=settings.V22_PREFLIGHT_CACHE_TTL_SECONDS)
         response = PreflightResponse(
             branch_options=branches or None,
+            gbp_lookup_reason=gbp_result.lookup_reason,
             target_keyword_suggestions=(saved_keyword_suggestions(site_snapshot.html if site_snapshot else '',signals,gbp_result,normalized_site_url)
                 if settings.V22_TARGET_KEYWORDS_ENABLED else None),
             preflight_id=preflight_id,

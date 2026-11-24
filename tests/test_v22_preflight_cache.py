@@ -5,6 +5,7 @@ import pytest
 
 from app.api.v2.models import ModuleAvailability, PreflightRequest, PreflightResponse
 from app.preflight_v22.cache import PreflightCache
+from app.report_v22.contract_version import CONTRACT_VERSION
 
 
 @pytest.fixture
@@ -63,7 +64,7 @@ def test_cache_key_is_stable_and_versioned() -> None:
     second = cache.key(request_payload(), "https://example.com/")
 
     assert first == second
-    assert first.startswith("searchtrust:v22:preflight:v2:2.2.1:")
+    assert first.startswith(f"searchtrust:v22:preflight:{PreflightCache.CACHE_VERSION}:{CONTRACT_VERSION}:")
     assert "Plumbing" not in first
 
 
@@ -81,11 +82,20 @@ async def test_cache_round_trip_revalidates_frozen_response() -> None:
 
 
 @pytest.mark.anyio
-async def test_phone_identity_revision_does_not_replay_name_only_cached_match() -> None:
+@pytest.mark.parametrize("versions_behind", (1, 2))
+async def test_current_preflight_cache_does_not_replay_older_cached_response(versions_behind: int) -> None:
     redis = FakeRedis()
     cache = PreflightCache(redis, prefix="searchtrust:v22", ttl_seconds=900)
     key = cache.key(request_payload(), "https://example.com/")
-    redis.values[key.replace(":preflight:v2:", ":preflight:v1:")] = response_payload().model_dump_json()
+    current_version = PreflightCache.CACHE_VERSION
+    version_number = int(current_version.removeprefix("v"))
+    previous_version = f"v{version_number - versions_behind}"
+    assert 0 < int(previous_version.removeprefix("v")) < version_number
+    old_key = key.replace(f":preflight:{current_version}:", f":preflight:{previous_version}:", 1)
+    assert old_key != key
+    payload = response_payload()
+    redis.values[old_key] = payload.model_dump_json()
+    assert await cache.get(old_key) == payload
     assert await cache.get(key) is None
 
 

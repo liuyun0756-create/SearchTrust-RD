@@ -2480,6 +2480,19 @@
           "title": "Estimated Duration Bucket",
           "type": "string"
         },
+        "gbp_lookup_reason": {
+          "anyOf": [
+            {
+              "const": "site_map_link_address_only",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gbp Lookup Reason"
+        },
         "identity_candidates": {
           "items": {
             "$ref": "#/$defs/BusinessIdentityCandidate"

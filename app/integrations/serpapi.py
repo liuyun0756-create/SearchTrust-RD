@@ -269,6 +269,7 @@ async def execute_serpapi_get(
     after_attempt: AfterAttempt | None = None,
     monotonic: Callable[[], float] = time.monotonic,
     logger: logging.Logger | None = None,
+    max_attempts: int | None = None,
 ) -> SerpApiResponse:
     """Execute one logical request with bounded, secret-safe key failover."""
     install_serpapi_log_safety()
@@ -298,7 +299,7 @@ async def execute_serpapi_get(
     safe_logger = logger or logging.getLogger(__name__)
     last_kind = "unavailable"
     attempt_count = 0
-    for slot, key in available:
+    for slot, key in available[:max_attempts]:
         fingerprint = serpapi_key_fingerprint(key)
         await _notify_before_attempt(before_attempt, slot + 1, fingerprint)
         attempt_count += 1

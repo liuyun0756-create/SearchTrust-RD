@@ -1,11 +1,16 @@
+import hashlib
 import json
 from pathlib import Path
+from uuid import UUID
 
 import pytest
+from pydantic import SecretStr
 
 from app.api.v2.models import PreflightRequest
+from app.core.config import settings
+from app.preflight_v22 import service as preflight_service
 from app.preflight_v22.fetcher import HomepageFetchError, HomepageSnapshot
-from app.preflight_v22.gbp import GbpCandidate, GbpLookupResult
+from app.preflight_v22.gbp import GbpCandidate, GbpLookupResult, LimitedGbpLookup
 from app.preflight_v22.service import PreflightService
 from app.report_v22.models import TargetMarket
 
@@ -108,6 +113,101 @@ def gbp_found() -> GbpLookupResult:
         categories=("Plumber",),
     )
     return GbpLookupResult("found", "GBP_FOUND", "Public GBP candidates were found.", (candidate,))
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("scenario", ["address_only", "place_id", "empty_search", "real_conflict", "explicit_link"])
+async def test_site_map_fallback_is_bounded_and_keeps_branch_binding(scenario, monkeypatch):
+    monkeypatch.setattr(settings, "V22_INTERNAL_API_TOKEN", SecretStr("local-test-key"))
+    calls = []
+    site = "https://seamlessgutterspensacola.com/"
+    short_link = "https://maps.app.goo.gl/8MMJyNe2na4og54U7"
+    gold_cid = "16921898606511158364"
+    old_cid = "10354290509108082871"
+    address = "10025 Ashton Brosnaham Dr, Pensacola, FL 32534"
+    html = ('<script type="application/ld+json">'
+            '{"@type":"Organization","name":"Seamless Gutters of Pensacola","telephone":"+18507761782"}'
+            '</script>'
+            f'<a href="{short_link}">Get directions</a>')
+    address_place = {"title": "10025 Ashton Brosnaham Dr", "address": address,
+                     "type": "Building", "data_id": "0x8890945269cf386b:0x8fb1d45bd095f8b7"}
+    gold_place = {"title": "Gutter Solutions & Home Improvements", "address": address,
+                  "website": site, "phone": "(850) 776-1782", "type": "Gutter service",
+                  "data_id": "0x8890edd63f678bf3:0xead6a9206646745c"}
+    wrong_business = {"title": "Another gutter company", "address": address,
+                      "website": "https://example.org/", "phone": "(850) 555-0101",
+                      "type": "Gutter service", "data_id": gold_place["data_id"]}
+
+    async def expand(gbp_url):
+        assert gbp_url == short_link
+        key, value = ("place_id", "address-place-id") if scenario == "place_id" else ("cid", old_cid)
+        return f"https://www.google.com/maps?{key}={value}"
+
+    async def provider(params):
+        calls.append(params)
+        if params["type"] == "place":
+            return {"place_results": wrong_business if scenario == "real_conflict" else address_place}
+        assert "seamlessgutterspensacola.com" in params["q"]
+        assert "Seamless Gutters of Pensacola" in params["q"]
+        return {"local_results": []} if scenario == "empty_search" else {"place_results": gold_place}
+
+    cache = MemoryCache()
+    service = PreflightService(
+        fetcher=FakeFetcher(HomepageSnapshot(site, site, 200, html)),
+        gbp_lookup=LimitedGbpLookup(provider=provider, configured=True, url_expander=expand),
+        cache=cache, serpapi_configured=True, pagespeed_configured=False,
+    )
+    req = PreflightRequest(site_url=site, gbp_url=short_link if scenario == "explicit_link" else None)
+    response = await service.run(req)
+    if scenario in {"real_conflict", "explicit_link"}:
+        assert [call["type"] for call in calls] == ["place"]
+        assert response.branch_options is None
+        assert "gbp_lookup_reason" not in response.model_dump(mode="json")
+        fields = response.identity_candidates[0].field_comparisons
+        assert fields[0].status == "not_matched"
+        return
+
+    assert [call["type"] for call in calls] == ["place", "search"]
+    assert calls[0].get("data_cid") == (None if scenario == "place_id" else old_cid)
+    assert response.gbp_lookup_reason == "site_map_link_address_only"
+    assert cache.set_value.gbp_lookup_reason == "site_map_link_address_only"
+    if scenario == "empty_search":
+        assert response.branch_options is None
+        assert any(gap.gap_code == "GBP_NOT_FOUND" for gap in response.data_gaps)
+        return
+
+    (branch,) = response.branch_options
+    assert (branch.ref, branch.name, branch.domain_matched, branch.phone_matched) == (
+        gold_cid, "Gutter Solutions & Home Improvements", True, True,
+    )
+
+
+@pytest.mark.anyio
+async def test_no_site_map_link_preserves_main_preflight_bytes(monkeypatch):
+    monkeypatch.setattr(preflight_service, "uuid4", lambda: UUID("0b9b1c33-cc35-49f0-a337-748d558db737"))
+    monkeypatch.setattr(settings, "V22_INTERNAL_API_TOKEN", SecretStr(""))
+    monkeypatch.setattr(settings, "V22_TARGET_KEYWORDS_ENABLED", False)
+    site = "https://example.com/"
+    calls = []
+
+    async def provider(params):
+        calls.append(params)
+        return {"place_results": {
+            "title": "100 Main St", "address": "100 Main St, Austin, TX 78701",
+            "type": "Building", "data_id": "0x1:0x2",
+        }}
+
+    response = await PreflightService(
+        fetcher=FakeFetcher(HomepageSnapshot(site, site, 200, "<title>Acme Plumbing</title>")),
+        gbp_lookup=LimitedGbpLookup(provider=provider, configured=True),
+        cache=MemoryCache(), serpapi_configured=True, pagespeed_configured=False,
+    ).run(PreflightRequest(site_url=site))
+
+    assert [call["type"] for call in calls] == ["search"]
+    # Full response bytes from main c32778c with the same fixed preflight ID.
+    assert hashlib.sha256(response.model_dump_json().encode()).hexdigest() == (
+        "52428f80eb147a2ab3f957a5a428b9687cd59f628fd361650bd413f8688a8fea"
+    )
 
 
 @pytest.mark.anyio
