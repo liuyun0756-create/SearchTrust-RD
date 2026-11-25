@@ -90,7 +90,14 @@ def _bound_public_sources(manifest, value):
         confirmation = request.business_identity.operating_model.confirmation_ref
         visit = request.business_identity.operating_location.confirmation_ref
         inherited = manifest.identity_inheritance
-        if inherited:
+        review_reassessment = manifest.ruleset_version == REVIEWS_RULESET and manifest.execution_type == "public_reassessment"
+        if review_reassessment:
+            if (confirmation and (confirmation.confirmed_at != manifest.evaluated_at
+                    or confirmation.confirmed_by != str(manifest.user_id)
+                    or not confirmation.source_ref.startswith("identity-review:"))
+                    or visit and bool(visit.source_identity_version_id) == bool(confirmation)):
+                raise CapabilityPublicError()
+        elif inherited:
             if ((inherited.operating_model == "retained") != bool(confirmation)
                     or (inherited.visits == "retained") != bool(visit)
                     or inherited.branch == "needs_confirmation" and (confirmation or visit)

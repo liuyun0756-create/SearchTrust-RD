@@ -187,7 +187,8 @@ class AnalysisInputManifest(StrictModel):
         if self.ruleset_version == REVIEWS_RULESET and (
                 self.identity_inheritance.branch != "retained" or self.content_ruleset not in REVIEWS_BASE_RULESETS):
             raise ValueError("customer review sampling requires a retained GBP branch")
-        if (inherits and (self.mode != "acquisition" or self.execution_type is not None
+        if (inherits and (self.mode != "acquisition"
+                         or self.execution_type is not None and self.ruleset_version != REVIEWS_RULESET
                          or instant(self.identity_inheritance.confirmed_at) > instant(self.evaluated_at))
                 or not inherits and "identity_inheritance" in self.model_fields_set):
             raise ValueError("identity inheritance provenance mismatch")
