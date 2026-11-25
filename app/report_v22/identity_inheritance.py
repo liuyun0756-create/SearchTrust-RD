@@ -23,11 +23,15 @@ class PinnedIdentity(StrictModel):
     gbp_website_url: str | None
     gbp_phone: str | None
     phone_matched: bool
+    branch_confirmed_at: str | None = None
 
     @model_validator(mode="after")
     def bound_identity(self):
-        if request_digest(self.identity) != self.identity_checksum or not self.identity.operating_model.confirmation_ref:
+        if (request_digest(self.identity) != self.identity_checksum
+                or not (self.identity.operating_model.confirmation_ref or self.branch_confirmed_at and self.identity.selected_branch_ref)):
             raise ValueError("invalid pinned confirmation")
+        if self.branch_confirmed_at is not None:
+            ModeConfirmation.timestamp(self.branch_confirmed_at)
         return self
 
 
@@ -104,7 +108,7 @@ def inherit_identity(manifest, request, pinned: PinnedIdentity):
     # Visit evidence has its own gate so its change does not revoke the operating model.
     old_mode_material = {item for item in old_material if item[0] not in visits_kinds}
     new_mode_material = {item for item in new_material if item[0] not in visits_kinds}
-    mode_ok = branch_ok and old_mode_material == new_mode_material and old_mode.conflicts == auto.conflicts
+    mode_ok = bool(confirmation and branch_ok and old_mode_material == new_mode_material and old_mode.conflicts == auto.conflicts)
     if mode_ok:
         auto = auto.model_copy(update=dict(value=confirmation.value, state="resolved", source="explicit_confirmation",
             confirmation_ref=confirmation.model_copy(update={"evidence_checksum": source_set_checksum(request)})))
@@ -121,8 +125,9 @@ def inherit_identity(manifest, request, pinned: PinnedIdentity):
     identity = current.model_copy(update=dict(operating_model=auto, operating_location=location,
         selected_branch_ref=original.selected_branch_ref if branch_ok else current.selected_branch_ref))
     request = request.model_copy(update={"business_identity": identity})
+    confirmed_at = confirmation.confirmed_at if confirmation else pinned.branch_confirmed_at
     return _bind_inheritance(manifest, request, pinned.id, pinned.identity_checksum, pinned.revision,
-        confirmation.confirmed_at, branch_ok, mode_ok, visit_ok, bool(old_visit))
+        confirmed_at, branch_ok, mode_ok, visit_ok, bool(old_visit))
 
 
 def _bind_inheritance(manifest, request, pin_id, pin_checksum, revision, confirmed_at,

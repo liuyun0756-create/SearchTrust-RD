@@ -18,6 +18,7 @@ from app.preflight_v22.gbp_identity_models import GbpIdentityRequest, GbpLookupL
 from app.report_v22.models import StrictModel
 from app.report_v22.public_reassessment import (IdentitySelection, validated_base, identity_workspace, reassess_public_report)
 from app.report_v22.business_identity_v2 import AlignmentIdentityV2
+from app.report_v22.customer_review_sample import RULESET as REVIEWS_RULESET
 from app.report_v22.site_business_facts import build_site_business_facts
 from app.report_v22.site_business_models import SiteBusinessFactsInput
 from app.report_v22.site_business_selection import select_site_business_candidates
@@ -145,11 +146,15 @@ class IdentityReviewService:
             options = {}
             reference = value.evidence_input.context.customer_public_gbp
             bound_keys = {f'{k.kind}:{k.value}' for k in reference.entity_keys} if reference else set()
+            if base.input_manifest.ruleset_version == REVIEWS_RULESET:
+                bound_keys = {key for key in bound_keys if key.split(":", 1)[1] == identity.selected_branch_ref}
             detail = next((s for s in value.evidence_input.sources if s.kind == 'public_gbp'), None)
             address_field = detail.payload.record.fields.address if detail else None
             bound_address = address_field.value if address_field and address_field.state == 'observed' else None
             for row in result.candidates:
                 key = f'cid:{row.record.cid}' if row.record.cid else f'place_id:{row.record.place_id}'
+                if base.input_manifest.ruleset_version == REVIEWS_RULESET and row.record.place_id == identity.selected_branch_ref:
+                    key = f'place_id:{row.record.place_id}'
                 if row.eligible:
                     options[key] = dict(ref=key, name=row.record.business_name, address=bound_address if key in bound_keys else row.record.address,
                         website=row.record.website_url, phone=row.record.phone, available_for_reassessment=key in bound_keys,

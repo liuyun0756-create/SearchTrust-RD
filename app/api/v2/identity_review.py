@@ -48,5 +48,6 @@ async def identity_review(request: Request, intake: IdentityReviewService = Depe
     except ValueError as exc:
         code=str(exc)
         allowed={'CONFLICT':409,'UNAVAILABLE':404,'BRANCH_NOT_VERIFIED':409,
-            'SAVED_BRANCH_DETAILS_REQUIRED':409,'SAVED_BRANCH_ADDRESS_REQUIRED':409,'UNEXPLAINED_FACT_CHANGE':409}
+            'SAVED_BRANCH_DETAILS_REQUIRED':409,'SAVED_BRANCH_ADDRESS_REQUIRED':409,'UNEXPLAINED_FACT_CHANGE':409,
+            'OPERATING_MODEL_REQUIRED':400}
         return reply({'code':code if code in allowed else 'INVALID'}, allowed.get(code,400))

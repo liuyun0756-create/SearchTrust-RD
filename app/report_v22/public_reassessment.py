@@ -10,6 +10,7 @@ from app.report_v22.business_identity_v2 import BusinessIdentityV2, IDENTITY_RUL
 from app.report_v22.capability import AnalysisInputManifest, CapabilityReport, instant
 from app.report_v22.public_rule_catalog import OBSERVED
 from app.report_v22.capability_public import build_public_capability_report, _bound_public_sources
+from app.report_v22.customer_review_sample import RULESET as REVIEWS_RULESET, MANIFEST_SCHEMA as REVIEWS_MANIFEST
 from app.report_v22.findings_models import PublicFindingsInput
 from app.report_v22.identity_input import prepare_identity_input, source_set_checksum
 from app.report_v22.models import StrictModel
@@ -17,7 +18,7 @@ from app.report_v22.operating_model import inspect_operating_model
 
 
 class IdentitySelection(StrictModel):
-    operating_model: OperatingMode
+    operating_model: OperatingMode | None
     branch_ref: str = Field(min_length=1, max_length=320)
     reason: str = Field(min_length=1, max_length=1000)
     customers_can_visit: bool = False
@@ -31,7 +32,7 @@ class IdentitySelection(StrictModel):
 
     @model_validator(mode="after")
     def visit_requires_storefront(self):
-        if self.customers_can_visit and self.operating_model not in {"storefront", "hybrid"}:
+        if self.customers_can_visit and self.operating_model not in {None, "storefront", "hybrid"}:
             raise ValueError("customer access confirmation requires storefront or hybrid")
         return self
 
@@ -72,12 +73,16 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
     key = selection.branch_ref.split(":", 1)
     if len(key) != 2 or not reference or not any(k.kind == key[0] and k.value == key[1] for k in reference.entity_keys):
         raise ValueError("SAVED_BRANCH_DETAILS_REQUIRED")
+    review_reassessment = base.input_manifest.ruleset_version == REVIEWS_RULESET
+    if selection.operating_model is None and not review_reassessment:
+        raise ValueError("OPERATING_MODEL_REQUIRED")
+    if review_reassessment:
+        # The only frozen customer snapshot records one branch, including its reviews.
+        # A candidate or another key cannot authorize reuse of that sample.
+        if key[1] != identity.selected_branch_ref:
+            raise ValueError("SAVED_BRANCH_DETAILS_REQUIRED")
     if instant(evaluated_at) < instant(base.generated_at):
         raise ValueError("REASSESSMENT_TIME_INVALID")
-    confirmation = ModeConfirmation(value=selection.operating_model, confirmed_by=str(base.input_manifest.user_id),
-        confirmed_at=evaluated_at, reason=selection.reason, normalized_domain=identity.normalized_domain,
-        selected_branch_ref=key[1], evidence_checksum=source_set_checksum(value),
-        source_ref=f"identity-review:{request_id}")
     # Resolve the address from the selected frozen GBP details, never from a
     # browser field or a prior review. Each review needs a fresh explicit tick.
     gbp = next((s for s in value.evidence_input.sources if s.kind == "public_gbp"), None)
@@ -91,17 +96,32 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
     if selection.customers_can_visit:
         if not address:
             raise ValueError("SAVED_BRANCH_ADDRESS_REQUIRED")
-        location = location.model_copy(update=dict(state="seo_confirmed", role="customer_facing",
-            confirmation_ref=LocationConfirmation(confirmed_by=str(base.input_manifest.user_id),
+        if selection.operating_model is None:
+            previous = identity.operating_location.confirmation_ref
+            if previous is None or previous.address != address or previous.selected_branch_ref != key[1]:
+                raise ValueError("SAVED_BRANCH_ADDRESS_REQUIRED")
+            visit = previous.model_copy(update={
+                "source_identity_version_id": previous.source_identity_version_id or base.input_manifest.identity_version_id,
+            })
+        else:
+            visit = LocationConfirmation(confirmed_by=str(base.input_manifest.user_id),
                 confirmed_at=evaluated_at, selected_branch_ref=key[1], address=address,
-                source_ref=f"identity-review:{request_id}")))
+                source_ref=f"identity-review:{request_id}")
+        location = location.model_copy(update=dict(state="seo_confirmed", role="customer_facing", confirmation_ref=visit))
     automatic, _ = inspect_operating_model(value)
-    updated_identity = identity.model_copy(update={"selected_branch_ref": key[1], "operating_location": location, "operating_model":
-        automatic.model_copy(update={"value": selection.operating_model, "state": "resolved",
-            "source": "explicit_confirmation", "confirmation_ref": confirmation})})
+    if selection.operating_model is not None:
+        confirmation = ModeConfirmation(value=selection.operating_model, confirmed_by=str(base.input_manifest.user_id),
+            confirmed_at=evaluated_at, reason=selection.reason, normalized_domain=identity.normalized_domain,
+            selected_branch_ref=key[1], evidence_checksum=source_set_checksum(value),
+            source_ref=f"identity-review:{request_id}")
+        automatic = automatic.model_copy(update={"value": selection.operating_model, "state": "resolved",
+            "source": "explicit_confirmation", "confirmation_ref": confirmation})
+    updated_identity = identity.model_copy(update={"selected_branch_ref": key[1], "operating_location": location,
+                                                    "operating_model": automatic})
     updated = value.model_copy(update={"schema_version": "public_findings_input_v2", "business_identity": updated_identity})
     raw = deepcopy(base.input_manifest.model_dump(mode="json"))
-    raw.pop("identity_inheritance", None)
+    if not review_reassessment:
+        raw.pop("identity_inheritance", None)
     action_advice = base.input_manifest.content_ruleset == "v22_capability_public_v20"
     local_entity = action_advice or base.input_manifest.content_ruleset == "v22_capability_public_v18"
     reasons = base.input_manifest.content_ruleset in {"v22_capability_public_v17", "v22_capability_public_v18"}
@@ -118,6 +138,8 @@ def reassess_public_report(report, request, selection, *, request_id: UUID, eval
         previous_report=None, implementation=None,
         base_report_ref=dict(report_id=str(base.id), case_id=str(base.input_manifest.case_id),
             report_type=base.report_type, version=base.version, payload_checksum=verified_request_digest(base.model_dump(mode="json"))))
+    if review_reassessment:
+        raw.update(schema_version=REVIEWS_MANIFEST, ruleset_version=REVIEWS_RULESET)
     raw['input_checksum'] = verified_request_digest({k: v for k,v in raw.items() if k != 'input_checksum'})
     manifest = AnalysisInputManifest.model_validate_json(canonical_json_bytes(raw))
     after = build_public_capability_report(manifest, updated)
