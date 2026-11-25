@@ -32,10 +32,17 @@ def validate_public_binding(source, context):
     try:
         raw = payload.model_dump(mode="python", include=set(PublicGbpSample.model_fields))
         rebuilt = build_customer_public_gbp_snapshot({**raw, "reference": reference},
-            extended_fields=payload.schema_version == "customer_public_gbp_snapshot_v2")
+            extended_fields=payload.schema_version != "customer_public_gbp_snapshot_v1")
     except PublicGbpError as exc:
         kind = "LIMIT_EXCEEDED" if exc.error_code.endswith("LIMIT_EXCEEDED") else "SNAPSHOT_BINDING_INVALID"
         raise EvidenceError(kind) from None
+    if payload.schema_version == "customer_public_gbp_snapshot_v3":
+        from app.report_v22.public_gbp_models import CustomerPublicGbpSnapshotV3
+
+        rebuilt = CustomerPublicGbpSnapshotV3.model_validate_json(canonical_json_bytes(
+            dict(rebuilt.model_dump(mode="json"), schema_version=payload.schema_version,
+                 review_sample=payload.review_sample.model_dump(mode="json"))))
+        require(payload.review_sample.completed_at <= context.evaluated_at)
     require(canonical_json_bytes(payload) == canonical_json_bytes(rebuilt))
 
 

@@ -93,13 +93,14 @@ class CapabilityAcquisitionPreparer:
     The existing collector is reused via collect_sources, never execute: this
     phase must not generate, persist or charge for a legacy report first.
     """
-    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None, target_keywords_enabled=False, gbp_comparison_enabled=False, landing_page_comparison_enabled=False, comparison_reasons_enabled=False, local_entity_coverage_enabled=False, action_example_copy_enabled=False):
+    def __init__(self, *, repository, collector, discovery_verifier, clock=None, render_stage=None, target_keywords_enabled=False, gbp_comparison_enabled=False, landing_page_comparison_enabled=False, comparison_reasons_enabled=False, local_entity_coverage_enabled=False, action_example_copy_enabled=False, customer_reviews_stage=None):
         self.target_keywords_enabled = target_keywords_enabled
         self.gbp_comparison_enabled = gbp_comparison_enabled
         self.landing_page_comparison_enabled = landing_page_comparison_enabled
         self.comparison_reasons_enabled = comparison_reasons_enabled
         self.local_entity_coverage_enabled = local_entity_coverage_enabled
         self.action_example_copy_enabled = action_example_copy_enabled
+        self.customer_reviews_stage = customer_reviews_stage
         self.repository = repository
         self.collector = collector
         self.render_stage = render_stage
@@ -183,6 +184,20 @@ class CapabilityAcquisitionPreparer:
             from app.report_v22.identity_inheritance import PinnedPreflightBranch, inherit_identity, inherit_preflight_branch
             inherit = inherit_preflight_branch if isinstance(pin, PinnedPreflightBranch) else inherit_identity
             manifest, value = inherit(manifest, value, pin)
+        if self.customer_reviews_stage is not None:
+            from app.jobs_v22.customer_gbp_review_binding import bind_customer_review_sample, eligible_profile
+            from app.report_v22.capability import instant
+
+            profile = eligible_profile(manifest, value)
+            if profile is not None:
+                deadline = min(receipt.deadline_at, *(instant(source.expires_at) for source in manifest.snapshots))
+                if getattr(pin, "evidence", None):
+                    deadline = min(deadline, instant(pin.evidence.expires_at))
+                sample = await self.customer_reviews_stage.collect(job_id=job_id, snapshot=profile.payload,
+                    branch_ref=value.business_identity.selected_branch_ref, checkpoints=checkpoints,
+                    cost_ledger=cost_ledger, deadline_at=deadline)
+                if sample is not None and sample.completed_at < deadline:
+                    manifest, value = bind_customer_review_sample(manifest, value, sample)
         # Do not compensate on a timeout: SQL may have committed. The next begin
         # recovers its dispatch; the database deadline handles genuine orphans.
         await self.repository.prepare(manifest=manifest, request=value, run_generation=receipt.run_generation)

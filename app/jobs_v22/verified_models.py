@@ -82,7 +82,7 @@ class VerifiedPublicGbpSnapshotRow(StrictModel):
     snapshot_id: UUID
     case_id: UUID
     source_type: Literal["gbp"]
-    schema_version: Literal["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2"]
+    schema_version: Literal["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2", "customer_public_gbp_snapshot_v3"]
     normalized_payload: CustomerPublicGbpSnapshotValue
     payload_checksum: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
     created_at: AwareDatetime

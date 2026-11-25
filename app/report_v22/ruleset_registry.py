@@ -2,7 +2,7 @@
 
 _PUBLIC_RULESET_NUMBERS = {
     f"v22_capability_public_v{number}": number
-    for number in range(1, 22)
+    for number in range(1, 23)
 }
 # Version 19 is reserved but registered for version-based policies.
 # Contract validation and intake still decide which reports can be generated.

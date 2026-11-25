@@ -11,7 +11,7 @@ DISCLAIMER = 'This difference may be one contributing factor. These observations
 
 
 class PossibleReason(StrictModel):
-    metric: Literal['rating', 'review_count']
+    metric: Literal['rating', 'review_count', 'recent_review_activity']
     classification: Literal['inference'] = 'inference'
     basis_refs: list[str] = Field(min_length=4, max_length=401)
     competitor_indices: list[int] = Field(min_length=2, max_length=3)
@@ -19,12 +19,14 @@ class PossibleReason(StrictModel):
 
 
 class PossibleReasons(StrictModel):
-    schema_version: Literal['possible_reasons_v1'] = 'possible_reasons_v1'
+    schema_version: Literal['possible_reasons_v1', 'possible_reasons_v2'] = 'possible_reasons_v1'
     status: Literal['assessed', 'not_assessed']
-    items: list[PossibleReason] = Field(max_length=2)
+    items: list[PossibleReason] = Field(max_length=3)
 
     @model_validator(mode='after')
     def coherent(self):
+        if self.schema_version == 'possible_reasons_v1' and (len(self.items)>2 or any(i.metric=='recent_review_activity' for i in self.items)):
+            raise ValueError('historical reasons do not include review activity')
         if (self.status == 'assessed') != bool(self.items):
             raise ValueError('no eligible differences means not assessed')
         return self
@@ -54,7 +56,25 @@ def build_possible_reasons(gbp, landing):
             basis_refs=[f'/gbp_comparison/differences/{index}', *(ref for m in values for ref in m.source_refs)], customer_text=text))
     # V16 landing comparisons never establish directional gaps (bounded counts/positive lower bounds).
     # Do not turn unobserved content, unequal lower bounds or category sets into reasons.
-    return PossibleReasons(status='assessed' if items else 'not_assessed', items=items)
+    version = 'possible_reasons_v1'
+    if gbp.schema_version == 'gbp_comparison_v2':
+        version = 'possible_reasons_v2'
+        recent, latest = gbp.differences[3:5]
+        if recent.direction == latest.direction == 'higher':
+            supporters = sorted(set(recent.competitor_indices) & set(latest.competitor_indices))
+            if len(supporters) >= 2:
+                rows = [gbp.rows[0], *(gbp.rows[i] for i in supporters)]
+                count = [row.metrics['reviews_90d'] for row in rows]
+                dates = [row.metrics['latest_review'] for row in rows]
+                counts = ', '.join(('at least ' if m.lower_bound else '') + str(int(m.value)) for m in count[1:])
+                dates_text = ', '.join(m.value[:10] for m in dates[1:])
+                items.append(PossibleReason(metric='recent_review_activity', competitor_indices=supporters,
+                    basis_refs=['/gbp_comparison/differences/3', '/gbp_comparison/differences/4',
+                        *(ref for m in [*count, *dates] for ref in m.source_refs)],
+                    customer_text=(f"Sample competitors had {counts} reviews in their 90-day windows and sample latest dates "
+                        f"of {dates_text}. Your profile had {int(count[0].value)} reviews in its sampled 90-day window "
+                        f"and a sample latest date of {dates[0].value[:10]}. {DISCLAIMER}")))
+    return PossibleReasons(schema_version=version, status='assessed' if items else 'not_assessed', items=items)
 
 
 def select_reasons_ruleset(gbp, landing, reasons):

@@ -25,7 +25,7 @@ def artifacts():
         values[f'{version}-snapshot.json'] = source.payload.model_dump(mode='json')
         values[f'{version}-report.json'] = report.model_dump(mode='json')
     encoded = {name: (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)+'\n').encode() for name,value in values.items()}
-    manifest = {'version': 'customer_public_gbp_snapshot_v2', 'files': {name: 'sha256:'+hashlib.sha256(raw).hexdigest() for name,raw in encoded.items()}}
+    manifest = {'version': 'customer_public_gbp_snapshot_v3', 'files': {name: 'sha256:'+hashlib.sha256(raw).hexdigest() for name,raw in encoded.items()}}
     encoded['manifest.json'] = (json.dumps(manifest,indent=2,sort_keys=True)+'\n').encode()
     return encoded
 
@@ -47,7 +47,7 @@ def main():
             else:
                 directory.mkdir(parents=True,exist_ok=True)
                 path.write_bytes(data)
-    print('Public GBP V1/V2 contracts and fixtures match.' if args.check else 'Exported public GBP V1/V2 contracts and fixtures.')
+    print('Public GBP snapshot contracts and fixtures match.' if args.check else 'Exported public GBP snapshot contracts and fixtures.')
 
 
 if __name__ == '__main__': main()

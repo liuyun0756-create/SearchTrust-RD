@@ -435,7 +435,8 @@
             "v22_analysis_input_v7",
             "v22_analysis_input_v8",
             "v22_analysis_input_v10",
-            "v22_analysis_input_v11"
+            "v22_analysis_input_v11",
+            "v22_analysis_input_v12"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -1203,7 +1204,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1258,7 +1262,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1319,7 +1326,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1382,7 +1392,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1447,7 +1460,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1514,7 +1530,10 @@
                     "type": "object"
                   },
                   "schema_version": {
-                    "const": "2.2.16"
+                    "enum": [
+                      "2.2.16",
+                      "2.2.17"
+                    ]
                   }
                 }
               }
@@ -1743,7 +1762,8 @@
                   "2.2.12",
                   "2.2.13",
                   "2.2.15",
-                  "2.2.16"
+                  "2.2.16",
+                  "2.2.17"
                 ]
               }
             }
@@ -1794,7 +1814,8 @@
                   "2.2.12",
                   "2.2.13",
                   "2.2.15",
-                  "2.2.16"
+                  "2.2.16",
+                  "2.2.17"
                 ]
               }
             }
@@ -1820,6 +1841,36 @@
                   },
                   "schema_version": {
                     "const": "v22_analysis_input_v11"
+                  }
+                },
+                "required": [
+                  "identity_inheritance"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.2.17"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_manifest": {
+                "properties": {
+                  "identity_inheritance": {
+                    "type": "object"
+                  },
+                  "ruleset_version": {
+                    "const": "v22_capability_public_v22"
+                  },
+                  "schema_version": {
+                    "const": "v22_analysis_input_v12"
                   }
                 },
                 "required": [
@@ -1891,7 +1942,8 @@
               "2.2.12",
               "2.2.13",
               "2.2.15",
-              "2.2.16"
+              "2.2.16",
+              "2.2.17"
             ]
           }
         },
@@ -2105,7 +2157,8 @@
             "2.2.12",
             "2.2.13",
             "2.2.15",
-            "2.2.16"
+            "2.2.16",
+            "2.2.17"
           ],
           "title": "Schema Version",
           "type": "string"
@@ -2184,7 +2237,8 @@
                     "v22_capability_public_v17",
                     "v22_capability_public_v18",
                     "v22_capability_public_v20",
-                    "v22_capability_public_v21"
+                    "v22_capability_public_v21",
+                    "v22_capability_public_v22"
                   ]
                 }
               },
@@ -2332,6 +2386,73 @@
         "evidence_ids"
       ],
       "title": "ContactCheck",
+      "type": "object"
+    },
+    "CustomerReviewProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "discarded_recent_or_invalid": {
+          "title": "Discarded Recent Or Invalid",
+          "type": "boolean"
+        },
+        "invalid_records": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Invalid Records",
+          "type": "integer"
+        },
+        "page_count": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Page Count",
+          "type": "integer"
+        },
+        "returned_count": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Returned Count",
+          "type": "integer"
+        },
+        "sampled_at": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sampled At"
+        },
+        "sort_verified": {
+          "title": "Sort Verified",
+          "type": "boolean"
+        },
+        "stop": {
+          "enum": [
+            "natural_end",
+            "sample_cap",
+            "page_cap",
+            "provider_failure",
+            "branch_unavailable",
+            "invalid_pagination",
+            "budget"
+          ],
+          "title": "Stop",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sampled_at",
+        "page_count",
+        "returned_count",
+        "sort_verified",
+        "stop",
+        "invalid_records",
+        "discarded_recent_or_invalid"
+      ],
+      "title": "CustomerReviewProvenance",
       "type": "object"
     },
     "DeliveryRevision": {
@@ -2743,6 +2864,17 @@
     "GbpComparison": {
       "additionalProperties": false,
       "properties": {
+        "customer_sampling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CustomerReviewProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "differences": {
           "items": {
             "$ref": "#/$defs/GbpDifference"
@@ -2762,8 +2894,11 @@
           "type": "array"
         },
         "schema_version": {
-          "const": "gbp_comparison_v1",
           "default": "gbp_comparison_v1",
+          "enum": [
+            "gbp_comparison_v1",
+            "gbp_comparison_v2"
+          ],
           "title": "Schema Version",
           "type": "string"
         }
@@ -4311,7 +4446,8 @@
         "metric": {
           "enum": [
             "rating",
-            "review_count"
+            "review_count",
+            "recent_review_activity"
           ],
           "title": "Metric",
           "type": "string"
@@ -4333,13 +4469,16 @@
           "items": {
             "$ref": "#/$defs/PossibleReason"
           },
-          "maxItems": 2,
+          "maxItems": 3,
           "title": "Items",
           "type": "array"
         },
         "schema_version": {
-          "const": "possible_reasons_v1",
           "default": "possible_reasons_v1",
+          "enum": [
+            "possible_reasons_v1",
+            "possible_reasons_v2"
+          ],
           "title": "Schema Version",
           "type": "string"
         },
@@ -5017,6 +5156,6 @@
     "report",
     "delivery_revision"
   ],
-  "title": "SearchTrust capability contracts 2.2.21 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12/2.2.13/2.2.15/2.2.16, delivery v1/v2/v3)",
+  "title": "SearchTrust capability contracts 2.2.22 (reports 2.2.2/2.2.4/2.2.5/2.2.6/2.2.7/2.2.8/2.2.9/2.2.10/2.2.11/2.2.12/2.2.13/2.2.15/2.2.16/2.2.17, delivery v1/v2/v3)",
   "type": "object"
 }

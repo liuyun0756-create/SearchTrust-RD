@@ -122,6 +122,7 @@ class Settings(BaseSettings):
     # explicitly unknown; it must never be interpreted as a known zero cost.
     V22_TARGET_KEYWORDS_ENABLED: bool = False
     V22_GBP_COMPARISON_ENABLED: bool = False
+    V22_CUSTOMER_GBP_REVIEWS_ENABLED: bool = False
     V22_LANDING_PAGE_COMPARISON_ENABLED: bool = False
     V22_COMPARISON_REASONS_ENABLED: bool = False
     V22_LOCAL_ENTITY_COVERAGE_ENABLED: bool = False
